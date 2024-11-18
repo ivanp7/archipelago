@@ -1,17 +1,4 @@
-# Station, a resource provider library/application
-
-## Features of the library (`libstation`)
-
-The library provides types, functions, macros, constants for the following things:
-
-* finite-state machines as algorithm of execution (`fsm.*.h`);
-* concurrent processing using threads (`concurrent.*.h`);
-* signal management in multithreading environment (`signal.*.h`);
-* quick & easy SDL windows for drawing (`sdl.*.h`);
-* fonts support for drawing (`font.*.h`);
-* other!
-
-## Features of the application (`station-app`)
+# Archipelago, a dynamic finite state machine implementation
 
 The application helps with the initialization and release of resources
 for the user-written plugins, which don't need to bother to do it manually.
@@ -62,130 +49,75 @@ the initial finite state machine state.
 
 4. `final()`: used to destroy the plugin's own resources, and set the application exit code.
 
-It is possible to link `station-app` with a user plugin,
-so that the latter becomes a standalone application.
+## Built-in plugins
 
-## Contents of `station-app --help`
+The library provides types, functions, macros, constants for the following things:
 
-```
-Usage: station-app [OPTION...] PLUGIN_FILE [-- [plugin arguments...]]
-
- Output options:
-  -@, --logo                 Display application logo
-  -C, --cl-list=TYPE         Display list of OpenCL-compatible hardware
-                             (platforms, devices)
-  -v, --verbose              Display more information
-
- Alternative modes:
-  -H, --plugin-help          Display plugin help
-
- Feature options:
-  -c, --cl-context=PID[:DMASK]   Create OpenCL context
-                             (PID: platform index, DMASK: device mask)
-  -f, --file=PATH            Open binary file for reading
-  -j, --threads=[±]THREADS   Create concurrent processing context
-                             (+: wait on condition variable, -: busy-wait)
-  -l, --library=PATH         Open shared library
-  -n, --no-sdl               Don't initialize SDL subsystems
-  -p, --shm-ptr=IDHEX@PATH   Attach shared memory with pointers for reading
-  -s, --shm=IDHEX@PATH       Attach simple shared memory for reading
-
- Signal management (interruption events):
-      --SIGINT               Catch <interruption request>
-      --SIGQUIT              Catch <quit request>
-      --SIGTERM              Catch <termination request>
-
- Signal management (process events):
-      --SIGCHLD              Catch <child stopped or terminated>
-      --SIGCONT              Catch <continue if stopped>
-      --SIGTSTP              Catch <stop request>
-      --SIGXCPU              Catch <CPU time limit exceeded>
-      --SIGXFSZ              Catch <file size limit exceeded>
-
- Signal management (input/output events):
-      --SIGPIPE              Catch <broken pipe>
-      --SIGPOLL              Catch <pollable event>
-      --SIGURG               Catch <urgent condition on socket>
-
- Signal management (timer events):
-      --SIGALRM              Catch <timer signal from alarm>
-      --SIGPROF              Catch <profiling timer expired>
-      --SIGVTALRM            Catch <virtual alarm clock>
-
- Signal management (terminal events):
-      --SIGHUP               Catch <terminal hangup>
-      --SIGTTIN              Catch <terminal input for background process>
-      --SIGTTOU              Catch <terminal output for background process>
-      --SIGWINCH             Catch <terminal resized>
-
- Signal management (user-defined):
-      --SIGRTMAX=-n          Catch <real-time signal MAX-n>
-      --SIGRTMIN=+n          Catch <real-time signal MIN+n>
-      --SIGUSR1              Catch <user-defined signal 1>
-      --SIGUSR2              Catch <user-defined signal 2>
-
-  -?, --usage                Display a short usage message
-  -h, --help                 Display this help list
-      --version              Display application version
-
-Mandatory or optional arguments to long options are also mandatory or optional
-for any corresponding short options.
-```
-
-## How to build
-
-The project is built using the Ninja build system.
-A `build.ninja` file is generated using `configure` script.
-To see the possible build configuration options, run `configure` without arguments.
-To generate `build.ninja`, run `configure <options>`.
-To build, run `ninja`.
-
-The configuration script also generates `station.pc` (pkg-config file for `libstation`)
-and `station-app.pc` (pkg-config file for standalone executable user plugins).
-
-## Build dependencies
-
-* gcc-compatible compiler (like clang)
-* pkg-config
-* ninja
-
-## Dependencies
-
-The code implies the availability of the POSIX interfaces.
-
-The following dependencies are optional.
-Each of them is required only if the corresponding feature
-is enabled at the build configuration step.
-
-* SDL2
-* OpenCL
+* finite-state machines as algorithm of execution (`fsm.*.h`);
+* concurrent processing using threads (`concurrent.*.h`);
+* signal management in multithreading environment (`signal.*.h`);
+* quick & easy SDL windows for drawing (`sdl.*.h`);
+* fonts support for drawing (`font.*.h`);
+* other!
 
 ## Examples
 
 A quick and dirty demo plugin can be found in the `demo` subdirectory.
 
-List of projects using Station:
+List of projects using Archipelago:
 
-* [still-alive](https://github.com/ivanp7/still-alive) (built as a standalone executable plugin)
+* [still-alive](https://github.com/ivanp7/still-alive)
+
+
+
+
+
+
+
 
 ## Documentation
 
 Doxygen documentation is available at `docs` subdirectory. To build it, run `make`.
 
+## How to build
+
+The project is built using the Ninja build system.
+The `build.ninja` file is generated using the `pyrate-build` pip package.
+
+The installation steps:
+
+1. `./prepare.sh`: prepare the Python virtual environment and install pyrate
+
+2. `./configure.sh`: generate `build.ninja` and `archipelago.pc` (pkg-config file for `libarchipelago.a`)
+
+3. `ninja`: build the project
+
+## Build dependencies
+
+* [ninja](https://ninja-build.org/) -- build system
+* [pyrate](https://pypi.org/project/pyrate-build/) -- ninja build file generator
+
+## Dependencies
+
+* The GNU C Library -- for [argp](https://www.gnu.org/software/libc/manual/html_node/Argp.html),
+[ftok()](https://man7.org/linux/man-pages/man3/ftok.3.html), [shmget()](https://man7.org/linux/man-pages/man3/shmget.3p.html),
+[shmat()](https://man7.org/linux/man-pages/man3/shmat.3p.html), [shmdt()](https://man7.org/linux/man-pages/man3/shmdt.3p.html),
+[dlopen(), dlclose()](https://man7.org/linux/man-pages/man3/dlopen.3.html), [dlsym()](https://man7.org/linux/man-pages/man3/dlsym.3.html)
+
 ## License
 
 ```
-   Station is free software: you can redistribute it and/or modify it
+   Archipelago is free software: you can redistribute it and/or modify it
    under the terms of the GNU Lesser General Public License as published
    by the Free Software Foundation, either version 3 of the License, or
    (at your option) any later version.
 
-   Station is distributed in the hope that it will be useful,
+   Archipelago is distributed in the hope that it will be useful,
    but WITHOUT ANY WARRANTY; without even the implied warranty of
    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
    GNU Lesser General Public License for more details.
 
    You should have received a copy of the GNU Lesser General Public
-   License along with Station. If not, see <http://www.gnu.org/licenses/>.
+   License along with Archipelago. If not, see <http://www.gnu.org/licenses/>.
 ```
 
