@@ -240,16 +240,16 @@ archi_main(
     void **shmaddr; // shared memory address
     archi_app_configuration_t *app_config; // application configuration
 
-    // Normal execution mode
+    // Application execution mode
     archi_plugin_vtable_t app_vtable; // application virtual table
     struct archi_app_context app_context; // application context
 
-    // Plugin help mode
+    // Plugin probe mode
     union {
         archi_app_config_plugin_list_node_t as_node;
         char as_bytes[sizeof(archi_app_config_plugin_list_node_t) + sizeof(char*) * 1]; // vtable_symbol[] of size 1
-    } help_config_plugin_node; // configuration node for the plugin help mode
-    archi_app_configuration_t help_config; // plugin help mode configuration
+    } probe_config_plugin_node; // configuration node for the plugin probe mode
+    archi_app_configuration_t probe_config; // plugin probe mode configuration
 
     ////////////////////////////////
     // Print the application logo //
@@ -265,37 +265,37 @@ archi_main(
     // Preparation step //
     //////////////////////
 
-    if (args->plugin_help.mode) // plugin help mode
+    if (args->probe_mode.pathname != NULL) // plugin probe mode
     {
-        archi_log_debug(M, "Preparing application configuration for the plugin help mode...");
+        archi_log_debug(M, "Preparing application configuration for the plugin probe mode...");
 
-        help_config_plugin_node.as_node = (archi_app_config_plugin_list_node_t){
+        probe_config_plugin_node.as_node = (archi_app_config_plugin_list_node_t){
             .base.name = "plugin", // any valid name will do here
-            .pathname = args->plugin_help.pathname,
+            .pathname = args->probe_mode.pathname,
             .num_vtables = 1,
         };
-        help_config_plugin_node.as_node.vtable_symbol[0] = args->plugin_help.vtable_symbol;
+        probe_config_plugin_node.as_node.vtable_symbol[0] = args->probe_mode.vtable_symbol;
 
-        help_config = (archi_app_configuration_t){
-            .plugins = {.head = (archi_list_node_t*)&help_config_plugin_node,
-                .tail = (archi_list_node_t*)&help_config_plugin_node},
+        probe_config = (archi_app_configuration_t){
+            .plugins = {.head = (archi_list_node_t*)&probe_config_plugin_node,
+                .tail = (archi_list_node_t*)&probe_config_plugin_node},
         };
 
         shmaddr = NULL;
-        app_config = &help_config;
+        app_config = &probe_config;
 
         *app = (archi_application_t){0};
     }
-    else // normal execution mode
+    else // application execution mode
     {
         // Attach to shared memory
         archi_log_debug(M, "Attaching to shared memory...");
 
-        shmaddr = archi_shared_memory_attach(args->config.pathname, args->config.proj_id, false);
+        shmaddr = archi_shared_memory_attach(args->exec_mode.pathname, args->exec_mode.proj_id, false);
         if (shmaddr == NULL)
         {
             archi_log_error(M, "Couldn't attach to shared memory at pathname '%s', project id %i.",
-                    args->config.pathname, args->config.proj_id);
+                    args->exec_mode.pathname, args->exec_mode.proj_id);
 
             return ARCHI_EXIT_CODE(ARCHI_ERROR_ATTACH);
         }
@@ -342,13 +342,13 @@ archi_main(
     // Execution step //
     ////////////////////
 
-    if (args->plugin_help.mode) // plugin help mode
+    if (args->probe_mode.pathname != NULL) // plugin probe mode
     {
-        code = archi_main_plugin_help(app, args->plugin_help.topic);
+        code = archi_main_plugin_help(app, args->probe_mode.help_topic);
         if (code != 0)
             archi_log_error(M, "Couldn't provide application plugin help.");
     }
-    else // normal execution mode
+    else // application execution mode
     {
         // Run the application
         if (app_context.entry_state.function == NULL)
