@@ -20,13 +20,13 @@
 
 /**
  * @file
- * @brief Application implementation.
+ * @brief Applications implementation.
  */
 
 #include "archi/app.h"
 #include "archi/util/error.def.h"
 #include "archi/util/list.fun.h"
-#include "archi/util/os.fun.h"
+#include "archi/util/os/lib.fun.h"
 
 #include <stdio.h> // for snprintf()
 #include <stdlib.h> // for malloc() and free()
@@ -454,7 +454,7 @@ archi_application_perform_instruction(
                 archi_app_config_instruct_assign_t instr = config_node->as_assign;
                 if ((instr.destination.context_alias == NULL) || (instr.source.context_alias == NULL))
                     return ARCHI_ERROR_CONFIG;
-                else if (instr.destination.port == NULL)
+                else if (instr.destination.slot == NULL)
                     return ARCHI_ERROR_CONFIG;
 
                 // Search destination context node starting from list tail
@@ -482,7 +482,7 @@ archi_application_perform_instruction(
                     return code;
                 else if (src_context_node == NULL)
                     return ARCHI_ERROR_CONFIG; // context with such alias name was not found
-                else if (instr.source.port != NULL)
+                else if (instr.source.slot != NULL)
                 {
                     if (src_context_node->vtable_node == NULL)
                         return ARCHI_ERROR_MISUSE;
@@ -495,10 +495,10 @@ archi_application_perform_instruction(
                 // Perform the assignment
                 archi_value_t value = {0};
 
-                if (instr.source.port != NULL) // get value from port
+                if (instr.source.slot != NULL) // get value from the source context slot
                 {
                     code = src_context_node->vtable_node->vtable->func.get_fn(
-                            src_context_node->context, instr.source.port, &value);
+                            src_context_node->context, instr.source.slot, &value);
                     if (code != 0)
                         return code;
                 }
@@ -510,7 +510,7 @@ archi_application_perform_instruction(
                 }
 
                 code = dest_context_node->vtable_node->vtable->func.set_fn(
-                        dest_context_node->context, instr.destination.port, &value);
+                        dest_context_node->context, instr.destination.slot, &value);
                 if (code != 0)
                     return code;
             }

@@ -20,12 +20,12 @@
 
 /**
  * @file
- * @brief OS-specific features.
+ * @brief Shared memory operations.
  */
 
 #pragma once
-#ifndef _ARCHI_UTIL_OS_FUN_H_
-#define _ARCHI_UTIL_OS_FUN_H_
+#ifndef _ARCHI_UTIL_OS_SHM_FUN_H_
+#define _ARCHI_UTIL_OS_SHM_FUN_H_
 
 #include <stdbool.h>
 #include <stddef.h>
@@ -84,34 +84,5 @@ archi_shared_memory_detach(
         const void *shmaddr ///< [in] Shared memory address.
 );
 
-/*****************************************************************************/
-
-/**
- * @brief Load shared library.
- *
- * @return Handle of the loaded library, or NULL in case of failure.
- */
-void*
-archi_library_load(
-        const char *file ///< [in] Path to the loaded library.
-);
-
-/**
- * @brief Unload shared library.
- */
-void
-archi_library_unload(
-        void *handle ///< [in] Handle of the unloaded library.
-);
-
-/**
- * @brief Get a symbol from shared library.
- */
-void*
-archi_library_get_symbol(
-        void *restrict handle, ///< [in] Handle of the library.
-        const char *restrict symbol ///< [in] Symbol name.
-);
-
-#endif // _ARCHI_UTIL_OS_FUN_H_
+#endif // _ARCHI_UTIL_OS_SHM_FUN_H_
 

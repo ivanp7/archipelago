@@ -20,7 +20,7 @@
 
 /**
  * @file
- * @brief Constants for application object interface implementation.
+ * @brief Constants for application interface implementation.
  */
 
 #pragma once

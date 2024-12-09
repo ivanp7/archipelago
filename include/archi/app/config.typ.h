@@ -20,7 +20,7 @@
 
 /**
  * @file
- * @brief Application configuration type.
+ * @brief Application configuration types.
  */
 
 #pragma once
@@ -80,15 +80,15 @@ typedef struct archi_app_config_instruct_final {
  * @brief Context assignment instruction.
  *
  * Context alias names must not be null.
- * Destination port must not be null.
+ * Destination slot must not be null.
  *
- * Source port may be null. In that case, source context pointer
+ * Source slot may be null. In that case, source context pointer
  * is passed to destination setter function.
  */
 typedef struct archi_app_config_instruct_assign {
     struct {
         char *context_alias; ///< Context alias name.
-        char *port; ///< Context port (or NULL).
+        char *slot; ///< Context slot.
     } destination,
         source;
 } archi_app_config_instruct_assign_t;

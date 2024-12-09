@@ -76,7 +76,7 @@
  */
 #define ARCHI_PLUGIN_SET_FUNC(func_name) archi_status_t func_name( \
         void *const restrict context, /* Action context. */ \
-        const char *const restrict port, /* Action input port. */ \
+        const char *const restrict slot, /* Action input slot. */ \
         const archi_value_t *const restrict value) /* Node with input value. */
 
 /**
@@ -90,7 +90,7 @@
  */
 #define ARCHI_PLUGIN_GET_FUNC(func_name) archi_status_t func_name( \
         void *const restrict context, /* Action context. */ \
-        const char *const restrict port, /* Action output port. */ \
+        const char *const restrict slot, /* Action output slot. */ \
         archi_value_t *const restrict value) /* Node for output value. */
 
 /**
@@ -112,7 +112,7 @@
 /**
  * @brief Default plugin virtual table symbol.
  */
-#define ARCHI_PLUGIN_VTABLE_DEFAULT plugin_vtable
+#define ARCHI_PLUGIN_VTABLE_DEFAULT vtable
 
 #endif // _ARCHI_APP_PLUGIN_DEF_H_
 

@@ -29,7 +29,11 @@
 #include "archi/app.h"
 #include "archi/fsm.h"
 #include "archi/util/error.def.h"
-#include "archi/util/os.fun.h"
+#include "archi/util/flexible.def.h"
+#include "archi/util/os/shm.fun.h"
+#include "archi/util/os/signal.fun.h"
+#include "archi/util/os/signal.typ.h"
+#include "archi/util/os/signal.def.h"
 #include "archi/util/print.fun.h"
 #include "archi/util/print.def.h"
 
@@ -49,18 +53,24 @@
 /*****************************************************************************/
 
 struct archi_app_context {
+    // Finite state machine
     archi_state_t entry_state;
     archi_state_transition_t state_transition;
+
+    // Signal management
+    struct archi_signal_management_context *signal_management;
 };
+
+/*****************************************************************************/
 
 static ARCHI_PLUGIN_SET_FUNC(archi_app_vtable_set)
 {
-    if ((context == NULL) || (port == NULL) || (value == NULL))
+    if ((context == NULL) || (slot == NULL) || (value == NULL))
         return ARCHI_ERROR_MISUSE;
 
     struct archi_app_context *app_context = context;
 
-    if (strcmp(port, ARCHI_APP_CONTEXT_PORT_ENTRY_STATE_FUNC) == 0) // entry state function
+    if (strcmp(slot, ARCHI_APP_CONTEXT_PORT_ENTRY_STATE_FUNC) == 0) // entry state function
     {
         if ((value->ptr == NULL) || (value->size != sizeof(archi_state_function_t)) ||
                 (value->num_of != 1) || (value->type != ARCHI_VALUE_POINTER))
@@ -69,9 +79,9 @@ static ARCHI_PLUGIN_SET_FUNC(archi_app_vtable_set)
         archi_state_function_t *fptr = value->ptr;
         app_context->entry_state.function = *fptr;
     }
-    else if (strcmp(port, ARCHI_APP_CONTEXT_PORT_ENTRY_STATE_DATA) == 0) // entry state data
+    else if (strcmp(slot, ARCHI_APP_CONTEXT_PORT_ENTRY_STATE_DATA) == 0) // entry state data
         app_context->entry_state.data = value->ptr;
-    else if (strcmp(port, ARCHI_APP_CONTEXT_PORT_STATE_TRANS_FUNC) == 0) // state transition function
+    else if (strcmp(slot, ARCHI_APP_CONTEXT_PORT_STATE_TRANS_FUNC) == 0) // state transition function
     {
         if ((value->ptr == NULL) || (value->size != sizeof(archi_state_transition_function_t)) ||
                 (value->num_of != 1) || (value->type != ARCHI_VALUE_POINTER))
@@ -80,10 +90,37 @@ static ARCHI_PLUGIN_SET_FUNC(archi_app_vtable_set)
         archi_state_transition_function_t *fptr = value->ptr;
         app_context->state_transition.function = *fptr;
     }
-    else if (strcmp(port, ARCHI_APP_CONTEXT_PORT_STATE_TRANS_DATA) == 0) // state transition data
+    else if (strcmp(slot, ARCHI_APP_CONTEXT_PORT_STATE_TRANS_DATA) == 0) // state transition data
         app_context->state_transition.data = value->ptr;
     else
         return ARCHI_ERROR_CONFIG;
+
+    return 0;
+}
+
+static ARCHI_PLUGIN_GET_FUNC(archi_app_vtable_get)
+{
+    if ((context == NULL) || (slot == NULL) || (value == NULL))
+        return ARCHI_ERROR_MISUSE;
+
+    struct archi_app_context *app_context = context;
+
+    if (strcmp(slot, ARCHI_APP_CONTEXT_PORT_SIGNAL_SET) == 0) // signal flags
+    {
+        if (app_context->signal_management != NULL)
+        {
+            archi_signal_flags_t *flags;
+            archi_signal_management_thread_get_properties(
+                    app_context->signal_management, &flags, NULL);
+
+            value->ptr = flags;
+            value->size = ARCHI_SIGNAL_FLAGS_SIZEOF;
+            value->num_of = 1;
+            value->type = ARCHI_VALUE_DATA;
+        }
+        else
+            *value = (archi_value_t){0};
+    }
 
     return 0;
 }
@@ -247,7 +284,7 @@ archi_main(
     // Plugin probe mode
     union {
         archi_app_config_plugin_list_node_t as_node;
-        char as_bytes[sizeof(archi_app_config_plugin_list_node_t) + sizeof(char*) * 1]; // vtable_symbol[] of size 1
+        char as_bytes[ARCHI_FLEXIBLE_SIZEOF(archi_app_config_plugin_list_node_t, vtable_symbol, 1)];
     } probe_config_plugin_node; // configuration node for the plugin probe mode
     archi_app_configuration_t probe_config; // plugin probe mode configuration
 
@@ -258,7 +295,7 @@ archi_main(
     {
         archi_print(ARCHI_COLOR_RESET "\n");
         if (!args->no_logo)
-            archi_print(ARCHI_COLOR_FG_GREEN "%s" ARCHI_COLOR_RESET "\n\n", ARCHI_PELAGO_LOGO);
+            archi_print(ARCHI_COLOR_FG_BRI_WHITE "%s" ARCHI_COLOR_RESET "\n\n", ARCHI_PELAGO_LOGO);
     }
 
     //////////////////////
@@ -297,25 +334,41 @@ archi_main(
             archi_log_error(M, "Couldn't attach to shared memory at pathname '%s', project id %i.",
                     args->exec_mode.pathname, args->exec_mode.proj_id);
 
-            return ARCHI_EXIT_CODE(ARCHI_ERROR_ATTACH);
+            code = ARCHI_ERROR_ATTACH;
+            goto cleanup;
         }
 
-        app_config = shmaddr[1]; // shmaddr[0] is just shmaddr, smaddr[1] is the pointer to configuration
+        app_config = shmaddr[ARCHI_SHM_APP_CONFIG_INDEX];
 
-        // Initialize the application instance with application vtable and context
+        // Initialize the application instance
+        app_context = (struct archi_app_context){0};
+        {
+            archi_signal_management_config_t *signals_config = shmaddr[ARCHI_SHM_SIGNALS_CONFIG_INDEX];
+            if (signals_config != NULL)
+            {
+                archi_log_debug(M, "Starting signal management thread...");
+
+                app_context.signal_management = archi_signal_management_thread_start(signals_config);
+                if (app_context.signal_management == NULL)
+                {
+                    archi_log_error(M, "Couldn't start signal management thread.");
+
+                    code = ARCHI_ERROR_SIGNAL;
+                    goto cleanup;
+                }
+            }
+        }
         {
             app_vtable = (archi_plugin_vtable_t){
                 .format = {.magic = ARCHI_API_MAGIC, .version = ARCHI_API_VERSION},
                 .info = {.name = ARCHI_APP_CONTEXT_ALIAS, .description = "Global virtual table"},
-                .func = {.set_fn = archi_app_vtable_set},
+                .func = {.set_fn = archi_app_vtable_set, .get_fn = archi_app_vtable_get},
             };
 
-            app_context = (struct archi_app_context){0};
+            code = archi_main_prepare_app(app, &app_vtable, &app_context);
+            if (code != 0)
+                goto cleanup;
         }
-
-        code = archi_main_prepare_app(app, &app_vtable, &app_context);
-        if (code != 0)
-            return ARCHI_EXIT_CODE(code);
     }
 
     /////////////////////////
@@ -323,7 +376,6 @@ archi_main(
     /////////////////////////
 
     {
-        // Initialize the application
         archi_log_info(M, "Initializing the application...");
 
         /***************************************************/
@@ -334,7 +386,7 @@ archi_main(
         if (code != 0)
         {
             archi_log_error(M, "Couldn't initialize the application.");
-            goto finish;
+            goto finalization;
         }
     }
 
@@ -356,7 +408,7 @@ archi_main(
             archi_log_error(M, "Application entry state is null.");
 
             code = ARCHI_ERROR_CONFIG;
-            goto finish;
+            goto finalization;
         }
 
         archi_log_info(M, "Running the application...");
@@ -368,14 +420,12 @@ archi_main(
         /***************************************************************************************/
     }
 
-finish:
-
     ///////////////////////
     // Finalization step //
     ///////////////////////
 
+finalization:
     {
-        // Clean up the resources and return
         archi_log_info(M, "Finalizing the application...");
 
         /******************************/
@@ -383,11 +433,26 @@ finish:
         /******************************/
     }
 
-    // Detach from shared memory
-    archi_log_debug(M, "Detaching from shared memory...");
+    /////////////
+    // Cleanup //
+    /////////////
 
-    if (shmaddr != NULL)
-        archi_shared_memory_detach(shmaddr);
+cleanup:
+    {
+        if (app_context.signal_management != NULL)
+        {
+            archi_log_debug(M, "Stopping signal management thread...");
+
+            archi_signal_management_thread_stop(app_context.signal_management);
+        }
+
+        if (shmaddr != NULL)
+        {
+            archi_log_debug(M, "Detaching from shared memory...");
+
+            archi_shared_memory_detach(shmaddr);
+        }
+    }
 
     return ARCHI_EXIT_CODE(code);
 }

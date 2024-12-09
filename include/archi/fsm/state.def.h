@@ -20,7 +20,7 @@
 
 /**
  * @file
- * @brief Constants and macros for implementation of plugin states.
+ * @brief Constants and macros for implementation of finite state machine states.
  */
 
 #pragma once
@@ -30,70 +30,65 @@
 #include "archi/fsm/state.typ.h"
 
 /**
- * @brief Null (empty, invalid) state.
+ * @brief A null (empty) state.
  */
 #define ARCHI_NULL_STATE (archi_state_t){0}
 
 /**
- * @brief State.
+ * @brief State literal.
  */
 #define ARCHI_STATE(func, data_ptr) \
     (archi_state_t){.function = (func), .data = (data_ptr)}
+
+/**
+ * @brief State literal with function from another state.
+ */
+#define ARCHI_STATE_OTHER_DATA(state, data) ARCHI_STATE((state).function, (data))
+/**
+ * @brief State literal with data from another state.
+ */
+#define ARCHI_STATE_OTHER_FUNC(state, func) ARCHI_STATE((func), (state).data)
 
 /*****************************************************************************/
 
 /**
  * @brief Access current state.
  */
-#define ARCHI_CURRENT archi_current(context)
+#define ARCHI_CURRENT() archi_current(fsm)
+/**
+ * @brief Access current state data through a pointer to the specified type.
+ */
+#define ARCHI_STATE_DATA(type) ((type*)ARCHI_CURRENT().data)
 
 /**
- * @brief Access current state data through a pointer of desired type.
+ * @brief Access current stack size.
  */
-#define ARCHI_STATE_DATA(type) ((type*)ARCHI_CURRENT.data)
+#define ARCHI_STACK_SIZE() archi_stack_size(fsm)
+
+/**
+ * @brief Access current status code.
+ */
+#define ARCHI_CODE() archi_code(fsm)
+/**
+ * @brief Update status code.
+ */
+#define ARCHI_SET_CODE(code) archi_set_code(fsm, (code))
 
 /*****************************************************************************/
 
 /**
- * @brief Exit the application immediately.
+ * @brief Proceed finite state machine execution -- pop and/or push states from/to the stack.
  */
-#define ARCHI_EXIT(exit_code) do {    \
-    archi_exit((exit_code), context); \
+#define ARCHI_PROCEED(num_popped, ...) do { \
+    archi_state_t seq[] = {__VA_ARGS__};    \
+    archi_proceed(fsm, (num_popped), sizeof(seq) / sizeof(seq[0]), seq); \
 } while (0)
 
 /**
- * @brief Make the current state final and stop its execution.
+ * @brief Proceed finite state machine execution -- pop states from the stack.
  */
-#define ARCHI_FINISH() do { \
-    archi_finish(context);  \
-} while (0)
-
-/**
- * @brief Redo the current state with new data.
- */
-#define ARCHI_REDO(new_data) do { \
-    archi_proceed(ARCHI_STATE(ARCHI_CURRENT.function, (new_data)), context); \
-} while (0)
-
-/**
- * @brief Proceed to the next state with the current data.
- */
-#define ARCHI_PROCEED_SAME_DATA(new_func) do { \
-    archi_proceed(ARCHI_STATE((new_func), ARCHI_CURRENT.data), context); \
-} while (0)
-
-/**
- * @brief Proceed to the next state.
- */
-#define ARCHI_PROCEED(next_state) do {    \
-    archi_proceed((next_state), context); \
-} while (0)
-
-/**
- * @brief Call the next state.
- */
-#define ARCHI_CALL(call_state, return_state) do {         \
-    archi_call((call_state), (return_state), context);    \
+#define ARCHI_DONE(num_popped) do { \
+    archi_proceed(fsm, (num_popped), 0, NULL); \
 } while (0)
 
 /*****************************************************************************/
@@ -107,7 +102,7 @@
  * @see archi_state_function_t
  */
 #define ARCHI_STATE_FUNCTION(name) void name( \
-        struct archi_state_context *const context)
+        struct archi_finite_state_machine_context *const fsm)
 
 #endif // _ARCHI_FSM_STATE_DEF_H_
 

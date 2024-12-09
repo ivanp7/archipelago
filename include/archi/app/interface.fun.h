@@ -20,7 +20,7 @@
 
 /**
  * @file
- * @brief Application object interface.
+ * @brief Application interface.
  */
 
 #pragma once

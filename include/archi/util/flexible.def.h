@@ -20,39 +20,18 @@
 
 /**
  * @file
- * @brief Types for finite state machine transitions.
+ * @brief Macros for flexible array members.
  */
 
 #pragma once
-#ifndef _ARCHI_FSM_TRANSITION_TYP_H_
-#define _ARCHI_FSM_TRANSITION_TYP_H_
-
-#include "archi/fsm/state.typ.h"
-#include "archi/util/status.typ.h"
+#ifndef _ARCHI_UTIL_FLEXIBLE_DEF_H_
+#define _ARCHI_UTIL_FLEXIBLE_DEF_H_
 
 /**
- * @brief State transition function.
- *
- * @see ARCHI_STATE_TRANSITION_FUNCTION
+ * @brief Size of a structure with a flexible array member.
  */
-typedef void (*archi_state_transition_function_t)(
-        const archi_state_t prev_state, ///< [in] Previous state.
-        const archi_state_t next_state, ///< [in] Next state.
+#define ARCHI_FLEXIBLE_SIZEOF(type, member, num_of) \
+    (sizeof(type*) + sizeof(((type*)NULL)->member[0]) * (num_of))
 
-        archi_state_t *const restrict trans_state, ///< [out] Transitional state.
-
-        archi_status_t *const code, ///< [in,out] Status code.
-
-        void *const restrict data ///< [in,out] State transition data.
-);
-
-/**
- * @brief State transition.
- */
-typedef struct archi_state_transition {
-    archi_state_transition_function_t function; ///< State transition function.
-    void *data; ///< State transition data.
-} archi_state_transition_t;
-
-#endif // _ARCHI_FSM_TRANSITION_TYP_H_
+#endif // _ARCHI_UTIL_FLEXIBLE_DEF_H_
 

@@ -15,20 +15,21 @@ INCLUDE_DIR = "include"
 SOURCE_DIR  = "src"
 BUILD_DIR   = "build"
 
-EXEC_SUBDIR = "exe"
+EXEC_SUBDIR = ""
 EXEC_SOURCE = "main.c"
 
 #------------------------------------------------------------------------------
 
 CFLAGS = ['-march=native', '-pipe', '-std=c17',
           '-Wall', '-Wextra', '-Wpedantic',
-          '-Wmissing-prototypes', '-Wstrict-prototypes', '-Wold-style-definition']
-LFLAGS = []
+          '-Wmissing-prototypes', '-Wstrict-prototypes', '-Wold-style-definition',
+          '-pthread']
+LFLAGS = ['-ldl', '-pthread']
 
 if 'DEBUG' in os.environ:                       ### <<<<<<<<<<<<<<<<<<<< INPUT ENVIRONMENT VARIABLE <<<<<<<<<<<<<<<<<<<<
     CFLAGS += ['-O0', '-g3', '-ggdb']
 else:
-    CFLAGS += ['-O2', '-g0', '-flto']
+    CFLAGS += ['-O2', '-g0', '-flto', '-ffat-lto-objects']
     LFLAGS += ['-flto']
 
 if 'PROFILE' in os.environ:                     ### <<<<<<<<<<<<<<<<<<<< INPUT ENVIRONMENT VARIABLE <<<<<<<<<<<<<<<<<<<<
@@ -40,6 +41,9 @@ CFLAGS += [f'-I{INCLUDE_DIR}']
 
 if 'COLORLESS' in os.environ:                   ### <<<<<<<<<<<<<<<<<<<< INPUT ENVIRONMENT VARIABLE <<<<<<<<<<<<<<<<<<<<
     CFLAGS += ['-DARCHI_FEATURE_COLORLESS']
+
+if 'QUEUE64' in os.environ:                     ### <<<<<<<<<<<<<<<<<<<< INPUT ENVIRONMENT VARIABLE <<<<<<<<<<<<<<<<<<<<
+    CFLAGS += ['-DARCHI_FEATURE_QUEUE64']
 
 #------------------------------------------------------------------------------
 
@@ -80,10 +84,10 @@ build_ninja = open('build.ninja', 'w')
 
 build_ninja.write(f'''\
 CC = {CC}
-CC_FLAGS = {CC_FLAGS}
+CC_FLAGS = {CC_FLAGS} {' '.join(CFLAGS)}
 
 rule compile
-    command = $CC $CC_FLAGS {' '.join(CFLAGS)} $opts -MMD -MT $out -MF $out.d -c $in -o $out
+    command = $CC $CC_FLAGS $opts -MMD -MT $out -MF $out.d -c $in -o $out
     description = compile: $out
     depfile = $out.d
     deps = gcc
@@ -96,10 +100,10 @@ rule link_static
     description = link(static): $out
 
 LINKER_EXE = {LINKER_EXE}
-LINKER_EXE_FLAGS = {LINKER_EXE_FLAGS}
+LINKER_EXE_FLAGS = {LINKER_EXE_FLAGS} {' '.join(LFLAGS)}
 
 rule link_exe
-    command = $LINKER_EXE $LINKER_EXE_FLAGS {' '.join(LFLAGS)} $opts -o $out $in
+    command = $LINKER_EXE $LINKER_EXE_FLAGS -o $out $in $opts
     description = link(executable): $out
 
 {'\n'.join([f'build {BUILD_DIR}/{src[:-1]}o: compile {src}' for src in SOURCES_LIBRARY])}
@@ -110,7 +114,7 @@ build {BUILD_DIR}/{SOURCE_DIR}/{EXEC_SUBDIR}/{EXEC_SOURCE[:-1]}o: compile {SOURC
 build {BUILD_DIR}/{EXEC_NAME}: link_exe \
 {BUILD_DIR}/{SOURCE_DIR}/{EXEC_SUBDIR}/{EXEC_SOURCE[:-1]}o \
 | {BUILD_DIR}/{LIB_NAME}
-    opts = -Wl,--whole-archive {BUILD_DIR}/{LIB_NAME} -Wl,--no-whole-archive
+    opts = {BUILD_DIR}/{LIB_NAME}
 
 build lib: phony {BUILD_DIR}/{LIB_NAME}
 build app: phony {BUILD_DIR}/{EXEC_NAME}

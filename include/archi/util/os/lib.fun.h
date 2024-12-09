@@ -20,39 +20,39 @@
 
 /**
  * @file
- * @brief Types for finite state machine transitions.
+ * @brief Shared library operations.
  */
 
 #pragma once
-#ifndef _ARCHI_FSM_TRANSITION_TYP_H_
-#define _ARCHI_FSM_TRANSITION_TYP_H_
-
-#include "archi/fsm/state.typ.h"
-#include "archi/util/status.typ.h"
+#ifndef _ARCHI_UTIL_OS_LIB_FUN_H_
+#define _ARCHI_UTIL_OS_LIB_FUN_H_
 
 /**
- * @brief State transition function.
+ * @brief Load shared library.
  *
- * @see ARCHI_STATE_TRANSITION_FUNCTION
+ * @return Handle of the loaded library, or NULL in case of failure.
  */
-typedef void (*archi_state_transition_function_t)(
-        const archi_state_t prev_state, ///< [in] Previous state.
-        const archi_state_t next_state, ///< [in] Next state.
-
-        archi_state_t *const restrict trans_state, ///< [out] Transitional state.
-
-        archi_status_t *const code, ///< [in,out] Status code.
-
-        void *const restrict data ///< [in,out] State transition data.
+void*
+archi_library_load(
+        const char *file ///< [in] Path to the loaded library.
 );
 
 /**
- * @brief State transition.
+ * @brief Unload shared library.
  */
-typedef struct archi_state_transition {
-    archi_state_transition_function_t function; ///< State transition function.
-    void *data; ///< State transition data.
-} archi_state_transition_t;
+void
+archi_library_unload(
+        void *handle ///< [in] Handle of the unloaded library.
+);
 
-#endif // _ARCHI_FSM_TRANSITION_TYP_H_
+/**
+ * @brief Get a symbol from shared library.
+ */
+void*
+archi_library_get_symbol(
+        void *restrict handle, ///< [in] Handle of the library.
+        const char *restrict symbol ///< [in] Symbol name.
+);
+
+#endif // _ARCHI_UTIL_OS_LIB_FUN_H_
 

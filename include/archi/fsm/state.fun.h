@@ -20,7 +20,7 @@
 
 /**
  * @file
- * @brief Functions for plugin state implementation.
+ * @brief Functions for implementation of finite state machine states.
  */
 
 #pragma once
@@ -30,6 +30,8 @@
 #include "archi/fsm/state.typ.h"
 #include "archi/fsm/state.def.h"
 #include "archi/util/status.typ.h"
+
+#include <stddef.h>
 
 /**
  * @brief Get current state.
@@ -42,74 +44,82 @@
  */
 archi_state_t
 archi_current(
-        const struct archi_state_context *context ///< [in] State context.
+        const struct archi_finite_state_machine_context *context ///< [in] Finite state machine context.
+);
+
+/**
+ * @brief Get current stack size.
+ *
+ * If context is NULL, the function returns 0.
+ *
+ * @see ARCHI_STACK_SIZE
+ *
+ * @return Current stack size.
+ */
+size_t
+archi_stack_size(
+        const struct archi_finite_state_machine_context *context ///< [in] Finite state machine context.
+);
+
+/**
+ * @brief Get current status code.
+ *
+ * If context is NULL, the function returns 0.
+ *
+ * @see ARCHI_CODE
+ *
+ * @return Current status code.
+ */
+archi_status_t
+archi_code(
+        const struct archi_finite_state_machine_context *context ///< [in] Finite state machine context.
+);
+
+/**
+ * @brief Set status code.
+ *
+ * If context is NULL, the function does nothing.
+ * If called not from a state function during finite state machine execution,
+ * the function does nothing.
+ *
+ * @see ARCHI_SET_CODE
+ */
+void
+archi_set_code(
+        struct archi_finite_state_machine_context *context, ///< [in] Finite state machine context.
+
+        archi_status_t code ///< [in] Status code.
 );
 
 /*****************************************************************************/
 
 /**
- * @brief Exit the application immediately.
+ * @brief Proceed finite state machine execution -- pop and/or push states to the stack.
  *
- * Remaining states on the stack are discarded.
+ * This function pops the specified number of states and
+ * pushes non-null states from the `pushed` array
+ * to the stack in reverse order (high index to low index).
+ * Null states are ignored.
  *
- * If context is NULL, the function does nothing.
+ * If the stack is empty after pop operation and no states are pushed,
+ * the finite state machine exits with the specified status code.
  *
- * @see ARCHI_EXIT
- */
-void
-archi_exit(
-        archi_status_t exit_code, ///< [in] Exit code.
-
-        struct archi_state_context *context ///< [in] State context.
-);
-
-/**
- * @brief Make the current state final and stop its execution.
+ * Returning from a state function normally is equivalent to:
+ * archi_proceed(context, 0, 0, NULL);
  *
  * If context is NULL, the function does nothing.
- *
- * @see ARCHI_FINISH
- */
-void
-archi_finish(
-        struct archi_state_context *context ///< [in] State context.
-);
-
-/**
- * @brief Proceed to the next state.
- *
- * archi_proceed(ARCHI_NULL_STATE) is equivalent to archi_finish().
- *
- * If context is NULL, the function does nothing.
+ * If called not from a state function during finite state machine execution,
+ * the function does nothing.
  *
  * @see ARCHI_PROCEED
  */
 void
 archi_proceed(
-        archi_state_t next_state, ///< [in] Next state.
+        struct archi_finite_state_machine_context *context, ///< [in] Finite state machine context.
 
-        struct archi_state_context *context ///< [in] State context.
-);
-
-/**
- * @brief Call the next state.
- *
- * archi_call(ARCHI_NULL_STATE, ARCHI_NULL_STATE) is equivalent to archi_finish().
- * archi_call(state, ARCHI_NULL_STATE) is equivalent to archi_proceed(state).
- *
- * If the next state is null, it is popped from the stack.
- * If the return state is not null, it is pushed to the stack.
- *
- * If context is NULL, the function does nothing.
- *
- * @see ARCHI_CALL
- */
-void
-archi_call(
-        archi_state_t next_state,   ///< [in] State to call.
-        archi_state_t return_state, ///< [in] State to proceed to after the call has finished.
-
-        struct archi_state_context *context ///< [in] State context.
+        size_t num_popped, ///< [in] Number of states popped from the stack (excluding the auto-pop to get the next state).
+        size_t num_pushed, ///< [in] Number of states in the pushed states array.
+        const archi_state_t pushed[] ///< [in] Array of states to be pushed to the stack.
 );
 
 /*****************************************************************************/

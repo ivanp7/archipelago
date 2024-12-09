@@ -28,28 +28,45 @@
 #define _ARCHI_EXE_MAIN_DEF_H_
 
 /**
+ * @brief Index of application configuration pointer in shared memory header.
+ */
+#define ARCHI_SHM_APP_CONFIG_INDEX 1
+
+/**
+ * @brief Index of signal management configuration pointer in shared memory header.
+ */
+#define ARCHI_SHM_SIGNALS_CONFIG_INDEX 2
+
+/*****************************************************************************/
+
+/**
  * @brief Application global context alias name.
  */
 #define ARCHI_APP_CONTEXT_ALIAS "" // empty string is forbidden
                                    // and is unlikely to be used elsewere
 
 /**
- * @brief Port name of entry state function of application global context.
+ * @brief Port of application global context: entry state function.
  */
 #define ARCHI_APP_CONTEXT_PORT_ENTRY_STATE_FUNC "entry_state.function"
 /**
- * @brief Port name of entry state data of application global context.
+ * @brief Port of application global context: entry state data.
  */
 #define ARCHI_APP_CONTEXT_PORT_ENTRY_STATE_DATA "entry_state.data"
 
 /**
- * @brief Port name of state transition function of application global context.
+ * @brief Port of application global context: state transition function.
  */
 #define ARCHI_APP_CONTEXT_PORT_STATE_TRANS_FUNC "state_transition.function"
 /**
- * @brief Port name of state transition data of application global context.
+ * @brief Port of application global context: state transition data.
  */
 #define ARCHI_APP_CONTEXT_PORT_STATE_TRANS_DATA "state_transition.data"
+
+/**
+ * @brief Port of application global context: signal flags.
+ */
+#define ARCHI_APP_CONTEXT_PORT_SIGNAL_SET "signal.flags"
 
 #endif // _ARCHI_EXE_MAIN_DEF_H_
 

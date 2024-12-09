@@ -20,39 +20,64 @@
 
 /**
  * @file
- * @brief Constants and macros for implementation of finite state machine transitions.
+ * @brief Macros for signal management.
  */
 
 #pragma once
-#ifndef _ARCHI_FSM_TRANSITION_DEF_H_
-#define _ARCHI_FSM_TRANSITION_DEF_H_
+#ifndef _ARCHI_UTIL_OS_SIGNAL_DEF_H_
+#define _ARCHI_UTIL_OS_SIGNAL_DEF_H_
 
-#include "archi/fsm/state.typ.h"
+#include "archi/util/os/signal.typ.h"
+#include "archi/util/os/signal.fun.h"
+#include "archi/util/flexible.def.h"
 
 /**
- * @brief Null (empty) state transition.
+ * @brief Size of signal watch set structure in bytes.
  */
-#define ARCHI_NULL_STATE_TRANSITION (archi_state_transition_t){0}
-
+#define ARCHI_SIGNAL_WATCH_SET_SIZEOF ARCHI_FLEXIBLE_SIZEOF( \
+        archi_signal_watch_set_t, f_SIGRTMIN, archi_signal_number_of_rt_signals())
 /**
- * @brief State transition.
+ * @brief Size of signal flags structure in bytes.
  */
-#define ARCHI_STATE_TRANSITION(func, data_ptr) \
-    (archi_state_transition_t){.function = (func), .data = (data_ptr)}
-
-/*****************************************************************************/
+#define ARCHI_SIGNAL_FLAGS_SIZEOF ARCHI_FLEXIBLE_SIZEOF( \
+        archi_signal_flags_t, f_SIGRTMIN, archi_signal_number_of_rt_signals())
 
 /**
- * @brief Declarator of a state transition function.
+ * @brief Check state of a signal flag.
+ */
+#define ARCHI_SIGNAL_IS_FLAG_SET(flag) atomic_load_explicit(&(flag), memory_order_acquire)
+
+/**
+ * @brief Initialize a signal flag.
+ */
+#define ARCHI_SIGNAL_INIT_FLAG(flag) do { \
+    atomic_init(&(flag), false); \
+} while (0)
+
+/**
+ * @brief Set a signal flag.
+ */
+#define ARCHI_SIGNAL_SET_FLAG(flag) do { \
+    atomic_store_explicit(&(flag), true, memory_order_release); \
+} while (0)
+
+/**
+ * @brief Unset a signal flag.
+ */
+#define ARCHI_SIGNAL_UNSET_FLAG(flag) do { \
+    atomic_store_explicit(&(flag), false, memory_order_release); \
+} while (0)
+
+/**
+ * @brief Declare/define signal handler function.
  *
- * @see archi_state_transition_function_t
+ * @see archi_signal_handler_func_t
  */
-#define ARCHI_STATE_TRANSITION_FUNCTION(name) void name(    \
-        const archi_state_t prev_state,                     \
-        const archi_state_t next_state,                     \
-        archi_state_t *const restrict trans_state,          \
-        archi_status_t *const code,                         \
+#define ARCHI_SIGNAL_HANDLER_FUNC(name) bool name(      \
+        int signo,                                      \
+        void *const restrict siginfo,                   \
+        archi_signal_flags_t *const restrict signals,   \
         void *const restrict data)
 
-#endif // _ARCHI_FSM_TRANSITION_DEF_H_
+#endif // _ARCHI_UTIL_OS_SIGNAL_DEF_H_
 

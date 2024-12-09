@@ -35,7 +35,7 @@ struct station_concurrent_processing_threads_state;
 /**
  * @brief Index of a concurrent task.
  */
-typedef uint32_t station_task_idx_t;
+typedef size_t station_task_idx_t;
 /**
  * @brief Number of concurrent tasks.
  */
@@ -44,7 +44,7 @@ typedef station_task_idx_t station_tasks_number_t;
 /**
  * @brief Index of a thread.
  */
-typedef uint16_t station_thread_idx_t;
+typedef size_t station_thread_idx_t;
 /**
  * @brief Number of threads.
  */
@@ -55,8 +55,8 @@ typedef station_thread_idx_t station_threads_number_t;
  */
 typedef void (*station_pfunc_t)(
         void *data, ///< [in,out] Processed data.
-        station_task_idx_t task_idx,    ///< [in] Index of the current task.
-        station_thread_idx_t thread_idx ///< [in] Index of the calling thread.
+        size_t task_idx,  ///< [in] Index of the current task.
+        size_t thread_idx ///< [in] Index of the calling thread.
 );
 
 /**

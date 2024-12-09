@@ -32,7 +32,17 @@
 #include "archi/util/status.typ.h"
 
 /**
- * @brief Run finite state machine.
+ * @brief Execute a finite state machine.
+ *
+ * The algorithm is as following:
+ * 0. Push the entry state to the stack.
+ * 1. Call the state transition function if it's non-null.
+ * 2. If the transition function is non-null and provided a transitional state,
+ *      use it as the next state and go to step 5.
+ * 3. If the stack is empty, exit.
+ * 4. Pop the next state from the stack.
+ * 5. Call the state function. The function can pop and push multiple states from/to the stack.
+ * 6. Go to step 1.
  *
  * @return Status code.
  */

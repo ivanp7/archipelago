@@ -27,7 +27,7 @@
 #ifndef _ARCHI_FSM_STATE_TYP_H_
 #define _ARCHI_FSM_STATE_TYP_H_
 
-struct archi_state_context;
+struct archi_finite_state_machine_context;
 
 /**
  * @brief State function.
@@ -35,7 +35,7 @@ struct archi_state_context;
  * @see ARCHI_STATE_FUNCTION
  */
 typedef void (*archi_state_function_t)(
-        struct archi_state_context *const context ///< [in, out] State context.
+        struct archi_finite_state_machine_context *const fsm ///< [in, out] Finite state machine context.
 );
 
 /**
