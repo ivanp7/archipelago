@@ -20,35 +20,38 @@
 
 /**
  * @file
- * @brief Standard error codes.
+ * @brief Macros for linked lists.
  */
 
 #pragma once
-#ifndef _ARCHI_UTIL_ERROR_DEF_H_
-#define _ARCHI_UTIL_ERROR_DEF_H_
+#ifndef _ARCHI_UTIL_LIST_DEF_H_
+#define _ARCHI_UTIL_LIST_DEF_H_
 
-#define ARCHI_ERROR_UNKNOWN     -1  ///< Unknown error.
-#define ARCHI_ERROR_MISUSE      -2  ///< Error: incorrect use of an interface (incorrect arguments such as null pointers and out-of-range values).
-#define ARCHI_ERROR_CONFIG      -3  ///< Error: incorrect configuration provided.
-#define ARCHI_ERROR_ALLOC       -4  ///< Error: couldn't allocate memory.
-#define ARCHI_ERROR_ATTACH      -5  ///< Error: couldn't attach shared memory.
-#define ARCHI_ERROR_LOAD        -6  ///< Error: couldn't load shared library.
-#define ARCHI_ERROR_SYMBOL      -7  ///< Error: couldn't find a symbol in shared library.
-#define ARCHI_ERROR_FORMAT      -8  ///< Error: virtual table format is incorrect (or wrong vtable pointer).
-#define ARCHI_ERROR_FUNCTION    -9  ///< Error: required function is not available.
-#define ARCHI_ERROR_SIGNAL      -10 ///< Error: couldn't initialize signal management.
-#define ARCHI_ERROR_THREAD      -11 ///< Error: couldn't create thread.
-#define ARCHI_ERROR_USER        -12 ///< First error code reserved for user.
+#include "archi/util/list.typ.h"
 
 /**
- * @brief Offset of application error exit codes.
+ * @brief Declare/define linked list link function.
  */
-#define ARCHI_EXIT_CODE_BASE 64
+#define ARCHI_LIST_LINK_FUNC(name) archi_status_t name( \
+        const archi_list_node_t *prev, /* Previous node. */ \
+        const archi_list_node_t *next, /* Next node. */ \
+        void *data) // Function data.
 
 /**
- * @brief Calculate application exit code from error code.
+ * @brief Declare/define linked list node function.
  */
-#define ARCHI_EXIT_CODE(code) (((code) >= 0) ? (code) : ARCHI_EXIT_CODE_BASE - (code))
+#define ARCHI_LIST_NODE_FUNC(name) archi_status_t name( \
+        const archi_list_node_t *node, /* Current node. */ \
+        bool is_head, /* Whether the current node is the list head. */ \
+        bool is_tail, /* Whether the current node is the list tail. */ \
+        void *data) // Function data.
 
-#endif // _ARCHI_UTIL_ERROR_DEF_H_
+/**
+ * @brief Declare/define linked list action function.
+ */
+#define ARCHI_LIST_ACT_FUNC(name) archi_status_t name( \
+        archi_list_node_t *node, /* Current node. */ \
+        void *data) // Function data.
+
+#endif // _ARCHI_UTIL_LIST_DEF_H_
 

@@ -20,7 +20,7 @@
 
 /**
  * @file
- * @brief Linked list types.
+ * @brief Types for linked lists.
  */
 
 #pragma once

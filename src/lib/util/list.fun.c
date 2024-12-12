@@ -455,12 +455,7 @@ archi_list_traverse(
 
 /*****************************************************************************/
 
-archi_status_t
-archi_list_node_func_select_by_name(
-        const archi_list_node_t *node,
-        bool is_head,
-        bool is_tail,
-        void *data)
+ARCHI_LIST_NODE_FUNC(archi_list_node_func_select_by_name)
 {
     (void) is_head;
     (void) is_tail;
@@ -475,10 +470,7 @@ archi_list_node_func_select_by_name(
 
 /*****************************************************************************/
 
-archi_status_t
-archi_list_act_func_copy_node(
-        archi_list_node_t *node,
-        void *data)
+ARCHI_LIST_ACT_FUNC(archi_list_act_func_copy_node)
 {
     if (data == NULL)
         return ARCHI_ERROR_MISUSE;
@@ -489,10 +481,7 @@ archi_list_act_func_copy_node(
     return 0; // no error
 }
 
-archi_status_t
-archi_list_act_func_free(
-        archi_list_node_t *node,
-        void *data)
+ARCHI_LIST_ACT_FUNC(archi_list_act_func_free)
 {
     (void) data;
 
@@ -501,10 +490,7 @@ archi_list_act_func_free(
     return 0; // no error
 }
 
-archi_status_t
-archi_list_act_func_free_named(
-        archi_list_node_t *node,
-        void *data)
+ARCHI_LIST_ACT_FUNC(archi_list_act_func_free_named)
 {
     (void) data;
 

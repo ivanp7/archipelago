@@ -360,9 +360,10 @@ archi_signal_management_thread(
 
 struct archi_signal_management_context*
 archi_signal_management_thread_start(
-        const archi_signal_management_config_t *config)
+        const archi_signal_watch_set_t *signals,
+        archi_signal_handler_t signal_handler)
 {
-    if ((config == NULL) || (config->signals == NULL))
+    if (signals == NULL)
         return NULL;
 
     struct archi_signal_management_context *context = malloc(sizeof(*context));
@@ -375,15 +376,15 @@ archi_signal_management_thread_start(
     if (context->flags == NULL)
         goto failure;
 
-    context->signal_handler = config->signal_handler;
+    context->signal_handler = signal_handler;
 
     sigemptyset(&context->set);
 
     ARCHI_SIGNAL_INIT_FLAG(context->terminate);
 
     {
-#define ADD_SIGNAL(signal) do { \
-        if (config->signals->f_##signal) { \
+#define ADD_SIGNAL(signal) do {     \
+        if (signals->f_##signal) {  \
             sigaddset(&context->set, signal); } } while (0)
 
         ADD_SIGNAL(SIGINT);
@@ -416,7 +417,7 @@ archi_signal_management_thread_start(
 
         for (int signal = SIGRTMIN; signal <= SIGRTMAX; signal++)
         {
-            if (config->signals->f_SIGRTMIN[signal - SIGRTMIN])
+            if (signals->f_SIGRTMIN[signal - SIGRTMIN])
                 sigaddset(&context->set, signal);
         }
     }

@@ -20,35 +20,51 @@
 
 /**
  * @file
- * @brief Standard error codes.
+ * @brief Types for threads.
  */
 
 #pragma once
-#ifndef _ARCHI_UTIL_ERROR_DEF_H_
-#define _ARCHI_UTIL_ERROR_DEF_H_
+#ifndef _ARCHI_PLUGIN_THREADS_INTERFACE_TYP_H_
+#define _ARCHI_PLUGIN_THREADS_INTERFACE_TYP_H_
 
-#define ARCHI_ERROR_UNKNOWN     -1  ///< Unknown error.
-#define ARCHI_ERROR_MISUSE      -2  ///< Error: incorrect use of an interface (incorrect arguments such as null pointers and out-of-range values).
-#define ARCHI_ERROR_CONFIG      -3  ///< Error: incorrect configuration provided.
-#define ARCHI_ERROR_ALLOC       -4  ///< Error: couldn't allocate memory.
-#define ARCHI_ERROR_ATTACH      -5  ///< Error: couldn't attach shared memory.
-#define ARCHI_ERROR_LOAD        -6  ///< Error: couldn't load shared library.
-#define ARCHI_ERROR_SYMBOL      -7  ///< Error: couldn't find a symbol in shared library.
-#define ARCHI_ERROR_FORMAT      -8  ///< Error: virtual table format is incorrect (or wrong vtable pointer).
-#define ARCHI_ERROR_FUNCTION    -9  ///< Error: required function is not available.
-#define ARCHI_ERROR_SIGNAL      -10 ///< Error: couldn't initialize signal management.
-#define ARCHI_ERROR_THREAD      -11 ///< Error: couldn't create thread.
-#define ARCHI_ERROR_USER        -12 ///< First error code reserved for user.
+#include "archi/plugin/threads/interface.def.h"
+
+#include <stdbool.h>
 
 /**
- * @brief Offset of application error exit codes.
+ * @brief Threaded processing function.
  */
-#define ARCHI_EXIT_CODE_BASE 64
+typedef ARCHI_THREADS_TASK_FUNC((*archi_threads_task_func_t));
 
 /**
- * @brief Calculate application exit code from error code.
+ * @brief Threaded processing completion callback function.
  */
-#define ARCHI_EXIT_CODE(code) (((code) >= 0) ? (code) : ARCHI_EXIT_CODE_BASE - (code))
+typedef ARCHI_THREADS_CALLBACK_FUNC((*archi_threads_callback_func_t));
 
-#endif // _ARCHI_UTIL_ERROR_DEF_H_
+/**
+ * @brief Threaded processing configuration.
+ */
+typedef struct archi_threads_config {
+    size_t num_threads; ///< Number of threads to create.
+    bool busy_wait;     ///< Whether busy-waiting for a job is enabled.
+} archi_threads_config_t;
+
+/**
+ * @brief Threaded processing job.
+ */
+typedef struct archi_threads_job {
+    archi_threads_task_func_t function; ///< [in] Job task function.
+    void *data;        ///< [in] Job data.
+    size_t num_tasks;  ///< [in] Number of tasks in the job.
+} archi_threads_job_t;
+
+/**
+ * @brief Threaded processing completion callback.
+ */
+typedef struct archi_threads_callback {
+    archi_threads_callback_func_t function; ///< [in] Callback function.
+    void *data; ///< [in] Callback data.
+} archi_threads_callback_t;
+
+#endif // _ARCHI_PLUGIN_THREADS_INTERFACE_TYP_H_
 

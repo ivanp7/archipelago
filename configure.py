@@ -15,7 +15,6 @@ INCLUDE_DIR = "include"
 SOURCE_DIR  = "src"
 BUILD_DIR   = "build"
 
-EXEC_SUBDIR = ""
 EXEC_SOURCE = "main.c"
 
 #------------------------------------------------------------------------------
@@ -42,29 +41,29 @@ CFLAGS += [f'-I{INCLUDE_DIR}']
 if 'COLORLESS' in os.environ:                   ### <<<<<<<<<<<<<<<<<<<< INPUT ENVIRONMENT VARIABLE <<<<<<<<<<<<<<<<<<<<
     CFLAGS += ['-DARCHI_FEATURE_COLORLESS']
 
-if 'QUEUE64' in os.environ:                     ### <<<<<<<<<<<<<<<<<<<< INPUT ENVIRONMENT VARIABLE <<<<<<<<<<<<<<<<<<<<
-    CFLAGS += ['-DARCHI_FEATURE_QUEUE64']
+if 'QUEUE32' in os.environ:                     ### <<<<<<<<<<<<<<<<<<<< INPUT ENVIRONMENT VARIABLE <<<<<<<<<<<<<<<<<<<<
+    CFLAGS += ['-DARCHI_FEATURE_QUEUE32']
 
 #------------------------------------------------------------------------------
 
 if 'LLVM' in os.environ:                        ### <<<<<<<<<<<<<<<<<<<< INPUT ENVIRONMENT VARIABLE <<<<<<<<<<<<<<<<<<<<
     CC = 'clang'
-    CC_FLAGS = '-fcolor-diagnostics'
+    CC_FLAGS = ['-fcolor-diagnostics']
 
     LINKER_STATIC = 'llvm-ar'
-    LINKER_STATIC_FLAGS = 'rcs'
+    LINKER_STATIC_FLAGS = ['rcs']
 
     LINKER_EXE = 'clang'
-    LINKER_EXE_FLAGS = '-fuse-ld=lld'
+    LINKER_EXE_FLAGS = ['-fuse-ld=lld']
 else:
     CC = 'gcc'
-    CC_FLAGS = '-fdiagnostics-color=always'
+    CC_FLAGS = ['-fdiagnostics-color=always']
 
     LINKER_STATIC = 'gcc-ar'
-    LINKER_STATIC_FLAGS = 'rcs'
+    LINKER_STATIC_FLAGS = ['rcs']
 
     LINKER_EXE = 'gcc'
-    LINKER_EXE_FLAGS = ''
+    LINKER_EXE_FLAGS = []
 
 #------------------------------------------------------------------------------
 
@@ -72,7 +71,7 @@ os.chdir(os.path.dirname(__file__))
 
 SOURCES_LIBRARY = []
 for entry in os.walk(SOURCE_DIR):
-    if (os.path.samefile(entry[0], f'{SOURCE_DIR}/{EXEC_SUBDIR}')):
+    if (os.path.samefile(entry[0], SOURCE_DIR)):
         entry[2].remove(EXEC_SOURCE)
 
     SOURCES_LIBRARY += [f'{entry[0]}/{s}' for s in entry[2] if s[-2:] == '.c']
@@ -84,7 +83,7 @@ build_ninja = open('build.ninja', 'w')
 
 build_ninja.write(f'''\
 CC = {CC}
-CC_FLAGS = {CC_FLAGS} {' '.join(CFLAGS)}
+CC_FLAGS = {' '.join(CC_FLAGS + CFLAGS)}
 
 rule compile
     command = $CC $CC_FLAGS $opts -MMD -MT $out -MF $out.d -c $in -o $out
@@ -93,14 +92,14 @@ rule compile
     deps = gcc
 
 LINKER_STATIC = {LINKER_STATIC}
-LINKER_STATIC_FLAGS = {LINKER_STATIC_FLAGS}
+LINKER_STATIC_FLAGS = {' '.join(LINKER_STATIC_FLAGS)}
 
 rule link_static
     command = rm -f $out && $LINKER_STATIC $LINKER_STATIC_FLAGS $opts $out $in
     description = link(static): $out
 
 LINKER_EXE = {LINKER_EXE}
-LINKER_EXE_FLAGS = {LINKER_EXE_FLAGS} {' '.join(LFLAGS)}
+LINKER_EXE_FLAGS = {' '.join(LINKER_EXE_FLAGS + LFLAGS)}
 
 rule link_exe
     command = $LINKER_EXE $LINKER_EXE_FLAGS -o $out $in $opts
@@ -110,9 +109,9 @@ rule link_exe
 build {BUILD_DIR}/{LIB_NAME}: link_static {
         ' '.join([f'{BUILD_DIR}/{src[:-1]}o' for src in SOURCES_LIBRARY])}
 
-build {BUILD_DIR}/{SOURCE_DIR}/{EXEC_SUBDIR}/{EXEC_SOURCE[:-1]}o: compile {SOURCE_DIR}/{EXEC_SUBDIR}/{EXEC_SOURCE}
+build {BUILD_DIR}/{SOURCE_DIR}/{EXEC_SOURCE[:-1]}o: compile {SOURCE_DIR}/{EXEC_SOURCE}
 build {BUILD_DIR}/{EXEC_NAME}: link_exe \
-{BUILD_DIR}/{SOURCE_DIR}/{EXEC_SUBDIR}/{EXEC_SOURCE[:-1]}o \
+{BUILD_DIR}/{SOURCE_DIR}/{EXEC_SOURCE[:-1]}o \
 | {BUILD_DIR}/{LIB_NAME}
     opts = {BUILD_DIR}/{LIB_NAME}
 

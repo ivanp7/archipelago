@@ -40,6 +40,19 @@ struct archi_application;
 struct archi_app_configuration;
 
 /**
+ * @brief Allocate an virtual table alias name.
+ *
+ * @return Virtual table alias name.
+ */
+char*
+archi_application_vtable_alias_alloc(
+        const char *plugin_alias, ///< [in] Plugin alias name.
+        const char *vtable_symbol ///< [in] Virtual table symbol name.
+);
+
+/*****************************************************************************/
+
+/**
  * @brief Allocate an instance and load a plugin.
  *
  * @return Zero on success, non-zero value on error.

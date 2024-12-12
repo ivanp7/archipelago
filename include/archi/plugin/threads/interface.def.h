@@ -20,35 +20,47 @@
 
 /**
  * @file
- * @brief Standard error codes.
+ * @brief Macros for threads.
  */
 
 #pragma once
-#ifndef _ARCHI_UTIL_ERROR_DEF_H_
-#define _ARCHI_UTIL_ERROR_DEF_H_
+#ifndef _ARCHI_PLUGIN_THREADS_INTERFACE_DEF_H_
+#define _ARCHI_PLUGIN_THREADS_INTERFACE_DEF_H_
 
-#define ARCHI_ERROR_UNKNOWN     -1  ///< Unknown error.
-#define ARCHI_ERROR_MISUSE      -2  ///< Error: incorrect use of an interface (incorrect arguments such as null pointers and out-of-range values).
-#define ARCHI_ERROR_CONFIG      -3  ///< Error: incorrect configuration provided.
-#define ARCHI_ERROR_ALLOC       -4  ///< Error: couldn't allocate memory.
-#define ARCHI_ERROR_ATTACH      -5  ///< Error: couldn't attach shared memory.
-#define ARCHI_ERROR_LOAD        -6  ///< Error: couldn't load shared library.
-#define ARCHI_ERROR_SYMBOL      -7  ///< Error: couldn't find a symbol in shared library.
-#define ARCHI_ERROR_FORMAT      -8  ///< Error: virtual table format is incorrect (or wrong vtable pointer).
-#define ARCHI_ERROR_FUNCTION    -9  ///< Error: required function is not available.
-#define ARCHI_ERROR_SIGNAL      -10 ///< Error: couldn't initialize signal management.
-#define ARCHI_ERROR_THREAD      -11 ///< Error: couldn't create thread.
-#define ARCHI_ERROR_USER        -12 ///< First error code reserved for user.
+#include <stddef.h>
 
 /**
- * @brief Offset of application error exit codes.
+ * @brief Declare/define a threaded processing function.
+ *
+ * This function is called for each task in the job concurrently.
+ *
+ * @see archi_threads_task_func_t
  */
-#define ARCHI_EXIT_CODE_BASE 64
+#define ARCHI_THREADS_TASK_FUNC(name) void name( \
+        void *data, /* Job data. */ \
+        size_t task_idx, /* Index of the current task. */ \
+        size_t thread_idx) /* Index of the calling thread. */
 
 /**
- * @brief Calculate application exit code from error code.
+ * @brief Declare/define a threaded processing completion callback.
+ *
+ * This function is called when all tasks have been complete.
+ *
+ * @see archi_threads_callback_func_t
  */
-#define ARCHI_EXIT_CODE(code) (((code) >= 0) ? (code) : ARCHI_EXIT_CODE_BASE - (code))
+#define ARCHI_THREADS_CALLBACK_FUNC(name) void name( \
+        void *data, /* Callback data. */ \
+        size_t num_tasks, /* Number of processed tasks. */ \
+        size_t thread_idx) /* Index of the calling thread. */
 
-#endif // _ARCHI_UTIL_ERROR_DEF_H_
+/**
+ * @brief Threads context configuration key -- number of threads to create.
+ */
+#define ARCHI_THREADS_CONFIG_KEY_NUM_THREADS "num_threads"
+/**
+ * @brief Threads context configuration key -- whether to enable busy-waiting for a job.
+ */
+#define ARCHI_THREADS_CONFIG_KEY_BUSY_WAIT "busy_wait"
+
+#endif // _ARCHI_PLUGIN_THREADS_INTERFACE_DEF_H_
 

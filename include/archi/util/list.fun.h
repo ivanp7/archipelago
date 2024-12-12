@@ -28,6 +28,7 @@
 #define _ARCHI_UTIL_LIST_FUN_H_
 
 #include "archi/util/list.typ.h"
+#include "archi/util/list.def.h"
 #include "archi/util/status.typ.h"
 
 /**
@@ -153,42 +154,24 @@ archi_list_traverse(
  *
  * @return 0 if the current node matches, otherwise 1.
  */
-archi_status_t
-archi_list_node_func_select_by_name(
-        const archi_list_node_t *node, ///< [in] Current node.
-        bool is_head, ///< [in] Unused.
-        bool is_tail, ///< [in] Unused.
-        void *data ///< [in,out] Node name.
-);
+ARCHI_LIST_NODE_FUNC(archi_list_node_func_select_by_name);
 
 /*****************************************************************************/
 
 /**
  * @brief Linked list action function -- copy node pointer.
  */
-archi_status_t
-archi_list_act_func_copy_node(
-        archi_list_node_t *node, ///< [in] Current node.
-        void *data ///< [in] Place to copy node pointer to.
-);
+ARCHI_LIST_ACT_FUNC(archi_list_act_func_copy_node);
 
 /**
  * @brief Linked list action function -- free base node memory.
  */
-archi_status_t
-archi_list_act_func_free(
-        archi_list_node_t *node, ///< [in] Current node.
-        void *data ///< [in] Unused.
-);
+ARCHI_LIST_ACT_FUNC(archi_list_act_func_free);
 
 /**
  * @brief Linked list action function -- free named node memory.
  */
-archi_status_t
-archi_list_act_func_free_named(
-        archi_list_node_t *node, ///< [in] Current node.
-        void *data ///< [in] Unused.
-);
+ARCHI_LIST_ACT_FUNC(archi_list_act_func_free_named);
 
 #endif // _ARCHI_UTIL_LIST_FUN_H_
 

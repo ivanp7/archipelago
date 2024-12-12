@@ -33,9 +33,9 @@
 #define ARCHI_SHM_APP_CONFIG_INDEX 1
 
 /**
- * @brief Index of signal management configuration pointer in shared memory header.
+ * @brief Index of signal watch set pointer in shared memory header.
  */
-#define ARCHI_SHM_SIGNALS_CONFIG_INDEX 2
+#define ARCHI_SHM_SIGNAL_WATCH_SET_INDEX 2
 
 /*****************************************************************************/
 
@@ -46,27 +46,35 @@
                                    // and is unlikely to be used elsewere
 
 /**
- * @brief Port of application global context: entry state function.
+ * @brief Input port of application global context: entry state function.
  */
 #define ARCHI_APP_CONTEXT_PORT_ENTRY_STATE_FUNC "entry_state.function"
 /**
- * @brief Port of application global context: entry state data.
+ * @brief Input port of application global context: entry state data.
  */
 #define ARCHI_APP_CONTEXT_PORT_ENTRY_STATE_DATA "entry_state.data"
 
 /**
- * @brief Port of application global context: state transition function.
+ * @brief Input port of application global context: state transition function.
  */
 #define ARCHI_APP_CONTEXT_PORT_STATE_TRANS_FUNC "state_transition.function"
 /**
- * @brief Port of application global context: state transition data.
+ * @brief Input port of application global context: state transition data.
  */
 #define ARCHI_APP_CONTEXT_PORT_STATE_TRANS_DATA "state_transition.data"
 
 /**
- * @brief Port of application global context: signal flags.
+ * @brief Output port of application global context: signal flags.
  */
 #define ARCHI_APP_CONTEXT_PORT_SIGNAL_SET "signal.flags"
+/**
+ * @brief Input port of application global context: signal handler function.
+ */
+#define ARCHI_APP_CONTEXT_PORT_SIGNAL_HANDLER_FUNCTION "signal.handler.function"
+/**
+ * @brief Input port of application global context: signal handler data.
+ */
+#define ARCHI_APP_CONTEXT_PORT_SIGNAL_HANDLER_DATA "signal.handler.data"
 
 #endif // _ARCHI_EXE_MAIN_DEF_H_
 

@@ -20,35 +20,18 @@
 
 /**
  * @file
- * @brief Standard error codes.
+ * @brief Functions of the plugin for operations with threads and concurrent processing.
  */
 
 #pragma once
-#ifndef _ARCHI_UTIL_ERROR_DEF_H_
-#define _ARCHI_UTIL_ERROR_DEF_H_
+#ifndef _ARCHI_PLUGIN_THREADS_VTABLE_FUN_H_
+#define _ARCHI_PLUGIN_THREADS_VTABLE_FUN_H_
 
-#define ARCHI_ERROR_UNKNOWN     -1  ///< Unknown error.
-#define ARCHI_ERROR_MISUSE      -2  ///< Error: incorrect use of an interface (incorrect arguments such as null pointers and out-of-range values).
-#define ARCHI_ERROR_CONFIG      -3  ///< Error: incorrect configuration provided.
-#define ARCHI_ERROR_ALLOC       -4  ///< Error: couldn't allocate memory.
-#define ARCHI_ERROR_ATTACH      -5  ///< Error: couldn't attach shared memory.
-#define ARCHI_ERROR_LOAD        -6  ///< Error: couldn't load shared library.
-#define ARCHI_ERROR_SYMBOL      -7  ///< Error: couldn't find a symbol in shared library.
-#define ARCHI_ERROR_FORMAT      -8  ///< Error: virtual table format is incorrect (or wrong vtable pointer).
-#define ARCHI_ERROR_FUNCTION    -9  ///< Error: required function is not available.
-#define ARCHI_ERROR_SIGNAL      -10 ///< Error: couldn't initialize signal management.
-#define ARCHI_ERROR_THREAD      -11 ///< Error: couldn't create thread.
-#define ARCHI_ERROR_USER        -12 ///< First error code reserved for user.
+#include "archi/app/plugin.def.h"
 
-/**
- * @brief Offset of application error exit codes.
- */
-#define ARCHI_EXIT_CODE_BASE 64
+ARCHI_PLUGIN_HELP_FUNC(archi_threads_vtable_help_func);     ///< Help function.
+ARCHI_PLUGIN_INIT_FUNC(archi_threads_vtable_init_func);     ///< Initialization function.
+ARCHI_PLUGIN_FINAL_FUNC(archi_threads_vtable_final_func);   ///< Finalization function.
 
-/**
- * @brief Calculate application exit code from error code.
- */
-#define ARCHI_EXIT_CODE(code) (((code) >= 0) ? (code) : ARCHI_EXIT_CODE_BASE - (code))
-
-#endif // _ARCHI_UTIL_ERROR_DEF_H_
+#endif // _ARCHI_PLUGIN_THREADS_VTABLE_FUN_H_
 

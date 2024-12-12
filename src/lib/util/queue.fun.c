@@ -31,7 +31,7 @@
 #include <stdint.h> // for uint_fast*_t
 #include <limits.h> // for CHAR_BIT
 
-#ifdef ARCHI_FEATURE_QUEUE64
+#ifdef ARCHI_FEATURE_QUEUE32
 
 typedef uint_fast32_t archi_queue_count_t;
 typedef uint_fast64_t archi_queue_count2_t;

@@ -28,8 +28,10 @@
 #include "archi/exe/args.typ.h"
 #include "archi/app.h"
 #include "archi/fsm.h"
+#include "archi/plugin/threads/vtable.var.h"
 #include "archi/util/error.def.h"
 #include "archi/util/flexible.def.h"
+#include "archi/util/list.fun.h"
 #include "archi/util/os/shm.fun.h"
 #include "archi/util/os/signal.fun.h"
 #include "archi/util/os/signal.typ.h"
@@ -40,6 +42,7 @@
 #include <stdlib.h> // for malloc(), free()
 #include <string.h> // for strcmp(), strlen()
 #include <stdio.h> // for printf()
+#include <stdatomic.h> // for atomic_flag, ATOMIC_FLAG_INIT
 
 /*****************************************************************************/
 
@@ -52,6 +55,11 @@
 
 /*****************************************************************************/
 
+struct archi_app_signal_handler_with_lock {
+    archi_signal_handler_t signal_handler;
+    atomic_flag spinlock;
+};
+
 struct archi_app_context {
     // Finite state machine
     archi_state_t entry_state;
@@ -59,11 +67,13 @@ struct archi_app_context {
 
     // Signal management
     struct archi_signal_management_context *signal_management;
+    struct archi_app_signal_handler_with_lock signal_handler_with_lock;
 };
 
 /*****************************************************************************/
 
-static ARCHI_PLUGIN_SET_FUNC(archi_app_vtable_set)
+static
+ARCHI_PLUGIN_SET_FUNC(archi_app_vtable_set)
 {
     if ((context == NULL) || (slot == NULL) || (value == NULL))
         return ARCHI_ERROR_MISUSE;
@@ -92,13 +102,32 @@ static ARCHI_PLUGIN_SET_FUNC(archi_app_vtable_set)
     }
     else if (strcmp(slot, ARCHI_APP_CONTEXT_PORT_STATE_TRANS_DATA) == 0) // state transition data
         app_context->state_transition.data = value->ptr;
+    else if (strcmp(slot, ARCHI_APP_CONTEXT_PORT_SIGNAL_HANDLER_FUNCTION) == 0) // signal handler function
+    {
+        if ((value->ptr == NULL) || (value->size != sizeof(archi_signal_handler_func_t)) ||
+                (value->num_of != 1) || (value->type != ARCHI_VALUE_POINTER))
+            return ARCHI_ERROR_CONFIG;
+
+        archi_signal_handler_func_t *fptr = value->ptr;
+
+        while (atomic_flag_test_and_set_explicit(&app_context->signal_handler_with_lock.spinlock, memory_order_acquire));
+        app_context->signal_handler_with_lock.signal_handler.function = *fptr;
+        atomic_flag_clear_explicit(&app_context->signal_handler_with_lock.spinlock, memory_order_release);
+    }
+    else if (strcmp(slot, ARCHI_APP_CONTEXT_PORT_SIGNAL_HANDLER_DATA) == 0) // signal handler data
+    {
+        while (atomic_flag_test_and_set_explicit(&app_context->signal_handler_with_lock.spinlock, memory_order_acquire));
+        app_context->signal_handler_with_lock.signal_handler.data = value->ptr;
+        atomic_flag_clear_explicit(&app_context->signal_handler_with_lock.spinlock, memory_order_release);
+    }
     else
         return ARCHI_ERROR_CONFIG;
 
     return 0;
 }
 
-static ARCHI_PLUGIN_GET_FUNC(archi_app_vtable_get)
+static
+ARCHI_PLUGIN_GET_FUNC(archi_app_vtable_get)
 {
     if ((context == NULL) || (slot == NULL) || (value == NULL))
         return ARCHI_ERROR_MISUSE;
@@ -125,88 +154,237 @@ static ARCHI_PLUGIN_GET_FUNC(archi_app_vtable_get)
     return 0;
 }
 
+static
+const archi_plugin_vtable_t archi_app = {
+    .format = {.magic = ARCHI_API_MAGIC, .version = ARCHI_API_VERSION},
+    .info = {.description = "Application interface"},
+    .func = {.set_fn = archi_app_vtable_set, .get_fn = archi_app_vtable_get},
+};
+
+static
+const archi_plugin_vtable_t *const archi_builtin_vtables[] = {
+    &archi_app,
+    &archi_threads,
+};
+
 /*****************************************************************************/
 
 static
-archi_status_t
-archi_main_prepare_app(
-        archi_application_t *app,
-
-        archi_plugin_vtable_t *app_vtable,
-        struct archi_app_context *app_context)
+ARCHI_SIGNAL_HANDLER_FUNC(archi_main_signal_handler_func)
 {
-    archi_log_debug(M, "Initializing application virtual table and context...");
+    if (data == NULL)
+        return true;
 
-    archi_app_vtable_instance_t *app_vtable_node;
+    archi_signal_handler_t signal_handler = {0};
     {
-        // Allocate node
-        app_vtable_node = malloc(sizeof(*app_vtable_node));
-        if (app_vtable_node == NULL)
-        {
-            archi_log_error(M, "Couldn't allocate the application vtable node.");
-            return ARCHI_ERROR_ALLOC;
-        }
-
-        *app_vtable_node = (archi_app_vtable_instance_t){.vtable = app_vtable};
-
-        // Allocate node name
-        app_vtable_node->base.name = malloc(1);
-        if (app_vtable_node->base.name == NULL)
-        {
-            free(app_vtable_node);
-
-            archi_log_error(M, "Couldn't allocate the application vtable node name.");
-            return ARCHI_ERROR_ALLOC;
-        }
-
-        app_vtable_node->base.name[0] = '\0'; // application vtable name is ""
+        struct archi_app_signal_handler_with_lock *ptr = data;
+        while (atomic_flag_test_and_set_explicit(&ptr->spinlock, memory_order_acquire));
+        signal_handler = ptr->signal_handler;
+        atomic_flag_clear_explicit(&ptr->spinlock, memory_order_release);
     }
 
-    archi_app_context_instance_t *app_context_node;
-    {
-        // Allocate node
-        app_context_node = malloc(sizeof(*app_context_node));
-        if (app_context_node == NULL)
-        {
-            archi_application_forget_vtable(app_vtable_node);
-
-            archi_log_error(M, "Couldn't allocate the application context node.");
-            return ARCHI_ERROR_ALLOC;
-        }
-
-        *app_context_node = (archi_app_context_instance_t){
-            .context = app_context, .vtable_node = app_vtable_node};
-
-        // Allocate node name
-        size_t name_size = strlen(ARCHI_APP_CONTEXT_ALIAS) + 1;
-        app_context_node->base.name = malloc(name_size);
-        if (app_context_node->base.name == NULL)
-        {
-            archi_application_forget_vtable(app_vtable_node);
-            free(app_context_node);
-
-            archi_log_error(M, "Couldn't allocate the application context node name.");
-            return ARCHI_ERROR_ALLOC;
-        }
-
-        memcpy(app_context_node->base.name, ARCHI_APP_CONTEXT_ALIAS, name_size);
-    }
-
-    *app = (archi_application_t){
-        .vtables = {.head = (archi_list_node_t*)app_vtable_node,
-            .tail = (archi_list_node_t*)app_vtable_node},
-        .contexts = {.head = (archi_list_node_t*)app_context_node,
-            .tail = (archi_list_node_t*)app_context_node},
-    };
-
-    return 0;
+    if (signal_handler.function != NULL)
+        return signal_handler.function(signo, siginfo, signals, signal_handler.data);
+    else
+        return true;
 }
 
 /*****************************************************************************/
 
 static
 archi_status_t
-archi_main_plugin_help(
+archi_init_app_builtins(
+        archi_application_t *app,
+        struct archi_app_context *app_context)
+{
+    archi_log_debug(M, "Adding built-in virtual tables to the application...");
+
+    size_t num_app_vtable_nodes;
+    archi_app_vtable_instance_t *app_vtable_nodes;
+    {
+        num_app_vtable_nodes = sizeof(archi_builtin_vtables) / sizeof(archi_builtin_vtables[0]);
+
+        // Allocate nodes
+        app_vtable_nodes = malloc(sizeof(*app_vtable_nodes) * num_app_vtable_nodes);
+        if (app_vtable_nodes == NULL)
+        {
+            archi_log_error(M, "Couldn't allocate application virtual table nodes.");
+            return ARCHI_ERROR_ALLOC;
+        }
+
+        // Initialize nodes
+        for (size_t i = 0; i < num_app_vtable_nodes; i++)
+            app_vtable_nodes[i] = (archi_app_vtable_instance_t){.vtable = archi_builtin_vtables[i]};
+
+        // Allocate node names
+        for (size_t i = 0; i < num_app_vtable_nodes; i++)
+        {
+            app_vtable_nodes[i].base.name = archi_application_vtable_alias_alloc(
+                    NULL, archi_builtin_vtables[i]->info.name);
+            if (app_vtable_nodes[i].base.name == NULL)
+            {
+                archi_log_error(M, "Couldn't allocate application virtual table node name.");
+
+                for (size_t j = 0; j < i; j++)
+                    free(app_vtable_nodes[j].base.name);
+
+                return ARCHI_ERROR_ALLOC;
+            }
+        }
+
+        // Add nodes to the list
+        for (size_t i = 0; i < num_app_vtable_nodes; i++)
+            archi_list_insert_node(&app->vtables, (archi_list_node_t*)&app_vtable_nodes[i], NULL, NULL, false); // append
+    }
+
+    archi_log_debug(M, "Adding built-in contexts to the application...");
+
+    {
+        // Allocate node
+        archi_app_context_instance_t *app_context_node = malloc(sizeof(*app_context_node));
+        if (app_context_node == NULL)
+        {
+            archi_log_error(M, "Couldn't allocate the application context node.");
+            return ARCHI_ERROR_ALLOC;
+        }
+
+        *app_context_node = (archi_app_context_instance_t){
+            .context = app_context, .vtable_node = app_vtable_nodes};
+
+        // Allocate node name
+        size_t name_len = strlen(ARCHI_APP_CONTEXT_ALIAS);
+        if (app_context_node->base.name == NULL)
+        {
+            archi_log_error(M, "Couldn't allocate the application context node name.");
+
+            free(app_context_node);
+            return ARCHI_ERROR_ALLOC;
+        }
+
+        memcpy(app_context_node->base.name, ARCHI_APP_CONTEXT_ALIAS, name_len + 1);
+
+        // Add node to the list
+        archi_list_insert_node(&app->contexts, (archi_list_node_t*)app_context_node, NULL, NULL, false); // append
+    }
+
+    return 0;
+}
+
+/*****************************************************************************/
+
+struct archi_app_main_local_variables {
+    void **shmaddr; // shared memory address
+    const archi_app_configuration_t *app_config; // application configuration
+
+    // Application execution mode
+    struct archi_app_context app_context; // application context
+
+    // Plugin probe mode
+    archi_app_configuration_t probe_config; // plugin probe mode configuration
+    archi_app_config_plugin_list_node_t probe_config_plugin_node; // configuration node for the plugin probe mode
+};
+
+static
+archi_status_t
+archi_prepare_plugin_help_mode(
+        archi_application_t *app,
+        const archi_cmdline_args_t *args,
+        struct archi_app_main_local_variables *l)
+{
+    archi_log_debug(M, "Preparing application configuration for the plugin probe mode...");
+
+    l->probe_config_plugin_node = (archi_app_config_plugin_list_node_t){
+        .base.name = "plugin", // any valid name will do here
+            .pathname = args->probe_mode.pathname,
+            .num_vtables = 1,
+            .vtable_symbols = (char**)&args->probe_mode.vtable_symbol,
+    };
+
+    l->probe_config = (archi_app_configuration_t){
+        .plugins = {.head = (archi_list_node_t*)&l->probe_config_plugin_node,
+            .tail = (archi_list_node_t*)&l->probe_config_plugin_node},
+    };
+
+    l->shmaddr = NULL;
+    l->app_config = &l->probe_config;
+
+    *app = (archi_application_t){0};
+    return 0;
+}
+
+static
+archi_status_t
+archi_prepare_execution_mode(
+        archi_application_t *app,
+        const archi_cmdline_args_t *args,
+        struct archi_app_main_local_variables *l)
+{
+    // Initialize the application context
+    l->app_context = (struct archi_app_context){.signal_handler_with_lock.spinlock = ATOMIC_FLAG_INIT};
+
+    // Attach to shared memory
+    archi_log_debug(M, "Attaching to shared memory...");
+
+    l->shmaddr = archi_shared_memory_attach(args->exec_mode.pathname, args->exec_mode.proj_id, false);
+    if (l->shmaddr == NULL)
+    {
+        archi_log_error(M, "Couldn't attach to shared memory at pathname '%s', project id %i.",
+                args->exec_mode.pathname, args->exec_mode.proj_id);
+
+        return ARCHI_ERROR_ATTACH;
+    }
+
+    l->app_config = l->shmaddr[ARCHI_SHM_APP_CONFIG_INDEX];
+
+    // Initialize signal management
+    {
+        const archi_signal_watch_set_t *signal_watch_set = l->shmaddr[ARCHI_SHM_SIGNAL_WATCH_SET_INDEX];
+        if (signal_watch_set != NULL)
+        {
+            archi_log_debug(M, "Starting signal management thread...");
+
+            l->app_context.signal_management = archi_signal_management_thread_start(signal_watch_set,
+                    (archi_signal_handler_t){.function = archi_main_signal_handler_func,
+                    .data = &l->app_context.signal_handler_with_lock.signal_handler});
+            if (l->app_context.signal_management == NULL)
+            {
+                archi_log_error(M, "Couldn't start signal management thread.");
+
+                return ARCHI_ERROR_SIGNAL;
+            }
+        }
+    }
+
+    // Initialize the application instance with builtins
+    *app = (archi_application_t){0};
+    return archi_init_app_builtins(app, &l->app_context);
+}
+
+static
+void
+archi_main_cleanup(
+        struct archi_app_main_local_variables *l)
+{
+    if (l->app_context.signal_management != NULL)
+    {
+        archi_log_debug(M, "Stopping signal management thread...");
+
+        archi_signal_management_thread_stop(l->app_context.signal_management);
+    }
+
+    if (l->shmaddr != NULL)
+    {
+        archi_log_debug(M, "Detaching from shared memory...");
+
+        archi_shared_memory_detach(l->shmaddr);
+    }
+}
+
+/*****************************************************************************/
+
+static
+archi_status_t
+archi_display_plugin_help(
         archi_application_t *app,
         const char *topic)
 {
@@ -268,29 +446,12 @@ archi_main(
     if ((app == NULL) || (args == NULL))
         return ARCHI_EXIT_CODE(ARCHI_ERROR_MISUSE);
 
-    /////////////////////
-    // Local variables //
-    /////////////////////
-
+    struct archi_app_main_local_variables l; // local variables
     archi_status_t code; // status of operations
 
-    void **shmaddr; // shared memory address
-    archi_app_configuration_t *app_config; // application configuration
-
-    // Application execution mode
-    archi_plugin_vtable_t app_vtable; // application virtual table
-    struct archi_app_context app_context; // application context
-
-    // Plugin probe mode
-    union {
-        archi_app_config_plugin_list_node_t as_node;
-        char as_bytes[ARCHI_FLEXIBLE_SIZEOF(archi_app_config_plugin_list_node_t, vtable_symbol, 1)];
-    } probe_config_plugin_node; // configuration node for the plugin probe mode
-    archi_app_configuration_t probe_config; // plugin probe mode configuration
-
-    ////////////////////////////////
-    // Print the application logo //
-    ////////////////////////////////
+    //////////////////////
+    // Application logo //
+    //////////////////////
 
     {
         archi_print(ARCHI_COLOR_RESET "\n");
@@ -302,73 +463,14 @@ archi_main(
     // Preparation step //
     //////////////////////
 
-    if (args->probe_mode.pathname != NULL) // plugin probe mode
     {
-        archi_log_debug(M, "Preparing application configuration for the plugin probe mode...");
+        if (args->probe_mode.pathname != NULL) // plugin probe mode
+            code = archi_prepare_plugin_help_mode(app, args, &l);
+        else // application execution mode
+            code = archi_prepare_execution_mode(app, args, &l);
 
-        probe_config_plugin_node.as_node = (archi_app_config_plugin_list_node_t){
-            .base.name = "plugin", // any valid name will do here
-            .pathname = args->probe_mode.pathname,
-            .num_vtables = 1,
-        };
-        probe_config_plugin_node.as_node.vtable_symbol[0] = args->probe_mode.vtable_symbol;
-
-        probe_config = (archi_app_configuration_t){
-            .plugins = {.head = (archi_list_node_t*)&probe_config_plugin_node,
-                .tail = (archi_list_node_t*)&probe_config_plugin_node},
-        };
-
-        shmaddr = NULL;
-        app_config = &probe_config;
-
-        *app = (archi_application_t){0};
-    }
-    else // application execution mode
-    {
-        // Attach to shared memory
-        archi_log_debug(M, "Attaching to shared memory...");
-
-        shmaddr = archi_shared_memory_attach(args->exec_mode.pathname, args->exec_mode.proj_id, false);
-        if (shmaddr == NULL)
-        {
-            archi_log_error(M, "Couldn't attach to shared memory at pathname '%s', project id %i.",
-                    args->exec_mode.pathname, args->exec_mode.proj_id);
-
-            code = ARCHI_ERROR_ATTACH;
-            goto cleanup;
-        }
-
-        app_config = shmaddr[ARCHI_SHM_APP_CONFIG_INDEX];
-
-        // Initialize the application instance
-        app_context = (struct archi_app_context){0};
-        {
-            archi_signal_management_config_t *signals_config = shmaddr[ARCHI_SHM_SIGNALS_CONFIG_INDEX];
-            if (signals_config != NULL)
-            {
-                archi_log_debug(M, "Starting signal management thread...");
-
-                app_context.signal_management = archi_signal_management_thread_start(signals_config);
-                if (app_context.signal_management == NULL)
-                {
-                    archi_log_error(M, "Couldn't start signal management thread.");
-
-                    code = ARCHI_ERROR_SIGNAL;
-                    goto cleanup;
-                }
-            }
-        }
-        {
-            app_vtable = (archi_plugin_vtable_t){
-                .format = {.magic = ARCHI_API_MAGIC, .version = ARCHI_API_VERSION},
-                .info = {.name = ARCHI_APP_CONTEXT_ALIAS, .description = "Global virtual table"},
-                .func = {.set_fn = archi_app_vtable_set, .get_fn = archi_app_vtable_get},
-            };
-
-            code = archi_main_prepare_app(app, &app_vtable, &app_context);
-            if (code != 0)
-                goto cleanup;
-        }
+        if (code != 0)
+            goto finalization;
     }
 
     /////////////////////////
@@ -378,9 +480,9 @@ archi_main(
     {
         archi_log_info(M, "Initializing the application...");
 
-        /***************************************************/
-        code = archi_application_initialize(app, app_config);
-        /***************************************************/
+        /*****************************************************/
+        code = archi_application_initialize(app, l.app_config);
+        /*****************************************************/
 
         // Exit on error
         if (code != 0)
@@ -396,14 +498,17 @@ archi_main(
 
     if (args->probe_mode.pathname != NULL) // plugin probe mode
     {
-        code = archi_main_plugin_help(app, args->probe_mode.help_topic);
+        /*****************************************************************/
+        code = archi_display_plugin_help(app, args->probe_mode.help_topic);
+        /*****************************************************************/
+
         if (code != 0)
             archi_log_error(M, "Couldn't provide application plugin help.");
     }
     else // application execution mode
     {
         // Run the application
-        if (app_context.entry_state.function == NULL)
+        if (l.app_context.entry_state.function == NULL)
         {
             archi_log_error(M, "Application entry state is null.");
 
@@ -413,11 +518,11 @@ archi_main(
 
         archi_log_info(M, "Running the application...");
 
-        /***************************************************************************************/
-        /***************************************************************************************/
-        code = archi_finite_state_machine(app_context.entry_state, app_context.state_transition);
-        /***************************************************************************************/
-        /***************************************************************************************/
+        /*******************************************************************************************/
+        /*******************************************************************************************/
+        code = archi_finite_state_machine(l.app_context.entry_state, l.app_context.state_transition);
+        /*******************************************************************************************/
+        /*******************************************************************************************/
     }
 
     ///////////////////////
@@ -437,23 +542,9 @@ finalization:
     // Cleanup //
     /////////////
 
-cleanup:
-    {
-        if (app_context.signal_management != NULL)
-        {
-            archi_log_debug(M, "Stopping signal management thread...");
+    archi_main_cleanup(&l);
 
-            archi_signal_management_thread_stop(app_context.signal_management);
-        }
-
-        if (shmaddr != NULL)
-        {
-            archi_log_debug(M, "Detaching from shared memory...");
-
-            archi_shared_memory_detach(shmaddr);
-        }
-    }
-
+    // Return status code transformed to exit code
     return ARCHI_EXIT_CODE(code);
 }
 

@@ -1,42 +1,36 @@
 /*****************************************************************************
  * Copyright (C) 2023-2024 by Ivan Podmazov                                  *
  *                                                                           *
- * This file is part of Station.                                             *
+ * This file is part of Archipelago.                                         *
  *                                                                           *
- *   Station is free software: you can redistribute it and/or modify it      *
+ *   Archipelago is free software: you can redistribute it and/or modify it  *
  *   under the terms of the GNU Lesser General Public License as published   *
  *   by the Free Software Foundation, either version 3 of the License, or    *
  *   (at your option) any later version.                                     *
  *                                                                           *
- *   Station is distributed in the hope that it will be useful,              *
+ *   Archipelago is distributed in the hope that it will be useful,          *
  *   but WITHOUT ANY WARRANTY; without even the implied warranty of          *
  *   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the           *
  *   GNU Lesser General Public License for more details.                     *
  *                                                                           *
  *   You should have received a copy of the GNU Lesser General Public        *
- *   License along with Station. If not, see <http://www.gnu.org/licenses/>. *
+ *   License along with Archipelago. If not, see                             *
+ *   <http://www.gnu.org/licenses/>.                                         *
  *****************************************************************************/
 
 /**
  * @file
- * @brief Macros for concurrent processing.
+ * @brief Constants of the plugin for operations with threads and concurrent processing.
  */
 
 #pragma once
-#ifndef _STATION_CONCURRENT_DEF_H_
-#define _STATION_CONCURRENT_DEF_H_
+#ifndef _ARCHI_PLUGIN_THREADS_VTABLE_DEF_H_
+#define _ARCHI_PLUGIN_THREADS_VTABLE_DEF_H_
 
 /**
- * @brief Declarator of a concurrent processing function.
+ * @brief Plugin name.
  */
-#define STATION_PFUNC(name) \
-    void name(void *data, station_task_idx_t task_idx, station_thread_idx_t thread_idx)
+#define ARCHI_PLUGIN_THREADS_NAME "threads"
 
-/**
- * @brief Declarator of a concurrent processing callback function.
- */
-#define STATION_PFUNC_CALLBACK(name) \
-    void name(void *data, station_thread_idx_t thread_idx)
-
-#endif // _STATION_CONCURRENT_DEF_H_
+#endif // _ARCHI_PLUGIN_THREADS_VTABLE_DEF_H_
 

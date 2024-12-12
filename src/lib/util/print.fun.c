@@ -33,7 +33,8 @@
 #ifndef __STDC_NO_ATOMICS__
 #  include <stdatomic.h>
 
-static atomic_flag archi_print_spinlock_flag = ATOMIC_FLAG_INIT;
+static
+atomic_flag archi_print_spinlock_flag = ATOMIC_FLAG_INIT;
 #endif
 
 /*****************************************************************************/
@@ -65,7 +66,8 @@ archi_print(
 
 /*****************************************************************************/
 
-static int archi_log_verbosity_level = ARCHI_LOG_VERBOSITY_MAX;
+static
+int archi_log_verbosity_level = ARCHI_LOG_VERBOSITY_MAX;
 
 int
 archi_log_verbosity(void)
@@ -93,7 +95,8 @@ archi_log_set_verbosity(
 
 /*****************************************************************************/
 
-static struct timespec archi_log_start_timespec;
+static
+struct timespec archi_log_start_timespec;
 
 void
 archi_log_start_time(

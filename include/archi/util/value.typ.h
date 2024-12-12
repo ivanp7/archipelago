@@ -44,19 +44,12 @@ typedef struct archi_fptr_wrapper {
 typedef enum archi_value_type {
     ARCHI_VALUE_NULL = 0,   ///< No value.
 
-    ARCHI_VALUE_UINT8,      ///< 8-bit unsigned integer.
-    ARCHI_VALUE_UINT16,     ///< 16-bit unsigned integer.
-    ARCHI_VALUE_UINT32,     ///< 32-bit unsigned integer.
-    ARCHI_VALUE_UINT64,     ///< 64-bit unsigned integer.
+    ARCHI_VALUE_FALSE,      ///< Falsey boolean value.
+    ARCHI_VALUE_TRUE,       ///< Truthy boolean value.
 
-    ARCHI_VALUE_SINT8,      ///< 8-bit signed integer.
-    ARCHI_VALUE_SINT16,     ///< 16-bit signed integer.
-    ARCHI_VALUE_SINT32,     ///< 32-bit signed integer.
-    ARCHI_VALUE_SINT64,     ///< 64-bit signed integer.
-
-    ARCHI_VALUE_FLOAT16,    ///< 16-bit floating-point number.
-    ARCHI_VALUE_FLOAT32,    ///< 32-bit floating-point number.
-    ARCHI_VALUE_FLOAT64,    ///< 64-bit floating-point number.
+    ARCHI_VALUE_UINT,       ///< Unsigned integer.
+    ARCHI_VALUE_SINT,       ///< Signed integer.
+    ARCHI_VALUE_FLOAT,      ///< Floating-point number.
 
     ARCHI_VALUE_POINTER,    ///< Pointer to data or a function.
 

@@ -82,7 +82,8 @@ archi_signal_flags_alloc(void);
  */
 struct archi_signal_management_context*
 archi_signal_management_thread_start(
-        const archi_signal_management_config_t *config ///< [in] Signal management configuration.
+        const archi_signal_watch_set_t *signals, ///< [in] Signals to watch.
+        archi_signal_handler_t signal_handler    ///< [in] Signal handler.
 );
 
 /**

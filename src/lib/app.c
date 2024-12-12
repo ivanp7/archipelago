@@ -41,6 +41,48 @@ struct archi_app_lists {
     archi_list_t *contexts;
 };
 
+char*
+archi_application_vtable_alias_alloc(
+        const char *plugin_alias,
+        const char *vtable_symbol)
+{
+    if (plugin_alias == NULL)
+        plugin_alias = "";
+
+    if (vtable_symbol == NULL)
+        vtable_symbol = "";
+
+    size_t plugin_alias_len = strlen(plugin_alias);
+    size_t vtable_symbol_len = strlen(vtable_symbol);
+
+    size_t length = plugin_alias_len + vtable_symbol_len;
+    if (length > 0)
+        length += strlen(ARCHI_APP_VTABLE_ALIAS_SEPARATOR);
+
+    char *str = malloc(length + 1);
+    if (str == NULL)
+        return NULL;
+
+    if (length > 0)
+    {
+        char *ptr = str;
+
+        memcpy(ptr, plugin_alias, plugin_alias_len);
+        ptr += plugin_alias_len;
+
+        memcpy(ptr, ARCHI_APP_VTABLE_ALIAS_SEPARATOR,
+                strlen(ARCHI_APP_VTABLE_ALIAS_SEPARATOR));
+        ptr += strlen(ARCHI_APP_VTABLE_ALIAS_SEPARATOR);
+
+        memcpy(ptr, vtable_symbol, vtable_symbol_len);
+    }
+
+    str[length] = '\0';
+    return str;
+}
+
+/*****************************************************************************/
+
 archi_status_t
 archi_application_load_plugin(
         archi_app_plugin_instance_t **node,
@@ -271,7 +313,7 @@ archi_application_load_plugin_impl(
     {
         // Get virtual table pointer
         archi_app_vtable_instance_t *vtable_node;
-        code = archi_application_get_vtable(&vtable_node, plugin_node, config_node->vtable_symbol[i]);
+        code = archi_application_get_vtable(&vtable_node, plugin_node, config_node->vtable_symbols[i]);
         if (code != 0)
             return code;
 

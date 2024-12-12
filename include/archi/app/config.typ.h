@@ -37,8 +37,8 @@ typedef struct archi_app_config_plugin_list_node {
 
     char *pathname; ///< Pathname of the plugin file.
 
-    size_t num_vtables; ///< Number of virtual table names.
-    char *vtable_symbol[]; ///< Virtual table symbol names.
+    size_t num_vtables; ///< Number of virtual tables.
+    char **vtable_symbols; ///< Virtual table symbol names.
 } archi_app_config_plugin_list_node_t;
 
 /*****************************************************************************/
