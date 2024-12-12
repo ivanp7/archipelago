@@ -28,6 +28,7 @@
 #include "archi/exe/args.typ.h"
 #include "archi/app.h"
 #include "archi/fsm.h"
+#include "archi/plugin/shared_libraries/vtable.var.h"
 #include "archi/plugin/threads/vtable.var.h"
 #include "archi/util/error.def.h"
 #include "archi/util/flexible.def.h"
@@ -161,11 +162,14 @@ const archi_plugin_vtable_t archi_app = {
     .func = {.set_fn = archi_app_vtable_set, .get_fn = archi_app_vtable_get},
 };
 
+// >>> built-in plugins <<< //
 static
 const archi_plugin_vtable_t *const archi_builtin_vtables[] = {
     &archi_app,
+    &archi_shared_libraries,
     &archi_threads,
 };
+// >>> built-in plugins <<< //
 
 /*****************************************************************************/
 
@@ -512,7 +516,7 @@ archi_main(
         {
             archi_log_error(M, "Application entry state is null.");
 
-            code = ARCHI_ERROR_CONFIG;
+            code = ARCHI_ERROR_FUNCTION;
             goto finalization;
         }
 

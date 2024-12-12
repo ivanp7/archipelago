@@ -53,14 +53,5 @@
         size_t num_tasks, /* Number of processed tasks. */ \
         size_t thread_idx) /* Index of the calling thread. */
 
-/**
- * @brief Threads context configuration key -- number of threads to create.
- */
-#define ARCHI_THREADS_CONFIG_KEY_NUM_THREADS "num_threads"
-/**
- * @brief Threads context configuration key -- whether to enable busy-waiting for a job.
- */
-#define ARCHI_THREADS_CONFIG_KEY_BUSY_WAIT "busy_wait"
-
 #endif // _ARCHI_PLUGIN_THREADS_INTERFACE_DEF_H_
 

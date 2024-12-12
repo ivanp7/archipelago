@@ -20,26 +20,19 @@
 
 /**
  * @file
- * @brief Constants of the plugin for operations with threads and concurrent processing.
+ * @brief Functions of the plugin for operations with shared libraries.
  */
 
 #pragma once
-#ifndef _ARCHI_PLUGIN_THREADS_VTABLE_DEF_H_
-#define _ARCHI_PLUGIN_THREADS_VTABLE_DEF_H_
+#ifndef _ARCHI_PLUGIN_SHARED_LIBRARIES_VTABLE_FUN_H_
+#define _ARCHI_PLUGIN_SHARED_LIBRARIES_VTABLE_FUN_H_
 
-/**
- * @brief Plugin name.
- */
-#define ARCHI_PLUGIN_THREADS_NAME "threads"
+#include "archi/app/plugin.def.h"
 
-/**
- * @brief Threads context configuration key -- number of threads to create.
- */
-#define ARCHI_THREADS_CONFIG_KEY_NUM_THREADS "num_threads"
-/**
- * @brief Threads context configuration key -- whether to enable busy-waiting for a job.
- */
-#define ARCHI_THREADS_CONFIG_KEY_BUSY_WAIT "busy_wait"
+ARCHI_PLUGIN_HELP_FUNC(archi_shared_libraries_vtable_help_func);     ///< Help function.
+ARCHI_PLUGIN_INIT_FUNC(archi_shared_libraries_vtable_init_func);     ///< Initialization function.
+ARCHI_PLUGIN_FINAL_FUNC(archi_shared_libraries_vtable_final_func);   ///< Finalization function.
+ARCHI_PLUGIN_GET_FUNC(archi_shared_libraries_vtable_get_func);       ///< Getter function.
 
-#endif // _ARCHI_PLUGIN_THREADS_VTABLE_DEF_H_
+#endif // _ARCHI_PLUGIN_SHARED_LIBRARIES_VTABLE_FUN_H_
 

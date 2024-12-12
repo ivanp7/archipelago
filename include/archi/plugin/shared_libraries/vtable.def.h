@@ -20,26 +20,22 @@
 
 /**
  * @file
- * @brief Constants of the plugin for operations with threads and concurrent processing.
+ * @brief Constants of the plugin for operations with shared libraries.
  */
 
 #pragma once
-#ifndef _ARCHI_PLUGIN_THREADS_VTABLE_DEF_H_
-#define _ARCHI_PLUGIN_THREADS_VTABLE_DEF_H_
+#ifndef _ARCHI_PLUGIN_SHARED_LIBRARIES_VTABLE_DEF_H_
+#define _ARCHI_PLUGIN_SHARED_LIBRARIES_VTABLE_DEF_H_
 
 /**
  * @brief Plugin name.
  */
-#define ARCHI_PLUGIN_THREADS_NAME "threads"
+#define ARCHI_PLUGIN_SHARED_LIBRARIES_NAME "shared_library"
 
 /**
- * @brief Threads context configuration key -- number of threads to create.
+ * @brief Shared library context configuration key -- path to library file.
  */
-#define ARCHI_THREADS_CONFIG_KEY_NUM_THREADS "num_threads"
-/**
- * @brief Threads context configuration key -- whether to enable busy-waiting for a job.
- */
-#define ARCHI_THREADS_CONFIG_KEY_BUSY_WAIT "busy_wait"
+#define ARCHI_SHARED_LIBRARY_PATHNAME "pathname"
 
-#endif // _ARCHI_PLUGIN_THREADS_VTABLE_DEF_H_
+#endif // _ARCHI_PLUGIN_SHARED_LIBRARIES_VTABLE_DEF_H_
 

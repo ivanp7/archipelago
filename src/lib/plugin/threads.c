@@ -24,7 +24,6 @@
  */
 
 #include "archi/plugin/threads/interface.fun.h"
-#include "archi/plugin/threads/interface.def.h"
 #include "archi/plugin/threads/vtable.fun.h"
 #include "archi/plugin/threads/vtable.def.h"
 #include "archi/plugin/threads/vtable.var.h"
@@ -556,7 +555,7 @@ ARCHI_LIST_ACT_FUNC(archi_threads_vtable_init_func_config)
     archi_list_node_named_value_t *vnode = (archi_list_node_named_value_t*)node;
     archi_threads_config_t *config = data;
 
-    if (strcmp(vnode->base.name, ARCHI_PLUGIN_THREADS_NAME) == 0) // whole structure
+    if (strcmp(vnode->base.name, ARCHI_PLUGIN_THREADS_NAME) == 0) // whole configuration
     {
         if ((vnode->value.type != ARCHI_VALUE_DATA) || (vnode->value.ptr == NULL) ||
                 (vnode->value.size != sizeof(*config)) || (vnode->value.num_of == 0))

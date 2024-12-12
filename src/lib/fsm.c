@@ -47,7 +47,7 @@ struct archi_finite_state_machine_context {
 
     archi_status_t code;
 
-    bool in_state;
+    bool in_state_function;
     jmp_buf env; // non-local jumps
 };
 
@@ -138,14 +138,14 @@ archi_finite_state_machine_loop(
         switch (setjmp(context->env))
         {
             case J_STATE: // no jump were performed yet, call the state function
-                context->in_state = true;
+                context->in_state_function = true;
                 {
                     /***************************************/
                     context->current_state.function(context);
                     /***************************************/
                 }
             case J_TRANSITION: // returned from the state function, perform transition to the next state
-                context->in_state = false;
+                context->in_state_function = false;
                 continue;
 
             default: // shouldn't happen
@@ -232,7 +232,7 @@ archi_set_code(
 
         archi_status_t code)
 {
-    if ((context == NULL) || !context->in_state)
+    if ((context == NULL) || !context->in_state_function)
         return;
 
     context->code = code;
@@ -267,7 +267,7 @@ archi_proceed(
         size_t num_pushed,
         const archi_state_t pushed[])
 {
-    if ((context == NULL) || !context->in_state)
+    if ((context == NULL) || !context->in_state_function)
         return;
     else if (num_popped > context->stack_size)
         archi_error(context, ARCHI_ERROR_MISUSE);
