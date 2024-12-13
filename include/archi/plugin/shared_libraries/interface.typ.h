@@ -20,17 +20,19 @@
 
 /**
  * @file
- * @brief Virtual table of the plugin for operations with threads and concurrent processing.
+ * @brief Types for shared libraries plugin.
  */
 
 #pragma once
-#ifndef _ARCHI_PLUGIN_THREADS_VTABLE_VAR_H_
-#define _ARCHI_PLUGIN_THREADS_VTABLE_VAR_H_
+#ifndef _ARCHI_PLUGIN_SHARED_LIBRARIES_INTERFACE_TYP_H_
+#define _ARCHI_PLUGIN_SHARED_LIBRARIES_INTERFACE_TYP_H_
 
-#include "archi/app/plugin.typ.h"
+/**
+ * @brief Shared library configuration.
+ */
+typedef struct archi_shared_library_config {
+    char *pathname; ///< Pathname of library file.
+} archi_shared_library_config_t;
 
-extern
-const archi_plugin_vtable_t archi_vtable_threads;
-
-#endif // _ARCHI_PLUGIN_THREADS_VTABLE_VAR_H_
+#endif // _ARCHI_PLUGIN_SHARED_LIBRARIES_INTERFACE_TYP_H_
 

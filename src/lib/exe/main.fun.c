@@ -28,8 +28,6 @@
 #include "archi/exe/args.typ.h"
 #include "archi/app.h"
 #include "archi/fsm.h"
-#include "archi/plugin/shared_libraries/vtable.var.h"
-#include "archi/plugin/threads/vtable.var.h"
 #include "archi/util/error.def.h"
 #include "archi/util/flexible.def.h"
 #include "archi/util/list.fun.h"
@@ -39,6 +37,10 @@
 #include "archi/util/os/signal.def.h"
 #include "archi/util/print.fun.h"
 #include "archi/util/print.def.h"
+
+#include "archi/plugin/shared_memory/vtable.var.h"
+#include "archi/plugin/shared_libraries/vtable.var.h"
+#include "archi/plugin/threads/vtable.var.h"
 
 #include <stdlib.h> // for malloc(), free()
 #include <string.h> // for strcmp(), strlen()
@@ -156,7 +158,7 @@ ARCHI_PLUGIN_GET_FUNC(archi_app_vtable_get)
 }
 
 static
-const archi_plugin_vtable_t archi_app = {
+const archi_plugin_vtable_t archi_vtable_application = {
     .format = {.magic = ARCHI_API_MAGIC, .version = ARCHI_API_VERSION},
     .info = {.description = "Application interface"},
     .func = {.set_fn = archi_app_vtable_set, .get_fn = archi_app_vtable_get},
@@ -165,9 +167,10 @@ const archi_plugin_vtable_t archi_app = {
 // >>> built-in plugins <<< //
 static
 const archi_plugin_vtable_t *const archi_builtin_vtables[] = {
-    &archi_app,
-    &archi_shared_libraries,
-    &archi_threads,
+    &archi_vtable_application,
+    &archi_vtable_shared_memory,
+    &archi_vtable_shared_libraries,
+    &archi_vtable_threads,
 };
 // >>> built-in plugins <<< //
 

@@ -20,17 +20,18 @@
 
 /**
  * @file
- * @brief Virtual table of the plugin for operations with threads and concurrent processing.
+ * @brief Functions of the plugin for operations with shared memory.
  */
 
 #pragma once
-#ifndef _ARCHI_PLUGIN_THREADS_VTABLE_VAR_H_
-#define _ARCHI_PLUGIN_THREADS_VTABLE_VAR_H_
+#ifndef _ARCHI_PLUGIN_SHARED_MEMORY_VTABLE_FUN_H_
+#define _ARCHI_PLUGIN_SHARED_MEMORY_VTABLE_FUN_H_
 
-#include "archi/app/plugin.typ.h"
+#include "archi/app/plugin.def.h"
 
-extern
-const archi_plugin_vtable_t archi_vtable_threads;
+ARCHI_PLUGIN_HELP_FUNC(archi_shared_memory_vtable_help_func);   ///< Help function.
+ARCHI_PLUGIN_INIT_FUNC(archi_shared_memory_vtable_init_func);   ///< Initialization function.
+ARCHI_PLUGIN_FINAL_FUNC(archi_shared_memory_vtable_final_func); ///< Finalization function.
 
-#endif // _ARCHI_PLUGIN_THREADS_VTABLE_VAR_H_
+#endif // _ARCHI_PLUGIN_SHARED_MEMORY_VTABLE_FUN_H_
 

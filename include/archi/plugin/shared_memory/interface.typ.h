@@ -20,17 +20,23 @@
 
 /**
  * @file
- * @brief Virtual table of the plugin for operations with threads and concurrent processing.
+ * @brief Types for shared memory plugin.
  */
 
 #pragma once
-#ifndef _ARCHI_PLUGIN_THREADS_VTABLE_VAR_H_
-#define _ARCHI_PLUGIN_THREADS_VTABLE_VAR_H_
+#ifndef _ARCHI_PLUGIN_SHARED_MEMORY_INTERFACE_TYP_H_
+#define _ARCHI_PLUGIN_SHARED_MEMORY_INTERFACE_TYP_H_
 
-#include "archi/app/plugin.typ.h"
+#include <stdbool.h>
 
-extern
-const archi_plugin_vtable_t archi_vtable_threads;
+/**
+ * @brief Shared memory configuration.
+ */
+typedef struct archi_shared_memory_config {
+    char *pathname; ///< Pathname of shared memory key.
+    int proj_id;    ///< Project identifier of shared memory key.
+    bool writable;  ///< Whether shared memory is writable.
+} archi_shared_memory_config_t;
 
-#endif // _ARCHI_PLUGIN_THREADS_VTABLE_VAR_H_
+#endif // _ARCHI_PLUGIN_SHARED_MEMORY_INTERFACE_TYP_H_
 

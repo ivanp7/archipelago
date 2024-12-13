@@ -30,7 +30,7 @@
 #include "archi/app/plugin.typ.h"
 
 extern
-const archi_plugin_vtable_t archi_shared_libraries;
+const archi_plugin_vtable_t archi_vtable_shared_libraries;
 
 #endif // _ARCHI_PLUGIN_SHARED_LIBRARIES_VTABLE_VAR_H_
 

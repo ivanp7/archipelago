@@ -26,6 +26,7 @@
 #include "archi/plugin/shared_libraries/vtable.fun.h"
 #include "archi/plugin/shared_libraries/vtable.def.h"
 #include "archi/plugin/shared_libraries/vtable.var.h"
+#include "archi/plugin/shared_libraries/interface.typ.h"
 #include "archi/util/os/lib.fun.h"
 #include "archi/app/plugin.def.h"
 #include "archi/app/version.def.h"
@@ -37,7 +38,7 @@
 
 #include <string.h> // for strcmp()
 
-const archi_plugin_vtable_t archi_shared_libraries = {
+const archi_plugin_vtable_t archi_vtable_shared_libraries = {
     .format = {.magic = ARCHI_API_MAGIC, .version = ARCHI_API_VERSION},
     .info = {.name = ARCHI_PLUGIN_SHARED_LIBRARIES_NAME,
         .description = "Operations with shared libraries.",
@@ -69,14 +70,15 @@ static
 ARCHI_LIST_ACT_FUNC(archi_shared_libraries_vtable_init_func_config)
 {
     archi_list_node_named_value_t *vnode = (archi_list_node_named_value_t*)node;
-    const char **pathname_ptr = data;
+    archi_shared_library_config_t *config = data;
 
     if (strcmp(vnode->base.name, ARCHI_PLUGIN_SHARED_LIBRARIES_NAME) == 0) // whole configuration
     {
-        if ((vnode->value.type != ARCHI_VALUE_STRING) || (vnode->value.ptr == NULL))
+        if ((vnode->value.type != ARCHI_VALUE_DATA) || (vnode->value.ptr == NULL) ||
+                (vnode->value.size != sizeof(*config)) || (vnode->value.num_of == 0))
             return ARCHI_ERROR_CONFIG;
 
-        *pathname_ptr = vnode->value.ptr;
+        memcpy(config, vnode->value.ptr, vnode->value.size);
         return 0;
     }
     else if (strcmp(vnode->base.name, ARCHI_SHARED_LIBRARY_PATHNAME) == 0)
@@ -84,7 +86,7 @@ ARCHI_LIST_ACT_FUNC(archi_shared_libraries_vtable_init_func_config)
         if ((vnode->value.type != ARCHI_VALUE_STRING) || (vnode->value.ptr == NULL))
             return ARCHI_ERROR_CONFIG;
 
-        *pathname_ptr = vnode->value.ptr;
+        config->pathname = vnode->value.ptr;
         return 0;
     }
     else
@@ -96,18 +98,18 @@ ARCHI_PLUGIN_INIT_FUNC(archi_shared_libraries_vtable_init_func)
     if ((context == NULL) || (config == NULL))
         return ARCHI_ERROR_MISUSE;
 
-    const char *file = NULL;
+    const char *pathname = NULL;
     {
         archi_status_t code = archi_list_traverse((archi_list_t*)config, NULL, NULL,
-                archi_shared_libraries_vtable_init_func_config, &file, true, 0, NULL); // start from head
+                archi_shared_libraries_vtable_init_func_config, &pathname, true, 0, NULL); // start from head
         if (code != 0)
             return code;
     }
 
-    if (file == NULL)
+    if (pathname == NULL)
         return ARCHI_ERROR_CONFIG;
 
-    void *handle = archi_library_load(file);
+    void *handle = archi_library_load(pathname);
     if (handle == NULL)
         return ARCHI_ERROR_LOAD;
 

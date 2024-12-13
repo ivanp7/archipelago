@@ -521,7 +521,7 @@ archi_threads_busy_wait(
 
 /*****************************************************************************/
 
-const archi_plugin_vtable_t archi_threads = {
+const archi_plugin_vtable_t archi_vtable_threads = {
     .format = {.magic = ARCHI_API_MAGIC, .version = ARCHI_API_VERSION},
     .info = {.name = ARCHI_PLUGIN_THREADS_NAME,
         .description = "Threads for concurrent processing.",

@@ -20,7 +20,7 @@
 
 /**
  * @file
- * @brief Types for threads.
+ * @brief Types for threads plugin.
  */
 
 #pragma once
