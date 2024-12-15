@@ -27,6 +27,8 @@
 #ifndef _ARCHI_UTIL_OS_LIB_FUN_H_
 #define _ARCHI_UTIL_OS_LIB_FUN_H_
 
+#include <stdbool.h>
+
 /**
  * @brief Load shared library.
  *
@@ -34,7 +36,10 @@
  */
 void*
 archi_library_load(
-        const char *file ///< [in] Path to the loaded library.
+        const char *pathname, ///< [in] Path to the loaded library.
+
+        bool lazy,  ///< [in] Whether to perform lazy binding.
+        bool global ///< [in] Whether defined symbols are available in subsequently loaded libraries.
 );
 
 /**

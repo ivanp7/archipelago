@@ -36,6 +36,14 @@
  * @brief Shared library context configuration key -- path to library file.
  */
 #define ARCHI_SHARED_LIBRARY_PATHNAME "pathname"
+/**
+ * @brief Shared library context configuration key -- whether to perform lazy binding.
+ */
+#define ARCHI_SHARED_LIBRARY_LAZY "lazy"
+/**
+ * @brief Shared library context configuration key -- whether defined symbols are available in subsequently loaded libraries.
+ */
+#define ARCHI_SHARED_LIBRARY_GLOBAL "global"
 
 #endif // _ARCHI_PLUGIN_SHARED_LIBRARIES_VTABLE_DEF_H_
 

@@ -59,9 +59,11 @@ This plugin provides contexts which are handles of loaded shared libraries.\n\
 The getter function allows to get addresses of library symbols.\n\
 \n\
 Configuration options:\n\
-    \"shared_library\": char[]\n\
+    \"shared_library\": archi_shared_library_config_t -- the whole configuration structure\n\
 or\n\
     \"pathname\": char[] -- path to the library file\n\
+    \"lazy\": bool -- whether to perform lazy binding\n\
+    \"global\": bool -- whether defined symbols are available in subsequently loaded libraries\n\
 ");
     return 0;
 }
@@ -89,6 +91,38 @@ ARCHI_LIST_ACT_FUNC(archi_shared_libraries_vtable_init_func_config)
         config->pathname = vnode->value.ptr;
         return 0;
     }
+    else if (strcmp(vnode->base.name, ARCHI_SHARED_LIBRARY_LAZY) == 0)
+    {
+        switch (vnode->value.type)
+        {
+            case ARCHI_VALUE_FALSE:
+                config->lazy = false;
+                return 0;
+
+            case ARCHI_VALUE_TRUE:
+                config->lazy = true;
+                return 0;
+
+            default:
+                return ARCHI_ERROR_CONFIG;
+        }
+    }
+    else if (strcmp(vnode->base.name, ARCHI_SHARED_LIBRARY_GLOBAL) == 0)
+    {
+        switch (vnode->value.type)
+        {
+            case ARCHI_VALUE_FALSE:
+                config->global = false;
+                return 0;
+
+            case ARCHI_VALUE_TRUE:
+                config->global = true;
+                return 0;
+
+            default:
+                return ARCHI_ERROR_CONFIG;
+        }
+    }
     else
         return ARCHI_ERROR_CONFIG;
 }
@@ -98,18 +132,19 @@ ARCHI_PLUGIN_INIT_FUNC(archi_shared_libraries_vtable_init_func)
     if ((context == NULL) || (config == NULL))
         return ARCHI_ERROR_MISUSE;
 
-    const char *pathname = NULL;
+    archi_shared_library_config_t library_config = {0};
     {
         archi_status_t code = archi_list_traverse((archi_list_t*)config, NULL, NULL,
-                archi_shared_libraries_vtable_init_func_config, &pathname, true, 0, NULL); // start from head
+                archi_shared_libraries_vtable_init_func_config, &library_config, true, 0, NULL); // start from head
         if (code != 0)
             return code;
     }
 
-    if (pathname == NULL)
+    if (library_config.pathname == NULL)
         return ARCHI_ERROR_CONFIG;
 
-    void *handle = archi_library_load(pathname);
+    void *handle = archi_library_load(library_config.pathname,
+            library_config.lazy, library_config.global);
     if (handle == NULL)
         return ARCHI_ERROR_LOAD;
 

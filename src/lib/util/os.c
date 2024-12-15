@@ -151,12 +151,15 @@ archi_shared_memory_detach(
 
 void*
 archi_library_load(
-        const char *file)
+        const char *pathname,
+
+        bool lazy,
+        bool global)
 {
-    if (file == NULL)
+    if (pathname == NULL)
         return NULL;
 
-    return dlopen(file, RTLD_LAZY | RTLD_GLOBAL);
+    return dlopen(pathname, (lazy ? RTLD_LAZY : RTLD_NOW) | (global ? RTLD_GLOBAL : RTLD_LOCAL));
 }
 
 void

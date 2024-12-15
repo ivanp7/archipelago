@@ -32,6 +32,9 @@
  */
 typedef struct archi_shared_library_config {
     char *pathname; ///< Pathname of library file.
+
+    bool lazy;   ///< Whether to perform lazy binding.
+    bool global; ///< Whether defined symbols are available in subsequently loaded libraries.
 } archi_shared_library_config_t;
 
 #endif // _ARCHI_PLUGIN_SHARED_LIBRARIES_INTERFACE_TYP_H_

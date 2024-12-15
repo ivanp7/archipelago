@@ -118,7 +118,7 @@ archi_application_load_plugin(
     }
 
     // Load the plugin library
-    plugin_node->handle = archi_library_load(pathname);
+    plugin_node->handle = archi_library_load(pathname, true, false);
     if (plugin_node->handle == NULL)
     {
         code = ARCHI_ERROR_LOAD;
