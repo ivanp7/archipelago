@@ -3,17 +3,19 @@
 Archipelago provides the following modules:
 
 * `util`: various auxiliary utilies, such as linked lists, logging, shared memory interface, shared libraries interface;
-
 * `app`: application plugin system (depends on `util`);
-
 * `fsm`: finite state machine implementation (depends on `util`);
-
-* `exe`: universal, multi-purpose executable configured via a shared memory (depends on `util`, `app`, `fsm`).
-
-* `plugin`: built-in plugins providing most used types of resources (depends on `util`, `app`, `fsm`).
+* `exe`: universal, multi-purpose executable configured via a shared memory (depends on `util`, `app`, `fsm`);
+* `plugin`: built-in plugins providing most used types of resources (depends on `util`, `app`, `fsm`):
+    - `files`: opening files;
+    - `shared_memory`: attaching shared memory;
+    - `shared_libraries`: loading shared libraries;
+    - `threads`: creating threads for concurrent processing.
 
 Application plugins serve to provide contexts of different kind (e.g. graphics)
 to other contexts of plugins which implement application logic.
+The application helps with the initialization and release of resources
+for the user-written plugins, which don't need to bother to do it manually.
 All contexts are created, shared around, and prepared according to the provided configuration
 during the initialization phase. After initialization phase comes execution phase,
 during which a finite state machine is run as described below.
@@ -40,11 +42,8 @@ State function initiates state transition by returning or by calling `proceed()`
 `proceed()` accepts the following parameters:
 
 1. finite state machine context;
-
 2. number of states to pop from the stack;
-
 3. number of states to push from the stack;
-
 4. array of states to push.
 
 `proceed()` can be invoked not only from the state function itself,
@@ -75,29 +74,20 @@ which is inserted before the next state.
 A transition function returns void and accepts the following parameters:
 
 * previous state (`prev_state`, input passed by value);
-
 * next state (`next_state`, input passed by value);
-
 * translational state (`trans_state`, output passed by pointer);
-
 * status code (`code`, input/output passed by pointer);
-
-* pointer to transition data (`data`).
+* pointer to transition function data (`data`).
 
 ## Application plugin interface
 
 A plugin is a shared library which implements some of the following functions:
 
 * `help(topic) -> status`: displays plugin help on the specified `topic`;
-
 * `init(config) -> context`: creates and initializes new context according to `config`;
-
 * `final(context)`: finalizes and destroys `context` previously created by `init()`;
-
 * `set(context, slot, value) -> status`: accepts `value` for internal use by `context`, the meaning is specified by `slot`;
-
-* `get(context, slot, value_ptr) -> status`: retrieves data provided by `context` for `slot` to a location pointed to by `value_ptr`;
-
+* `get(context, slot, value) -> status`: retrieves data provided by `context` for `slot` to a location pointed to by `value`;
 * `act(context, action, config) -> status`: invokes an internal `action` for `context` according to `config`.
 
 Pointers to these functions are provided through a virtual table structure.
@@ -107,74 +97,22 @@ This architecture allows to separate resource consumers from producers.
 
 ## Application configuration
 
-XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
+An application is configured by providing a special structure via a shared memory.
+This structure specifies the list of plugins (shared libraries) to load,
+and the list of initialization instructions. There are the following types of instructions:
 
-### Standard plugins
-
-Several plugins providing most useful resources are located in `plugin` directory.
-
-Resources and features provided by the standard plugins include, but not limited to:
-
-* concurrent processing using threads (`plugin/threads`); XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX FIXME
-* signal management in multithreading environment (`plugin/signals`); XXXXXXXXXXXXX UNITE WITH threads
-* quick & easy SDL windows for drawing (`sdl.*.h`);
-* fonts support for drawing (`font.*.h`);
-* OpenCL contexts (`opencl.*.h`).
-
-
-
-
-
-
-
-The application helps with the initialization and release of resources
-for the user-written plugins, which don't need to bother to do it manually.
-
-
-The application works as follows:
-
-1. Command line arguments are parsed.
-
-2. Plugin file is loaded.
-
-3. Plugin configuration function is called.
-This function allows the plugin to select and configure features provided by
-the application, and also to parse command line arguments for the plugin.
-
-4. Application resources are initialized by the application.
-
-5. Plugin initialization function is called,
-the application resources are passed to it by pointers.
-The plugin prepares the initial finite state machine state, and creates its own resources.
-
-6. The finite state machine is executed.
-
-```c
-while (application.fsm.state.sfunc != NULL)
-    application.fsm.state.sfunc(&application.fsm.state, application.fsm.data);
-```
-
-7. Plugin finalization function is called.
-This function allows the plugin to destroy its own resources.
-
-8. Application resources are released by the application.
-
-
-
-
-
-
-
-
+* `init`: create a context and add it to the list of application contexts;
+* `final`: destroy a context and remove it from the list of application contexts;
+* `assign`: call a setter function and pass another context or output of a getter function;
+* `act`: call an actor function.
 
 ## Examples
 
-An example demonstration plugin can be found in the `demo` subdirectory.
+Examples of plugins can be found in the `plugin` subdirectory.
 
-Some of projects using Archipelago:
+Other projects using Archipelago:
 
 * [still-alive](https://github.com/ivanp7/still-alive) -- built as a plugin.
-
 * [port](https://github.com/ivanp7/port) -- provides plugin for execution of kernel functions.
 
 ## Documentation
@@ -184,9 +122,7 @@ Doxygen documentation is available at `docs` subdirectory. To build it, run `mak
 ## How to build
 
 0. change directory to the repository root;
-
-1. execute `configure.sh` to generate `build.ninja`;
-
+1. execute `configure.sh` (providing optional environment variables) to generate `build.ninja`;
 2. execute `ninja` to build.
 
 ## Build dependencies
