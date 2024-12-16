@@ -38,7 +38,8 @@
 #define ARCHI_ERROR_FUNCTION    -9  ///< Error: required function is not available.
 #define ARCHI_ERROR_SIGNAL      -10 ///< Error: couldn't initialize signal management.
 #define ARCHI_ERROR_THREAD      -11 ///< Error: couldn't create thread.
-#define ARCHI_ERROR_USER        -12 ///< First error code reserved for user.
+#define ARCHI_ERROR_FILE        -12 ///< Error: couldn't open file.
+#define ARCHI_ERROR_USER        -13 ///< First error code reserved for user.
 
 /**
  * @brief Offset of application error exit codes.

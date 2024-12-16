@@ -83,7 +83,7 @@ ARCHI_LIST_ACT_FUNC(archi_shared_libraries_vtable_init_func_config)
         memcpy(config, vnode->value.ptr, vnode->value.size);
         return 0;
     }
-    else if (strcmp(vnode->base.name, ARCHI_SHARED_LIBRARY_PATHNAME) == 0)
+    else if (strcmp(vnode->base.name, ARCHI_SHARED_LIBRARY_CONFIG_KEY_PATHNAME) == 0)
     {
         if ((vnode->value.type != ARCHI_VALUE_STRING) || (vnode->value.ptr == NULL))
             return ARCHI_ERROR_CONFIG;
@@ -91,7 +91,7 @@ ARCHI_LIST_ACT_FUNC(archi_shared_libraries_vtable_init_func_config)
         config->pathname = vnode->value.ptr;
         return 0;
     }
-    else if (strcmp(vnode->base.name, ARCHI_SHARED_LIBRARY_LAZY) == 0)
+    else if (strcmp(vnode->base.name, ARCHI_SHARED_LIBRARY_CONFIG_KEY_LAZY) == 0)
     {
         switch (vnode->value.type)
         {
@@ -107,7 +107,7 @@ ARCHI_LIST_ACT_FUNC(archi_shared_libraries_vtable_init_func_config)
                 return ARCHI_ERROR_CONFIG;
         }
     }
-    else if (strcmp(vnode->base.name, ARCHI_SHARED_LIBRARY_GLOBAL) == 0)
+    else if (strcmp(vnode->base.name, ARCHI_SHARED_LIBRARY_CONFIG_KEY_GLOBAL) == 0)
     {
         switch (vnode->value.type)
         {

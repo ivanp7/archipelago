@@ -112,8 +112,7 @@ build {BUILD_DIR}/{LIB_NAME}: link_static {
 build {BUILD_DIR}/{SOURCE_DIR}/{EXEC_SOURCE[:-1]}o: compile {SOURCE_DIR}/{EXEC_SOURCE}
 build {BUILD_DIR}/{EXEC_NAME}: link_exe \
 {BUILD_DIR}/{SOURCE_DIR}/{EXEC_SOURCE[:-1]}o \
-| {BUILD_DIR}/{LIB_NAME}
-    opts = {BUILD_DIR}/{LIB_NAME}
+{BUILD_DIR}/{LIB_NAME}
 
 build lib: phony {BUILD_DIR}/{LIB_NAME}
 build app: phony {BUILD_DIR}/{EXEC_NAME}

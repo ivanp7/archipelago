@@ -20,30 +20,18 @@
 
 /**
  * @file
- * @brief Constants of the plugin for operations with shared memory.
+ * @brief Functions of the plugin for operations with files.
  */
 
 #pragma once
-#ifndef _ARCHI_PLUGIN_SHARED_MEMORY_VTABLE_DEF_H_
-#define _ARCHI_PLUGIN_SHARED_MEMORY_VTABLE_DEF_H_
+#ifndef _ARCHI_PLUGIN_FILES_VTABLE_FUN_H_
+#define _ARCHI_PLUGIN_FILES_VTABLE_FUN_H_
 
-/**
- * @brief Plugin name.
- */
-#define ARCHI_PLUGIN_SHARED_MEMORY_NAME "shared_memory"
+#include "archi/app/plugin.def.h"
 
-/**
- * @brief Shared memory context configuration key -- pathname.
- */
-#define ARCHI_SHARED_MEMORY_CONFIG_KEY_PATHNAME "pathname"
-/**
- * @brief Shared memory context configuration key -- project identifier.
- */
-#define ARCHI_SHARED_MEMORY_CONFIG_KEY_PROJECT_ID "proj_id"
-/**
- * @brief Shared memory context configuration key -- whether shared memory is writable.
- */
-#define ARCHI_SHARED_MEMORY_CONFIG_KEY_WRITABLE "writable"
+ARCHI_PLUGIN_HELP_FUNC(archi_files_vtable_help_func);   ///< Help function.
+ARCHI_PLUGIN_INIT_FUNC(archi_files_vtable_init_func);   ///< Initialization function.
+ARCHI_PLUGIN_FINAL_FUNC(archi_files_vtable_final_func); ///< Finalization function.
 
-#endif // _ARCHI_PLUGIN_SHARED_MEMORY_VTABLE_DEF_H_
+#endif // _ARCHI_PLUGIN_FILES_VTABLE_FUN_H_
 

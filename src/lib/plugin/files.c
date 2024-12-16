@@ -20,13 +20,13 @@
 
 /**
  * @file
- * @brief Built-in plugin for attaching shared memory.
+ * @brief Built-in plugin for opening files.
  */
 
-#include "archi/plugin/shared_memory/vtable.fun.h"
-#include "archi/plugin/shared_memory/vtable.def.h"
-#include "archi/plugin/shared_memory/vtable.var.h"
-#include "archi/plugin/shared_memory/interface.typ.h"
+#include "archi/plugin/files/vtable.fun.h"
+#include "archi/plugin/files/vtable.def.h"
+#include "archi/plugin/files/vtable.var.h"
+#include "archi/plugin/files/interface.typ.h"
 #include "archi/util/os/shm.fun.h"
 #include "archi/app/plugin.def.h"
 #include "archi/app/version.def.h"
@@ -36,46 +36,43 @@
 #include "archi/util/error.def.h"
 #include "archi/util/print.fun.h"
 
+#include <stdio.h> // for FILE, fopen(), fclose()
 #include <string.h> // for strcmp()
 
-const archi_plugin_vtable_t archi_vtable_shared_memory = {
+const archi_plugin_vtable_t archi_vtable_files = {
     .format = {.magic = ARCHI_API_MAGIC, .version = ARCHI_API_VERSION},
-    .info = {.name = ARCHI_PLUGIN_SHARED_MEMORY_NAME,
-        .description = "Operations with shared memory.",
-        .help_fn = archi_shared_memory_vtable_help_func,
+    .info = {.name = ARCHI_PLUGIN_FILES_NAME,
+        .description = "Operations with files.",
+        .help_fn = archi_files_vtable_help_func,
     },
     .func = {
-        .init_fn = archi_shared_memory_vtable_init_func,
-        .final_fn = archi_shared_memory_vtable_final_func,
+        .init_fn = archi_files_vtable_init_func,
+        .final_fn = archi_files_vtable_final_func,
     },
 };
 
-ARCHI_PLUGIN_HELP_FUNC(archi_shared_memory_vtable_help_func)
+ARCHI_PLUGIN_HELP_FUNC(archi_files_vtable_help_func)
 {
     (void) topic;
     archi_print("\
-This plugin provides contexts which are addresses of loaded shared memory.\n\
-The address is to be casted to type void**, which is an array of pointers\n\
-to data structures in the shared memory. The first element (index 0) is always\n\
-equal to the shared memory address itself.\n\
+This plugin provides contexts which are file descriptors of open files.\n\
 \n\
 Configuration options:\n\
-    \"shared_memory\": archi_shared_memory_config_t -- the whole configuration structure\n\
+    \"file\": archi_file_config_t -- the whole configuration structure\n\
 or\n\
-    \"pathname\": char[] -- shared memory key pathname\n\
-    \"proj_id\": int -- shared memory key project identifier (1-255)\n\
-    \"writable\": bool -- whether attached memory is writable\n\
+    \"pathname\": char[] -- path to file\n\
+    \"mode\": char[] -- file opening mode\n\
 ");
     return 0;
 }
 
 static
-ARCHI_LIST_ACT_FUNC(archi_shared_memory_vtable_init_func_config)
+ARCHI_LIST_ACT_FUNC(archi_files_vtable_init_func_config)
 {
     archi_list_node_named_value_t *vnode = (archi_list_node_named_value_t*)node;
-    archi_shared_memory_config_t *config = data;
+    archi_file_config_t *config = data;
 
-    if (strcmp(vnode->base.name, ARCHI_PLUGIN_SHARED_MEMORY_NAME) == 0) // whole configuration
+    if (strcmp(vnode->base.name, ARCHI_PLUGIN_FILES_NAME) == 0) // whole configuration
     {
         if ((vnode->value.type != ARCHI_VALUE_DATA) || (vnode->value.ptr == NULL) ||
                 (vnode->value.size != sizeof(*config)) || (vnode->value.num_of == 0))
@@ -84,7 +81,7 @@ ARCHI_LIST_ACT_FUNC(archi_shared_memory_vtable_init_func_config)
         memcpy(config, vnode->value.ptr, vnode->value.size);
         return 0;
     }
-    else if (strcmp(vnode->base.name, ARCHI_SHARED_MEMORY_CONFIG_KEY_PATHNAME) == 0)
+    else if (strcmp(vnode->base.name, ARCHI_FILE_CONFIG_KEY_PATHNAME) == 0)
     {
         if ((vnode->value.type != ARCHI_VALUE_STRING) || (vnode->value.ptr == NULL))
             return ARCHI_ERROR_CONFIG;
@@ -92,62 +89,44 @@ ARCHI_LIST_ACT_FUNC(archi_shared_memory_vtable_init_func_config)
         config->pathname = vnode->value.ptr;
         return 0;
     }
-    else if (strcmp(vnode->base.name, ARCHI_SHARED_MEMORY_CONFIG_KEY_PROJECT_ID) == 0)
+    else if (strcmp(vnode->base.name, ARCHI_FILE_CONFIG_KEY_MODE) == 0)
     {
-        if ((vnode->value.type != ARCHI_VALUE_UINT) || (vnode->value.ptr == NULL) ||
-                (vnode->value.size != 1) || (vnode->value.num_of == 0))
+        if ((vnode->value.type != ARCHI_VALUE_STRING) || (vnode->value.ptr == NULL))
             return ARCHI_ERROR_CONFIG;
 
-        config->proj_id = *(unsigned char*)vnode->value.ptr;
+        config->mode = vnode->value.ptr;
         return 0;
-    }
-    else if (strcmp(vnode->base.name, ARCHI_SHARED_MEMORY_CONFIG_KEY_WRITABLE) == 0)
-    {
-        switch (vnode->value.type)
-        {
-            case ARCHI_VALUE_FALSE:
-                config->writable = false;
-                return 0;
-
-            case ARCHI_VALUE_TRUE:
-                config->writable = true;
-                return 0;
-
-            default:
-                return ARCHI_ERROR_CONFIG;
-        }
     }
     else
         return ARCHI_ERROR_CONFIG;
 }
 
-ARCHI_PLUGIN_INIT_FUNC(archi_shared_memory_vtable_init_func)
+ARCHI_PLUGIN_INIT_FUNC(archi_files_vtable_init_func)
 {
     if ((context == NULL) || (config == NULL))
         return ARCHI_ERROR_MISUSE;
 
-    archi_shared_memory_config_t shared_memory_config = {0};
+    archi_file_config_t file_config = {0};
     {
         archi_status_t code = archi_list_traverse((archi_list_t*)config, NULL, NULL,
-                archi_shared_memory_vtable_init_func_config, &shared_memory_config, true, 0, NULL); // start from head
+                archi_files_vtable_init_func_config, &file_config, true, 0, NULL); // start from head
         if (code != 0)
             return code;
     }
 
-    if ((shared_memory_config.pathname == NULL) || (shared_memory_config.proj_id == 0))
+    if ((file_config.pathname == NULL) || (file_config.mode == NULL))
         return ARCHI_ERROR_CONFIG;
 
-    void **shmaddr = archi_shared_memory_attach(shared_memory_config.pathname,
-            shared_memory_config.proj_id, shared_memory_config.writable);
-    if (shmaddr == NULL)
-        return ARCHI_ERROR_ATTACH;
+    FILE *file = fopen(file_config.pathname, file_config.mode);
+    if (file == NULL)
+        return ARCHI_ERROR_FILE;
 
-    *context = shmaddr;
+    *context = file;
     return 0;
 }
 
-ARCHI_PLUGIN_FINAL_FUNC(archi_shared_memory_vtable_final_func)
+ARCHI_PLUGIN_FINAL_FUNC(archi_files_vtable_final_func)
 {
-    archi_shared_memory_detach(context);
+    fclose(context);
 }
 

@@ -38,6 +38,7 @@
 #include "archi/util/print.fun.h"
 #include "archi/util/print.def.h"
 
+#include "archi/plugin/files/vtable.var.h"
 #include "archi/plugin/shared_memory/vtable.var.h"
 #include "archi/plugin/shared_libraries/vtable.var.h"
 #include "archi/plugin/threads/vtable.var.h"
@@ -168,6 +169,7 @@ const archi_plugin_vtable_t archi_vtable_application = {
 static
 const archi_plugin_vtable_t *const archi_builtin_vtables[] = {
     &archi_vtable_application,
+    &archi_vtable_files,
     &archi_vtable_shared_memory,
     &archi_vtable_shared_libraries,
     &archi_vtable_threads,
