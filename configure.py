@@ -8,13 +8,16 @@ PROJECT_NAME = "archipelago"
 
 LIB_NAME = f"lib{PROJECT_NAME}.a"
 EXEC_NAME = "archi"
+TESTS_NAME = f"{EXEC_NAME}-tests"
 
 #------------------------------------------------------------------------------
 
 INCLUDE_DIR = "include"
 SOURCE_DIR  = "src"
+TEST_DIR    = "test"
 BUILD_DIR   = "build"
 
+LIB_SOURCE_DIR = "lib"
 EXEC_SOURCE = "main.c"
 
 #------------------------------------------------------------------------------
@@ -67,21 +70,44 @@ else:
 
 #------------------------------------------------------------------------------
 
-os.chdir(os.path.dirname(__file__))
+BUILD_TESTS = 'NO_TESTS' not in os.environ
 
-SOURCES_LIBRARY = []
-for entry in os.walk(SOURCE_DIR):
-    if (os.path.samefile(entry[0], SOURCE_DIR)):
-        entry[2].remove(EXEC_SOURCE)
-
-    SOURCES_LIBRARY += [f'{entry[0]}/{s}' for s in entry[2] if s[-2:] == '.c']
+#------------------------------------------------------------------------------
 
 CFLAGS = list(filter(None, CFLAGS))
 LFLAGS = list(filter(None, LFLAGS))
 
-build_ninja = open('build.ninja', 'w')
+os.chdir(os.path.dirname(__file__))
 
-build_ninja.write(f'''\
+EXEC_OBJECT = f"{BUILD_DIR}/{SOURCE_DIR}/{EXEC_SOURCE[:-1]}o"
+
+SOURCES_LIBRARY = []
+OBJECTS_LIBRARY = []
+for entry in os.walk(f'{SOURCE_DIR}/{LIB_SOURCE_DIR}'):
+    src = [f'{entry[0]}/{s}' for s in entry[2] if s[-2:] == '.c']
+    SOURCES_LIBRARY += src
+    OBJECTS_LIBRARY += [f'{BUILD_DIR}/{s[:-1]}o' for s in src] # replace .c extension with .o
+
+if BUILD_TESTS:
+    TEST_HEADER = f'{BUILD_DIR}/{TEST_DIR}/test.h'
+    TEST_SOURCE = f'{TEST_HEADER[:-1]}c'
+    TEST_OBJECT = f'{TEST_HEADER[:-1]}o'
+
+    SOURCES_TESTS = []
+    OBJECTS_TESTS = []
+    for entry in os.walk(TEST_DIR):
+        src = [f'{entry[0]}/{s}' for s in entry[2] if s[-2:] == '.c']
+        SOURCES_TESTS += src
+        OBJECTS_TESTS += [f'{BUILD_DIR}/{s[:-1]}o' for s in src] # replace .c extension with .o
+
+#------------------------------------------------------------------------------
+
+build_ninja_separator = '\n###############################################################################\n'
+
+build_ninja_segments = []
+TARGETS = []
+
+build_ninja_segments.append(f'''\
 CC = {CC}
 CC_FLAGS = {' '.join(CC_FLAGS + CFLAGS)}
 
@@ -91,12 +117,14 @@ rule compile
     depfile = $out.d
     deps = gcc
 
+
 LINKER_STATIC = {LINKER_STATIC}
 LINKER_STATIC_FLAGS = {' '.join(LINKER_STATIC_FLAGS)}
 
 rule link_static
     command = rm -f $out && $LINKER_STATIC $LINKER_STATIC_FLAGS $opts $out $in
     description = link(static): $out
+
 
 LINKER_EXE = {LINKER_EXE}
 LINKER_EXE_FLAGS = {' '.join(LINKER_EXE_FLAGS + LFLAGS)}
@@ -105,21 +133,52 @@ rule link_exe
     command = $LINKER_EXE $LINKER_EXE_FLAGS -o $out $in $opts
     description = link(executable): $out
 
-{'\n'.join([f'build {BUILD_DIR}/{src[:-1]}o: compile {src}' for src in SOURCES_LIBRARY])}
-build {BUILD_DIR}/{LIB_NAME}: link_static {
-        ' '.join([f'{BUILD_DIR}/{src[:-1]}o' for src in SOURCES_LIBRARY])}
 
-build {BUILD_DIR}/{SOURCE_DIR}/{EXEC_SOURCE[:-1]}o: compile {SOURCE_DIR}/{EXEC_SOURCE}
-build {BUILD_DIR}/{EXEC_NAME}: link_exe \
-{BUILD_DIR}/{SOURCE_DIR}/{EXEC_SOURCE[:-1]}o \
-{BUILD_DIR}/{LIB_NAME}
-
-build lib: phony {BUILD_DIR}/{LIB_NAME}
-build app: phony {BUILD_DIR}/{EXEC_NAME}
-build all: phony lib app
-default all
-
+rule download
+    command = curl -s $url -o $out
+    description = download: $out
 ''')
 
-build_ninja.close()
+build_ninja_segments.append(f'''\
+{'\n'.join([f'build {obj}: compile {src}' for obj, src in zip(OBJECTS_LIBRARY, SOURCES_LIBRARY)])}
+
+build {BUILD_DIR}/{LIB_NAME}: link_static {' '.join(OBJECTS_LIBRARY)}
+build lib: phony {BUILD_DIR}/{LIB_NAME}
+''')
+TARGETS.append('lib')
+
+build_ninja_segments.append(f'''\
+build {EXEC_OBJECT}: compile {SOURCE_DIR}/{EXEC_SOURCE}
+
+build {BUILD_DIR}/{EXEC_NAME}: link_exe {EXEC_OBJECT} {BUILD_DIR}/{LIB_NAME}
+build app: phony {BUILD_DIR}/{EXEC_NAME}
+''')
+TARGETS.append('app')
+
+if BUILD_TESTS:
+    build_ninja_segments.append(f'''\
+TEST_CODE_URL = "https://gist.githubusercontent.com/ivanp7/506fe8dc053952fd4a960666814cfd9a/raw"
+
+build {TEST_HEADER}: download
+    url = $TEST_CODE_URL/test.h
+build {TEST_SOURCE}: download
+    url = $TEST_CODE_URL/test.c
+build {TEST_OBJECT}: compile {TEST_SOURCE} || {TEST_HEADER}
+    opts = -I{BUILD_DIR}/{TEST_DIR}
+
+{'\n'.join([f'build {obj}: compile {src} || {TEST_HEADER}\n\
+    opts = -I{BUILD_DIR}/{TEST_DIR}' for obj, src in zip(OBJECTS_TESTS, SOURCES_TESTS)])}
+
+build {BUILD_DIR}/{TESTS_NAME}: link_exe {TEST_OBJECT} {' '.join(OBJECTS_TESTS)} {BUILD_DIR}/{LIB_NAME}
+build tests: phony {BUILD_DIR}/{TESTS_NAME}
+''')
+    TARGETS.append('tests')
+
+build_ninja_segments.append(f'''\
+build all: phony {' '.join(TARGETS)}
+default all
+''')
+
+with open('build.ninja', 'w') as file:
+    file.write(f'{build_ninja_separator}\n'.join(build_ninja_segments) + '\n')
 

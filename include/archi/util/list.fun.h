@@ -28,8 +28,7 @@
 #define _ARCHI_UTIL_LIST_FUN_H_
 
 #include "archi/util/list.typ.h"
-#include "archi/util/list.def.h"
-#include "archi/util/status.typ.h"
+#include "archi/util/container.typ.h"
 
 /**
  * @brief Insert sublist to a linked list.
@@ -156,8 +155,6 @@ archi_list_traverse(
  */
 ARCHI_LIST_NODE_FUNC(archi_list_node_func_select_by_name);
 
-/*****************************************************************************/
-
 /**
  * @brief Linked list action function -- copy node pointer.
  */
@@ -172,6 +169,34 @@ ARCHI_LIST_ACT_FUNC(archi_list_act_func_free);
  * @brief Linked list action function -- free named node memory.
  */
 ARCHI_LIST_ACT_FUNC(archi_list_act_func_free_named);
+
+/*****************************************************************************/
+
+/**
+ * @brief Linked list: container element insertion function.
+ */
+ARCHI_CONTAINER_INSERT_FUNC(archi_list_container_insert);
+
+/**
+ * @brief Linked list: container element removal function.
+ */
+ARCHI_CONTAINER_REMOVE_FUNC(archi_list_container_remove);
+
+/**
+ * @brief Linked list: container element extraction function.
+ */
+ARCHI_CONTAINER_EXTRACT_FUNC(archi_list_container_extract);
+
+/**
+ * @brief Linked list: container element traversal function.
+ */
+ARCHI_CONTAINER_TRAVERSE_FUNC(archi_list_container_traverse);
+
+/**
+ * @brief Linked list container interface.
+ */
+extern
+const archi_container_interface_t archi_list_container_interface;
 
 #endif // _ARCHI_UTIL_LIST_FUN_H_
 

@@ -26,8 +26,6 @@
 #include "archi/util/os/shm.fun.h"
 #include "archi/util/os/lib.fun.h"
 #include "archi/util/os/signal.fun.h"
-#include "archi/util/os/signal.typ.h"
-#include "archi/util/os/signal.def.h"
 
 #include <stdlib.h> // for malloc()
 
@@ -144,6 +142,9 @@ bool
 archi_shared_memory_detach(
         const void *shmaddr)
 {
+    if (shmaddr == NULL)
+        return true;
+
     return shmdt(shmaddr) == 0;
 }
 

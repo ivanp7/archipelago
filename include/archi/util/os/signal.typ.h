@@ -70,6 +70,8 @@ typedef struct archi_signal_watch_set {
     bool f_SIGRTMIN[];  ///< Real-time signals SIGRTMIN+index, where index <= SIGRTMAX - SIGRTMIN.
 } archi_signal_watch_set_t;
 
+/*****************************************************************************/
+
 /**
  * @brief Signal status flag.
  */
@@ -119,8 +121,10 @@ typedef struct archi_signal_flags {
     archi_signal_flag_t f_SIGRTMIN[];   ///< Real-time signals SIGRTMIN+index, where index <= SIGRTMAX - SIGRTMIN.
 } archi_signal_flags_t;
 
+/*****************************************************************************/
+
 /**
- * @brief Signal handler function.
+ * @brief Declare/define signal handler function.
  *
  * This function is called from the signal management thread every time a signal is caught.
  *
@@ -128,21 +132,26 @@ typedef struct archi_signal_flags {
  *
  * @return True if the signal manager should set the signal flag, false if it should ignore the signal.
  */
-typedef bool (*archi_signal_handler_func_t)(
-        int signo,     ///< [in] Signal number.
-        void *const restrict siginfo, ///< [in] Pointer to siginfo_t data structure.
+#define ARCHI_SIGNAL_HANDLER_FUNC(name) bool name( \
+        int signo, /* Signal number. */ \
+        void *const restrict siginfo, /* Pointer to siginfo_t data structure. */ \
+        archi_signal_flags_t *const restrict signals, /* Signal flags. */ \
+        void *const restrict data) /* Signal handler data. */
 
-        archi_signal_flags_t *const restrict signals, ///< [in,out] Signal flags.
-        void *const restrict data ///< [in,out] Handler data.
-);
+/**
+ * @brief Signal handler function.
+ */
+typedef ARCHI_SIGNAL_HANDLER_FUNC((*archi_signal_handler_function_t));
 
 /**
  * @brief Signal handler.
  */
 typedef struct archi_signal_handler {
-    archi_signal_handler_func_t function; ///< Signal hander function.
+    archi_signal_handler_function_t function; ///< Signal hander function.
     void *data; ///< Signal hander function data.
 } archi_signal_handler_t;
+
+/*****************************************************************************/
 
 /**
  * @brief Signal management configuration.

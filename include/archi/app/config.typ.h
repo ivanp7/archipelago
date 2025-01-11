@@ -20,113 +20,96 @@
 
 /**
  * @file
- * @brief Application configuration types.
+ * @brief Types for application configuration.
  */
 
 #pragma once
 #ifndef _ARCHI_APP_CONFIG_TYP_H_
 #define _ARCHI_APP_CONFIG_TYP_H_
 
-#include "archi/util/list.typ.h"
+struct archi_value;
 
 /**
- * @brief Configuration node for plugins and virtual tables.
- */
-typedef struct archi_app_config_plugin_list_node {
-    archi_list_node_named_t base; ///< Node base.
-
-    char *pathname; ///< Pathname of the plugin file.
-
-    size_t num_vtables; ///< Number of virtual tables.
-    char **vtable_symbols; ///< Virtual table symbol names.
-} archi_app_config_plugin_list_node_t;
-
-/*****************************************************************************/
-
-/**
- * @brief Type of initialization instructions.
- */
-typedef enum archi_app_config_instruct_type {
-    ARCHI_APP_CONFIG_INSTRUCT_INIT,   ///< Initialize a context.
-    ARCHI_APP_CONFIG_INSTRUCT_FINAL,  ///< Finalize a context.
-    ARCHI_APP_CONFIG_INSTRUCT_ASSIGN, ///< Assign a value to context (get and set).
-    ARCHI_APP_CONFIG_INSTRUCT_ACT,    ///< Perform a context action.
-} archi_app_config_instruct_type_t;
-
-/**
- * @brief Context initialization instruction.
+ * @brief Configuration step for context initialization.
  *
- * Empty alias name is forbidden.
+ * @warning Null key is forbidden.
  */
-typedef struct archi_app_config_instruct_init {
-    char *context_alias; ///< Context alias name.
-    bool prepend; ///< Whether to prepend the new context node to the list, or to append it.
+typedef struct archi_app_config_step_init {
+    const void *key; ///< Context key.
 
-    char *vtable_alias; ///< Virtual table alias name.
-    archi_list_t *config; ///< Context configuration.
-} archi_app_config_instruct_init_t;
+    const void *interface_key; ///< Context interface key.
+    const void *config; ///< Context configuration.
+} archi_app_config_step_init_t;
 
 /**
- * @brief Context finalization instruction.
- *
- * Empty alias name is forbidden.
+ * @brief Configuration step for context finalization.
  */
-typedef struct archi_app_config_instruct_final {
-    char *context_alias; ///< Context alias name.
-    bool start_from_head; ///< Whether to start from list head searching for the context node.
-} archi_app_config_instruct_final_t;
+typedef struct archi_app_config_step_final {
+    const void *key; ///< Context key.
+} archi_app_config_step_final_t;
 
 /**
- * @brief Context assignment instruction.
+ * @brief Configuration step for context slot value setting.
+ */
+typedef struct archi_app_config_step_set {
+    const void *key; ///< Context key.
+
+    const char *slot; ///< Context slot.
+    const struct archi_value *value; ///< Value to set.
+} archi_app_config_step_set_t;
+
+/**
+ * @brief Configuration step for context assignment.
  *
- * Context alias names must not be null.
  * Destination slot must not be null.
- *
- * Source slot may be null. In that case, source context pointer
- * is passed to destination setter function.
+ * Source slot may be null. In that case,
+ * source context pointer is passed to destination setter function.
  */
-typedef struct archi_app_config_instruct_assign {
+typedef struct archi_app_config_step_assign {
     struct {
-        char *context_alias; ///< Context alias name.
-        char *slot; ///< Context slot.
-    } destination,
-        source;
-} archi_app_config_instruct_assign_t;
+        const void *key; ///< Context key.
+        const char *slot; ///< Context slot.
+    } destination, ///< Assignment destination.
+        source; ///< Assignment source.
+} archi_app_config_step_assign_t;
 
 /**
- * @brief Context action instruction.
+ * @brief Configuration step for context action.
  */
-typedef struct archi_app_config_instruct_act {
-    char *context_alias; ///< Context alias name.
+typedef struct archi_app_config_step_act {
+    const void *key; ///< Context key.
 
-    char *action_type; ///< Action type.
-    archi_list_t *config; ///< Action configuration.
-} archi_app_config_instruct_act_t;
-
-/**
- * @brief Configuration node for initialization instructions.
- */
-typedef struct archi_app_config_instruct_list_node {
-    archi_list_node_t base; ///< Node base.
-
-    archi_app_config_instruct_type_t type; ///< Instruction type.
-    union {
-        archi_app_config_instruct_init_t as_init;     ///< Context initialization.
-        archi_app_config_instruct_final_t as_final;   ///< Context finalization.
-        archi_app_config_instruct_assign_t as_assign; ///< Context assignment.
-        archi_app_config_instruct_act_t as_act;       ///< Context action.
-    };
-} archi_app_config_instruct_list_node_t;
+    const char *action; ///< Action type.
+    const void *params; ///< Action parameters.
+} archi_app_config_step_act_t;
 
 /*****************************************************************************/
 
 /**
- * @brief Application configuration.
+ * @brief Type of application configuration steps.
  */
-typedef struct archi_app_configuration {
-    archi_list_t plugins;       ///< List of plugins.
-    archi_list_t instructions;  ///< List of initialization instructions.
-} archi_app_configuration_t;
+typedef enum archi_app_config_step_type {
+    ARCHI_APP_CONFIG_STEP_INIT,     ///< Initialize a context.
+    ARCHI_APP_CONFIG_STEP_FINAL,    ///< Finalize a context.
+    ARCHI_APP_CONFIG_STEP_SET,      ///< Set a value to context slot.
+    ARCHI_APP_CONFIG_STEP_ASSIGN,   ///< Assign a value to context slot (get -> set).
+    ARCHI_APP_CONFIG_STEP_ACT,      ///< Perform a context action.
+} archi_app_config_step_type_t;
+
+/**
+ * @brief Application configuration step.
+ */
+typedef struct archi_app_config_step {
+    archi_app_config_step_type_t type; ///< Step type.
+
+    union {
+        archi_app_config_step_init_t as_init;     ///< Context initialization.
+        archi_app_config_step_final_t as_final;   ///< Context finalization.
+        archi_app_config_step_set_t as_set;       ///< Context slot value setting.
+        archi_app_config_step_assign_t as_assign; ///< Context assignment.
+        archi_app_config_step_act_t as_act;       ///< Context action.
+    };
+} archi_app_config_step_t;
 
 #endif // _ARCHI_APP_CONFIG_TYP_H_
 

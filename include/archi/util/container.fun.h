@@ -20,58 +20,66 @@
 
 /**
  * @file
- * @brief Value type.
+ * @brief Operations on containers.
  */
 
 #pragma once
-#ifndef _ARCHI_UTIL_VALUE_TYP_H_
-#define _ARCHI_UTIL_VALUE_TYP_H_
+#ifndef _ARCHI_UTIL_CONTAINER_FUN_H_
+#define _ARCHI_UTIL_CONTAINER_FUN_H_
 
-#include <stddef.h>
-
-/**
- * @brief Generic function pointer type.
- */
-typedef void (*archi_function_t)(void);
+#include "archi/util/container.typ.h"
 
 /**
- * @brief Value type.
- */
-typedef enum archi_value_type {
-    ARCHI_VALUE_NULL = 0,   ///< No value.
-
-    ARCHI_VALUE_FALSE,      ///< Falsey boolean value.
-    ARCHI_VALUE_TRUE,       ///< Truthy boolean value.
-
-    ARCHI_VALUE_UINT,       ///< Unsigned integer.
-    ARCHI_VALUE_SINT,       ///< Signed integer.
-    ARCHI_VALUE_FLOAT,      ///< Floating-point number.
-
-    ARCHI_VALUE_STRING,     ///< Null-terminated string.
-    ARCHI_VALUE_DATA,       ///< Binary data.
-
-    ARCHI_VALUE_NESTED,     ///< Nested node.
-    ARCHI_VALUE_LIST,       ///< Nested list.
-
-    ARCHI_VALUE_FUNCTION,   ///< Pointer to a function.
-} archi_value_type_t;
-
-/**
- * @brief Value pointer with metadata.
+ * @brief Insert an element into container.
  *
- * Minimum size of memory pointed to by ptr is (size * num_of).
+ * @return Status code.
  */
-typedef struct archi_value {
-    union {
-        void *ptr; ///< Pointer to data.
-        archi_function_t fptr; ///< Pointer to function.
-    };
+archi_status_t
+archi_container_insert(
+        archi_container_t container, ///< [in] Container.
 
-    size_t size; ///< Size of a value element, or zero if unknown.
-    size_t num_of; ///< Number of value elements.
+        const void *restrict key, ///< [in] Element key.
+        void *restrict element ///< [in] Element value.
+);
 
-    archi_value_type_t type; ///< Value element type.
-} archi_value_t;
+/**
+ * @brief Remove an element form container.
+ *
+ * @return Status code.
+ */
+archi_status_t
+archi_container_remove(
+        archi_container_t container, ///< [in] Container.
 
-#endif // _ARCHI_UTIL_VALUE_TYP_H_
+        const void *restrict key, ///< [in] Element key.
+        void *restrict *restrict element ///< [out] Place for element value.
+);
+
+/**
+ * @brief Extract an element from container.
+ *
+ * @return Status code.
+ */
+archi_status_t
+archi_container_extract(
+        archi_container_t container, ///< [in] Container.
+
+        const void *restrict key, ///< [in] Element key.
+        void *restrict *restrict element ///< [out] Place for element value.
+);
+
+/**
+ * @brief Traverse elements of container.
+ *
+ * @return Status code.
+ */
+archi_status_t
+archi_container_traverse(
+        archi_container_t container, ///< [in] Container.
+
+        archi_container_element_func_t func, ///< [in] Traversal function.
+        void *restrict func_data ///< [in,out] Traversal function data.
+);
+
+#endif // _ARCHI_UTIL_CONTAINER_FUN_H_
 

@@ -20,58 +20,44 @@
 
 /**
  * @file
- * @brief Value type.
+ * @brief Context configuration types of the plugin.
  */
 
 #pragma once
-#ifndef _ARCHI_UTIL_VALUE_TYP_H_
-#define _ARCHI_UTIL_VALUE_TYP_H_
+#ifndef _ARCHI_PLUGIN_SHARED_MEMORY_CONFIG_TYP_H_
+#define _ARCHI_PLUGIN_SHARED_MEMORY_CONFIG_TYP_H_
 
-#include <stddef.h>
-
-/**
- * @brief Generic function pointer type.
- */
-typedef void (*archi_function_t)(void);
+#include <stdbool.h>
 
 /**
- * @brief Value type.
+ * @brief Shared memory configuration.
  */
-typedef enum archi_value_type {
-    ARCHI_VALUE_NULL = 0,   ///< No value.
+typedef struct archi_shared_memory_config {
+    const char *pathname; ///< Pathname of shared memory key.
+    int proj_id;   ///< Project identifier of shared memory key.
 
-    ARCHI_VALUE_FALSE,      ///< Falsey boolean value.
-    ARCHI_VALUE_TRUE,       ///< Truthy boolean value.
-
-    ARCHI_VALUE_UINT,       ///< Unsigned integer.
-    ARCHI_VALUE_SINT,       ///< Signed integer.
-    ARCHI_VALUE_FLOAT,      ///< Floating-point number.
-
-    ARCHI_VALUE_STRING,     ///< Null-terminated string.
-    ARCHI_VALUE_DATA,       ///< Binary data.
-
-    ARCHI_VALUE_NESTED,     ///< Nested node.
-    ARCHI_VALUE_LIST,       ///< Nested list.
-
-    ARCHI_VALUE_FUNCTION,   ///< Pointer to a function.
-} archi_value_type_t;
+    bool writable; ///< Whether shared memory is writable.
+} archi_shared_memory_config_t;
 
 /**
- * @brief Value pointer with metadata.
- *
- * Minimum size of memory pointed to by ptr is (size * num_of).
+ * @brief Shared memory configuration key for the whole configuration structure.
  */
-typedef struct archi_value {
-    union {
-        void *ptr; ///< Pointer to data.
-        archi_function_t fptr; ///< Pointer to function.
-    };
+#define ARCHI_SHARED_MEMORY_CONFIG_KEY "config"
 
-    size_t size; ///< Size of a value element, or zero if unknown.
-    size_t num_of; ///< Number of value elements.
+/**
+ * @brief Shared memory configuration key -- pathname.
+ */
+#define ARCHI_SHARED_MEMORY_CONFIG_KEY_PATHNAME "pathname"
 
-    archi_value_type_t type; ///< Value element type.
-} archi_value_t;
+/**
+ * @brief Shared memory configuration key -- project identifier.
+ */
+#define ARCHI_SHARED_MEMORY_CONFIG_KEY_PROJECT_ID "proj_id"
 
-#endif // _ARCHI_UTIL_VALUE_TYP_H_
+/**
+ * @brief Shared memory configuration key -- whether shared memory is writable.
+ */
+#define ARCHI_SHARED_MEMORY_CONFIG_KEY_WRITABLE "writable"
+
+#endif // _ARCHI_PLUGIN_SHARED_MEMORY_CONFIG_TYP_H_
 

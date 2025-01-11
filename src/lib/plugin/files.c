@@ -23,93 +23,63 @@
  * @brief Built-in plugin for opening files.
  */
 
-#include "archi/plugin/files/vtable.fun.h"
-#include "archi/plugin/files/vtable.def.h"
-#include "archi/plugin/files/vtable.var.h"
-#include "archi/plugin/files/interface.typ.h"
-#include "archi/util/os/shm.fun.h"
-#include "archi/app/plugin.def.h"
-#include "archi/app/version.def.h"
-#include "archi/util/list.fun.h"
-#include "archi/util/list.def.h"
-#include "archi/util/value.typ.h"
+#include "archi/plugin/files/context.fun.h"
+#include "archi/plugin/files/config.typ.h"
+#include "archi/util/container.fun.h"
 #include "archi/util/error.def.h"
-#include "archi/util/print.fun.h"
 
 #include <stdio.h> // for FILE, fopen(), fclose()
-#include <string.h> // for strcmp()
-
-const archi_plugin_vtable_t archi_vtable_files = {
-    .format = {.magic = ARCHI_API_MAGIC, .version = ARCHI_API_VERSION},
-    .info = {.name = ARCHI_PLUGIN_FILES_NAME,
-        .description = "Operations with files.",
-        .help_fn = archi_files_vtable_help_func,
-    },
-    .func = {
-        .init_fn = archi_files_vtable_init_func,
-        .final_fn = archi_files_vtable_final_func,
-    },
-};
-
-ARCHI_PLUGIN_HELP_FUNC(archi_files_vtable_help_func)
-{
-    (void) topic;
-    archi_print("\
-This plugin provides contexts which are file descriptors of open files.\n\
-\n\
-Configuration options:\n\
-    \"file\": archi_file_config_t -- the whole configuration structure\n\
-or\n\
-    \"pathname\": char[] -- path to file\n\
-    \"mode\": char[] -- file opening mode\n\
-");
-    return 0;
-}
+#include <string.h> // for strcmp(), memcpy()
 
 static
-ARCHI_LIST_ACT_FUNC(archi_files_vtable_init_func_config)
+ARCHI_CONTAINER_ELEMENT_FUNC(archi_file_context_init_config)
 {
-    archi_list_node_named_value_t *vnode = (archi_list_node_named_value_t*)node;
+    if ((key == NULL) || (element == NULL) || (data == NULL))
+        return ARCHI_ERROR_MISUSE;
+
+    archi_value_t *value = element;
     archi_file_config_t *config = data;
 
-    if (strcmp(vnode->base.name, ARCHI_PLUGIN_FILES_NAME) == 0) // whole configuration
+    if (strcmp(key, ARCHI_FILE_CONFIG_KEY) == 0)
     {
-        if ((vnode->value.type != ARCHI_VALUE_DATA) || (vnode->value.ptr == NULL) ||
-                (vnode->value.size != sizeof(*config)) || (vnode->value.num_of == 0))
+        if ((value->type != ARCHI_VALUE_DATA) || (value->ptr == NULL) ||
+                (value->size != sizeof(*config)) || (value->num_of == 0))
             return ARCHI_ERROR_CONFIG;
 
-        memcpy(config, vnode->value.ptr, vnode->value.size);
+        memcpy(config, value->ptr, sizeof(*config));
         return 0;
     }
-    else if (strcmp(vnode->base.name, ARCHI_FILE_CONFIG_KEY_PATHNAME) == 0)
+    else if (strcmp(key, ARCHI_FILE_CONFIG_KEY_PATHNAME) == 0)
     {
-        if ((vnode->value.type != ARCHI_VALUE_STRING) || (vnode->value.ptr == NULL))
+        if ((value->type != ARCHI_VALUE_STRING) || (value->ptr == NULL))
             return ARCHI_ERROR_CONFIG;
 
-        config->pathname = vnode->value.ptr;
+        config->pathname = value->ptr;
         return 0;
     }
-    else if (strcmp(vnode->base.name, ARCHI_FILE_CONFIG_KEY_MODE) == 0)
+    else if (strcmp(key, ARCHI_FILE_CONFIG_KEY_MODE) == 0)
     {
-        if ((vnode->value.type != ARCHI_VALUE_STRING) || (vnode->value.ptr == NULL))
+        if ((value->type != ARCHI_VALUE_STRING) || (value->ptr == NULL))
             return ARCHI_ERROR_CONFIG;
 
-        config->mode = vnode->value.ptr;
+        config->mode = value->ptr;
         return 0;
     }
     else
         return ARCHI_ERROR_CONFIG;
 }
 
-ARCHI_PLUGIN_INIT_FUNC(archi_files_vtable_init_func)
+ARCHI_CONTEXT_INIT_FUNC(archi_file_context_init)
 {
-    if ((context == NULL) || (config == NULL))
+    if (context == NULL)
         return ARCHI_ERROR_MISUSE;
 
+    archi_status_t code;
+
     archi_file_config_t file_config = {0};
+    if (config.data != NULL)
     {
-        archi_status_t code = archi_list_traverse((archi_list_t*)config, NULL, NULL,
-                archi_files_vtable_init_func_config, &file_config, true, 0, NULL); // start from head
+        code = archi_container_traverse(config, archi_file_context_init_config, &file_config);
         if (code != 0)
             return code;
     }
@@ -125,8 +95,13 @@ ARCHI_PLUGIN_INIT_FUNC(archi_files_vtable_init_func)
     return 0;
 }
 
-ARCHI_PLUGIN_FINAL_FUNC(archi_files_vtable_final_func)
+ARCHI_CONTEXT_FINAL_FUNC(archi_file_context_final)
 {
     fclose(context);
 }
+
+const archi_context_interface_t archi_file_context_interface = {
+    .init_fn = archi_file_context_init,
+    .final_fn = archi_file_context_final,
+};
 

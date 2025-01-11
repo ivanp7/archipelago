@@ -25,8 +25,6 @@
 
 #include "archi/exe/args.fun.h"
 #include "archi/exe/args.typ.h"
-#include "archi/app/plugin.def.h" // for ARCHI_PLUGIN_VTABLE_DEFAULT
-#include "archi/app/version.def.h" // for ARCHI_API_VERSION
 #include "archi/util/print.def.h" // for ARCHI_LOG_VERBOSITY_*
 
 #include <stdlib.h>
@@ -38,51 +36,34 @@
 #define STRINGIFY(x) _STR(x)
 
 enum {
-    ARGKEY_EXEC_SHM_PATHNAME = 'i',
-    ARGKEY_EXEC_SHM_PROJ_ID = 'j',
-
-    ARGKEY_PROBE_PLUGIN_PATHNAME = 'P',
-    ARGKEY_PROBE_PLUGIN_VTABLE = 'T',
-    ARGKEY_PROBE_PLUGIN_HELP = 'H',
+    ARGKEY_SHM_PATHNAME = 'i',
+    ARGKEY_SHM_PROJ_ID = 'j',
 
     ARGKEY_NO_LOGO = 'q',
     ARGKEY_VERBOSITY = 'v',
 
-    ARGKEY_VERSION = 'V',
     ARGKEY_HELP = 0xFF,
 };
 
 static
 const struct argp_option args_options[] = {
-    {.doc = "Application execution mode:"},
+    {.doc = "Shared memory key options:"},
 
-    {.key = ARGKEY_EXEC_SHM_PATHNAME,   .name = "shm-path", .arg = "PATHNAME",
-                                        .doc = "Change pathname (default: argv[0]) of shared memory "
-                                               "containing app configuration"},
-    {.key = ARGKEY_EXEC_SHM_PROJ_ID,    .name = "shm-proj", .arg = "ID",
-                                        .doc = "Change project identifier (1-255, default: 1) of shared memory "
-                                               "containing app configuration"},
-
-    {.doc = "Plugin probe mode:"},
-
-    {.key = ARGKEY_PROBE_PLUGIN_PATHNAME,   .name = "plugin", .arg = "PATHNAME",
-                                            .doc = "Specify plugin pathname, enable probe mode"},
-    {.key = ARGKEY_PROBE_PLUGIN_VTABLE,     .name = "plugin-vtable", .arg = "SYMBOL",
-                                            .doc = "Change plugin virtual table symbol (default: \""
-                                                   STRINGIFY(ARCHI_PLUGIN_VTABLE_DEFAULT) "\")"},
-
-    {.key = ARGKEY_PROBE_PLUGIN_HELP,       .name = "plugin-help", .arg = "TOPIC", .flags = OPTION_ARG_OPTIONAL,
-                                            .doc = "Display plugin help (for topic, if specified)"},
+    {.key = ARGKEY_SHM_PATHNAME,    .name = "path", .arg = "PATHNAME",
+                                        .doc = "Change pathname (default: argv[0])"
+                                               " of shared memory containing app configuration"},
+    {.key = ARGKEY_SHM_PROJ_ID,     .name = "proj", .arg = "ID",
+                                        .doc = "Change project identifier (1-255, default: 1)"
+                                               " of shared memory containing app configuration"},
 
     {.doc = "Verbosity options:"},
 
     {.key = ARGKEY_NO_LOGO,     .name = "no-logo",  .doc = "Don't display the logo"},
     {.key = ARGKEY_VERBOSITY,   .name = "verbose", .arg = "LEVEL", .flags = OPTION_ARG_OPTIONAL,
-                                .doc = "Set verbosity level (0-" STRINGIFY(ARCHI_LOG_VERBOSITY_MAX)
-                                       ", or one of: quiet, error, warning, notice, info, debug, max; "
-                                       "default: info)"},
+                                    .doc = "Set verbosity level (0-" STRINGIFY(ARCHI_LOG_VERBOSITY_MAX)
+                                           ", or one of: quiet, error, warning, notice, info, debug, max; "
+                                           "default: info)"},
 
-    {.key = ARGKEY_VERSION,     .name = "version",  .doc = "Display application version and exit",      .group = -1},
     {.key = ARGKEY_HELP,        .name = "help",     .doc = "Display a short help message and exit",     .group = -1},
 
     {0}
@@ -96,44 +77,22 @@ args_parse(int key, char *arg, struct argp_state *state)
 
     switch (key)
     {
-        case ARGKEY_EXEC_SHM_PATHNAME:
-            if (args->exec_mode.pathname != NULL)
+        case ARGKEY_SHM_PATHNAME:
+            if (args->pathname != NULL)
                 return EINVAL; // setting multiple configuration pathnames is not supported
 
-            args->exec_mode.pathname = arg;
+            args->pathname = arg;
             break;
 
-        case ARGKEY_EXEC_SHM_PROJ_ID:
-            if (args->exec_mode.proj_id != 0)
+        case ARGKEY_SHM_PROJ_ID:
+            if (args->proj_id != 0)
                 return EINVAL; // setting multiple configuration project identifiers is not supported
 
             int proj_id = atoi(arg);
             if ((proj_id <= 0) || (proj_id > 0xFF))
                 return EINVAL; // project identifier is invalid
 
-            args->exec_mode.proj_id = proj_id;
-            break;
-
-        case ARGKEY_PROBE_PLUGIN_PATHNAME:
-            if (args->probe_mode.pathname != NULL)
-                return EINVAL; // displaying help for multiple plugins is not supported
-
-            args->probe_mode.pathname = arg;
-            break;
-
-        case ARGKEY_PROBE_PLUGIN_VTABLE:
-            if (args->probe_mode.vtable_symbol != NULL)
-                return EINVAL; // displaying help for multiple vtables is not supported
-
-            args->probe_mode.vtable_symbol = arg;
-            break;
-
-        case ARGKEY_PROBE_PLUGIN_HELP:
-            if (args->probe_mode.help_topic_set)
-                return EINVAL; // displaying help for multiple topics is not supported
-
-            args->probe_mode.help_topic = arg;
-            args->probe_mode.help_topic_set = true;
+            args->proj_id = proj_id;
             break;
 
         case ARGKEY_NO_LOGO:
@@ -166,13 +125,6 @@ args_parse(int key, char *arg, struct argp_state *state)
             else
                 return EINVAL;
             break;
-
-        case ARGKEY_VERSION:
-            printf("%u.%.2u.%.2u\n",
-                    ARCHI_API_VERSION / 10000,
-                    ARCHI_API_VERSION / 100 % 100,
-                    ARCHI_API_VERSION % 100);
-            exit(EXIT_SUCCESS);
 
         case ARGKEY_HELP:
             argp_state_help(state, state->out_stream, ARGP_HELP_STD_HELP);
@@ -213,25 +165,19 @@ archi_parse_cmdline_args(
         .parser = args_parse,
         .doc = "\n\
 Initialize an application according to configuration\n\
-provided via shared memory and execute the finite state machine,\n\
-or, alternatively, display plugin virtual table information and help.\n\
+provided via shared memory and execute the finite state machine.\n\
 \v\
-Application execution mode is the default.\n\
-If plugin pathname is provided, plugin probe mode is enabled instead.\n\
 "
     };
 
     archi_status_t code = argp_parse(&args_parser, argc, argv,
             ARGP_NO_EXIT | ARGP_NO_HELP, NULL, args);
 
-    if (args->exec_mode.pathname == NULL)
-        args->exec_mode.pathname = argv[0];
+    if (args->pathname == NULL)
+        args->pathname = argv[0];
 
-    if (args->exec_mode.proj_id == 0)
-        args->exec_mode.proj_id = 1;
-
-    if ((args->probe_mode.pathname != NULL) && (args->probe_mode.vtable_symbol == NULL))
-        args->probe_mode.vtable_symbol = STRINGIFY(ARCHI_PLUGIN_VTABLE_DEFAULT);
+    if (args->proj_id == 0)
+        args->proj_id = 1;
 
     return code;
 }

@@ -20,58 +20,41 @@
 
 /**
  * @file
- * @brief Value type.
+ * @brief Application plugin loading operations.
  */
 
 #pragma once
-#ifndef _ARCHI_UTIL_VALUE_TYP_H_
-#define _ARCHI_UTIL_VALUE_TYP_H_
+#ifndef _ARCHI_APP_LOADER_FUN_H_
+#define _ARCHI_APP_LOADER_FUN_H_
 
-#include <stddef.h>
-
-/**
- * @brief Generic function pointer type.
- */
-typedef void (*archi_function_t)(void);
+#include "archi/util/container.typ.h"
 
 /**
- * @brief Value type.
- */
-typedef enum archi_value_type {
-    ARCHI_VALUE_NULL = 0,   ///< No value.
-
-    ARCHI_VALUE_FALSE,      ///< Falsey boolean value.
-    ARCHI_VALUE_TRUE,       ///< Truthy boolean value.
-
-    ARCHI_VALUE_UINT,       ///< Unsigned integer.
-    ARCHI_VALUE_SINT,       ///< Signed integer.
-    ARCHI_VALUE_FLOAT,      ///< Floating-point number.
-
-    ARCHI_VALUE_STRING,     ///< Null-terminated string.
-    ARCHI_VALUE_DATA,       ///< Binary data.
-
-    ARCHI_VALUE_NESTED,     ///< Nested node.
-    ARCHI_VALUE_LIST,       ///< Nested list.
-
-    ARCHI_VALUE_FUNCTION,   ///< Pointer to a function.
-} archi_value_type_t;
-
-/**
- * @brief Value pointer with metadata.
+ * @brief Container element function for loading of a library.
  *
- * Minimum size of memory pointed to by ptr is (size * num_of).
+ * Container element type is expected to be archi_app_loader_library_t.
  */
-typedef struct archi_value {
-    union {
-        void *ptr; ///< Pointer to data.
-        archi_function_t fptr; ///< Pointer to function.
-    };
+ARCHI_CONTAINER_ELEMENT_FUNC(archi_app_load_library);
 
-    size_t size; ///< Size of a value element, or zero if unknown.
-    size_t num_of; ///< Number of value elements.
+/**
+ * @brief Container element function for unloading of a library.
+ */
+ARCHI_CONTAINER_ELEMENT_FUNC(archi_app_unload_library);
 
-    archi_value_type_t type; ///< Value element type.
-} archi_value_t;
+/**
+ * @brief Container element function for getting a library content.
+ *
+ * Container element type is expected to be archi_app_loader_library_symbol_t.
+ */
+ARCHI_CONTAINER_ELEMENT_FUNC(archi_app_get_library_content);
 
-#endif // _ARCHI_UTIL_VALUE_TYP_H_
+/**
+ * @brief Data for library content getter function.
+ */
+typedef struct archi_app_get_library_content_data {
+    archi_container_t contents; ///< Ponters to symbols of loaded libraries.
+    archi_container_t loaded_libraries; ///< Loaded libraries.
+} archi_app_get_library_content_data_t;
+
+#endif // _ARCHI_APP_LOADER_FUN_H_
 

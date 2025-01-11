@@ -30,13 +30,20 @@
 struct archi_finite_state_machine_context;
 
 /**
- * @brief State function.
+ * @brief Declarator of a state function.
  *
- * @see ARCHI_STATE_FUNCTION
+ * @warning Use of variable-length arrays is not allowed in state functions,
+ * as it will lead to memory leaks due to the finite state machine implementation.
  */
-typedef void (*archi_state_function_t)(
-        struct archi_finite_state_machine_context *const fsm ///< [in, out] Finite state machine context.
-);
+#define ARCHI_STATE_FUNCTION(name) void name( \
+        struct archi_finite_state_machine_context *const fsm) /* Finite state machine context. */
+
+/**
+ * @brief State function.
+ */
+typedef ARCHI_STATE_FUNCTION((*archi_state_function_t));
+
+/*****************************************************************************/
 
 /**
  * @brief State.
@@ -44,7 +51,36 @@ typedef void (*archi_state_function_t)(
 typedef struct archi_state {
     archi_state_function_t function; ///< State function.
     void *data; ///< State data.
+
+    void *metadata; ///< State metadata (for debugging purposes).
 } archi_state_t;
+
+/**
+ * @brief Null (empty) state.
+ */
+#define ARCHI_NULL_STATE (archi_state_t){0}
+
+/**
+ * @brief State literal.
+ */
+#define ARCHI_STATE(func, data_ptr) \
+    (archi_state_t){.function = (func), .data = (data_ptr)}
+/**
+ * @brief State literal (with metadata).
+ */
+#define ARCHI_STATE_M(func, data_ptr, metadata_ptr) \
+    (archi_state_t){.function = (func), .data = (data_ptr), .metadata = (metadata_ptr)}
+
+/**
+ * @brief State literal with function from another state.
+ */
+#define ARCHI_STATE_OTHER_DATA(state, data) ARCHI_STATE_M((state).function, (data), (state).metadata)
+/**
+ * @brief State literal with data from another state.
+ */
+#define ARCHI_STATE_OTHER_FUNC(state, func) ARCHI_STATE_M((func), (state).data, (state).metadata)
+
+/*****************************************************************************/
 
 /**
  * @brief Chain (linked list) of states.

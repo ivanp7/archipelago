@@ -23,77 +23,43 @@
  * @brief Built-in plugin for loading shared libraries.
  */
 
-#include "archi/plugin/shared_libraries/vtable.fun.h"
-#include "archi/plugin/shared_libraries/vtable.def.h"
-#include "archi/plugin/shared_libraries/vtable.var.h"
-#include "archi/plugin/shared_libraries/interface.typ.h"
+#include "archi/plugin/shared_libraries/context.fun.h"
+#include "archi/plugin/shared_libraries/config.typ.h"
 #include "archi/util/os/lib.fun.h"
-#include "archi/app/plugin.def.h"
-#include "archi/app/version.def.h"
-#include "archi/util/list.fun.h"
-#include "archi/util/list.def.h"
-#include "archi/util/value.typ.h"
+#include "archi/util/container.fun.h"
 #include "archi/util/error.def.h"
-#include "archi/util/print.fun.h"
 
-#include <string.h> // for strcmp()
-
-const archi_plugin_vtable_t archi_vtable_shared_libraries = {
-    .format = {.magic = ARCHI_API_MAGIC, .version = ARCHI_API_VERSION},
-    .info = {.name = ARCHI_PLUGIN_SHARED_LIBRARIES_NAME,
-        .description = "Operations with shared libraries.",
-        .help_fn = archi_shared_libraries_vtable_help_func,
-    },
-    .func = {
-        .init_fn = archi_shared_libraries_vtable_init_func,
-        .final_fn = archi_shared_libraries_vtable_final_func,
-        .get_fn = archi_shared_libraries_vtable_get_func,
-    },
-};
-
-ARCHI_PLUGIN_HELP_FUNC(archi_shared_libraries_vtable_help_func)
-{
-    (void) topic;
-    archi_print("\
-This plugin provides contexts which are handles of loaded shared libraries.\n\
-The getter function allows to get addresses of library symbols.\n\
-\n\
-Configuration options:\n\
-    \"shared_library\": archi_shared_library_config_t -- the whole configuration structure\n\
-or\n\
-    \"pathname\": char[] -- path to the library file\n\
-    \"lazy\": bool -- whether to perform lazy binding\n\
-    \"global\": bool -- whether defined symbols are available in subsequently loaded libraries\n\
-");
-    return 0;
-}
+#include <string.h> // for strcmp(), memcpy()
 
 static
-ARCHI_LIST_ACT_FUNC(archi_shared_libraries_vtable_init_func_config)
+ARCHI_CONTAINER_ELEMENT_FUNC(archi_shared_library_context_init_config)
 {
-    archi_list_node_named_value_t *vnode = (archi_list_node_named_value_t*)node;
+    if ((key == NULL) || (element == NULL) || (data == NULL))
+        return ARCHI_ERROR_MISUSE;
+
+    archi_value_t *value = element;
     archi_shared_library_config_t *config = data;
 
-    if (strcmp(vnode->base.name, ARCHI_PLUGIN_SHARED_LIBRARIES_NAME) == 0) // whole configuration
+    if (strcmp(key, ARCHI_SHARED_LIBRARY_CONFIG_KEY) == 0)
     {
-        if ((vnode->value.type != ARCHI_VALUE_DATA) || (vnode->value.ptr == NULL) ||
-                (vnode->value.size != sizeof(*config)) || (vnode->value.num_of == 0))
+        if ((value->type != ARCHI_VALUE_DATA) || (value->ptr == NULL) ||
+                (value->size != sizeof(*config)) || (value->num_of == 0))
             return ARCHI_ERROR_CONFIG;
 
-        memcpy(config, vnode->value.ptr, vnode->value.size);
+        memcpy(config, value->ptr, sizeof(*config));
         return 0;
     }
-    else if (strcmp(vnode->base.name, ARCHI_SHARED_LIBRARY_CONFIG_KEY_PATHNAME) == 0)
+    else if (strcmp(key, ARCHI_SHARED_LIBRARY_CONFIG_KEY_PATHNAME) == 0)
     {
-        if ((vnode->value.type != ARCHI_VALUE_STRING) || (vnode->value.ptr == NULL))
+        if ((value->type != ARCHI_VALUE_STRING) || (value->ptr == NULL))
             return ARCHI_ERROR_CONFIG;
 
-        config->pathname = vnode->value.ptr;
+        config->pathname = value->ptr;
         return 0;
     }
-    else if (strcmp(vnode->base.name, ARCHI_SHARED_LIBRARY_CONFIG_KEY_LAZY) == 0)
+    else if (strcmp(key, ARCHI_SHARED_LIBRARY_CONFIG_KEY_LAZY) == 0)
     {
-        switch (vnode->value.type)
+        switch (value->type)
         {
             case ARCHI_VALUE_FALSE:
                 config->lazy = false;
@@ -107,9 +73,9 @@ ARCHI_LIST_ACT_FUNC(archi_shared_libraries_vtable_init_func_config)
                 return ARCHI_ERROR_CONFIG;
         }
     }
-    else if (strcmp(vnode->base.name, ARCHI_SHARED_LIBRARY_CONFIG_KEY_GLOBAL) == 0)
+    else if (strcmp(key, ARCHI_SHARED_LIBRARY_CONFIG_KEY_GLOBAL) == 0)
     {
-        switch (vnode->value.type)
+        switch (value->type)
         {
             case ARCHI_VALUE_FALSE:
                 config->global = false;
@@ -127,24 +93,26 @@ ARCHI_LIST_ACT_FUNC(archi_shared_libraries_vtable_init_func_config)
         return ARCHI_ERROR_CONFIG;
 }
 
-ARCHI_PLUGIN_INIT_FUNC(archi_shared_libraries_vtable_init_func)
+ARCHI_CONTEXT_INIT_FUNC(archi_shared_library_context_init)
 {
-    if ((context == NULL) || (config == NULL))
+    if (context == NULL)
         return ARCHI_ERROR_MISUSE;
 
-    archi_shared_library_config_t library_config = {0};
+    archi_status_t code;
+
+    archi_shared_library_config_t shared_library_config = {0};
+    if (config.data != NULL)
     {
-        archi_status_t code = archi_list_traverse((archi_list_t*)config, NULL, NULL,
-                archi_shared_libraries_vtable_init_func_config, &library_config, true, 0, NULL); // start from head
+        code = archi_container_traverse(config, archi_shared_library_context_init_config, &shared_library_config);
         if (code != 0)
             return code;
     }
 
-    if (library_config.pathname == NULL)
+    if (shared_library_config.pathname == NULL)
         return ARCHI_ERROR_CONFIG;
 
-    void *handle = archi_library_load(library_config.pathname,
-            library_config.lazy, library_config.global);
+    void *handle = archi_library_load(shared_library_config.pathname,
+            shared_library_config.lazy, shared_library_config.global);
     if (handle == NULL)
         return ARCHI_ERROR_LOAD;
 
@@ -152,12 +120,12 @@ ARCHI_PLUGIN_INIT_FUNC(archi_shared_libraries_vtable_init_func)
     return 0;
 }
 
-ARCHI_PLUGIN_FINAL_FUNC(archi_shared_libraries_vtable_final_func)
+ARCHI_CONTEXT_FINAL_FUNC(archi_shared_library_context_final)
 {
     archi_library_unload(context);
 }
 
-ARCHI_PLUGIN_GET_FUNC(archi_shared_libraries_vtable_get_func)
+ARCHI_CONTEXT_GET_FUNC(archi_shared_library_context_get)
 {
     if ((context == NULL) || (slot == NULL) || (value == NULL))
         return ARCHI_ERROR_MISUSE;
@@ -172,4 +140,10 @@ ARCHI_PLUGIN_GET_FUNC(archi_shared_libraries_vtable_get_func)
 
     return 0;
 }
+
+const archi_context_interface_t archi_shared_library_context_interface = {
+    .init_fn = archi_shared_library_context_init,
+    .final_fn = archi_shared_library_context_final,
+    .get_fn = archi_shared_library_context_get,
+};
 

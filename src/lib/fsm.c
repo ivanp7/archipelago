@@ -23,7 +23,8 @@
  * @brief Finite state machines implementation.
  */
 
-#include "archi/fsm.h"
+#include "archi/fsm/algorithm.h"
+#include "archi/fsm/state.fun.h"
 #include "archi/util/error.def.h"
 
 #include <stdlib.h>
@@ -39,7 +40,7 @@ enum {
 
 struct archi_finite_state_machine_context {
     archi_state_t current_state;
-    archi_state_transition_t state_transition;
+    archi_transition_t transition;
 
     archi_state_t *stack;
     size_t stack_size;
@@ -81,25 +82,25 @@ archi_state_context_stack_reserve(
 static
 void
 archi_finite_state_machine_loop(
-        struct archi_finite_state_machine_context *context);
+        struct archi_finite_state_machine_context *const context);
 
 static
 bool
 archi_finite_state_machine_transition(
-        struct archi_finite_state_machine_context *context);
+        struct archi_finite_state_machine_context *const context);
 
 archi_status_t
 archi_finite_state_machine(
         archi_state_t entry_state,
-        archi_state_transition_t state_transition)
+        archi_transition_t transition)
 {
     // Process the degenerate case
-    if ((entry_state.function == NULL) && (state_transition.function == NULL))
+    if ((entry_state.function == NULL) && (transition.function == NULL))
         return 0;
 
     // Initialize the context
     struct archi_finite_state_machine_context context = {
-        .state_transition = state_transition,
+        .transition = transition,
 
         .stack_size = 1,
         .stack_capacity = ARCHI_FSM_INITIAL_STACK_CAPACITY,
@@ -123,15 +124,14 @@ archi_finite_state_machine(
     return context.code;
 }
 
-#ifdef __GNUC__
-#  pragma GCC diagnostic push
-#  pragma GCC diagnostic ignored "-Wimplicit-fallthrough" // make gcc/clang shut up about the switch not having any breaks
-#endif
-
 void
 archi_finite_state_machine_loop(
-        struct archi_finite_state_machine_context *context)
+        struct archi_finite_state_machine_context *const context)
 {
+    // This function is needed to get rid of as many local variables as possible.
+    // The only local variable left is `context` pointer.
+    // As it does not change its address, it is not required to be volatile (setjmp() restriction).
+
     while (archi_finite_state_machine_transition(context)) // there is a next state
     {
         // Set the jump point, call the current state function and process its response after return/jump
@@ -144,6 +144,7 @@ archi_finite_state_machine_loop(
                     context->current_state.function(context);
                     /***************************************/
                 }
+                // fallthrough
             case J_TRANSITION: // returned from the state function, perform transition to the next state
                 context->in_state_function = false;
                 continue;
@@ -154,48 +155,42 @@ archi_finite_state_machine_loop(
     }
 }
 
-#ifdef __GNUC__
-#  pragma GCC diagnostic pop // ignored "-Wimplicit-fallthrough"
-#endif
-
 bool
 archi_finite_state_machine_transition(
-        struct archi_finite_state_machine_context *context)
+        struct archi_finite_state_machine_context *const context)
 {
-    if (context->state_transition.function == NULL)
+    if (context->transition.function == NULL)
     {
         if (context->stack_size > 0) // pop the next state from the stack
-        {
             context->current_state = context->stack[--context->stack_size];
-            return true;
-        }
         else // the stack is empty, exit now
             return false;
     }
-
-    archi_state_t stack_top, trans_state = {0};
-
-    if (context->stack_size > 0) // the next state is at the stack top
-        stack_top = context->stack[context->stack_size - 1];
-    else
-        stack_top = ARCHI_NULL_STATE;
-
-    // Call the state transition function
-
-    /********************************************************************/
-    context->state_transition.function(context->current_state, stack_top,
-            &trans_state, &context->code, context->state_transition.data);
-    /********************************************************************/
-
-    // Update the current state
-    if (trans_state.function != NULL)
-        context->current_state = trans_state;
     else
     {
-        context->current_state = stack_top;
+        archi_state_t stack_top, trans_state = {0};
 
-        if (context->stack_size > 0) // pop the next state from the stack
-            context->stack_size--;
+        if (context->stack_size > 0) // the next state is at the stack top
+            stack_top = context->stack[context->stack_size - 1];
+        else
+            stack_top = ARCHI_NULL_STATE;
+
+        // Call the state transition function
+        {
+            /**************************************************************/
+            context->transition.function(context->current_state, stack_top,
+                    &trans_state, &context->code, context->transition.data);
+            /**************************************************************/
+        }
+
+        // Update the current state
+        if (trans_state.function != NULL)
+            context->current_state = trans_state;
+        else if (stack_top.function != NULL)
+        {
+            context->current_state = stack_top;
+            context->stack_size--; // pop the top from the stack
+        }
         else // the stack is empty, exit now
             return false;
     }
@@ -242,7 +237,7 @@ archi_set_code(
 
 static
 void
-archi_done(
+archi_return(
         struct archi_finite_state_machine_context *context)
 {
     longjmp(context->env, J_TRANSITION);
@@ -256,7 +251,8 @@ archi_error(
 {
     archi_set_code(context, code);
     context->stack_size = 0;
-    archi_done(context);
+
+    archi_return(context);
 }
 
 void
@@ -269,7 +265,8 @@ archi_proceed(
 {
     if ((context == NULL) || !context->in_state_function)
         return;
-    else if (num_popped > context->stack_size)
+
+    if (num_popped > context->stack_size)
         archi_error(context, ARCHI_ERROR_MISUSE);
     else if ((num_pushed > 0) && (pushed == NULL))
         archi_error(context, ARCHI_ERROR_MISUSE);
@@ -280,35 +277,35 @@ archi_proceed(
     // Push states to the stack
     for (size_t i = 0; i < num_pushed; i++)
     {
-        size_t index = (num_pushed-1) - i; // reverse order
-        if (pushed[index].function == NULL)
-            continue;
+        archi_state_t state = pushed[(num_pushed-1) - i]; // reverse order
+
+        if (state.function == NULL)
+            continue; // don't push null states to the stack
 
         // Reserve a seat in the stack
         if (!archi_state_context_stack_reserve(context, 1))
             archi_error(context, ARCHI_ERROR_ALLOC);
 
         // Push
-        context->stack[context->stack_size++] = pushed[index];
+        context->stack[context->stack_size++] = state;
     }
 
     // Proceed
-    archi_done(context);
+    archi_return(context);
 }
 
 /*****************************************************************************/
 
 ARCHI_STATE_FUNCTION(archi_state_chain_execute)
 {
-    archi_state_chain_t *chain = ARCHI_STATE_DATA(archi_state_chain_t);
+    archi_state_chain_t *chain = ARCHI_CURRENT_DATA(archi_state_chain_t);
     if (chain == NULL)
         ARCHI_DONE(0);
 
-    archi_state_t after_next_state = {.data = chain->data};
-    if (after_next_state.data == NULL)
-        ARCHI_DONE(0); // optimization saving a state
+    archi_state_t next_link = {.data = chain->data};
+    if (next_link.data != NULL)
+        next_link.function = archi_state_chain_execute;
 
-    after_next_state.function = archi_state_chain_execute;
-    ARCHI_PROCEED(0, chain->next_state, after_next_state);
+    ARCHI_PROCEED(0, chain->next_state, next_link);
 }
 

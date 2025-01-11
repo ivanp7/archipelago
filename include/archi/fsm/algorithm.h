@@ -20,58 +20,37 @@
 
 /**
  * @file
- * @brief Value type.
+ * @brief The finite state machine algorithm.
  */
 
 #pragma once
-#ifndef _ARCHI_UTIL_VALUE_TYP_H_
-#define _ARCHI_UTIL_VALUE_TYP_H_
+#ifndef _ARCHI_FSM_ALGORITHM_H_
+#define _ARCHI_FSM_ALGORITHM_H_
 
-#include <stddef.h>
-
-/**
- * @brief Generic function pointer type.
- */
-typedef void (*archi_function_t)(void);
+#include "archi/fsm/state.typ.h"
+#include "archi/fsm/transition.typ.h"
+#include "archi/util/status.typ.h"
 
 /**
- * @brief Value type.
- */
-typedef enum archi_value_type {
-    ARCHI_VALUE_NULL = 0,   ///< No value.
-
-    ARCHI_VALUE_FALSE,      ///< Falsey boolean value.
-    ARCHI_VALUE_TRUE,       ///< Truthy boolean value.
-
-    ARCHI_VALUE_UINT,       ///< Unsigned integer.
-    ARCHI_VALUE_SINT,       ///< Signed integer.
-    ARCHI_VALUE_FLOAT,      ///< Floating-point number.
-
-    ARCHI_VALUE_STRING,     ///< Null-terminated string.
-    ARCHI_VALUE_DATA,       ///< Binary data.
-
-    ARCHI_VALUE_NESTED,     ///< Nested node.
-    ARCHI_VALUE_LIST,       ///< Nested list.
-
-    ARCHI_VALUE_FUNCTION,   ///< Pointer to a function.
-} archi_value_type_t;
-
-/**
- * @brief Value pointer with metadata.
+ * @brief Execute a finite state machine.
  *
- * Minimum size of memory pointed to by ptr is (size * num_of).
+ * The algorithm is as following:
+ * 0. Push the entry state to the stack.
+ * 1. Call the state transition function if it's non-null.
+ * 2. If the transition function is non-null and provided a transitional state,
+ *      use it as the next state and go to step 5.
+ * 3. If the stack is empty, exit.
+ * 4. Pop the next state from the stack.
+ * 5. Call the state function. The function can pop and push multiple states from/to the stack.
+ * 6. Go to step 1.
+ *
+ * @return Status code.
  */
-typedef struct archi_value {
-    union {
-        void *ptr; ///< Pointer to data.
-        archi_function_t fptr; ///< Pointer to function.
-    };
+archi_status_t
+archi_finite_state_machine(
+        archi_state_t entry_state, ///< [in] Entry state.
+        archi_transition_t transition ///< [in] Optional state transition.
+);
 
-    size_t size; ///< Size of a value element, or zero if unknown.
-    size_t num_of; ///< Number of value elements.
-
-    archi_value_type_t type; ///< Value element type.
-} archi_value_t;
-
-#endif // _ARCHI_UTIL_VALUE_TYP_H_
+#endif // _ARCHI_FSM_ALGORITHM_H_
 

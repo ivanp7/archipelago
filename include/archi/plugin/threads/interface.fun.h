@@ -28,6 +28,7 @@
 #define _ARCHI_PLUGIN_THREADS_INTERFACE_FUN_H_
 
 #include "archi/plugin/threads/interface.typ.h"
+#include "archi/plugin/threads/config.typ.h"
 #include "archi/util/status.typ.h"
 
 struct archi_threads_context;

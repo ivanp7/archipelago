@@ -28,6 +28,7 @@
 #define _ARCHI_UTIL_OS_SIGNAL_FUN_H_
 
 #include "archi/util/os/signal.typ.h"
+#include "archi/util/flexible.def.h"
 
 #include <stddef.h>
 
@@ -60,6 +61,48 @@ archi_signal_watch_set_alloc(void);
  */
 archi_signal_flags_t*
 archi_signal_flags_alloc(void);
+
+/*****************************************************************************/
+
+/**
+ * @brief Size of signal watch set structure in bytes.
+ */
+#define ARCHI_SIGNAL_WATCH_SET_SIZEOF ARCHI_FLEXIBLE_SIZEOF( \
+        archi_signal_watch_set_t, f_SIGRTMIN, archi_signal_number_of_rt_signals())
+
+/*****************************************************************************/
+
+/**
+ * @brief Size of signal flags structure in bytes.
+ */
+#define ARCHI_SIGNAL_FLAGS_SIZEOF ARCHI_FLEXIBLE_SIZEOF( \
+        archi_signal_flags_t, f_SIGRTMIN, archi_signal_number_of_rt_signals())
+
+/**
+ * @brief Check state of a signal flag.
+ */
+#define ARCHI_SIGNAL_IS_FLAG_SET(flag) atomic_load_explicit(&(flag), memory_order_acquire)
+
+/**
+ * @brief Initialize a signal flag.
+ */
+#define ARCHI_SIGNAL_INIT_FLAG(flag) do { \
+    atomic_init(&(flag), false); \
+} while (0)
+
+/**
+ * @brief Set a signal flag.
+ */
+#define ARCHI_SIGNAL_SET_FLAG(flag) do { \
+    atomic_store_explicit(&(flag), true, memory_order_release); \
+} while (0)
+
+/**
+ * @brief Unset a signal flag.
+ */
+#define ARCHI_SIGNAL_UNSET_FLAG(flag) do { \
+    atomic_store_explicit(&(flag), false, memory_order_release); \
+} while (0)
 
 /*****************************************************************************/
 

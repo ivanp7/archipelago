@@ -28,7 +28,6 @@
 #define _ARCHI_FSM_STATE_FUN_H_
 
 #include "archi/fsm/state.typ.h"
-#include "archi/fsm/state.def.h"
 #include "archi/util/status.typ.h"
 
 #include <stddef.h>
@@ -37,8 +36,6 @@
  * @brief Get current state.
  *
  * If context is NULL, the function returns null state.
- *
- * @see ARCHI_CURRENT
  *
  * @return Current state.
  */
@@ -52,8 +49,6 @@ archi_current(
  *
  * If context is NULL, the function returns 0.
  *
- * @see ARCHI_STACK_SIZE
- *
  * @return Current stack size.
  */
 size_t
@@ -65,8 +60,6 @@ archi_stack_size(
  * @brief Get current status code.
  *
  * If context is NULL, the function returns 0.
- *
- * @see ARCHI_CODE
  *
  * @return Current status code.
  */
@@ -81,8 +74,6 @@ archi_code(
  * If context is NULL, the function does nothing.
  * If called not from a state function during finite state machine execution,
  * the function does nothing.
- *
- * @see ARCHI_SET_CODE
  */
 void
 archi_set_code(
@@ -90,6 +81,35 @@ archi_set_code(
 
         archi_status_t code ///< [in] Status code.
 );
+
+/*****************************************************************************/
+
+/**
+ * @brief Access current state.
+ */
+#define ARCHI_CURRENT() archi_current(fsm)
+/**
+ * @brief Access current state data through a pointer to the specified type.
+ */
+#define ARCHI_CURRENT_DATA(type) ((type*)ARCHI_CURRENT().data)
+/**
+ * @brief Access current state metadata through a pointer to the specified type.
+ */
+#define ARCHI_CURRENT_METADATA(type) ((type*)ARCHI_CURRENT().metadata)
+
+/**
+ * @brief Access current stack size.
+ */
+#define ARCHI_STACK_SIZE() archi_stack_size(fsm)
+
+/**
+ * @brief Access current status code.
+ */
+#define ARCHI_CODE() archi_code(fsm)
+/**
+ * @brief Update status code.
+ */
+#define ARCHI_SET_CODE(code) archi_set_code(fsm, (code))
 
 /*****************************************************************************/
 
@@ -110,8 +130,6 @@ archi_set_code(
  * If context is NULL, the function does nothing.
  * If called not from a state function during finite state machine execution,
  * the function does nothing.
- *
- * @see ARCHI_PROCEED
  */
 void
 archi_proceed(
@@ -121,6 +139,23 @@ archi_proceed(
         size_t num_pushed, ///< [in] Number of states in the pushed states array.
         const archi_state_t pushed[] ///< [in] Array of states to be pushed to the stack.
 );
+
+/*****************************************************************************/
+
+/**
+ * @brief Proceed finite state machine execution -- pop and/or push states from/to the stack.
+ */
+#define ARCHI_PROCEED(num_popped, ...) do { \
+    archi_state_t pushed[] = {__VA_ARGS__}; \
+    archi_proceed(fsm, (num_popped), sizeof(pushed) / sizeof(pushed[0]), pushed); \
+} while (0)
+
+/**
+ * @brief Proceed finite state machine execution -- pop states from the stack.
+ */
+#define ARCHI_DONE(num_popped) do { \
+    archi_proceed(fsm, (num_popped), 0, NULL); \
+} while (0)
 
 /*****************************************************************************/
 

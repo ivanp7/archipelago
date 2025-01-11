@@ -33,18 +33,8 @@
  * @brief Values of command line arguments.
  */
 typedef struct archi_cmdline_args {
-    struct {
-        char *pathname; ///< Pathname of shared memory with configuration.
-        int proj_id;    ///< Project identifier of shared memory with configuration.
-    } exec_mode; ///< Execution mode configuration.
-
-    struct {
-        char *pathname;      ///< Pathname of plugin to provide help for.
-        char *vtable_symbol; ///< Symbol name of virtual table containing the help function.
-
-        char *help_topic;    ///< Help topic.
-        bool help_topic_set; ///< Whether help topic has been set.
-    } probe_mode; ///< Probe mode configuration.
+    const char *pathname; ///< Pathname of shared memory with configuration.
+    int proj_id; ///< Project identifier of shared memory with configuration.
 
     int verbosity_level; ///< Application verbosity level.
     bool no_logo; ///< Whether to suppress display of the application logo.

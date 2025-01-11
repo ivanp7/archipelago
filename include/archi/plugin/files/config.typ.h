@@ -20,58 +20,35 @@
 
 /**
  * @file
- * @brief Value type.
+ * @brief Context configuration types of the plugin.
  */
 
 #pragma once
-#ifndef _ARCHI_UTIL_VALUE_TYP_H_
-#define _ARCHI_UTIL_VALUE_TYP_H_
-
-#include <stddef.h>
+#ifndef _ARCHI_PLUGIN_FILES_CONFIG_TYP_H_
+#define _ARCHI_PLUGIN_FILES_CONFIG_TYP_H_
 
 /**
- * @brief Generic function pointer type.
+ * @brief File configuration.
  */
-typedef void (*archi_function_t)(void);
+typedef struct archi_file_config {
+    const char *pathname; ///< Path to a file.
+    const char *mode;     ///< File mode.
+} archi_file_config_t;
 
 /**
- * @brief Value type.
+ * @brief File configuration key for the whole configuration structure.
  */
-typedef enum archi_value_type {
-    ARCHI_VALUE_NULL = 0,   ///< No value.
-
-    ARCHI_VALUE_FALSE,      ///< Falsey boolean value.
-    ARCHI_VALUE_TRUE,       ///< Truthy boolean value.
-
-    ARCHI_VALUE_UINT,       ///< Unsigned integer.
-    ARCHI_VALUE_SINT,       ///< Signed integer.
-    ARCHI_VALUE_FLOAT,      ///< Floating-point number.
-
-    ARCHI_VALUE_STRING,     ///< Null-terminated string.
-    ARCHI_VALUE_DATA,       ///< Binary data.
-
-    ARCHI_VALUE_NESTED,     ///< Nested node.
-    ARCHI_VALUE_LIST,       ///< Nested list.
-
-    ARCHI_VALUE_FUNCTION,   ///< Pointer to a function.
-} archi_value_type_t;
+#define ARCHI_FILE_CONFIG_KEY "config"
 
 /**
- * @brief Value pointer with metadata.
- *
- * Minimum size of memory pointed to by ptr is (size * num_of).
+ * @brief File context configuration key -- pathname.
  */
-typedef struct archi_value {
-    union {
-        void *ptr; ///< Pointer to data.
-        archi_function_t fptr; ///< Pointer to function.
-    };
+#define ARCHI_FILE_CONFIG_KEY_PATHNAME "pathname"
 
-    size_t size; ///< Size of a value element, or zero if unknown.
-    size_t num_of; ///< Number of value elements.
+/**
+ * @brief File context configuration key -- file mode.
+ */
+#define ARCHI_FILE_CONFIG_KEY_MODE "mode"
 
-    archi_value_type_t type; ///< Value element type.
-} archi_value_t;
-
-#endif // _ARCHI_UTIL_VALUE_TYP_H_
+#endif // _ARCHI_PLUGIN_FILES_CONFIG_TYP_H_
 

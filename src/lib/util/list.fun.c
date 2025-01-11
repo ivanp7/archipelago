@@ -468,8 +468,6 @@ ARCHI_LIST_NODE_FUNC(archi_list_node_func_select_by_name)
         return 1; // skip
 }
 
-/*****************************************************************************/
-
 ARCHI_LIST_ACT_FUNC(archi_list_act_func_copy_node)
 {
     if (data == NULL)
@@ -496,10 +494,161 @@ ARCHI_LIST_ACT_FUNC(archi_list_act_func_free_named)
 
     if (node != NULL)
     {
-        free(((archi_list_node_named_t*)node)->name);
+        free((char*)((archi_list_node_named_t*)node)->name);
         free(node);
     }
 
     return 0; // no error
 }
+
+/*****************************************************************************/
+
+static
+const char*
+archi_list_node_copy_name(
+        const char *name)
+{
+    size_t name_size = strlen(name) + 1;
+
+    char *copy = malloc(name_size);
+    if (copy == NULL)
+        return NULL;
+
+    memcpy(copy, name, name_size);
+    return copy;
+}
+
+ARCHI_CONTAINER_INSERT_FUNC(archi_list_container_insert)
+{
+    if ((container == NULL) || (key == NULL))
+        return ARCHI_ERROR_MISUSE;
+
+    archi_list_container_data_t *list_data = container;
+
+    archi_list_node_named_value_t *node = malloc(sizeof(*node));
+    if (node == NULL)
+        return ARCHI_ERROR_ALLOC;
+
+    *node = (archi_list_node_named_value_t){0};
+
+    node->base.name = archi_list_node_copy_name(key);
+    if (node->base.name == NULL)
+    {
+        free(node);
+        return ARCHI_ERROR_ALLOC;
+    }
+
+    node->value = (archi_value_t){
+        .ptr = element,
+        .num_of = 1,
+        .type = ARCHI_VALUE_DATA,
+    };
+
+    archi_status_t code = archi_list_insert_node(&list_data->list, (archi_list_node_t*)node,
+            NULL, NULL, list_data->insert_to_head);
+    if (code != 0)
+    {
+        archi_list_act_func_free_named((archi_list_node_t*)node, NULL);
+        return code;
+    }
+
+    return 0;
+}
+
+ARCHI_CONTAINER_REMOVE_FUNC(archi_list_container_remove)
+{
+    if (container == NULL)
+        return ARCHI_ERROR_MISUSE;
+
+    archi_list_container_data_t *list_data = container;
+
+    archi_list_node_named_value_t *node = NULL;
+    size_t num_counted = 0;
+
+    archi_status_t code;
+
+    code = archi_list_traverse(&list_data->list,
+            archi_list_node_func_select_by_name, (void*)key, archi_list_act_func_copy_node, &node,
+            list_data->traverse_from_head, 1, &num_counted);
+
+    if (code != 0)
+        return code;
+    else if (num_counted != 1)
+        return 1; // not found
+
+    if (!archi_list_cut_node(&list_data->list, (archi_list_node_t*)node))
+        return ARCHI_ERROR_UNKNOWN; // this should not happen
+
+    archi_list_act_func_free_named((archi_list_node_t*)node, NULL);
+
+    if (element != NULL)
+        *element = node->value.ptr;
+
+    return 0;
+}
+
+ARCHI_CONTAINER_EXTRACT_FUNC(archi_list_container_extract)
+{
+    if (container == NULL)
+        return ARCHI_ERROR_MISUSE;
+
+    archi_list_container_data_t *list_data = container;
+
+    archi_list_node_named_value_t *node = NULL;
+    size_t num_counted = 0;
+
+    archi_status_t code;
+
+    code = archi_list_traverse(&list_data->list,
+            archi_list_node_func_select_by_name, (void*)key, archi_list_act_func_copy_node, &node,
+            list_data->traverse_from_head, 1, &num_counted);
+
+    if (code != 0)
+        return code;
+    else if (num_counted != 1)
+        return 1; // not found
+
+    if (element != NULL)
+        *element = node->value.ptr;
+
+    return 0;
+}
+
+struct archi_list_container_traverse_act_func_data {
+    archi_container_element_func_t func;
+    void *func_data;
+};
+
+static
+ARCHI_LIST_ACT_FUNC(archi_list_container_traverse_act_func)
+{
+    struct archi_list_container_traverse_act_func_data *data_ptr = data;
+    const archi_list_node_named_value_t *node_ptr = (const archi_list_node_named_value_t*)node;
+
+    return data_ptr->func(node_ptr->base.name, node_ptr->value.ptr, data_ptr->func_data);
+}
+
+ARCHI_CONTAINER_TRAVERSE_FUNC(archi_list_container_traverse)
+{
+    if (container == NULL)
+        return ARCHI_ERROR_MISUSE;
+
+    archi_list_container_data_t *list_data = container;
+
+    struct archi_list_container_traverse_act_func_data data = {
+        .func = func,
+        .func_data = func_data,
+    };
+
+    return archi_list_traverse(&list_data->list, NULL, NULL,
+            archi_list_container_traverse_act_func, &data,
+            list_data->traverse_from_head, 0, NULL);
+}
+
+const archi_container_interface_t archi_list_container_interface = {
+    .insert_fn = archi_list_container_insert,
+    .remove_fn = archi_list_container_remove,
+    .extract_fn = archi_list_container_extract,
+    .traverse_fn = archi_list_container_traverse,
+};
 

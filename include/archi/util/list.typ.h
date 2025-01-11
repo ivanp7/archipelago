@@ -27,13 +27,67 @@
 #ifndef _ARCHI_UTIL_LIST_TYP_H_
 #define _ARCHI_UTIL_LIST_TYP_H_
 
-#include "archi/util/value.typ.h"
 #include "archi/util/status.typ.h"
+#include "archi/util/value.typ.h"
 
 #include <stdbool.h>
-#include <stddef.h>
 
 struct archi_list_node;
+
+/*****************************************************************************/
+
+/**
+ * @brief Declare/define linked list link function.
+ *
+ * @return Positive value if the test failed, zero if the test passed,
+ * negative value on traversal stop request.
+ */
+#define ARCHI_LIST_LINK_FUNC(name) archi_status_t name( \
+        const struct archi_list_node *prev, /* Previous node. */ \
+        const struct archi_list_node *next, /* Next node. */ \
+        void *data) /* Function data. */
+
+/**
+ * @brief Linked list link function.
+ */
+typedef ARCHI_LIST_LINK_FUNC((*archi_list_link_func_t));
+
+/*****************************************************************************/
+
+/**
+ * @brief Declare/define linked list node function.
+ *
+ * @return Positive value if the test failed, zero if the test passed,
+ * negative value on traversal stop request.
+ */
+#define ARCHI_LIST_NODE_FUNC(name) archi_status_t name( \
+        const struct archi_list_node *node, /* Current node. */ \
+        bool is_head, /* Whether the current node is the list head. */ \
+        bool is_tail, /* Whether the current node is the list tail. */ \
+        void *data) /* Function data. */
+
+/**
+ * @brief Linked list node function.
+ */
+typedef ARCHI_LIST_NODE_FUNC((*archi_list_node_func_t));
+
+/*****************************************************************************/
+
+/**
+ * @brief Declare/define linked list action function.
+ *
+ * @return Zero on success, non-zero value on error.
+ */
+#define ARCHI_LIST_ACT_FUNC(name) archi_status_t name( \
+        struct archi_list_node *node, /* Current node. */ \
+        void *data) /* Function data. */
+
+/**
+ * @brief Linked list action function.
+ */
+typedef ARCHI_LIST_ACT_FUNC((*archi_list_act_func_t));
+
+/*****************************************************************************/
 
 /**
  * @brief Linked list node base.
@@ -58,7 +112,7 @@ typedef struct archi_list {
  */
 typedef struct archi_list_node_named {
     archi_list_node_t link; ///< Node links.
-    char *name; ///< Node name.
+    const char *name; ///< Node name.
 } archi_list_node_named_t;
 
 /**
@@ -72,39 +126,14 @@ typedef struct archi_list_node_named_value {
 /*****************************************************************************/
 
 /**
- * @brief Linked list link function.
- *
- * @return Positive value if the test failed, zero if the test passed,
- * negative value on traversal stop request.
+ * @brief Linked list container.
  */
-typedef archi_status_t (*archi_list_link_func_t)(
-        const archi_list_node_t *prev, ///< [in] Previous node.
-        const archi_list_node_t *next, ///< [in] Next node.
-        void *data ///< [in,out] Function data.
-);
+typedef struct archi_list_container_data {
+    archi_list_t list; ///< Linked list.
 
-/**
- * @brief Linked list node function.
- *
- * @return Positive value if the test failed, zero if the test passed,
- * negative value on traversal stop request.
- */
-typedef archi_status_t (*archi_list_node_func_t)(
-        const archi_list_node_t *node, ///< [in] Current node.
-        bool is_head, ///< [in] Whether the current node is the list head.
-        bool is_tail, ///< [in] Whether the current node is the list tail.
-        void *data ///< [in,out] Function data.
-);
-
-/**
- * @brief Linked list action function.
- *
- * @return Zero on success, non-zero value on error.
- */
-typedef archi_status_t (*archi_list_act_func_t)(
-        archi_list_node_t *node, ///< [in] Current node.
-        void *data ///< [in,out] Function data.
-);
+    bool insert_to_head; ///< Whether insertion is done to the head.
+    bool traverse_from_head; ///< Whether traversal is done from the head.
+} archi_list_container_data_t;
 
 #endif // _ARCHI_UTIL_LIST_TYP_H_
 
