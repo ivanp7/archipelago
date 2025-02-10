@@ -48,12 +48,9 @@ archi_list_insert_sublist(
     if (list == sublist)
         return ARCHI_ERROR_MISUSE;
 
-    archi_list_node_t *list_head = list->head;
-    archi_list_node_t *list_tail = list->tail;
-
-    if ((list_head == NULL) && (list_tail == NULL))
+    if ((list->head == NULL) && (list->tail == NULL))
     {
-        if ((where_fn == NULL) || (where_fn(NULL, NULL, where_fn_data) == 0))
+        if ((where_fn == NULL) || (where_fn(NULL, NULL, 0, true, where_fn_data) == 0))
         {
             *list = *sublist;
             return 0;
@@ -65,24 +62,24 @@ archi_list_insert_sublist(
     archi_list_node_t *node_prev, *node_next;
     if (start_from_head)
     {
-        if (list_head == NULL)
+        if (list->head == NULL)
             return ARCHI_ERROR_MISUSE;
 
-        node_prev = list_head->prev;
-        node_next = list_head;
+        node_prev = list->head->prev;
+        node_next = list->head;
     }
     else
     {
-        if (list_tail == NULL)
+        if (list->tail == NULL)
             return ARCHI_ERROR_MISUSE;
 
-        node_prev = list_tail;
-        node_next = list_tail->next;
+        node_prev = list->tail;
+        node_next = list->tail->next;
     }
 
     archi_status_t code;
 
-    for (;;) // whole list
+    for (size_t position = 0;; position++) // whole list
     {
         if (where_fn != NULL)
         {
@@ -90,13 +87,19 @@ archi_list_insert_sublist(
             archi_list_node_t *next = node_next;
 
             // Hide nodes beyond the list borders
-            if ((list_head != NULL) && (node_next == list_head))
+            if ((list->head != NULL) && (node_next == list->head))
                 prev = NULL;
 
-            if ((list_tail != NULL) && (node_prev == list_tail))
+            if ((list->tail != NULL) && (node_prev == list->tail))
                 next = NULL;
 
-            code = where_fn(prev, next, where_fn_data);
+            bool is_last;
+            if (start_from_head)
+                is_last = (next == NULL);
+            else
+                is_last = (prev == NULL);
+
+            code = where_fn(prev, next, position, is_last, where_fn_data);
         }
         else
             code = 0;
@@ -117,10 +120,10 @@ archi_list_insert_sublist(
                 node_next->prev = sublist->tail;
 
             // Update list end pointers
-            if ((list_head != NULL) && (node_next == list_head)) // regardless of node_prev value
+            if ((list->head != NULL) && (node_next == list->head)) // regardless of node_prev value
                 list->head = sublist->head;
 
-            if ((list_tail != NULL) && (node_prev == list_tail)) // regardless of node_next value
+            if ((list->tail != NULL) && (node_prev == list->tail)) // regardless of node_next value
                 list->tail = sublist->tail;
 
             break;
@@ -129,7 +132,7 @@ archi_list_insert_sublist(
 
         if (start_from_head)
         {
-            if ((node_next == NULL) || ((list_tail != NULL) && (node_prev == list_tail)))
+            if ((node_next == NULL) || ((list->tail != NULL) && (node_prev == list->tail)))
             {
                 code = 1;
                 break;
@@ -140,7 +143,7 @@ archi_list_insert_sublist(
         }
         else
         {
-            if ((node_prev == NULL) || ((list_head != NULL) && (node_next == list_head)))
+            if ((node_prev == NULL) || ((list->head != NULL) && (node_next == list->head)))
             {
                 code = 1;
                 break;
@@ -249,18 +252,25 @@ archi_list_remove_nodes(
 
     archi_status_t code;
 
-    for (;;) // whole list
+    for (size_t position = 0;; position++) // whole list
     {
         archi_list_node_t *node_prev = node->prev;
         archi_list_node_t *node_next = node->next;
 
         bool is_head = (node == list->head);
         bool is_tail = (node == list->tail);
+        {
+            bool is_last;
+            if (start_from_head)
+                is_last = (node_next == NULL) || (node_next == list->head);
+            else
+                is_last = (node_prev == NULL) || (node_prev == list->tail);
 
-        if (which_fn != NULL)
-            code = which_fn(node, is_head, is_tail, which_fn_data);
-        else
-            code = 0;
+            if (which_fn != NULL)
+                code = which_fn(node, position, is_last, which_fn_data);
+            else
+                code = 0;
+        }
 
         if (code < 0) // stop now
             break;
@@ -271,7 +281,7 @@ archi_list_remove_nodes(
             // Free node memory if needed
             if (free_fn != NULL)
             {
-                code = free_fn(node, free_fn_data);
+                code = free_fn(node, position, free_fn_data);
 
                 if (code > 0)
                     code = ARCHI_ERROR_UNKNOWN;
@@ -300,16 +310,17 @@ archi_list_remove_nodes(
         }
         // else proceed
 
+        if (limit && (counter == limit))
+        {
+            code = 1;
+            break;
+        }
+
         if (start_from_head)
         {
-            if (is_tail)
+            if (is_tail || (node_next == NULL))
             {
                 code = 0;
-                break;
-            }
-            else if (node_next == NULL)
-            {
-                code = 1;
                 break;
             }
 
@@ -317,24 +328,13 @@ archi_list_remove_nodes(
         }
         else
         {
-            if (is_head)
+            if (is_head || (node_prev == NULL))
             {
                 code = 0;
                 break;
             }
-            else if (node_prev == NULL)
-            {
-                code = 1;
-                break;
-            }
 
             node = node_prev;
-        }
-
-        if (limit && (counter == limit))
-        {
-            code = 1;
-            break;
         }
     }
 
@@ -373,23 +373,30 @@ archi_list_traverse(
             return ARCHI_ERROR_MISUSE;
     }
 
-    archi_list_node_t *list_head = list->head;
-    archi_list_node_t *list_tail = list->tail;
-
-    archi_list_node_t *node = start_from_head ? list_head : list_tail;
+    archi_list_node_t *node = start_from_head ? list->head : list->tail;
     size_t counter = 0;
 
     archi_status_t code;
 
-    for (;;) // whole list
+    for (size_t position = 0;; position++) // whole list
     {
         bool is_head = (node == list->head);
         bool is_tail = (node == list->tail);
+        {
+            archi_list_node_t *node_prev = node->prev;
+            archi_list_node_t *node_next = node->next;
 
-        if (which_fn != NULL)
-            code = which_fn(node, is_head, is_tail, which_fn_data);
-        else
-            code = 0;
+            bool is_last;
+            if (start_from_head)
+                is_last = (node_next == NULL) || (node_next == list->head);
+            else
+                is_last = (node_prev == NULL) || (node_prev == list->tail);
+
+            if (which_fn != NULL)
+                code = which_fn(node, position, is_last, which_fn_data);
+            else
+                code = 0;
+        }
 
         if (code < 0) // stop now
             break;
@@ -398,7 +405,7 @@ archi_list_traverse(
             // Process node if needed
             if (act_fn != NULL)
             {
-                code = act_fn(node, act_fn_data);
+                code = act_fn(node, position, act_fn_data);
 
                 if (code > 0)
                     code = ARCHI_ERROR_UNKNOWN;
@@ -409,16 +416,17 @@ archi_list_traverse(
         }
         // else proceed
 
+        if (limit && (counter == limit))
+        {
+            code = 1;
+            break;
+        }
+
         if (start_from_head)
         {
-            if (is_tail)
+            if (is_tail || (node->next == NULL))
             {
                 code = 0;
-                break;
-            }
-            else if (node->next == NULL)
-            {
-                code = 1;
                 break;
             }
 
@@ -426,24 +434,13 @@ archi_list_traverse(
         }
         else
         {
-            if (is_head)
+            if (is_head || (node->prev == NULL))
             {
                 code = 0;
                 break;
             }
-            else if (node->prev == NULL)
-            {
-                code = 1;
-                break;
-            }
 
             node = node->prev;
-        }
-
-        if (limit && (counter == limit))
-        {
-            code = 1;
-            break;
         }
     }
 
@@ -455,21 +452,50 @@ archi_list_traverse(
 
 /*****************************************************************************/
 
-ARCHI_LIST_NODE_FUNC(archi_list_node_func_select_by_name)
+ARCHI_LIST_LINK_FUNC(archi_list_link_func_select_every_nth)
 {
-    (void) is_head;
-    (void) is_tail;
+    (void) prev;
+    (void) next;
+    (void) is_last;
 
-    if ((node == NULL) || (data == NULL))
+    if (data == NULL)
         return ARCHI_ERROR_MISUSE;
-    else if (strcmp(((const archi_list_node_named_t*)node)->name, data) == 0)
-        return 0; // select
-    else
-        return 1; // skip
+
+    size_t nth = *(size_t*)data;
+
+    return (position + 1) % (nth + 1) != 0;
 }
 
-ARCHI_LIST_ACT_FUNC(archi_list_act_func_copy_node)
+ARCHI_LIST_NODE_FUNC(archi_list_node_func_select_every_nth)
 {
+    (void) node;
+    (void) is_last;
+
+    if (data == NULL)
+        return ARCHI_ERROR_MISUSE;
+
+    size_t nth = *(size_t*)data;
+
+    return (position + 1) % (nth + 1) != 0;
+}
+
+ARCHI_LIST_NODE_FUNC(archi_list_node_func_select_by_name)
+{
+    (void) position;
+    (void) is_last;
+
+    const archi_list_node_named_t* nnode = (const archi_list_node_named_t*)node;
+
+    if ((nnode->name == NULL) || (data == NULL))
+        return ARCHI_ERROR_MISUSE;
+
+    return strcmp(nnode->name, data) != 0;
+}
+
+ARCHI_LIST_ACT_FUNC(archi_list_act_func_extract_node)
+{
+    (void) position;
+
     if (data == NULL)
         return ARCHI_ERROR_MISUSE;
 
@@ -481,6 +507,7 @@ ARCHI_LIST_ACT_FUNC(archi_list_act_func_copy_node)
 
 ARCHI_LIST_ACT_FUNC(archi_list_act_func_free)
 {
+    (void) position;
     (void) data;
 
     free(node);
@@ -490,6 +517,7 @@ ARCHI_LIST_ACT_FUNC(archi_list_act_func_free)
 
 ARCHI_LIST_ACT_FUNC(archi_list_act_func_free_named)
 {
+    (void) position;
     (void) data;
 
     if (node != NULL)
@@ -548,7 +576,7 @@ ARCHI_CONTAINER_INSERT_FUNC(archi_list_container_insert)
             NULL, NULL, list_data->insert_to_head);
     if (code != 0)
     {
-        archi_list_act_func_free_named((archi_list_node_t*)node, NULL);
+        archi_list_act_func_free_named((archi_list_node_t*)node, 0, NULL);
         return code;
     }
 
@@ -568,18 +596,23 @@ ARCHI_CONTAINER_REMOVE_FUNC(archi_list_container_remove)
     archi_status_t code;
 
     code = archi_list_traverse(&list_data->list,
-            archi_list_node_func_select_by_name, (void*)key, archi_list_act_func_copy_node, &node,
+            archi_list_node_func_select_by_name, (void*)key, archi_list_act_func_extract_node, &node,
             list_data->traverse_from_head, 1, &num_counted);
 
-    if (code != 0)
+    if (code != 1)
+    {
+        if (code == 0)
+            return 1;
+
         return code;
+    }
     else if (num_counted != 1)
         return 1; // not found
 
     if (!archi_list_cut_node(&list_data->list, (archi_list_node_t*)node))
         return ARCHI_ERROR_UNKNOWN; // this should not happen
 
-    archi_list_act_func_free_named((archi_list_node_t*)node, NULL);
+    archi_list_act_func_free_named((archi_list_node_t*)node, 0, NULL);
 
     if (element != NULL)
         *element = node->value.ptr;
@@ -600,11 +633,16 @@ ARCHI_CONTAINER_EXTRACT_FUNC(archi_list_container_extract)
     archi_status_t code;
 
     code = archi_list_traverse(&list_data->list,
-            archi_list_node_func_select_by_name, (void*)key, archi_list_act_func_copy_node, &node,
+            archi_list_node_func_select_by_name, (void*)key, archi_list_act_func_extract_node, &node,
             list_data->traverse_from_head, 1, &num_counted);
 
-    if (code != 0)
+    if (code != 1)
+    {
+        if (code == 0)
+            return 1;
+
         return code;
+    }
     else if (num_counted != 1)
         return 1; // not found
 
@@ -622,6 +660,8 @@ struct archi_list_container_traverse_act_func_data {
 static
 ARCHI_LIST_ACT_FUNC(archi_list_container_traverse_act_func)
 {
+    (void) position;
+
     struct archi_list_container_traverse_act_func_data *data_ptr = data;
     const archi_list_node_named_value_t *node_ptr = (const archi_list_node_named_value_t*)node;
 

@@ -149,6 +149,19 @@ archi_list_traverse(
 /*****************************************************************************/
 
 /**
+ * @brief Linked list link function -- select every nth link.
+ *
+ * @return 0 if the current link matches, otherwise 1.
+ */
+ARCHI_LIST_LINK_FUNC(archi_list_link_func_select_every_nth);
+/**
+ * @brief Linked list node function -- select every nth node.
+ *
+ * @return 0 if the current node matches, otherwise 1.
+ */
+ARCHI_LIST_NODE_FUNC(archi_list_node_func_select_every_nth);
+
+/**
  * @brief Linked list node function -- select named nodes with the specified name.
  *
  * @return 0 if the current node matches, otherwise 1.
@@ -158,7 +171,7 @@ ARCHI_LIST_NODE_FUNC(archi_list_node_func_select_by_name);
 /**
  * @brief Linked list action function -- copy node pointer.
  */
-ARCHI_LIST_ACT_FUNC(archi_list_act_func_copy_node);
+ARCHI_LIST_ACT_FUNC(archi_list_act_func_extract_node);
 
 /**
  * @brief Linked list action function -- free base node memory.

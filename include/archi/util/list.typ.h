@@ -45,6 +45,8 @@ struct archi_list_node;
 #define ARCHI_LIST_LINK_FUNC(name) archi_status_t name( \
         const struct archi_list_node *prev, /* Previous node. */ \
         const struct archi_list_node *next, /* Next node. */ \
+        size_t position, /* Current link position counter. */ \
+        bool is_last, /* Whether the current link is the last. */ \
         void *data) /* Function data. */
 
 /**
@@ -62,8 +64,8 @@ typedef ARCHI_LIST_LINK_FUNC((*archi_list_link_func_t));
  */
 #define ARCHI_LIST_NODE_FUNC(name) archi_status_t name( \
         const struct archi_list_node *node, /* Current node. */ \
-        bool is_head, /* Whether the current node is the list head. */ \
-        bool is_tail, /* Whether the current node is the list tail. */ \
+        size_t position, /* Current node position counter. */ \
+        bool is_last, /* Whether the current node is the last. */ \
         void *data) /* Function data. */
 
 /**
@@ -80,6 +82,7 @@ typedef ARCHI_LIST_NODE_FUNC((*archi_list_node_func_t));
  */
 #define ARCHI_LIST_ACT_FUNC(name) archi_status_t name( \
         struct archi_list_node *node, /* Current node. */ \
+        size_t position, /* Current node position counter. */ \
         void *data) /* Function data. */
 
 /**
