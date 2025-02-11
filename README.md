@@ -4,14 +4,16 @@ The executable:
 
 1. obtains an application configuration from attached shared memory;
 2. loads shared libraries providing plugins as specified in the configuration;
-3. performs initialization instructions (creating contexts) as specified in the configuration;
+3. performs initialization instructions (creates contexts) as specified in the configuration;
 4. executes a finite state machine with the specified entry state and state transition;
-5. finalizes the application (destroying contexts).
+5. finalizes the application (destroys contexts).
 
 Application plugins serve to provide contexts of different kind
 to other plugins which implement application logic.
 The application does the initialization and finalization of resources
 for the user-written plugins, which don't need to bother to do it manually.
+This allows to separate resource consumers from producers.
+
 All contexts are created, shared around, and prepared according to the provided configuration
 during the initialization phase. After initialization phase comes execution phase,
 during which a finite state machine is run as described below.
@@ -30,47 +32,56 @@ Archipelago library provides the following modules:
     - `threads`: creating threads for concurrent processing.
 
 This application was originally designed as a part of [Rayway](https://github.com/ivanp7/rayway)
-engine to implement a (dynamic) rendering pipeline that can be configured at runtime.
+engine to implement a command pipeline.
 
-## Application plugin interface
+## Application context interface
 
-A plugin is a shared library which implements some of the following functions,
-which are provided via a special virtual table structure:
+Context interfaces are like very limited dynamic classes which produce context objects.
 
-* `help(topic) -> status`: displays plugin help on the specified `topic`;
-* `init(config) -> context`: creates and initializes new context according to `config`;
+A context interface is a structure of pointers to the following functions:
+
+* `init(context_ptr, config) -> status`: creates and initializes new context according to `config`, and stores the pointer to `*context_ptr`;
 * `final(context)`: finalizes and destroys `context` previously created by `init()`;
 * `set(context, slot, value) -> status`: accepts `value` for internal use by `context`, the meaning is specified by `slot`;
 * `get(context, slot, value) -> status`: retrieves data provided by `context` for `slot` to a location pointed to by `value`;
-* `act(context, action, config) -> status`: invokes an internal `action` for `context` according to `config`.
+* `act(context, action, params) -> status`: invokes an internal `action` for `context` with the specified `params`.
 
-A plugin can provide multiple virtual tables.
-
-This interface allows to separate resource consumers from producers, connecting them only via an application configuration.
+A plugin library can provide multiple context interfaces.
 
 ## Application configuration
 
-An application is configured by providing a special structure via a shared memory.
-This structure specifies the list of plugins (shared libraries) to load,
-and the list of initialization instructions. There are the following types of instructions:
+An application configuration is a container of steps, which describes what contexts to initialize and how,
+share pointers between contexts, invoke actions on contexts, etc.
 
-* `init`: create a context and add it to the list of application contexts;
-* `final`: destroy a context and remove it from the list of application contexts;
-* `assign`: call a setter function and pass another context or output of a getter function;
-* `act`: call an actor function.
+Thus a container of contexts is formed, which is called an application.
+
+A configuration step is a structure containing a type id and type-specific data.
+There are the several types of configuration steps:
+
+* `init`: create a context and add it to the container of application contexts;
+* `final`: destroy a context and remove it from the container of application contexts;
+* `set`: call a setter function on a context;
+* `assign`: call a setter function on a context and pass another context or output of a getter function to it;
+* `act`: call an actor function on a context.
 
 ## Finite state machine
 
 ### State
 
-A state of a finite state machine is a pair of a function and a `void*` pointer to data
-that will be provided to the function during the call.
-State functions perform logically cohesive chunks of application logic.
+A state of a finite state machine is a triple of:
+
+1. a state function;
+2. a `void*` pointer to state data;
+3. a `void*` pointer to state metadata.
+
+State functions return nothing and accept a pointer to finite state machine context (`fsm`).
+State functions have access to state data & metadata via the FSM context pointer,
+and perform logically cohesive chunks of application logic.
 
 During execution, a finite state machine maintains a stack of states.
 State functions can push and pop states while doing state transition.
 
-State function initiates state transition by returning or by calling `proceed()` function.
+State function initiates state transition by returning or by calling `proceed()`.
 `proceed()` accepts the following parameters:
 
 1. finite state machine context;
@@ -78,35 +89,34 @@ State function initiates state transition by returning or by calling `proceed()`
 3. number of states to push from the stack;
 4. array of states to push.
 
-`proceed()` can be invoked not only from the state function itself, but from any nested call depth.
-`proceed()` unwinds the call stack up to the state function,
-eliminating the need of returning from multiple calls.
-
-State function returns void and accepts a finite state machine context pointer (`fsm`).
-State data pointer can be fetched from a finite state machine context.
+`proceed()` can be invoked not only from the state function itself, but from any nested function calls.
+`proceed()` unwinds the call stack up to the state function, eliminating the need of returning from multiple calls.
 
 ### Transition
 
-A transition (pair of a function and a `void*` pointer to data)
-can be specified optionally for a finite state machine.
+A transition of a finite state machine is a pair of:
 
-Transition is useful for debugging and profiling purposes.
-It stays the same during the whole finite state machine execution
-and cannot be changed, and is encapsulated from state functions.
+1. a transition function;
+2. a `void*` pointer to transition data.
+
+Transition functions return nothing and accept the following parameters:
+
+* previous state (`prev_state`, input passed by value);
+* next state (`next_state`, input passed by value);
+* transitional state (`trans_state`, output passed by pointer);
+* status code (`code`, input/output passed by pointer);
+* pointer to transition function data (`data`).
 
 Transition function is called every time the state changes,
 before the entry state (previous state is null),
 and after the exit state (next state is null).
-Transition function can provide a translational state as output,
-which is to be inserted before the next state.
 
-A transition function returns void and accepts the following parameters:
+Transition function can provide a state as output (a transitional state),
+which is pushed to the stack top and executed before the next state.
 
-* previous state (`prev_state`, input passed by value);
-* next state (`next_state`, input passed by value);
-* translational state (`trans_state`, output passed by pointer);
-* status code (`code`, input/output passed by pointer);
-* pointer to transition function data (`data`).
+Transition is useful for debugging and profiling purposes.
+It is encapsulated from state functions -- they don't have access to the active transition.
+It stays the same during the whole finite state machine execution and cannot be changed.
 
 # Examples
 
@@ -114,8 +124,7 @@ Examples of plugins can be found in the `plugin` subdirectory.
 
 Other projects using Archipelago:
 
-* [still-alive](https://github.com/ivanp7/still-alive) -- built as a plugin.
-* [port](https://github.com/ivanp7/port) -- provides plugin for execution of kernel functions.
+* [port](https://github.com/ivanp7/port) -- provides context interfaces for execution of kernel functions.
 
 # Documentation
 
@@ -124,7 +133,7 @@ Doxygen documentation is available at `docs` subdirectory. To build it, run `mak
 # How to build
 
 0. change directory to the repository root;
-1. execute `configure.sh` (providing optional environment variables) to generate `build.ninja`;
+1. execute `configure.py` (providing optional environment variables) to generate `build.ninja`;
 2. execute `ninja` to build.
 
 # Build dependencies
