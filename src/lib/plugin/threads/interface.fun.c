@@ -24,17 +24,19 @@
  */
 
 #include "archi/plugin/threads/interface.fun.h"
+#include "archi/util/container.fun.h"
 #include "archi/util/error.def.h"
 
 #include <threads.h>
 #include <stdatomic.h>
 #include <stdlib.h>
+#include <string.h> // for strcmp(), memcpy()
 #include <assert.h>
 
 struct archi_threads_context {
     struct {
         thrd_t *threads;
-        size_t num_threads;
+        archi_threads_config_t config;
 
         atomic_flag busy;
 
@@ -43,7 +45,6 @@ struct archi_threads_context {
         bool ping_sense;
         bool pong_sense;
 
-        bool use_ping_cnd;
         cnd_t ping_cnd;
         mtx_t ping_mtx;
 
@@ -54,9 +55,7 @@ struct archi_threads_context {
     struct {
         archi_threads_job_t job;
         archi_threads_callback_t callback;
-
-        size_t batch_size;
-        bool use_pong_cnd;
+        archi_threads_exec_config_t config;
 
         atomic_uint done_tasks;
         atomic_ushort thread_counter;
@@ -88,8 +87,8 @@ archi_thread(
         free(thread_arg);
     }
 
-    size_t thread_counter_last = context->persistent.num_threads - 1;
-    bool use_ping_cnd = context->persistent.use_ping_cnd;
+    size_t thread_counter_last = context->persistent.config.num_threads - 1;
+    bool use_ping_cnd = !context->persistent.config.busy_wait;
 
     bool ping_sense = false, pong_sense = false;
 
@@ -136,7 +135,7 @@ archi_thread(
 
         // Copy the current job
         archi_threads_job_t job = context->current.job;
-        size_t batch_size = context->current.batch_size;
+        size_t batch_size = context->current.config.batch_size;
 
         // Acquire first task
         size_t task_idx = atomic_fetch_add_explicit(
@@ -172,7 +171,7 @@ archi_thread(
             if (context->current.callback.function != NULL)
                 context->current.callback.function(
                         context->current.callback.data, job.num_tasks, thread_idx);
-            else if (context->current.use_pong_cnd)
+            else if (!context->current.config.busy_wait)
             {
                 {
 #ifndef NDEBUG
@@ -218,13 +217,12 @@ archi_threads_start(
     }
 
     *context = (struct archi_threads_context){.persistent = {
-        .num_threads = config.num_threads,
+        .config = config,
         .busy = ATOMIC_FLAG_INIT,
-        .use_ping_cnd = !config.busy_wait,
     }};
 
     // Create mutexes and condition variables
-    if (context->persistent.use_ping_cnd)
+    if (!config.busy_wait)
     {
         int res;
 
@@ -322,7 +320,7 @@ archi_threads_start(
 failure:
     if (context != NULL)
     {
-        context->persistent.num_threads = thread_idx; // number of created threads
+        context->persistent.config.num_threads = thread_idx; // number of created threads
         archi_threads_stop(context);
     }
 
@@ -345,7 +343,9 @@ archi_threads_stop(
     atomic_store_explicit(&context->persistent.ping_flag,
             !context->persistent.ping_sense, memory_order_release);
 
-    if (context->persistent.use_ping_cnd)
+    bool use_ping_cnd = !context->persistent.config.busy_wait;
+
+    if (use_ping_cnd)
     {
         {
 #ifndef NDEBUG
@@ -365,13 +365,13 @@ archi_threads_stop(
     }
 
     // Join threads
-    for (size_t i = 0; i < context->persistent.num_threads; i++)
+    for (size_t i = 0; i < context->persistent.config.num_threads; i++)
         thrd_join(context->persistent.threads[i], (int*)NULL);
 
     // Destroy mutexes, condition variables, and free memory
     free(context->persistent.threads);
 
-    if (context->persistent.use_ping_cnd)
+    if (use_ping_cnd)
     {
         cnd_destroy(&context->persistent.ping_cnd);
         mtx_destroy(&context->persistent.ping_mtx);
@@ -391,9 +391,7 @@ archi_threads_execute(
 
         archi_threads_job_t job,
         archi_threads_callback_t callback,
-
-        size_t batch_size,
-        bool busy_wait)
+        archi_threads_exec_config_t config)
 {
     if ((context == NULL) || (job.function == NULL))
         return ARCHI_ERROR_MISUSE;
@@ -401,20 +399,19 @@ archi_threads_execute(
     if (job.num_tasks == 0)
         return 0;
 
-    if (context->persistent.num_threads > 0)
+    if (context->persistent.config.num_threads > 0)
     {
         // Check if threads are busy, and set the flag if not
         if (atomic_flag_test_and_set_explicit(&context->persistent.busy, memory_order_acquire))
             return 1;
 
         // Assign the job
-        if (batch_size == 0) // automatic batch size
-            batch_size = (job.num_tasks - 1) / context->persistent.num_threads + 1;
+        if (config.batch_size == 0) // automatic batch size
+            config.batch_size = (job.num_tasks - 1) / context->persistent.config.num_threads + 1;
 
         context->current.job = job;
         context->current.callback = callback;
-        context->current.batch_size = batch_size;
-        context->current.use_pong_cnd = !busy_wait,
+        context->current.config = config;
 
         // Initialize counters and flags
         context->current.done_tasks = 0;
@@ -428,7 +425,7 @@ archi_threads_execute(
         // Wake slave threads
         atomic_store_explicit(&context->persistent.ping_flag, ping_sense, memory_order_release);
 
-        if (context->persistent.use_ping_cnd)
+        if (!context->persistent.config.busy_wait)
         {
             {
 #ifndef NDEBUG
@@ -449,7 +446,7 @@ archi_threads_execute(
 
         if (callback.function == NULL)
         {
-            if (context->current.use_pong_cnd)
+            if (!config.busy_wait)
             {
 #ifndef NDEBUG
                 int res =
@@ -462,7 +459,7 @@ archi_threads_execute(
             while (atomic_load_explicit(&context->persistent.pong_flag,
                         memory_order_acquire) != pong_sense)
             {
-                if (context->current.use_pong_cnd)
+                if (!config.busy_wait)
                 {
 #ifndef NDEBUG
                     int res =
@@ -473,7 +470,7 @@ archi_threads_execute(
                 }
             }
 
-            if (context->current.use_pong_cnd)
+            if (!config.busy_wait)
             {
 #ifndef NDEBUG
                 int res =
@@ -495,17 +492,95 @@ archi_threads_execute(
     return 0;
 }
 
-size_t
-archi_threads_number(
+archi_threads_config_t
+archi_threads_config(
         const struct archi_threads_context *context)
 {
-    return (context != NULL) ? context->persistent.num_threads : 0;
+    if (context == NULL)
+        return (archi_threads_config_t){0};
+
+    return context->persistent.config;
 }
 
-bool
-archi_threads_busy_wait(
-        const struct archi_threads_context *context)
+/*****************************************************************************/
+
+static
+ARCHI_CONTAINER_ELEMENT_FUNC(archi_threads_context_init_config)
 {
-    return (context != NULL) ? !context->persistent.use_ping_cnd : false;
+    if ((key == NULL) || (element == NULL) || (data == NULL))
+        return ARCHI_ERROR_MISUSE;
+
+    archi_value_t *value = element;
+    archi_threads_config_t *config = data;
+
+    if (strcmp(key, ARCHI_THREADS_CONFIG_KEY) == 0)
+    {
+        if ((value->type != ARCHI_VALUE_DATA) || (value->ptr == NULL) ||
+                (value->size != sizeof(*config)) || (value->num_of == 0))
+            return ARCHI_ERROR_CONFIG;
+
+        memcpy(config, value->ptr, sizeof(*config));
+        return 0;
+    }
+    else if (strcmp(key, ARCHI_THREADS_CONFIG_KEY_NUM_THREADS) == 0)
+    {
+        if ((value->type != ARCHI_VALUE_UINT) || (value->ptr == NULL) ||
+                (value->size != sizeof(config->num_threads)) || (value->num_of == 0))
+            return ARCHI_ERROR_CONFIG;
+
+        config->num_threads = *(size_t*)value->ptr;
+        return 0;
+    }
+    else if (strcmp(key, ARCHI_THREADS_CONFIG_KEY_BUSY_WAIT) == 0)
+    {
+        switch (value->type)
+        {
+            case ARCHI_VALUE_FALSE:
+                config->busy_wait = false;
+                return 0;
+
+            case ARCHI_VALUE_TRUE:
+                config->busy_wait = true;
+                return 0;
+
+            default:
+                return ARCHI_ERROR_CONFIG;
+        }
+    }
+    else
+        return ARCHI_ERROR_CONFIG;
 }
+
+ARCHI_CONTEXT_INIT_FUNC(archi_threads_context_init)
+{
+    if (context == NULL)
+        return ARCHI_ERROR_MISUSE;
+
+    archi_status_t code;
+
+    archi_threads_config_t threads_config = {0};
+    if (config.data != NULL)
+    {
+        code = archi_container_traverse(config, archi_threads_context_init_config, &threads_config);
+        if (code != 0)
+            return code;
+    }
+
+    struct archi_threads_context *threads_context = archi_threads_start(threads_config, &code);
+    if (code != 0)
+        return code;
+
+    *context = threads_context;
+    return 0;
+}
+
+ARCHI_CONTEXT_FINAL_FUNC(archi_threads_context_final)
+{
+    archi_threads_stop(context);
+}
+
+const archi_context_interface_t archi_threads_context_interface = {
+    .init_fn = archi_threads_context_init,
+    .final_fn = archi_threads_context_final,
+};
 

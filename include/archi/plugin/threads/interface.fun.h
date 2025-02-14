@@ -29,6 +29,7 @@
 
 #include "archi/plugin/threads/interface.typ.h"
 #include "archi/plugin/threads/config.typ.h"
+#include "archi/app/context.typ.h"
 #include "archi/util/status.typ.h"
 
 struct archi_threads_context;
@@ -46,7 +47,8 @@ struct archi_threads_context;
  */
 struct archi_threads_context*
 archi_threads_start(
-        archi_threads_config_t config, ///< [in] Threaded processing configuration.
+        archi_threads_config_t config, ///< [in] Threaded processing context configuration.
+
         archi_status_t *code ///< [out] Status code.
 );
 
@@ -86,30 +88,31 @@ archi_threads_execute(
 
         archi_threads_job_t job, ///< [in] Threaded processing job.
         archi_threads_callback_t callback, ///< [in] Threaded processing completion callback.
-
-        size_t batch_size, ///< [in] Number of tasks done by a thread at a time.
-        bool busy_wait ///< [in] Whether busy-waiting for job completion is enabled.
+        archi_threads_exec_config_t config ///< [in] Threaded processing configuration.
 );
 
 /**
- * @brief Get number of running threads from context.
+ * @brief Get threaded processing context configuration.
  *
- * @return Number of threads.
+ * @return Threaded processing context configuration.
  */
-size_t
-archi_threads_number(
+archi_threads_config_t
+archi_threads_config(
         const struct archi_threads_context *context ///< [in] Threaded processing context.
 );
 
+/*****************************************************************************/
+
+ARCHI_CONTEXT_INIT_FUNC(archi_threads_context_init);   ///< Context initialization function.
+ARCHI_CONTEXT_FINAL_FUNC(archi_threads_context_final); ///< Context finalization function.
+
+extern
+const archi_context_interface_t archi_threads_context_interface; ///< Context interface functions.
+
 /**
- * @brief Check from context whether busy-waiting for a job is enabled.
- *
- * @return True if threads do busy-waiting, false if threads use locks.
+ * @brief Interface alias name.
  */
-bool
-archi_threads_busy_wait(
-        const struct archi_threads_context *context ///< [in] Threaded processing context.
-);
+#define ARCHI_THREADS_CONTEXT_INTERFACE_ALIAS "threads"
 
 #endif // _ARCHI_PLUGIN_THREADS_INTERFACE_FUN_H_
 

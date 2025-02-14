@@ -24,8 +24,8 @@
  */
 
 #pragma once
-#ifndef _ARCHI_PLUGIN_SHARED_LIBRARIES_CONTEXT_FUN_H_
-#define _ARCHI_PLUGIN_SHARED_LIBRARIES_CONTEXT_FUN_H_
+#ifndef _ARCHI_PLUGIN_SHARED_LIBRARIES_INTERFACE_FUN_H_
+#define _ARCHI_PLUGIN_SHARED_LIBRARIES_INTERFACE_FUN_H_
 
 #include "archi/app/context.typ.h"
 
@@ -41,5 +41,5 @@ const archi_context_interface_t archi_shared_library_context_interface; ///< Con
  */
 #define ARCHI_SHARED_LIBRARY_CONTEXT_INTERFACE_ALIAS "shared_library"
 
-#endif // _ARCHI_PLUGIN_SHARED_LIBRARIES_CONTEXT_FUN_H_
+#endif // _ARCHI_PLUGIN_SHARED_LIBRARIES_INTERFACE_FUN_H_
 

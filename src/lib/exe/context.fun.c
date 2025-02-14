@@ -34,10 +34,11 @@
 #include "archi/util/list.fun.h"
 #include "archi/util/os/signal.fun.h"
 
-#include "archi/plugin/files/context.fun.h"
-#include "archi/plugin/shared_memory/context.fun.h"
-#include "archi/plugin/shared_libraries/context.fun.h"
-#include "archi/plugin/threads/context.fun.h"
+#include "archi/plugin/files/interface.fun.h"
+#include "archi/plugin/shared_memory/interface.fun.h"
+#include "archi/plugin/shared_libraries/interface.fun.h"
+#include "archi/plugin/threads/interface.fun.h"
+#include "archi/plugin/threads/queue.fun.h"
 
 #include <string.h>
 
@@ -347,6 +348,8 @@ archi_app_initialize(
     };
 
     // Fill list of context interfaces with built-in plugins
+
+    /*************************************************************************/
     REGISTER_PLUGIN(ARCHI_FILE_CONTEXT_INTERFACE_ALIAS,
             &archi_file_context_interface);
     REGISTER_PLUGIN(ARCHI_SHARED_LIBRARY_CONTEXT_INTERFACE_ALIAS,
@@ -355,6 +358,11 @@ archi_app_initialize(
             &archi_shared_memory_context_interface);
     REGISTER_PLUGIN(ARCHI_SHARED_LIBRARY_CONTEXT_INTERFACE_ALIAS,
             &archi_shared_library_context_interface);
+    REGISTER_PLUGIN(ARCHI_THREADS_CONTEXT_INTERFACE_ALIAS,
+            &archi_threads_context_interface);
+    REGISTER_PLUGIN(ARCHI_QUEUE_CONTEXT_INTERFACE_ALIAS,
+            &archi_queue_context_interface);
+    /*************************************************************************/
 
     // Start signal management
     if (signal_watch_set != NULL)

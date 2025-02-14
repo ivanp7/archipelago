@@ -31,7 +31,7 @@
 #include <stdbool.h>
 
 /**
- * @brief Threaded processing configuration.
+ * @brief Parameters for archi_threads_start().
  */
 typedef struct archi_threads_config {
     size_t num_threads; ///< Number of threads to create.
@@ -52,6 +52,48 @@ typedef struct archi_threads_config {
  * @brief Threaded processing configuration key -- whether to enable busy-waiting for a job.
  */
 #define ARCHI_THREADS_CONFIG_KEY_BUSY_WAIT "busy_wait"
+
+/*****************************************************************************/
+
+/**
+ * @brief Parameters for archi_threads_execute().
+ */
+typedef struct archi_threads_exec_config {
+    size_t batch_size; ///< Number of tasks done by a thread at a time.
+    bool busy_wait;    ///< Whether busy-waiting for job completion is enabled.
+} archi_threads_exec_config_t;
+
+/*****************************************************************************/
+
+/**
+ * @brief Parameters for archi_queue_alloc().
+ */
+typedef struct archi_queue_config {
+    size_t capacity_log2; ///< Log2 of maximum capacity of queue.
+
+    size_t element_alignment_log2; ///< Log2 of queue element alignment in bytes.
+    size_t element_size; ///< Queue element size in bytes.
+} archi_queue_config_t;
+
+/**
+ * @brief Lock-less queue configuration key for the whole configuration structure.
+ */
+#define ARCHI_QUEUE_CONFIG_KEY "config"
+
+/**
+ * @brief Lock-less queue configuration key -- log2 of maximum capacity of queue.
+ */
+#define ARCHI_QUEUE_CONFIG_KEY_CAPACITY_LOG2 "capacity_log2"
+
+/**
+ * @brief Lock-less queue configuration key -- log2 of queue element alignment in bytes.
+ */
+#define ARCHI_QUEUE_CONFIG_KEY_ELEMENT_ALIGNMENT_LOG2 "element_alignment_log2"
+
+/**
+ * @brief Lock-less queue configuration key -- queue element size in bytes.
+ */
+#define ARCHI_QUEUE_CONFIG_KEY_ELEMENT_SIZE "element_size"
 
 #endif // _ARCHI_PLUGIN_THREADS_CONFIG_TYP_H_
 

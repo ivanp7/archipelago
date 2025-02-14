@@ -23,7 +23,7 @@
  * @brief Built-in plugin for loading shared libraries.
  */
 
-#include "archi/plugin/shared_libraries/context.fun.h"
+#include "archi/plugin/shared_libraries/interface.fun.h"
 #include "archi/plugin/shared_libraries/config.typ.h"
 #include "archi/util/os/lib.fun.h"
 #include "archi/util/container.fun.h"
@@ -135,7 +135,10 @@ ARCHI_CONTEXT_GET_FUNC(archi_shared_library_context_get)
         return ARCHI_ERROR_SYMBOL;
 
     *value = (archi_value_t){
-        .ptr = symbol, .size = 0, .num_of = 1, .type = ARCHI_VALUE_DATA,
+        .ptr = symbol,
+        .size = 0,
+        .num_of = 1,
+        .type = ARCHI_VALUE_DATA,
     };
 
     return 0;

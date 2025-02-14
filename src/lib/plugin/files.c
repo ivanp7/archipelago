@@ -23,7 +23,7 @@
  * @brief Built-in plugin for opening files.
  */
 
-#include "archi/plugin/files/context.fun.h"
+#include "archi/plugin/files/interface.fun.h"
 #include "archi/plugin/files/config.typ.h"
 #include "archi/util/container.fun.h"
 #include "archi/util/error.def.h"

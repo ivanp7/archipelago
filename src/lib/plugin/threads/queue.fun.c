@@ -24,10 +24,12 @@
  */
 
 #include "archi/plugin/threads/queue.fun.h"
+#include "archi/util/container.fun.h"
+#include "archi/util/error.def.h"
 
 #include <stdatomic.h>
 #include <stdlib.h> // for aligned_alloc(), malloc(), free()
-#include <string.h> // for memcpy()
+#include <string.h> // for strcmp(), memcpy()
 #include <stdint.h> // for uint_fast*_t
 #include <limits.h> // for CHAR_BIT
 
@@ -57,8 +59,7 @@ struct archi_queue {
         size_t used;
     } element_size;
 
-    archi_queue_count_t mask;
-    unsigned char mask_bits;
+    archi_queue_count_t mask_bits;
 
     archi_queue_atomic_count_t *push_count, *pop_count;
     archi_queue_atomic_count2_t total_push_count, total_pop_count;
@@ -66,27 +67,24 @@ struct archi_queue {
 
 struct archi_queue*
 archi_queue_alloc(
-        size_t element_size,
-        unsigned char element_alignment_log2,
-
-        unsigned char capacity_log2)
+        archi_queue_config_t config)
 {
-    if (capacity_log2 > sizeof(archi_queue_count_t) * CHAR_BIT)
+    if (config.capacity_log2 > sizeof(archi_queue_count_t) * CHAR_BIT)
         return NULL;
 
-    if ((element_size > 0) && (element_alignment_log2 >= sizeof(size_t) * CHAR_BIT))
+    if ((config.element_size > 0) && (config.element_alignment_log2 >= sizeof(size_t) * CHAR_BIT))
         return NULL;
 
     struct archi_queue *queue = malloc(sizeof(*queue));
     if (queue == NULL)
         return NULL;
 
-    size_t capacity = (size_t)1 << capacity_log2;
+    size_t capacity = (size_t)1 << config.capacity_log2;
 
-    if (element_size > 0)
+    if (config.element_size > 0)
     {
-        size_t element_alignment = (size_t)1 << element_alignment_log2;
-        size_t element_size_full = (element_size + (element_alignment - 1)) & ~(element_alignment - 1);
+        size_t element_alignment = (size_t)1 << config.element_alignment_log2;
+        size_t element_size_full = (config.element_size + (element_alignment - 1)) & ~(element_alignment - 1);
 
         size_t memory_size = element_size_full * capacity;
         if (memory_size / capacity != element_size_full) // overflow
@@ -103,7 +101,7 @@ archi_queue_alloc(
         }
 
         queue->element_size.full = element_size_full;
-        queue->element_size.used = element_size;
+        queue->element_size.used = config.element_size;
     }
     else
     {
@@ -112,8 +110,7 @@ archi_queue_alloc(
         queue->element_size.used = 0;
     }
 
-    queue->mask = capacity - 1;
-    queue->mask_bits = capacity_log2;
+    queue->mask_bits = config.capacity_log2;
 
     {
         size_t memory_size = sizeof(*queue->push_count) * capacity;
@@ -177,9 +174,8 @@ archi_queue_push(
     if (queue == NULL)
         return false;
 
-    archi_queue_count_t mask = queue->mask;
-
-    unsigned char mask_bits = queue->mask_bits;
+    archi_queue_count_t mask_bits = queue->mask_bits;
+    archi_queue_count_t mask = ((archi_queue_count_t)1 << mask_bits) - 1;
 
     archi_queue_count2_t total_push_count = atomic_load_explicit(&queue->total_push_count, memory_order_relaxed);
 
@@ -226,9 +222,8 @@ archi_queue_pop(
     if (queue == NULL)
         return false;
 
-    archi_queue_count_t mask = queue->mask;
-
-    unsigned char mask_bits = queue->mask_bits;
+    archi_queue_count_t mask_bits = queue->mask_bits;
+    archi_queue_count_t mask = ((archi_queue_count_t)1 << mask_bits) - 1;
 
     archi_queue_count2_t total_pop_count = atomic_load_explicit(&queue->total_pop_count, memory_order_relaxed);
 
@@ -269,7 +264,7 @@ archi_queue_capacity(
     if (queue == NULL)
         return 0;
 
-    return (size_t)queue->mask + 1;
+    return (size_t)1 << queue->mask_bits;
 }
 
 size_t
@@ -281,4 +276,88 @@ archi_queue_element_size(
 
     return queue->element_size.used;
 }
+
+/*****************************************************************************/
+
+static
+ARCHI_CONTAINER_ELEMENT_FUNC(archi_queue_context_init_config)
+{
+    if ((key == NULL) || (element == NULL) || (data == NULL))
+        return ARCHI_ERROR_MISUSE;
+
+    archi_value_t *value = element;
+    archi_queue_config_t *config = data;
+
+    if (strcmp(key, ARCHI_QUEUE_CONFIG_KEY) == 0)
+    {
+        if ((value->type != ARCHI_VALUE_DATA) || (value->ptr == NULL) ||
+                (value->size != sizeof(*config)) || (value->num_of == 0))
+            return ARCHI_ERROR_CONFIG;
+
+        memcpy(config, value->ptr, sizeof(*config));
+        return 0;
+    }
+    else if (strcmp(key, ARCHI_QUEUE_CONFIG_KEY_CAPACITY_LOG2) == 0)
+    {
+        if ((value->type != ARCHI_VALUE_UINT) || (value->ptr == NULL) ||
+                (value->size != sizeof(config->capacity_log2)) || (value->num_of == 0))
+            return ARCHI_ERROR_CONFIG;
+
+        config->capacity_log2 = *(size_t*)value->ptr;
+        return 0;
+    }
+    else if (strcmp(key, ARCHI_QUEUE_CONFIG_KEY_ELEMENT_ALIGNMENT_LOG2) == 0)
+    {
+        if ((value->type != ARCHI_VALUE_UINT) || (value->ptr == NULL) ||
+                (value->size != sizeof(config->element_alignment_log2)) || (value->num_of == 0))
+            return ARCHI_ERROR_CONFIG;
+
+        config->element_alignment_log2 = *(size_t*)value->ptr;
+        return 0;
+    }
+    else if (strcmp(key, ARCHI_QUEUE_CONFIG_KEY_ELEMENT_SIZE) == 0)
+    {
+        if ((value->type != ARCHI_VALUE_UINT) || (value->ptr == NULL) ||
+                (value->size != sizeof(config->element_size)) || (value->num_of == 0))
+            return ARCHI_ERROR_CONFIG;
+
+        config->element_size = *(size_t*)value->ptr;
+        return 0;
+    }
+    else
+        return ARCHI_ERROR_CONFIG;
+}
+
+ARCHI_CONTEXT_INIT_FUNC(archi_queue_context_init)
+{
+    if (context == NULL)
+        return ARCHI_ERROR_MISUSE;
+
+    archi_status_t code;
+
+    archi_queue_config_t queue_config = {0};
+    if (config.data != NULL)
+    {
+        code = archi_container_traverse(config, archi_queue_context_init_config, &queue_config);
+        if (code != 0)
+            return code;
+    }
+
+    struct archi_queue *queue_context = archi_queue_alloc(queue_config);
+    if (queue_context == NULL)
+        return ARCHI_ERROR_ALLOC;
+
+    *context = queue_context;
+    return 0;
+}
+
+ARCHI_CONTEXT_FINAL_FUNC(archi_queue_context_final)
+{
+    archi_queue_free(context);
+}
+
+const archi_context_interface_t archi_queue_context_interface = {
+    .init_fn = archi_queue_context_init,
+    .final_fn = archi_queue_context_final,
+};
 

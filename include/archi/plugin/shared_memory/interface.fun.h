@@ -24,21 +24,21 @@
  */
 
 #pragma once
-#ifndef _ARCHI_PLUGIN_THREADS_CONTEXT_FUN_H_
-#define _ARCHI_PLUGIN_THREADS_CONTEXT_FUN_H_
+#ifndef _ARCHI_PLUGIN_SHARED_MEMORY_INTERFACE_FUN_H_
+#define _ARCHI_PLUGIN_SHARED_MEMORY_INTERFACE_FUN_H_
 
 #include "archi/app/context.typ.h"
 
-ARCHI_CONTEXT_INIT_FUNC(archi_threads_context_init);   ///< Context initialization function.
-ARCHI_CONTEXT_FINAL_FUNC(archi_threads_context_final); ///< Context finalization function.
+ARCHI_CONTEXT_INIT_FUNC(archi_shared_memory_context_init);   ///< Context initialization function.
+ARCHI_CONTEXT_FINAL_FUNC(archi_shared_memory_context_final); ///< Context finalization function.
 
 extern
-const archi_context_interface_t archi_threads_context_interface; ///< Context interface functions.
+const archi_context_interface_t archi_shared_memory_context_interface; ///< Context interface functions.
 
 /**
  * @brief Plugin interface alias name.
  */
-#define ARCHI_THREADS_CONTEXT_INTERFACE_ALIAS "threads"
+#define ARCHI_SHARED_MEMORY_CONTEXT_INTERFACE_ALIAS "shared_memory"
 
-#endif // _ARCHI_PLUGIN_THREADS_CONTEXT_FUN_H_
+#endif // _ARCHI_PLUGIN_SHARED_MEMORY_INTERFACE_FUN_H_
 

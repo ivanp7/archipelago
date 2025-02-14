@@ -28,6 +28,7 @@
 #define _ARCHI_UTIL_VALUE_TYP_H_
 
 #include <stddef.h>
+#include <stdbool.h>
 
 /**
  * @brief Generic function pointer type.
@@ -69,6 +70,7 @@ typedef struct archi_value {
 
     size_t size; ///< Size of a value element, or zero if unknown.
     size_t num_of; ///< Number of value elements.
+    bool own_memory; ///< Whether is the memory not belong to other objects.
 
     archi_value_type_t type; ///< Value element type.
 } archi_value_t;

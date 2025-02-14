@@ -23,7 +23,7 @@
  * @brief Built-in plugin for attaching shared memory.
  */
 
-#include "archi/plugin/shared_memory/context.fun.h"
+#include "archi/plugin/shared_memory/interface.fun.h"
 #include "archi/plugin/shared_memory/config.typ.h"
 #include "archi/util/os/shm.fun.h"
 #include "archi/util/container.fun.h"

@@ -54,14 +54,7 @@ archi_application_t archi_main_app;
 
 static
 void
-archi_exit_cleanup(void) // will be called on exit(), or if main() returns
-{
-    archi_log_debug(M, "Finalizing application...");
-    archi_app_finalize(&archi_main_app);
-
-    archi_log_debug(M, "Detaching shared memory...");
-    archi_shared_memory_detach(archi_main_shmaddr);
-}
+archi_exit_cleanup(void);
 
 int
 main(
@@ -172,5 +165,15 @@ main(
             archi_main_app.context.transition);
 
     return ARCHI_EXIT_CODE(code);
+}
+
+void
+archi_exit_cleanup(void) // will be called on exit(), or if main() returns
+{
+    archi_log_debug(M, "Finalizing application...");
+    archi_app_finalize(&archi_main_app);
+
+    archi_log_debug(M, "Detaching shared memory...");
+    archi_shared_memory_detach(archi_main_shmaddr);
 }
 

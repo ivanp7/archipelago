@@ -27,8 +27,8 @@
 #ifndef _ARCHI_PLUGIN_THREADS_QUEUE_FUN_H_
 #define _ARCHI_PLUGIN_THREADS_QUEUE_FUN_H_
 
-#include <stddef.h>
-#include <stdbool.h>
+#include "archi/plugin/threads/config.typ.h"
+#include "archi/app/context.typ.h"
 
 struct archi_queue;
 
@@ -43,10 +43,7 @@ struct archi_queue;
  */
 struct archi_queue*
 archi_queue_alloc(
-        size_t element_size, ///< [in] Queue element size in bytes.
-        unsigned char element_alignment_log2, ///< [in] Log2 of queue element alignment in bytes.
-
-        unsigned char capacity_log2 ///< [in] Log2 of maximum capacity of queue.
+        archi_queue_config_t config ///< [in] Lock-free queue configuration.
 );
 
 /**
@@ -98,6 +95,19 @@ size_t
 archi_queue_element_size(
         struct archi_queue *queue ///< [in] Queue.
 );
+
+/*****************************************************************************/
+
+ARCHI_CONTEXT_INIT_FUNC(archi_queue_context_init);   ///< Context initialization function.
+ARCHI_CONTEXT_FINAL_FUNC(archi_queue_context_final); ///< Context finalization function.
+
+extern
+const archi_context_interface_t archi_queue_context_interface; ///< Context interface functions.
+
+/**
+ * @brief Interface alias name.
+ */
+#define ARCHI_QUEUE_CONTEXT_INTERFACE_ALIAS "queue"
 
 #endif // _ARCHI_PLUGIN_THREADS_QUEUE_FUN_H_
 
