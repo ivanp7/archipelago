@@ -30,16 +30,19 @@
 #define ARCHI_ERROR_UNKNOWN     -1  ///< Unknown error.
 #define ARCHI_ERROR_MISUSE      -2  ///< Error: incorrect use of an interface (incorrect arguments such as null pointers and out-of-range values).
 #define ARCHI_ERROR_CONFIG      -3  ///< Error: incorrect configuration provided.
-#define ARCHI_ERROR_ALLOC       -4  ///< Error: couldn't allocate memory.
-#define ARCHI_ERROR_ATTACH      -5  ///< Error: couldn't attach shared memory.
-#define ARCHI_ERROR_LOAD        -6  ///< Error: couldn't load shared library.
-#define ARCHI_ERROR_SYMBOL      -7  ///< Error: couldn't find a symbol in shared library.
-#define ARCHI_ERROR_FORMAT      -8  ///< Error: virtual table format is incorrect (or wrong vtable pointer).
-#define ARCHI_ERROR_FUNCTION    -9  ///< Error: required function is not available.
-#define ARCHI_ERROR_SIGNAL      -10 ///< Error: couldn't initialize signal management.
-#define ARCHI_ERROR_THREAD      -11 ///< Error: couldn't create thread.
-#define ARCHI_ERROR_FILE        -12 ///< Error: couldn't open file.
-#define ARCHI_ERROR_USER        -13 ///< First error code reserved for user.
+#define ARCHI_ERROR_INIT        -4  ///< Error: couldn't initialize a resource.
+#define ARCHI_ERROR_ALLOC       -5  ///< Error: couldn't allocate memory.
+#define ARCHI_ERROR_ATTACH      -6  ///< Error: couldn't attach shared memory.
+#define ARCHI_ERROR_LOAD        -7  ///< Error: couldn't load shared library.
+#define ARCHI_ERROR_SYMBOL      -8  ///< Error: couldn't find a symbol in shared library.
+#define ARCHI_ERROR_FORMAT      -9  ///< Error: data format is incorrect.
+#define ARCHI_ERROR_FUNCTION    -10 ///< Error: required function is not available.
+#define ARCHI_ERROR_SIGNAL      -11 ///< Error: couldn't initialize signal management.
+#define ARCHI_ERROR_THREAD      -12 ///< Error: couldn't create thread.
+#define ARCHI_ERROR_FILE        -13 ///< Error: couldn't open file.
+                             // -14
+                             // -15
+#define ARCHI_ERROR_USER        -16 ///< First error code reserved for user.
 
 /**
  * @brief Offset of application error exit codes.
