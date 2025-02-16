@@ -29,14 +29,14 @@
 
 #include "archi/app/context.typ.h"
 
-ARCHI_CONTEXT_INIT_FUNC(archi_shared_memory_context_init);   ///< Context initialization function.
-ARCHI_CONTEXT_FINAL_FUNC(archi_shared_memory_context_final); ///< Context finalization function.
+ARCHI_CONTEXT_INIT_FUNC(archi_shared_memory_context_init);   ///< Shared memory context initialization function.
+ARCHI_CONTEXT_FINAL_FUNC(archi_shared_memory_context_final); ///< Shared memory context finalization function.
 
 extern
-const archi_context_interface_t archi_shared_memory_context_interface; ///< Context interface functions.
+const archi_context_interface_t archi_shared_memory_context_interface; ///< Shared memory context interface functions.
 
 /**
- * @brief Plugin interface alias name.
+ * @brief Alias name of shared memory context interface.
  */
 #define ARCHI_SHARED_MEMORY_CONTEXT_INTERFACE_ALIAS "shared_memory"
 

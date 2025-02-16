@@ -29,14 +29,14 @@
 
 #include "archi/app/context.typ.h"
 
-ARCHI_CONTEXT_INIT_FUNC(archi_file_context_init);   ///< Context initialization function.
-ARCHI_CONTEXT_FINAL_FUNC(archi_file_context_final); ///< Context finalization function.
+ARCHI_CONTEXT_INIT_FUNC(archi_file_context_init);   ///< File context initialization function.
+ARCHI_CONTEXT_FINAL_FUNC(archi_file_context_final); ///< File context finalization function.
 
 extern
-const archi_context_interface_t archi_file_context_interface; ///< Context interface functions.
+const archi_context_interface_t archi_file_context_interface; ///< File context interface functions.
 
 /**
- * @brief Plugin interface alias name.
+ * @brief Alias name of file context interface.
  */
 #define ARCHI_FILE_CONTEXT_INTERFACE_ALIAS "file"
 

@@ -98,16 +98,16 @@ archi_queue_element_size(
 
 /*****************************************************************************/
 
-ARCHI_CONTEXT_INIT_FUNC(archi_queue_context_init);   ///< Context initialization function.
-ARCHI_CONTEXT_FINAL_FUNC(archi_queue_context_final); ///< Context finalization function.
+ARCHI_CONTEXT_INIT_FUNC(archi_queue_context_init);   ///< Lock-free queue initialization function.
+ARCHI_CONTEXT_FINAL_FUNC(archi_queue_context_final); ///< Lock-free queue finalization function.
 
 extern
-const archi_context_interface_t archi_queue_context_interface; ///< Context interface functions.
+const archi_context_interface_t archi_queue_context_interface; ///< Lock-free queue interface functions.
 
 /**
- * @brief Interface alias name.
+ * @brief Alias name of lock-free queue interface.
  */
-#define ARCHI_QUEUE_CONTEXT_INTERFACE_ALIAS "queue"
+#define ARCHI_QUEUE_CONTEXT_INTERFACE_ALIAS "lockless_queue"
 
 #endif // _ARCHI_PLUGIN_THREADS_QUEUE_FUN_H_
 

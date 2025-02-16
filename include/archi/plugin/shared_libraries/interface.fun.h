@@ -29,15 +29,15 @@
 
 #include "archi/app/context.typ.h"
 
-ARCHI_CONTEXT_INIT_FUNC(archi_shared_library_context_init);   ///< Context initialization function.
-ARCHI_CONTEXT_FINAL_FUNC(archi_shared_library_context_final); ///< Context finalization function.
-ARCHI_CONTEXT_GET_FUNC(archi_shared_library_context_get);     ///< Context getter function.
+ARCHI_CONTEXT_INIT_FUNC(archi_shared_library_context_init);   ///< Shared library context initialization function.
+ARCHI_CONTEXT_FINAL_FUNC(archi_shared_library_context_final); ///< Shared library context finalization function.
+ARCHI_CONTEXT_GET_FUNC(archi_shared_library_context_get);     ///< Shared library context getter function.
 
 extern
-const archi_context_interface_t archi_shared_library_context_interface; ///< Context interface functions.
+const archi_context_interface_t archi_shared_library_context_interface; ///< Shared library context interface functions.
 
 /**
- * @brief Plugin interface alias name.
+ * @brief Alias name of shared library context interface.
  */
 #define ARCHI_SHARED_LIBRARY_CONTEXT_INTERFACE_ALIAS "shared_library"
 

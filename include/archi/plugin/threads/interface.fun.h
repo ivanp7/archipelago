@@ -103,14 +103,14 @@ archi_threads_config(
 
 /*****************************************************************************/
 
-ARCHI_CONTEXT_INIT_FUNC(archi_threads_context_init);   ///< Context initialization function.
-ARCHI_CONTEXT_FINAL_FUNC(archi_threads_context_final); ///< Context finalization function.
+ARCHI_CONTEXT_INIT_FUNC(archi_threads_context_init);   ///< Threaded processing context initialization function.
+ARCHI_CONTEXT_FINAL_FUNC(archi_threads_context_final); ///< Threaded processing context finalization function.
 
 extern
-const archi_context_interface_t archi_threads_context_interface; ///< Context interface functions.
+const archi_context_interface_t archi_threads_context_interface; ///< Threaded processing context interface functions.
 
 /**
- * @brief Interface alias name.
+ * @brief Alias name of threaded processing context interface.
  */
 #define ARCHI_THREADS_CONTEXT_INTERFACE_ALIAS "threads"
 
