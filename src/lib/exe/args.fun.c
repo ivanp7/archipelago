@@ -73,7 +73,7 @@ static
 error_t
 args_parse(int key, char *arg, struct argp_state *state)
 {
-    archi_cmdline_args_t *args = state->input;
+    archi_args_t *args = state->input;
 
     switch (key)
     {
@@ -148,8 +148,8 @@ args_parse(int key, char *arg, struct argp_state *state)
 }
 
 archi_status_t
-archi_parse_cmdline_args(
-        archi_cmdline_args_t *args,
+archi_args_parse(
+        archi_args_t *args,
 
         int argc,
         char *argv[])
@@ -157,7 +157,7 @@ archi_parse_cmdline_args(
     if (args == NULL)
         return false;
 
-    *args = (archi_cmdline_args_t){.verbosity_level = ARCHI_LOG_VERBOSITY_DEFAULT_LOWER};
+    *args = (archi_args_t){.verbosity_level = ARCHI_LOG_VERBOSITY_DEFAULT_LOWER};
 
     // Parse command line arguments
     struct argp args_parser = {

@@ -20,29 +20,23 @@
 
 /**
  * @file
- * @brief Command line arguments parsing.
+ * @brief Finite state machine instance type.
  */
 
 #pragma once
-#ifndef _ARCHI_EXE_ARGS_FUN_H_
-#define _ARCHI_EXE_ARGS_FUN_H_
+#ifndef _ARCHI_FSM_INSTANCE_TYP_H_
+#define _ARCHI_FSM_INSTANCE_TYP_H_
 
-#include "archi/util/status.typ.h"
-
-struct archi_args;
+#include "archi/fsm/state.typ.h"
+#include "archi/fsm/transition.typ.h"
 
 /**
- * @brief Parse command line arguments.
- *
- * @return Zero on success, non-zero error code otherwise.
+ * @brief Finite state machine instance.
  */
-archi_status_t
-archi_args_parse(
-        struct archi_args *args, ///< [out] Parsed values of command line arguments.
+typedef struct archi_fsm {
+    archi_fsm_state_t entry_state;     ///< Entry state of the finite state machine.
+    archi_fsm_transition_t transition; ///< State transition of the finite state machine.
+} archi_fsm_t;
 
-        int argc,    ///< [in] Number of command line arguments.
-        char *argv[] ///< [in] Command line arguments.
-);
-
-#endif // _ARCHI_EXE_ARGS_FUN_H_
+#endif // _ARCHI_FSM_INSTANCE_TYP_H_
 

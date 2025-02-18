@@ -24,31 +24,30 @@
  */
 
 #include "archi/app/loader.fun.h"
-#include "archi/app/loader.typ.h"
+#include "archi/app/instance.typ.h"
 #include "archi/util/os/lib.fun.h"
 #include "archi/util/container.fun.h"
 #include "archi/util/error.def.h"
 
 #include <stdlib.h>
 
-ARCHI_CONTAINER_ELEMENT_FUNC(archi_app_load_library)
+archi_status_t
+archi_app_add_library(
+        archi_application_t *app,
+        archi_app_loader_library_t lib)
 {
-    if ((key == NULL) || (element == NULL) || (data == NULL))
+    if (app == NULL)
         return ARCHI_ERROR_MISUSE;
-
-    const archi_app_loader_library_t *library = element;
-    archi_container_t *loaded_libraries = data;
-
-    if ((library->key == NULL) || (library->pathname == NULL))
+    else if (lib.key == NULL)
         return ARCHI_ERROR_MISUSE;
 
     archi_status_t code;
 
-    void *handle = archi_library_load(library->pathname, library->lazy, library->global);
+    void *handle = archi_library_load(lib.pathname, lib.lazy, lib.global);
     if (handle == NULL)
         return ARCHI_ERROR_LOAD;
 
-    code = archi_container_insert(*loaded_libraries, library->key, handle);
+    code = archi_container_insert(app->libraries, lib.key, handle);
     if (code != 0)
     {
         archi_library_unload(handle);
@@ -58,43 +57,73 @@ ARCHI_CONTAINER_ELEMENT_FUNC(archi_app_load_library)
     return 0;
 }
 
-ARCHI_CONTAINER_ELEMENT_FUNC(archi_app_unload_library)
+archi_status_t
+archi_app_remove_library(
+        archi_application_t *app,
+        const void *key)
 {
-    (void) key;
-    (void) data;
-
-    if (element == NULL)
+    if (app == NULL)
         return ARCHI_ERROR_MISUSE;
-
-    archi_library_unload(element);
-
-    return 0;
-}
-
-ARCHI_CONTAINER_ELEMENT_FUNC(archi_app_get_library_content)
-{
-    if ((key == NULL) || (element == NULL) || (data == NULL))
-        return ARCHI_ERROR_MISUSE;
-
-    const archi_app_loader_library_symbol_t *symbol = element;
-    archi_app_get_library_content_data_t *func_data = data;
-
-    if ((symbol->key == NULL) || (symbol->library_key == NULL) || (symbol->symbol_name == NULL))
+    else if (key == NULL)
         return ARCHI_ERROR_MISUSE;
 
     archi_status_t code;
 
     void *handle = NULL;
-    code = archi_container_extract(func_data->loaded_libraries,
-            symbol->library_key, &handle);
+
+    code = archi_container_remove(app->libraries, key, &handle);
     if (code != 0)
         return code;
 
-    void *content = archi_library_get_symbol(handle, symbol->symbol_name);
-    if (content == NULL)
+    if (handle == NULL)
+        return ARCHI_ERROR_LOAD;
+
+    archi_library_unload(handle);
+
+    return 0;
+}
+
+archi_status_t
+archi_app_add_interface(
+        archi_application_t *app,
+        archi_app_loader_library_symbol_t sym)
+{
+    if (app == NULL)
+        return ARCHI_ERROR_MISUSE;
+    else if ((sym.key == NULL) || (sym.library_key == NULL) || (sym.symbol_name == NULL))
+        return ARCHI_ERROR_MISUSE;
+
+    archi_status_t code;
+
+    void *handle = NULL;
+    code = archi_container_extract(app->libraries, sym.library_key, &handle);
+    if (code != 0)
+        return code;
+
+    void *symbol = archi_library_get_symbol(handle, sym.symbol_name);
+    if (symbol == NULL)
         return ARCHI_ERROR_SYMBOL;
 
-    code = archi_container_insert(func_data->contents, symbol->key, content);
+    code = archi_container_insert(app->interfaces, sym.key, symbol);
+    if (code != 0)
+        return code;
+
+    return 0;
+}
+
+archi_status_t
+archi_app_remove_interface(
+        archi_application_t *app,
+        const void *key)
+{
+    if (app == NULL)
+        return ARCHI_ERROR_MISUSE;
+    else if (key == NULL)
+        return ARCHI_ERROR_MISUSE;
+
+    archi_status_t code;
+
+    code = archi_container_remove(app->interfaces, key, NULL);
     if (code != 0)
         return code;
 

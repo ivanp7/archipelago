@@ -27,9 +27,10 @@
 #ifndef _ARCHI_APP_CONTEXT_TYP_H_
 #define _ARCHI_APP_CONTEXT_TYP_H_
 
-#include "archi/util/container.typ.h"
 #include "archi/util/status.typ.h"
 #include "archi/util/value.typ.h"
+
+struct archi_list_node_named_value;
 
 /**
  * @brief Dummy context pointer used when the context initialization function is null.
@@ -51,7 +52,7 @@
  */
 #define ARCHI_CONTEXT_INIT_FUNC(func_name) archi_status_t func_name( \
         void **const restrict context, /* Place for pointer to the new context. */ \
-        const archi_container_t config) /* Context configuration. */
+        const struct archi_list_node_named_value *config) /* Context configuration. */
 
 /**
  * @brief Context initialization function.
@@ -115,7 +116,7 @@ typedef ARCHI_CONTEXT_GET_FUNC((*archi_context_get_func_t));
 #define ARCHI_CONTEXT_ACT_FUNC(func_name) archi_status_t func_name( \
         void *const restrict context, /* Context. */ \
         const char *const restrict action, /* Action type. */ \
-        const archi_container_t params) /* Action parameters. */
+        const struct archi_list_node_named_value *params) /* Action parameters. */
 
 /**
  * @brief Context action function.

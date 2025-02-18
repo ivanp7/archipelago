@@ -27,60 +27,47 @@
 #ifndef _ARCHI_APP_CONFIG_TYP_H_
 #define _ARCHI_APP_CONFIG_TYP_H_
 
+struct archi_list_node_named_value;
 struct archi_value;
 
 /**
- * @brief Configuration step for context initialization.
+ * @brief Specific configuration step data for context initialization.
  *
  * @warning Null key is forbidden.
  */
 typedef struct archi_app_config_step_init {
-    const void *key; ///< Context key.
-
     const void *interface_key; ///< Context interface key.
-    const void *config; ///< Context configuration.
+    const struct archi_list_node_named_value *config; ///< Context configuration.
 } archi_app_config_step_init_t;
 
 /**
- * @brief Configuration step for context finalization.
- */
-typedef struct archi_app_config_step_final {
-    const void *key; ///< Context key.
-} archi_app_config_step_final_t;
-
-/**
- * @brief Configuration step for context slot value setting.
+ * @brief Specific configuration step data for context slot value setting.
  */
 typedef struct archi_app_config_step_set {
-    const void *key; ///< Context key.
-
     const char *slot; ///< Context slot.
     const struct archi_value *value; ///< Value to set.
 } archi_app_config_step_set_t;
 
 /**
- * @brief Configuration step for context assignment.
+ * @brief Specific configuration step data for context assignment.
  *
  * Destination slot must not be null.
  * Source slot may be null. In that case,
  * source context pointer is passed to destination setter function.
  */
 typedef struct archi_app_config_step_assign {
-    struct {
-        const void *key; ///< Context key.
-        const char *slot; ///< Context slot.
-    } destination, ///< Assignment destination.
-        source; ///< Assignment source.
+    const char *slot; ///< Destination context slot.
+
+    const void *source_key; ///< Source context key.
+    const char *source_slot; ///< Source context slot.
 } archi_app_config_step_assign_t;
 
 /**
- * @brief Configuration step for context action.
+ * @brief Specific configuration step data for context action.
  */
 typedef struct archi_app_config_step_act {
-    const void *key; ///< Context key.
-
     const char *action; ///< Action type.
-    const void *params; ///< Action parameters.
+    const struct archi_list_node_named_value *params; ///< Action parameters.
 } archi_app_config_step_act_t;
 
 /*****************************************************************************/
@@ -102,9 +89,11 @@ typedef enum archi_app_config_step_type {
 typedef struct archi_app_config_step {
     archi_app_config_step_type_t type; ///< Step type.
 
+    const void *key; ///< Key of the context being acted on.
+
     union {
         archi_app_config_step_init_t as_init;     ///< Context initialization.
-        archi_app_config_step_final_t as_final;   ///< Context finalization.
+        // no 'as_final' here
         archi_app_config_step_set_t as_set;       ///< Context slot value setting.
         archi_app_config_step_assign_t as_assign; ///< Context assignment.
         archi_app_config_step_act_t as_act;       ///< Context action.

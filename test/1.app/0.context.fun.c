@@ -1,6 +1,7 @@
 #include "test.h"
 
 #include "archi/app/context.fun.h"
+#include "archi/util/list.typ.h"
 #include "archi/util/error.def.h"
 
 #include <string.h>
@@ -10,8 +11,7 @@ ARCHI_CONTEXT_INIT_FUNC(init_func)
 {
     if ((context == NULL) || (*context != NULL))
         return 1;
-    else if ((config.data != ARCHI_CONTEXT_DUMMY) ||
-            (config.interface != ARCHI_CONTEXT_DUMMY))
+    else if (config == NULL)
         return 2;
 
     *context = ARCHI_CONTEXT_DUMMY;
@@ -22,25 +22,24 @@ TEST(archi_context_initialize)
 {
     archi_context_interface_t interface = {0};
     archi_context_t context = {0};
-    archi_container_t config = {0};
+    archi_list_node_named_value_t config = {0};
 
-    ASSERT_EQ(archi_context_initialize(NULL, config),
+    ASSERT_EQ(archi_context_initialize(NULL, &config),
             ARCHI_ERROR_MISUSE, archi_status_t, "%i");
-    ASSERT_EQ(archi_context_initialize(&context, config),
+    ASSERT_EQ(archi_context_initialize(&context, &config),
             ARCHI_ERROR_MISUSE, archi_status_t, "%i");
 
     context.interface = &interface;
-    ASSERT_EQ(archi_context_initialize(&context, config),
+    ASSERT_EQ(archi_context_initialize(&context, &config),
             0, archi_status_t, "%i");
 
     context.handle = NULL;
 
     interface.init_fn = init_func;
-    ASSERT_EQ(archi_context_initialize(&context, config),
+    ASSERT_EQ(archi_context_initialize(&context, NULL),
             2, archi_status_t, "%i");
 
-    config.interface = config.data = ARCHI_CONTEXT_DUMMY;
-    ASSERT_EQ(archi_context_initialize(&context, config),
+    ASSERT_EQ(archi_context_initialize(&context, &config),
             0, archi_status_t, "%i");
     ASSERT_EQ(context.handle, ARCHI_CONTEXT_DUMMY, void*, "%p");
 }
@@ -250,7 +249,8 @@ TEST(archi_context_assign)
 static
 ARCHI_CONTEXT_ACT_FUNC(act_func)
 {
-    (void) params;
+    if (params == NULL)
+        return 2;
 
     int *counter = context;
 
@@ -270,31 +270,34 @@ TEST(archi_context_act)
 
     archi_context_interface_t interface = {0};
     archi_context_t context = {0};
-    archi_container_t params = {0};
+    archi_list_node_named_value_t params = {0};
 
-    ASSERT_EQ(archi_context_act(context, NULL, params),
+    ASSERT_EQ(archi_context_act(context, NULL, &params),
             ARCHI_ERROR_MISUSE, archi_status_t, "%i");
-    ASSERT_EQ(archi_context_act(context, "inc", params),
+    ASSERT_EQ(archi_context_act(context, "inc", &params),
             ARCHI_ERROR_MISUSE, archi_status_t, "%i");
 
     context.handle = &counter;
-    ASSERT_EQ(archi_context_act(context, "inc", params),
+    ASSERT_EQ(archi_context_act(context, "inc", &params),
             ARCHI_ERROR_MISUSE, archi_status_t, "%i");
 
     context.interface = &interface;
-    ASSERT_EQ(archi_context_act(context, "inc", params),
+    ASSERT_EQ(archi_context_act(context, "inc", &params),
             ARCHI_ERROR_FUNCTION, archi_status_t, "%i");
 
     interface.act_fn = act_func;
-    ASSERT_EQ(archi_context_act(context, "inc", params),
+    ASSERT_EQ(archi_context_act(context, "inc", &params),
             0, archi_status_t, "%i");
     ASSERT_EQ(counter, 1, int, "%i");
 
-    ASSERT_EQ(archi_context_act(context, "dec", params),
+    ASSERT_EQ(archi_context_act(context, "inc", NULL),
+            2, archi_status_t, "%i");
+
+    ASSERT_EQ(archi_context_act(context, "dec", &params),
             0, archi_status_t, "%i");
     ASSERT_EQ(counter, 0, int, "%i");
 
-    ASSERT_EQ(archi_context_act(context, "inv", params),
+    ASSERT_EQ(archi_context_act(context, "inv", &params),
             42, archi_status_t, "%i");
 }
 

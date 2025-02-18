@@ -33,38 +33,38 @@
 /**
  * @brief Declarator of a state transition function.
  */
-#define ARCHI_TRANSITION_FUNCTION(name) void name( \
-        const archi_state_t prev_state, /* Previous state. */ \
-        const archi_state_t next_state, /* Next state. */ \
-        archi_state_t *const restrict trans_state, /* Transitional state. */ \
+#define ARCHI_FSM_TRANSITION_FUNCTION(name) void name( \
+        const archi_fsm_state_t prev_state, /* Previous state. */ \
+        const archi_fsm_state_t next_state, /* Next state. */ \
+        archi_fsm_state_t *const restrict trans_state, /* Transitional state. */ \
         archi_status_t *const code, /* Status code. */ \
         void *const restrict data) /* State transition data. */
 
 /**
  * @brief State transition function.
  */
-typedef ARCHI_TRANSITION_FUNCTION((*archi_transition_function_t));
+typedef ARCHI_FSM_TRANSITION_FUNCTION((*archi_fsm_transition_function_t));
 
 /*****************************************************************************/
 
 /**
  * @brief State transition.
  */
-typedef struct archi_transition {
-    archi_transition_function_t function; ///< State transition function.
+typedef struct archi_fsm_transition {
+    archi_fsm_transition_function_t function; ///< State transition function.
     void *data; ///< State transition data.
-} archi_transition_t;
+} archi_fsm_transition_t;
 
 /**
  * @brief Null (empty) state transition.
  */
-#define ARCHI_NULL_TRANSITION (archi_transition_t){0}
+#define ARCHI_NULL_FSM_TRANSITION (archi_fsm_transition_t){0}
 
 /**
  * @brief State transition.
  */
-#define ARCHI_TRANSITION(func, data_ptr) \
-    (archi_transition_t){.function = (func), .data = (data_ptr)}
+#define ARCHI_FSM_TRANSITION(func, data_ptr) \
+    (archi_fsm_transition_t){.function = (func), .data = (data_ptr)}
 
 #endif // _ARCHI_FSM_TRANSITION_TYP_H_
 

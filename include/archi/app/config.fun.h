@@ -27,22 +27,64 @@
 #ifndef _ARCHI_APP_CONFIG_FUN_H_
 #define _ARCHI_APP_CONFIG_FUN_H_
 
-#include "archi/util/container.typ.h"
+#include "archi/app/config.typ.h"
+#include "archi/util/status.typ.h"
+
+struct archi_application;
+struct archi_context_interface;
+struct archi_list_node_named_value;
 
 /**
- * @brief Container element function for configuration step.
+ * @brief Initialize a context and add it to an application.
  *
- * Container element type is expected to be archi_app_config_step_t.
+ * @return Status code.
  */
-ARCHI_CONTAINER_ELEMENT_FUNC(archi_app_apply_config_step);
+archi_status_t
+archi_app_add_context(
+        struct archi_application *app, ///< [in] Application instance.
+        const void *key, ///< [in] Context key.
+        const struct archi_context_interface *interface, ///< [in] Context interface.
+        const struct archi_list_node_named_value *config ///< [in] Context configuration.
+);
 
 /**
- * @brief Data for configuration step function.
+ * @brief Finalize a context and remove it from an application.
+ *
+ * @return Status code.
  */
-typedef struct archi_app_apply_config_step_data {
-    archi_container_t contexts; ///< Contexts of application.
-    archi_container_t context_interfaces; ///< Available context interfaces.
-} archi_app_apply_config_step_data_t;
+archi_status_t
+archi_app_remove_context(
+        struct archi_application *app, ///< [in] Application instance.
+        const void *key ///< [in] Context key.
+);
+
+/*****************************************************************************/
+
+/**
+ * @brief Do a configuration step for an application.
+ *
+ * @return Status code.
+ */
+archi_status_t
+archi_app_do_config_step(
+        struct archi_application *app, ///< [in] Application instance.
+        archi_app_config_step_t step ///< [in] Configuration step.
+);
+
+/**
+ * @brief Undo a configuration step for an application.
+ *
+ * If the step is context initialization, the corresponding context
+ * is finalized and removed from the application.
+ * Other step types are ignored.
+ *
+ * @return Status code.
+ */
+archi_status_t
+archi_app_undo_config_step(
+        struct archi_application *app, ///< [in] Application instance.
+        archi_app_config_step_t step ///< [in] Configuration step.
+);
 
 #endif // _ARCHI_APP_CONFIG_FUN_H_
 

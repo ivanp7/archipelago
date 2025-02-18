@@ -24,11 +24,10 @@
  */
 
 #pragma once
-#ifndef _ARCHI_FSM_ALGORITHM_H_
-#define _ARCHI_FSM_ALGORITHM_H_
+#ifndef _ARCHI_FSM_ALGORITHM_FUN_H_
+#define _ARCHI_FSM_ALGORITHM_FUN_H_
 
-#include "archi/fsm/state.typ.h"
-#include "archi/fsm/transition.typ.h"
+#include "archi/fsm/instance.typ.h"
 #include "archi/util/status.typ.h"
 
 /**
@@ -47,10 +46,9 @@
  * @return Status code.
  */
 archi_status_t
-archi_finite_state_machine(
-        archi_state_t entry_state, ///< [in] Entry state.
-        archi_transition_t transition ///< [in] Optional state transition.
+archi_fsm_execute(
+        archi_fsm_t fsm ///< [in] Finite state machine.
 );
 
-#endif // _ARCHI_FSM_ALGORITHM_H_
+#endif // _ARCHI_FSM_ALGORITHM_FUN_H_
 

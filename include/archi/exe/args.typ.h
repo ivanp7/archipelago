@@ -32,13 +32,13 @@
 /**
  * @brief Values of command line arguments.
  */
-typedef struct archi_cmdline_args {
+typedef struct archi_args {
     const char *pathname; ///< Pathname of shared memory with configuration.
     int proj_id; ///< Project identifier of shared memory with configuration.
 
     int verbosity_level; ///< Application verbosity level.
     bool no_logo; ///< Whether to suppress display of the application logo.
-} archi_cmdline_args_t;
+} archi_args_t;
 
 #endif // _ARCHI_EXE_ARGS_TYP_H_
 

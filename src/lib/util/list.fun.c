@@ -239,12 +239,12 @@ archi_list_remove_nodes(
     if (start_from_head)
     {
         if (list->head == NULL)
-            return ARCHI_ERROR_MISUSE;
+            return 0;
     }
     else
     {
         if (list->tail == NULL)
-            return ARCHI_ERROR_MISUSE;
+            return 0;
     }
 
     archi_list_node_t *node = start_from_head ? list->head : list->tail;
@@ -365,12 +365,12 @@ archi_list_traverse(
     if (start_from_head)
     {
         if (list->head == NULL)
-            return ARCHI_ERROR_MISUSE;
+            return 0;
     }
     else
     {
         if (list->tail == NULL)
-            return ARCHI_ERROR_MISUSE;
+            return 0;
     }
 
     archi_list_node_t *node = start_from_head ? list->head : list->tail;

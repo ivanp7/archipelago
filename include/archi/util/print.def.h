@@ -27,6 +27,11 @@
 #ifndef _ARCHI_UTIL_PRINT_DEF_H_
 #define _ARCHI_UTIL_PRINT_DEF_H_
 
+#define ARCHI_PELAGO_LOGO "\
+  ⡏ ⢀⣀ ⡀⣀ ⢀⣀ ⣇⡀ ⠄ ⣀⡀ ⢀⡀ ⡇ ⢀⣀ ⢀⡀ ⢀⡀ ⢹  \n\
+  ⣇ ⠣⠼ ⠏  ⠣⠤ ⠇⠸ ⠇ ⡧⠜ ⠣⠭ ⠣ ⠣⠼ ⣑⡺ ⠣⠜ ⣸  \n\
+"
+
 #ifndef ARCHI_FEATURE_COLORLESS
 
 #  define ARCHI_COLOR_RESET           "\033[0m" ///< Reset colors to default.

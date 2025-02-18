@@ -107,10 +107,10 @@ archi_signal_flags_alloc(void);
 /*****************************************************************************/
 
 /**
- * @brief Start signal management thread.
+ * @brief Start signal management.
  *
- * @warning There should be only one signal management thread per application,
- * which must be created in the main thread before any other thread,
+ * @warning There should be only one signal management thread per process.
+ * The signal management context must be created in the main thread before any threads,
  * otherwise signal management won't work (reliably or at all).
  *
  * Input set of signals specifies which signals are to be watched.
@@ -124,28 +124,47 @@ archi_signal_flags_alloc(void);
  * @return Signal management context.
  */
 struct archi_signal_management_context*
-archi_signal_management_thread_start(
+archi_signal_management_start(
         const archi_signal_watch_set_t *signals, ///< [in] Signals to watch.
         archi_signal_handler_t signal_handler    ///< [in] Signal handler.
 );
 
 /**
- * @brief Stop signal management thread.
+ * @brief Stop signal management.
  */
 void
-archi_signal_management_thread_stop(
+archi_signal_management_stop(
         struct archi_signal_management_context *context ///< [in] Signal management context.
 );
 
 /**
- * @brief Extract signal management thread properties.
+ * @brief Get signal flags from signal management context.
+ *
+ * @return Signal flags.
+ */
+archi_signal_flags_t*
+archi_signal_management_flags(
+        struct archi_signal_management_context *context ///< [in] Signal management context.
+);
+
+/**
+ * @brief Get signal handler from signal management context.
+ *
+ * @return Signal handler.
+ */
+archi_signal_handler_t
+archi_signal_management_handler(
+        struct archi_signal_management_context *context ///< [in] Signal management context.
+);
+
+/**
+ * @brief Set signal handler to signal management context.
  */
 void
-archi_signal_management_thread_get_properties(
+archi_signal_management_set_handler(
         struct archi_signal_management_context *context, ///< [in] Signal management context.
 
-        archi_signal_flags_t **flags, ///< [out] Place for pointer to signal flags.
-        archi_signal_handler_t *signal_handler ///< [out] Place for signal handler.
+        archi_signal_handler_t signal_handler ///< [in] New signal handler.
 );
 
 #endif // _ARCHI_UTIL_OS_SIGNAL_FUN_H_

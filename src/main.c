@@ -23,34 +23,57 @@
  * @brief Default main() implementation.
  */
 
-#include "archi/exe/context.fun.h"
 #include "archi/exe/args.fun.h"
 #include "archi/exe/args.typ.h"
-#include "archi/fsm/algorithm.h"
+#include "archi/exe/builtin.var.h"
+#include "archi/exe/config.typ.h"
+#include "archi/exe/interface.fun.h"
+#include "archi/app/config.fun.h"
+#include "archi/app/loader.fun.h"
+#include "archi/app/instance.typ.h"
+#include "archi/fsm/algorithm.fun.h"
+#include "archi/util/container.fun.h"
+#include "archi/util/list.fun.h"
 #include "archi/util/error.def.h"
 #include "archi/util/print.fun.h"
 #include "archi/util/print.def.h"
 #include "archi/util/os/shm.fun.h"
+#include "archi/util/os/signal.fun.h"
 
 #include <stdlib.h> // for atexit()
 #include <errno.h> // for error codes
 
 /*****************************************************************************/
 
-#define ARCHI_PELAGO_LOGO "\
-  ⡏ ⢀⣀ ⡀⣀ ⢀⣀ ⣇⡀ ⠄ ⣀⡀ ⢀⡀ ⡇ ⢀⣀ ⢀⡀ ⢀⡀ ⢹  \n\
-  ⣇ ⠣⠼ ⠏  ⠣⠤ ⠇⠸ ⠇ ⡧⠜ ⠣⠭ ⠣ ⠣⠼ ⣑⡺ ⠣⠜ ⣸  \n\
-"
-
 #define M "main()" // module name for logging
+
+#define SAFE(str) ((str) != NULL ? (str) : "[NULL]")
 
 /*****************************************************************************/
 
 static
-void **archi_main_shmaddr;
+struct {
+    archi_process_config_shmaddr_t *shmaddr; ///< Configuration of the process in shared memory.
 
-static
-archi_application_t archi_main_app;
+    struct archi_signal_management_context *signal_management; ///< Signal management context.
+
+    archi_fsm_t fsm; ///< Finite state machine.
+
+    archi_application_t app; ///< Application instance.
+    archi_list_container_data_t app_libraries_data;  ///< Data for the libraries container.
+    archi_list_container_data_t app_interfaces_data; ///< Data for the context interfaces container.
+    archi_list_container_data_t app_contexts_data;   ///< Data for the contexts container.
+    archi_context_t app_context_signal; ///< Wrapper of application signal management context.
+    archi_context_t app_context_fsm;    ///< Wrapper of application finite state machine.
+
+    struct {
+        size_t builtin_interfaces;
+        size_t builtin_contexts;
+        size_t libraries;
+        size_t interfaces;
+        size_t steps;
+    } counter;
+} archi_process;
 
 static
 void
@@ -71,8 +94,8 @@ main(
     archi_log_set_start_time();
 
     // Parse command line arguments
-    archi_cmdline_args_t args;
-    switch (archi_parse_cmdline_args(&args, argc, argv))
+    archi_args_t args;
+    switch (archi_args_parse(&args, argc, argv))
     {
         case 0: // success
             break;
@@ -103,10 +126,12 @@ main(
     // Attach shared memory //
     //////////////////////////
 
-    archi_log_debug(M, "Attaching shared memory...");
+    archi_log_debug(M, "(ini) Attaching shared memory at pathname '%s', project id %i...",
+            args.pathname, args.proj_id);
 
-    archi_main_shmaddr = archi_shared_memory_attach(args.pathname, args.proj_id, false);
-    if (archi_main_shmaddr == NULL)
+    archi_process.shmaddr = archi_shared_memory_attach(args.pathname, args.proj_id, false);
+
+    if (archi_process.shmaddr == NULL)
     {
         archi_log_error(M, "Couldn't attach to shared memory at pathname '%s', project id %i.",
                 args.pathname, args.proj_id);
@@ -114,55 +139,248 @@ main(
         return ARCHI_EXIT_CODE(ARCHI_ERROR_ATTACH);
     }
 
-    /////////////////////////
-    // Parse shared memory //
-    /////////////////////////
+    /////////////////////////////
+    // Start signal management //
+    /////////////////////////////
 
-    archi_log_debug(M, "Parsing shared memory...");
+    if (archi_process.shmaddr->signal_watch_set != NULL)
+    {
+        archi_log_debug(M, "(ini) Starting signal management...");
 
-    const archi_signal_watch_set_t *signal_watch_set = {0};
-    archi_container_t plugin_libraries = {0};
-    archi_container_t plugin_interfaces = {0};
-    archi_container_t app_config_steps = {0};
+#define LOG_SIGNAL(signal) do { \
+        if (archi_process.shmaddr->signal_watch_set->f_##signal) \
+            archi_log_debug(M, " - %s", #signal); \
+} while (0)
 
-    archi_app_parse_shm(archi_main_shmaddr, &signal_watch_set,
-            &plugin_libraries, &plugin_interfaces, &app_config_steps);
+        LOG_SIGNAL(SIGINT);
+        LOG_SIGNAL(SIGQUIT);
+        LOG_SIGNAL(SIGTERM);
+
+        LOG_SIGNAL(SIGCHLD);
+        LOG_SIGNAL(SIGCONT);
+        LOG_SIGNAL(SIGTSTP);
+        LOG_SIGNAL(SIGXCPU);
+        LOG_SIGNAL(SIGXFSZ);
+
+        LOG_SIGNAL(SIGPIPE);
+        LOG_SIGNAL(SIGPOLL);
+        LOG_SIGNAL(SIGURG);
+
+        LOG_SIGNAL(SIGALRM);
+        LOG_SIGNAL(SIGVTALRM);
+        LOG_SIGNAL(SIGPROF);
+
+        LOG_SIGNAL(SIGHUP);
+        LOG_SIGNAL(SIGTTIN);
+        LOG_SIGNAL(SIGTTOU);
+        LOG_SIGNAL(SIGWINCH);
+
+        LOG_SIGNAL(SIGUSR1);
+        LOG_SIGNAL(SIGUSR2);
+
+#undef LOG_SIGNAL
+
+        for (size_t i = 0; i < archi_signal_number_of_rt_signals(); i++)
+        {
+            if (archi_process.shmaddr->signal_watch_set->f_SIGRTMIN[i])
+                archi_log_debug(M, " - SIGRTMIN+%u", (unsigned)i);
+        }
+
+        archi_process.signal_management = archi_signal_management_start(
+                archi_process.shmaddr->signal_watch_set, (archi_signal_handler_t){0});
+
+        if (archi_process.signal_management == NULL)
+            return ARCHI_EXIT_CODE(ARCHI_ERROR_SIGNAL);
+    }
 
     ////////////////////////////
     // Initialize application //
     ////////////////////////////
 
-    archi_log_debug(M, "Initializing application...");
+    archi_log_debug(M, "(ini) Initializing the application...");
 
-    code = archi_app_initialize(&archi_main_app, signal_watch_set);
-    if (code != 0)
+    archi_process.app = (archi_application_t){
+        .libraries = {
+            .data = &archi_process.app_libraries_data,
+            .interface = &archi_list_container_interface,
+        },
+        .interfaces = {
+            .data = &archi_process.app_interfaces_data,
+            .interface = &archi_list_container_interface,
+        },
+        .contexts = {
+            .data = &archi_process.app_contexts_data,
+            .interface = &archi_list_container_interface,
+        },
+    };
+
+    archi_process.app_libraries_data =
+        archi_process.app_interfaces_data =
+        archi_process.app_contexts_data =
+        (archi_list_container_data_t){
+            .insert_to_head = false,
+            .traverse_from_head = false,
+        };
+
+    archi_process.app_context_signal = (archi_context_t){
+        .handle = archi_process.signal_management,
+        .interface = &archi_app_signal_interface,
+    };
+    archi_process.app_context_fsm = (archi_context_t){
+        .handle = &archi_process.fsm,
+        .interface = &archi_app_fsm_interface,
+    };
+
+    // Register built-in interfaces
+    for (size_t i = 0; i < archi_builtin_interfaces_num_of; i++)
     {
-        archi_log_error(M, "Couldn't initialize the application.");
-        return ARCHI_EXIT_CODE(code);
+        archi_log_debug(M, " - adding built-in context interface '%s'...",
+                archi_builtin_interfaces_aliases[i]);
+
+        code = archi_container_insert(archi_process.app.interfaces,
+                archi_builtin_interfaces_aliases[i], (void*)archi_builtin_interfaces[i]);
+
+        if (code != 0)
+        {
+            archi_log_error(M, "Couldn't add built-in context interface '%s' (error %i).",
+                    (unsigned)i, archi_builtin_interfaces_aliases[i], code);
+            return ARCHI_EXIT_CODE(code);
+        }
+
+        archi_process.counter.builtin_interfaces++;
     }
 
-    ///////////////////////////
-    // Configure application //
-    ///////////////////////////
-
-    archi_log_info(M, "Configuring application...");
-
-    code = archi_app_configure(&archi_main_app,
-            plugin_libraries, plugin_interfaces, app_config_steps);
-    if (code != 0)
+    // Register built-in contexts
+    if (archi_process.signal_management != NULL)
     {
-        archi_log_error(M, "Couldn't configure the application.");
-        return ARCHI_EXIT_CODE(code);
+        archi_log_debug(M, " - adding built-in context '%s'...", ARCHI_APP_SIGNAL_ALIAS);
+
+        code = archi_container_insert(archi_process.app.contexts,
+                ARCHI_APP_SIGNAL_ALIAS, &archi_process.app_context_signal);
+
+        if (code != 0)
+        {
+            archi_log_error(M, "Couldn't add built-in context '%s' (error %i).",
+                    ARCHI_APP_SIGNAL_ALIAS, code);
+            return ARCHI_EXIT_CODE(code);
+        }
+
+        archi_process.counter.builtin_contexts++;
     }
 
-    /////////////////////////
-    // Execute application //
-    /////////////////////////
+    {
+        archi_log_debug(M, " - adding built-in context '%s'...", ARCHI_APP_FSM_ALIAS);
 
-    archi_log_info(M, "Executing application...");
+        code = archi_container_insert(archi_process.app.contexts,
+                ARCHI_APP_FSM_ALIAS, &archi_process.app_context_fsm);
 
-    code = archi_finite_state_machine(archi_main_app.context.entry_state,
-            archi_main_app.context.transition);
+        if (code != 0)
+        {
+            archi_log_error(M, "Couldn't add built-in context '%s' (error %i).",
+                    ARCHI_APP_FSM_ALIAS, code);
+            return ARCHI_EXIT_CODE(code);
+        }
+
+        archi_process.counter.builtin_contexts++;
+    }
+
+    // Load libraries
+    if (archi_process.shmaddr->app_config.libraries != NULL)
+    {
+        for (size_t i = 0; i < archi_process.shmaddr->app_config.num_libraries; i++)
+        {
+            archi_log_debug(M, " - loading shared library '%s'...",
+                    SAFE(archi_process.shmaddr->app_config.libraries[i].key));
+
+            code = archi_app_add_library(&archi_process.app, archi_process.shmaddr->app_config.libraries[i]);
+            if (code != 0)
+            {
+                archi_log_error(M, "Couldn't load shared library '%s' (error %i).",
+                        SAFE(archi_process.shmaddr->app_config.libraries[i].key), code);
+                return ARCHI_EXIT_CODE(code);
+            }
+        }
+
+        archi_process.counter.libraries++;
+    }
+
+    // Get context interfaces
+    if (archi_process.shmaddr->app_config.interfaces != NULL)
+    {
+        for (size_t i = 0; i < archi_process.shmaddr->app_config.num_interfaces; i++)
+        {
+            archi_log_debug(M, " - adding context interface '%s'...",
+                    SAFE(archi_process.shmaddr->app_config.interfaces[i].key));
+
+            code = archi_app_add_interface(&archi_process.app, archi_process.shmaddr->app_config.interfaces[i]);
+            if (code != 0)
+            {
+                archi_log_error(M, "Couldn't extract context interface '%s' (error %i).",
+                        SAFE(archi_process.shmaddr->app_config.interfaces[i].key), code);
+                return ARCHI_EXIT_CODE(code);
+            }
+        }
+
+        archi_process.counter.interfaces++;
+    }
+
+    // Configure the application
+    if (archi_process.shmaddr->app_config.steps != NULL)
+    {
+        for (size_t i = 0; i < archi_process.shmaddr->app_config.num_steps; i++)
+        {
+            archi_app_config_step_t step = archi_process.shmaddr->app_config.steps[i];
+
+            switch (step.type)
+            {
+                case ARCHI_APP_CONFIG_STEP_INIT:
+                    archi_log_debug(M, " - [%u] initializing context '%s' of type '%s'...",
+                            (unsigned)i, SAFE(step.key), SAFE(step.as_init.interface_key));
+                    break;
+
+                case ARCHI_APP_CONFIG_STEP_FINAL:
+                    archi_log_debug(M, " - [%u] finalizing context '%s'...", (unsigned)i, SAFE(step.key));
+                    break;
+
+                case ARCHI_APP_CONFIG_STEP_SET:
+                    archi_log_debug(M, " - [%u] setting slot '%s' of context '%s' to value of type %u...",
+                            (unsigned)i, SAFE(step.as_set.slot), SAFE(step.key), step.as_set.value->type);
+                    break;
+
+                case ARCHI_APP_CONFIG_STEP_ASSIGN:
+                    if (step.as_assign.source_slot != NULL)
+                        archi_log_debug(M, " - [%u] assigning slot '%s' of context '%s' to slot '%s' of context '%s'...",
+                                (unsigned)i, SAFE(step.as_assign.source_slot), SAFE(step.as_assign.source_key),
+                                SAFE(step.as_assign.slot), SAFE(step.key));
+                    else
+                        archi_log_debug(M, " - [%u] assigning context '%s' to slot '%s' of context '%s'...",
+                                (unsigned)i, SAFE(step.as_assign.source_key),
+                                SAFE(step.as_assign.slot), SAFE(step.key));
+                    break;
+
+                case ARCHI_APP_CONFIG_STEP_ACT:
+                    archi_log_debug(M, " - [%u] invoking action '%s' of context '%s'...",
+                            (unsigned)i, SAFE(step.as_act.action), SAFE(step.key));
+                    break;
+            }
+
+            code = archi_app_do_config_step(&archi_process.app, step);
+            if (code != 0)
+            {
+                archi_log_error(M, "Couldn't do configuration step #%u (error %i).", (unsigned)i, code);
+                return ARCHI_EXIT_CODE(code);
+            }
+
+            archi_process.counter.steps++;
+        }
+    }
+
+    /////////////////////////////
+    // Execute the application //
+    /////////////////////////////
+
+    archi_log_debug(M, "(exe) Executing the finite state machine...");
+    code = archi_fsm_execute(archi_process.fsm);
 
     return ARCHI_EXIT_CODE(code);
 }
@@ -170,10 +388,108 @@ main(
 void
 archi_exit_cleanup(void) // will be called on exit(), or if main() returns
 {
-    archi_log_debug(M, "Finalizing application...");
-    archi_app_finalize(&archi_main_app);
+    archi_status_t code;
 
-    archi_log_debug(M, "Detaching shared memory...");
-    archi_shared_memory_detach(archi_main_shmaddr);
+    //////////////////////////////
+    // Finalize the application //
+    //////////////////////////////
+
+    if (archi_process.shmaddr != NULL)
+    {
+        archi_log_debug(M, "(fin) Finalizing the application...");
+
+        // Reset the application
+        for (size_t i = 0; i < archi_process.counter.steps; i++)
+        {
+            size_t j = (archi_process.counter.steps - 1) - i;
+
+            archi_log_debug(M, " - undoing configuration step #%u...", (unsigned)j);
+
+            code = archi_app_undo_config_step(&archi_process.app, archi_process.shmaddr->app_config.steps[j]);
+            if (code != 0)
+                archi_log_error(M, "Couldn't undo configuration step #%u (error %i).", (unsigned)i, code);
+        }
+
+        // Remove context interfaces
+        for (size_t i = 0; i < archi_process.counter.interfaces; i++)
+        {
+            size_t j = (archi_process.counter.interfaces - 1) - i;
+
+            archi_log_debug(M, " - removing context interface '%s'...",
+                    SAFE(archi_process.shmaddr->app_config.interfaces[j].key));
+
+            code = archi_app_remove_interface(&archi_process.app, archi_process.shmaddr->app_config.interfaces[j].key);
+            if (code != 0)
+                archi_log_error(M, "Couldn't remove context interface '%s' (error %i).",
+                        SAFE(archi_process.shmaddr->app_config.interfaces[j].key), code);
+        }
+
+        // Unload libraries
+        for (size_t i = 0; i < archi_process.counter.libraries; i++)
+        {
+            size_t j = (archi_process.counter.libraries - 1) - i;
+
+            archi_log_debug(M, " - unloading shared library '%s'...",
+                    SAFE(archi_process.shmaddr->app_config.libraries[j].key));
+
+            code = archi_app_remove_library(&archi_process.app, archi_process.shmaddr->app_config.libraries[j].key);
+            if (code != 0)
+                archi_log_error(M, "Couldn't unload shared library '%s' (error %i).",
+                        SAFE(archi_process.shmaddr->app_config.libraries[j].key), code);
+        }
+
+        // Remove built-in contexts
+        {
+            archi_log_debug(M, " - removing built-in context '%s'...", ARCHI_APP_FSM_ALIAS);
+
+            code = archi_container_remove(archi_process.app.contexts, ARCHI_APP_FSM_ALIAS, NULL);
+            if (code != 0)
+                archi_log_error(M, "Couldn't remove built-in context '%s' (error %i).",
+                        ARCHI_APP_FSM_ALIAS, code);
+        }
+        {
+            archi_log_debug(M, " - removing built-in context '%s'...", ARCHI_APP_SIGNAL_ALIAS);
+
+            code = archi_container_remove(archi_process.app.contexts, ARCHI_APP_SIGNAL_ALIAS, NULL);
+            if (code != 0)
+                archi_log_error(M, "Couldn't remove built-in context '%s' (error %i).",
+                        ARCHI_APP_SIGNAL_ALIAS, code);
+        }
+
+        // Remove built-in context interfaces
+        for (size_t i = 0; i < archi_process.counter.builtin_interfaces; i++)
+        {
+            size_t j = (archi_process.counter.builtin_interfaces - 1) - i;
+
+            archi_log_debug(M, " - removing built-in context interface '%s'...",
+                    archi_builtin_interfaces_aliases[j]);
+
+            code = archi_container_remove(archi_process.app.interfaces,
+                    archi_builtin_interfaces_aliases[j], NULL);
+            if (code != 0)
+                archi_log_error(M, "Couldn't remove built-in context interface '%s' (error %i).",
+                        archi_builtin_interfaces_aliases[j], code);
+        }
+    }
+
+    ////////////////////////////
+    // Stop signal management //
+    ////////////////////////////
+
+    if (archi_process.signal_management != NULL)
+    {
+        archi_log_debug(M, "(fin) Stopping signal management...");
+        archi_signal_management_stop(archi_process.signal_management);
+    }
+
+    //////////////////////////
+    // Detach shared memory //
+    //////////////////////////
+
+    if (archi_process.shmaddr != NULL)
+    {
+        archi_log_debug(M, "(fin) Detaching shared memory...");
+        archi_shared_memory_detach(archi_process.shmaddr);
+    }
 }
 

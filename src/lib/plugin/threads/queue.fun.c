@@ -24,7 +24,7 @@
  */
 
 #include "archi/plugin/threads/queue.fun.h"
-#include "archi/util/container.fun.h"
+#include "archi/util/list.fun.h"
 #include "archi/util/error.def.h"
 
 #include <stdatomic.h>
@@ -280,48 +280,47 @@ archi_queue_element_size(
 /*****************************************************************************/
 
 static
-ARCHI_CONTAINER_ELEMENT_FUNC(archi_queue_context_init_config)
+ARCHI_LIST_ACT_FUNC(archi_queue_context_init_config)
 {
-    if ((key == NULL) || (element == NULL) || (data == NULL))
-        return ARCHI_ERROR_MISUSE;
+    (void) position;
 
-    archi_value_t *value = element;
+    archi_list_node_named_value_t *config_node = (archi_list_node_named_value_t*)node;
     archi_queue_config_t *config = data;
 
-    if (strcmp(key, ARCHI_QUEUE_CONFIG_KEY) == 0)
+    if (strcmp(config_node->base.name, ARCHI_QUEUE_CONFIG_KEY) == 0)
     {
-        if ((value->type != ARCHI_VALUE_DATA) || (value->ptr == NULL) ||
-                (value->size != sizeof(*config)) || (value->num_of == 0))
+        if ((config_node->value.type != ARCHI_VALUE_DATA) || (config_node->value.ptr == NULL) ||
+                (config_node->value.size != sizeof(*config)) || (config_node->value.num_of == 0))
             return ARCHI_ERROR_CONFIG;
 
-        memcpy(config, value->ptr, sizeof(*config));
+        memcpy(config, config_node->value.ptr, sizeof(*config));
         return 0;
     }
-    else if (strcmp(key, ARCHI_QUEUE_CONFIG_KEY_CAPACITY_LOG2) == 0)
+    else if (strcmp(config_node->base.name, ARCHI_QUEUE_CONFIG_KEY_CAPACITY_LOG2) == 0)
     {
-        if ((value->type != ARCHI_VALUE_UINT) || (value->ptr == NULL) ||
-                (value->size != sizeof(config->capacity_log2)) || (value->num_of == 0))
+        if ((config_node->value.type != ARCHI_VALUE_UINT) || (config_node->value.ptr == NULL) ||
+                (config_node->value.size != sizeof(config->capacity_log2)) || (config_node->value.num_of == 0))
             return ARCHI_ERROR_CONFIG;
 
-        config->capacity_log2 = *(size_t*)value->ptr;
+        config->capacity_log2 = *(size_t*)config_node->value.ptr;
         return 0;
     }
-    else if (strcmp(key, ARCHI_QUEUE_CONFIG_KEY_ELEMENT_ALIGNMENT_LOG2) == 0)
+    else if (strcmp(config_node->base.name, ARCHI_QUEUE_CONFIG_KEY_ELEMENT_ALIGNMENT_LOG2) == 0)
     {
-        if ((value->type != ARCHI_VALUE_UINT) || (value->ptr == NULL) ||
-                (value->size != sizeof(config->element_alignment_log2)) || (value->num_of == 0))
+        if ((config_node->value.type != ARCHI_VALUE_UINT) || (config_node->value.ptr == NULL) ||
+                (config_node->value.size != sizeof(config->element_alignment_log2)) || (config_node->value.num_of == 0))
             return ARCHI_ERROR_CONFIG;
 
-        config->element_alignment_log2 = *(size_t*)value->ptr;
+        config->element_alignment_log2 = *(size_t*)config_node->value.ptr;
         return 0;
     }
-    else if (strcmp(key, ARCHI_QUEUE_CONFIG_KEY_ELEMENT_SIZE) == 0)
+    else if (strcmp(config_node->base.name, ARCHI_QUEUE_CONFIG_KEY_ELEMENT_SIZE) == 0)
     {
-        if ((value->type != ARCHI_VALUE_UINT) || (value->ptr == NULL) ||
-                (value->size != sizeof(config->element_size)) || (value->num_of == 0))
+        if ((config_node->value.type != ARCHI_VALUE_UINT) || (config_node->value.ptr == NULL) ||
+                (config_node->value.size != sizeof(config->element_size)) || (config_node->value.num_of == 0))
             return ARCHI_ERROR_CONFIG;
 
-        config->element_size = *(size_t*)value->ptr;
+        config->element_size = *(size_t*)config_node->value.ptr;
         return 0;
     }
     else
@@ -336,9 +335,11 @@ ARCHI_CONTEXT_INIT_FUNC(archi_queue_context_init)
     archi_status_t code;
 
     archi_queue_config_t queue_config = {0};
-    if (config.data != NULL)
+    if (config != NULL)
     {
-        code = archi_container_traverse(config, archi_queue_context_init_config, &queue_config);
+        archi_list_t config_list = {.head = (archi_list_node_t*)config};
+        code = archi_list_traverse(&config_list, NULL, NULL,
+                archi_queue_context_init_config, &queue_config, true, 0, NULL);
         if (code != 0)
             return code;
     }

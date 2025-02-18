@@ -25,44 +25,43 @@
 
 #include "archi/plugin/files/interface.fun.h"
 #include "archi/plugin/files/config.typ.h"
-#include "archi/util/container.fun.h"
+#include "archi/util/list.fun.h"
 #include "archi/util/error.def.h"
 
 #include <stdio.h> // for FILE, fopen(), fclose()
 #include <string.h> // for strcmp(), memcpy()
 
 static
-ARCHI_CONTAINER_ELEMENT_FUNC(archi_file_context_init_config)
+ARCHI_LIST_ACT_FUNC(archi_file_context_init_config)
 {
-    if ((key == NULL) || (element == NULL) || (data == NULL))
-        return ARCHI_ERROR_MISUSE;
+    (void) position;
 
-    archi_value_t *value = element;
+    archi_list_node_named_value_t *config_node = (archi_list_node_named_value_t*)node;
     archi_file_config_t *config = data;
 
-    if (strcmp(key, ARCHI_FILE_CONFIG_KEY) == 0)
+    if (strcmp(config_node->base.name, ARCHI_FILE_CONFIG_KEY) == 0)
     {
-        if ((value->type != ARCHI_VALUE_DATA) || (value->ptr == NULL) ||
-                (value->size != sizeof(*config)) || (value->num_of == 0))
+        if ((config_node->value.type != ARCHI_VALUE_DATA) || (config_node->value.ptr == NULL) ||
+                (config_node->value.size != sizeof(*config)) || (config_node->value.num_of == 0))
             return ARCHI_ERROR_CONFIG;
 
-        memcpy(config, value->ptr, sizeof(*config));
+        memcpy(config, config_node->value.ptr, sizeof(*config));
         return 0;
     }
-    else if (strcmp(key, ARCHI_FILE_CONFIG_KEY_PATHNAME) == 0)
+    else if (strcmp(config_node->base.name, ARCHI_FILE_CONFIG_KEY_PATHNAME) == 0)
     {
-        if ((value->type != ARCHI_VALUE_STRING) || (value->ptr == NULL))
+        if ((config_node->value.type != ARCHI_VALUE_STRING) || (config_node->value.ptr == NULL))
             return ARCHI_ERROR_CONFIG;
 
-        config->pathname = value->ptr;
+        config->pathname = config_node->value.ptr;
         return 0;
     }
-    else if (strcmp(key, ARCHI_FILE_CONFIG_KEY_MODE) == 0)
+    else if (strcmp(config_node->base.name, ARCHI_FILE_CONFIG_KEY_MODE) == 0)
     {
-        if ((value->type != ARCHI_VALUE_STRING) || (value->ptr == NULL))
+        if ((config_node->value.type != ARCHI_VALUE_STRING) || (config_node->value.ptr == NULL))
             return ARCHI_ERROR_CONFIG;
 
-        config->mode = value->ptr;
+        config->mode = config_node->value.ptr;
         return 0;
     }
     else
@@ -77,9 +76,11 @@ ARCHI_CONTEXT_INIT_FUNC(archi_file_context_init)
     archi_status_t code;
 
     archi_file_config_t file_config = {0};
-    if (config.data != NULL)
+    if (config != NULL)
     {
-        code = archi_container_traverse(config, archi_file_context_init_config, &file_config);
+        archi_list_t config_list = {.head = (archi_list_node_t*)config};
+        code = archi_list_traverse(&config_list, NULL, NULL,
+                archi_file_context_init_config, &file_config, true, 0, NULL);
         if (code != 0)
             return code;
     }

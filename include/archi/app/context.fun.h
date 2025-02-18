@@ -41,7 +41,7 @@ archi_status_t
 archi_context_initialize(
         archi_context_t *context, ///< [in,out] Initialized context.
 
-        archi_container_t config ///< [in] Context configuration.
+        const struct archi_list_node_named_value *config ///< [in] Context configuration.
 );
 
 /**
@@ -107,7 +107,7 @@ archi_context_act(
         archi_context_t context, ///< [in] Initialized context.
 
         const char *action, ///< [in] Action type.
-        archi_container_t params ///< [in] Action parameters.
+        const struct archi_list_node_named_value *params ///< [in] Action parameters.
 );
 
 #endif // _ARCHI_APP_CONTEXT_FUN_H_

@@ -24,23 +24,23 @@
  */
 
 #include "archi/app/config.fun.h"
-#include "archi/app/config.typ.h"
 #include "archi/app/context.fun.h"
+#include "archi/app/instance.typ.h"
 #include "archi/util/container.fun.h"
-#include "archi/util/list.fun.h"
 #include "archi/util/error.def.h"
 
 #include <stdlib.h>
 
-static
 archi_status_t
-archi_app_configure_step_init(
-        archi_container_t application,
-
-        const archi_app_config_step_init_t *step_init,
-        archi_container_t context_interfaces)
+archi_app_add_context(
+        archi_application_t *app,
+        const void *key,
+        const archi_context_interface_t *interface,
+        const struct archi_list_node_named_value *config)
 {
-    if ((step_init->key == NULL) || (((const char*)step_init->key)[0] == '\0'))
+    if (app == NULL)
+        return ARCHI_ERROR_MISUSE;
+    else if ((key == NULL) || (interface == NULL))
         return ARCHI_ERROR_MISUSE;
 
     archi_status_t code;
@@ -49,46 +49,41 @@ archi_app_configure_step_init(
     if (context == NULL)
         return ARCHI_ERROR_ALLOC;
 
-    code = archi_container_extract(context_interfaces,
-            step_init->interface_key, (void**)&context->interface);
-    if (code != 0)
-        goto failure;
+    *context = (archi_context_t){.interface = interface};
 
-    code = archi_context_initialize(context, (archi_container_t){
-            .data = (void*)step_init->config,
-            .interface = &archi_list_container_interface});
+    code = archi_context_initialize(context, config);
     if (code != 0)
-        goto failure;
+    {
+        free(context);
+        return code;
+    }
 
-    code = archi_container_insert(application, step_init->key, context);
+    code = archi_container_insert(app->contexts, key, context);
     if (code != 0)
     {
         archi_context_finalize(context);
-        goto failure;
+        free(context);
+        return code;
     }
 
     return 0;
-
-failure:
-    free(context);
-    return code;
 }
 
-static
 archi_status_t
-archi_app_configure_step_final(
-        archi_container_t application,
-
-        const archi_app_config_step_final_t *step_final)
+archi_app_remove_context(
+        archi_application_t *app,
+        const void *key)
 {
-    if ((step_final->key == NULL) || (((const char*)step_final->key)[0] == '\0'))
+    if (app == NULL)
+        return ARCHI_ERROR_MISUSE;
+    else if (key == NULL)
         return ARCHI_ERROR_MISUSE;
 
     archi_status_t code;
 
     archi_context_t *context = NULL;
 
-    code = archi_container_remove(application, step_final->key, (void**)&context);
+    code = archi_container_remove(app->contexts, key, (void**)&context);
     if (code != 0)
         return code;
 
@@ -101,28 +96,67 @@ archi_app_configure_step_final(
     return 0;
 }
 
+/*****************************************************************************/
+
 static
 archi_status_t
-archi_app_configure_step_set(
-        archi_container_t application,
+archi_app_do_config_step_init(
+        archi_application_t *app,
 
-        const archi_app_config_step_set_t *step_set)
+        const void *context_key,
+        archi_app_config_step_init_t step_init)
 {
-    if ((step_set->key == NULL) || (step_set->slot == NULL) || (step_set->value == NULL))
+    if (context_key == NULL)
+        return ARCHI_ERROR_MISUSE;
+
+    archi_status_t code;
+
+    const archi_context_interface_t *interface = NULL;
+
+    code = archi_container_extract(app->interfaces,
+            step_init.interface_key, (void**)&interface);
+    if (code != 0)
+        return code;
+
+    return archi_app_add_context(app, context_key, interface, step_init.config);
+}
+
+static
+archi_status_t
+archi_app_do_config_step_final(
+        archi_application_t *app,
+
+        const void *context_key)
+{
+    if (context_key == NULL)
+        return ARCHI_ERROR_MISUSE;
+
+    return archi_app_remove_context(app, context_key);
+}
+
+static
+archi_status_t
+archi_app_do_config_step_set(
+        archi_application_t *app,
+
+        const void *context_key,
+        archi_app_config_step_set_t step_set)
+{
+    if ((context_key == NULL) || (step_set.slot == NULL) || (step_set.value == NULL))
         return ARCHI_ERROR_MISUSE;
 
     archi_status_t code;
 
     archi_context_t *context = NULL;
 
-    code = archi_container_extract(application, step_set->key, (void**)&context);
+    code = archi_container_extract(app->contexts, context_key, (void**)&context);
     if (code != 0)
         return code;
 
     if (context == NULL)
         return ARCHI_ERROR_CONFIG;
 
-    code = archi_context_set(*context, step_set->slot, step_set->value);
+    code = archi_context_set(*context, step_set.slot, step_set.value);
     if (code != 0)
         return code;
 
@@ -131,33 +165,34 @@ archi_app_configure_step_set(
 
 static
 archi_status_t
-archi_app_configure_step_assign(
-        archi_container_t application,
+archi_app_do_config_step_assign(
+        archi_application_t *app,
 
-        const archi_app_config_step_assign_t *step_assign)
+        const void *context_key,
+        archi_app_config_step_assign_t step_assign)
 {
-    if ((step_assign->destination.key == NULL) || (step_assign->destination.slot == NULL))
+    if ((context_key == NULL) || (step_assign.slot == NULL))
         return ARCHI_ERROR_MISUSE;
-    else if (step_assign->source.key == NULL)
+    else if (step_assign.source_key == NULL)
         return ARCHI_ERROR_MISUSE;
 
     archi_status_t code;
 
     archi_context_t *dest_context = NULL, *src_context = NULL;
 
-    code = archi_container_extract(application, step_assign->destination.key, (void**)&dest_context);
+    code = archi_container_extract(app->contexts, context_key, (void**)&dest_context);
     if (code != 0)
         return code;
 
-    code = archi_container_extract(application, step_assign->source.key, (void**)&src_context);
+    code = archi_container_extract(app->contexts, step_assign.source_key, (void**)&src_context);
     if (code != 0)
         return code;
 
     if ((dest_context == NULL) || (src_context == NULL))
         return ARCHI_ERROR_CONFIG;
 
-    code = archi_context_assign(*dest_context, step_assign->destination.slot,
-            *src_context, step_assign->source.slot);
+    code = archi_context_assign(*dest_context, step_assign.slot,
+            *src_context, step_assign.source_slot);
     if (code != 0)
         return code;
 
@@ -166,64 +201,78 @@ archi_app_configure_step_assign(
 
 static
 archi_status_t
-archi_app_configure_step_act(
-        archi_container_t application,
+archi_app_do_config_step_act(
+        archi_application_t *app,
 
-        const archi_app_config_step_act_t *step_act)
+        const void *context_key,
+        archi_app_config_step_act_t step_act)
 {
-    if ((step_act->key == NULL) || (step_act->action == NULL))
+    if ((context_key == NULL) || (step_act.action == NULL))
         return ARCHI_ERROR_MISUSE;
 
     archi_status_t code;
 
     archi_context_t *context = NULL;
 
-    code = archi_container_extract(application, step_act->key, (void**)&context);
+    code = archi_container_extract(app->contexts, context_key, (void**)&context);
     if (code != 0)
         return code;
 
     if (context == NULL)
         return ARCHI_ERROR_CONFIG;
 
-    code = archi_context_act(*context, step_act->action, (archi_container_t){
-            .data = (void*)step_act->params,
-            .interface = &archi_list_container_interface});
+    code = archi_context_act(*context, step_act.action, step_act.params);
     if (code != 0)
         return code;
 
     return 0;
 }
 
-ARCHI_CONTAINER_ELEMENT_FUNC(archi_app_apply_config_step)
+archi_status_t
+archi_app_do_config_step(
+        archi_application_t *app,
+        archi_app_config_step_t step)
 {
-    (void) key;
-
-    if ((element == NULL) || (data == NULL))
+    if (app == NULL)
         return ARCHI_ERROR_MISUSE;
 
-    const archi_app_config_step_t *step = element;
-    archi_app_apply_config_step_data_t *func_data = data;
-
-    switch (step->type)
+    switch (step.type)
     {
         case ARCHI_APP_CONFIG_STEP_INIT:
-            return archi_app_configure_step_init(func_data->contexts,
-                    &step->as_init, func_data->context_interfaces);
+            return archi_app_do_config_step_init(app, step.key, step.as_init);
 
         case ARCHI_APP_CONFIG_STEP_FINAL:
-            return archi_app_configure_step_final(func_data->contexts, &step->as_final);
+            return archi_app_do_config_step_final(app, step.key);
 
         case ARCHI_APP_CONFIG_STEP_SET:
-            return archi_app_configure_step_set(func_data->contexts, &step->as_set);
+            return archi_app_do_config_step_set(app, step.key, step.as_set);
 
         case ARCHI_APP_CONFIG_STEP_ASSIGN:
-            return archi_app_configure_step_assign(func_data->contexts, &step->as_assign);
+            return archi_app_do_config_step_assign(app, step.key, step.as_assign);
 
         case ARCHI_APP_CONFIG_STEP_ACT:
-            return archi_app_configure_step_act(func_data->contexts, &step->as_act);
+            return archi_app_do_config_step_act(app, step.key, step.as_act);
 
         default:
-            return ARCHI_ERROR_MISUSE;
+            return ARCHI_ERROR_CONFIG;
+    }
+}
+
+archi_status_t
+archi_app_undo_config_step(
+        archi_application_t *app,
+        archi_app_config_step_t step)
+{
+    if (app == NULL)
+        return ARCHI_ERROR_MISUSE;
+
+    switch (step.type)
+    {
+        case ARCHI_APP_CONFIG_STEP_INIT:
+            return archi_app_do_config_step_final(app, step.key);
+
+        default:
+            return 0;
     }
 }
 

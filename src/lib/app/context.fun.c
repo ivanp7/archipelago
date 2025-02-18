@@ -25,7 +25,6 @@
 
 #include "archi/app/context.fun.h"
 #include "archi/app/context.typ.h"
-#include "archi/util/list.fun.h"
 #include "archi/util/value.typ.h"
 #include "archi/util/error.def.h"
 
@@ -33,7 +32,7 @@ archi_status_t
 archi_context_initialize(
         archi_context_t *context,
 
-        archi_container_t config)
+        const struct archi_list_node_named_value *config)
 {
     if ((context == NULL) || (context->interface == NULL))
         return ARCHI_ERROR_MISUSE;
@@ -169,7 +168,7 @@ archi_context_act(
         archi_context_t context,
 
         const char *action,
-        archi_container_t params)
+        const struct archi_list_node_named_value *params)
 {
     if ((context.handle == NULL) || (context.interface == NULL))
         return ARCHI_ERROR_MISUSE;

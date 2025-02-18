@@ -20,29 +20,42 @@
 
 /**
  * @file
- * @brief Command line arguments parsing.
+ * @brief Application interface types.
  */
 
 #pragma once
-#ifndef _ARCHI_EXE_ARGS_FUN_H_
-#define _ARCHI_EXE_ARGS_FUN_H_
+#ifndef _ARCHI_APP_INSTANCE_TYP_H_
+#define _ARCHI_APP_INSTANCE_TYP_H_
 
-#include "archi/util/status.typ.h"
+#include "archi/util/container.typ.h"
 
-struct archi_args;
+#include <stddef.h> // for size_t
+
+struct archi_app_loader_library;
+struct archi_app_loader_library_symbol;
+struct archi_app_config_step;
 
 /**
- * @brief Parse command line arguments.
- *
- * @return Zero on success, non-zero error code otherwise.
+ * @brief Application configuration.
  */
-archi_status_t
-archi_args_parse(
-        struct archi_args *args, ///< [out] Parsed values of command line arguments.
+typedef struct archi_app_config {
+    struct archi_app_loader_library *libraries;         ///< Libraries to load.
+    struct archi_app_loader_library_symbol *interfaces; ///< Interfaces to get.
+    struct archi_app_config_step *steps;                ///< Configuration steps to do.
 
-        int argc,    ///< [in] Number of command line arguments.
-        char *argv[] ///< [in] Command line arguments.
-);
+    size_t num_libraries;  ///< Number of libraries to load.
+    size_t num_interfaces; ///< Number of interfaces to get.
+    size_t num_steps;      ///< Number of configuration steps to do.
+} archi_app_config_t;
 
-#endif // _ARCHI_EXE_ARGS_FUN_H_
+/**
+ * @brief Application instance.
+ */
+typedef struct archi_application {
+    archi_container_t libraries;  ///< Loaded libraries (element type is library handle pointer).
+    archi_container_t interfaces; ///< Available context interfaces (element type: archi_context_interface_t).
+    archi_container_t contexts;   ///< Initialized contexts (element type: archi_context_t).
+} archi_application_t;
+
+#endif // _ARCHI_APP_INSTANCE_TYP_H_
 

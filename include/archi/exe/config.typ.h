@@ -20,29 +20,29 @@
 
 /**
  * @file
- * @brief Command line arguments parsing.
+ * @brief Application configuration.
  */
 
 #pragma once
-#ifndef _ARCHI_EXE_ARGS_FUN_H_
-#define _ARCHI_EXE_ARGS_FUN_H_
+#ifndef _ARCHI_EXE_CONFIG_TYP_H_
+#define _ARCHI_EXE_CONFIG_TYP_H_
 
-#include "archi/util/status.typ.h"
+#include "archi/app/instance.typ.h"
 
-struct archi_args;
+struct archi_signal_watch_set;
 
 /**
- * @brief Parse command line arguments.
+ * @brief Configuration of the process in shared memory.
  *
- * @return Zero on success, non-zero error code otherwise.
+ * If config is an object in shared memory,
+ * config.shmaddr must be equal to &config.
  */
-archi_status_t
-archi_args_parse(
-        struct archi_args *args, ///< [out] Parsed values of command line arguments.
+typedef struct archi_process_config_shmaddr {
+    void *shmaddr; ///< Address of the structure object itself.
 
-        int argc,    ///< [in] Number of command line arguments.
-        char *argv[] ///< [in] Command line arguments.
-);
+    struct archi_signal_watch_set *signal_watch_set; ///< Signal watch set.
+    archi_app_config_t app_config; ///< Application configuration.
+} archi_process_config_shmaddr_t;
 
-#endif // _ARCHI_EXE_ARGS_FUN_H_
+#endif // _ARCHI_EXE_CONFIG_TYP_H_
 

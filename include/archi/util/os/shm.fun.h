@@ -39,7 +39,7 @@
  *
  * @return Shared memory address or NULL in case of failure.
  */
-void**
+void*
 archi_shared_memory_create(
         const char *pathname, ///< [in] Pathname associated with shared memory.
         int proj_id,          ///< [in] Project identifier associated with shared memory.
@@ -66,7 +66,7 @@ archi_shared_memory_destroy(
  *
  * @return Shared memory address or NULL in case of failure.
  */
-void**
+void*
 archi_shared_memory_attach(
         const char *pathname, ///< [in] Pathname associated with shared memory.
         int proj_id,          ///< [in] Project identifier associated with shared memory.

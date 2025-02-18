@@ -24,7 +24,7 @@
  */
 
 #include "archi/plugin/threads/interface.fun.h"
-#include "archi/util/container.fun.h"
+#include "archi/util/list.fun.h"
 #include "archi/util/error.def.h"
 
 #include <threads.h>
@@ -505,35 +505,34 @@ archi_threads_config(
 /*****************************************************************************/
 
 static
-ARCHI_CONTAINER_ELEMENT_FUNC(archi_threads_context_init_config)
+ARCHI_LIST_ACT_FUNC(archi_threads_context_init_config)
 {
-    if ((key == NULL) || (element == NULL) || (data == NULL))
-        return ARCHI_ERROR_MISUSE;
+    (void) position;
 
-    archi_value_t *value = element;
+    archi_list_node_named_value_t *config_node = (archi_list_node_named_value_t*)node;
     archi_threads_config_t *config = data;
 
-    if (strcmp(key, ARCHI_THREADS_CONFIG_KEY) == 0)
+    if (strcmp(config_node->base.name, ARCHI_THREADS_CONFIG_KEY) == 0)
     {
-        if ((value->type != ARCHI_VALUE_DATA) || (value->ptr == NULL) ||
-                (value->size != sizeof(*config)) || (value->num_of == 0))
+        if ((config_node->value.type != ARCHI_VALUE_DATA) || (config_node->value.ptr == NULL) ||
+                (config_node->value.size != sizeof(*config)) || (config_node->value.num_of == 0))
             return ARCHI_ERROR_CONFIG;
 
-        memcpy(config, value->ptr, sizeof(*config));
+        memcpy(config, config_node->value.ptr, sizeof(*config));
         return 0;
     }
-    else if (strcmp(key, ARCHI_THREADS_CONFIG_KEY_NUM_THREADS) == 0)
+    else if (strcmp(config_node->base.name, ARCHI_THREADS_CONFIG_KEY_NUM_THREADS) == 0)
     {
-        if ((value->type != ARCHI_VALUE_UINT) || (value->ptr == NULL) ||
-                (value->size != sizeof(config->num_threads)) || (value->num_of == 0))
+        if ((config_node->value.type != ARCHI_VALUE_UINT) || (config_node->value.ptr == NULL) ||
+                (config_node->value.size != sizeof(config->num_threads)) || (config_node->value.num_of == 0))
             return ARCHI_ERROR_CONFIG;
 
-        config->num_threads = *(size_t*)value->ptr;
+        config->num_threads = *(size_t*)config_node->value.ptr;
         return 0;
     }
-    else if (strcmp(key, ARCHI_THREADS_CONFIG_KEY_BUSY_WAIT) == 0)
+    else if (strcmp(config_node->base.name, ARCHI_THREADS_CONFIG_KEY_BUSY_WAIT) == 0)
     {
-        switch (value->type)
+        switch (config_node->value.type)
         {
             case ARCHI_VALUE_FALSE:
                 config->busy_wait = false;
@@ -559,9 +558,11 @@ ARCHI_CONTEXT_INIT_FUNC(archi_threads_context_init)
     archi_status_t code;
 
     archi_threads_config_t threads_config = {0};
-    if (config.data != NULL)
+    if (config != NULL)
     {
-        code = archi_container_traverse(config, archi_threads_context_init_config, &threads_config);
+        archi_list_t config_list = {.head = (archi_list_node_t*)config};
+        code = archi_list_traverse(&config_list, NULL, NULL,
+                archi_threads_context_init_config, &threads_config, true, 0, NULL);
         if (code != 0)
             return code;
     }

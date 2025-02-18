@@ -16,8 +16,8 @@ INCLUDE_DIR = "include"
 SOURCE_DIR  = "src"
 BUILD_DIR   = "build"
 
-ARCHI_INC   = os.environ.get('ARCHI_INC', "../../include")
-ARCHI_LIB   = os.environ.get('ARCHI_LIB', "../../build/libarchipelago.a")
+ARCHI_INC   = os.environ.get('ARCHI_INC', "../../include")                  ### <<<<<<<<<<<<<<<<<<<< INPUT ENVIRONMENT VARIABLE <<<<<<<<<<<<<<<<<<<<
+ARCHI_LIB   = os.environ.get('ARCHI_LIB', "../../build/libarchipelago.a")   ### <<<<<<<<<<<<<<<<<<<< INPUT ENVIRONMENT VARIABLE <<<<<<<<<<<<<<<<<<<<
 
 #------------------------------------------------------------------------------
 

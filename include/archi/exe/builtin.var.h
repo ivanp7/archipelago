@@ -20,29 +20,32 @@
 
 /**
  * @file
- * @brief Command line arguments parsing.
+ * @brief Built-in context interfaces.
  */
 
 #pragma once
-#ifndef _ARCHI_EXE_ARGS_FUN_H_
-#define _ARCHI_EXE_ARGS_FUN_H_
+#ifndef _ARCHI_EXE_BUILTIN_VAR_H_
+#define _ARCHI_EXE_BUILTIN_VAR_H_
 
-#include "archi/util/status.typ.h"
-
-struct archi_args;
+#include "archi/app/context.typ.h"
 
 /**
- * @brief Parse command line arguments.
- *
- * @return Zero on success, non-zero error code otherwise.
+ * @brief Built-in context interfaces.
  */
-archi_status_t
-archi_args_parse(
-        struct archi_args *args, ///< [out] Parsed values of command line arguments.
+extern
+const archi_context_interface_t *const archi_builtin_interfaces[];
 
-        int argc,    ///< [in] Number of command line arguments.
-        char *argv[] ///< [in] Command line arguments.
-);
+/**
+ * @brief Aliases of built-in context interfaces.
+ */
+extern
+const char *const archi_builtin_interfaces_aliases[];
 
-#endif // _ARCHI_EXE_ARGS_FUN_H_
+/**
+ * @brief Number of built-in context interfaces.
+ */
+extern
+const size_t archi_builtin_interfaces_num_of;
+
+#endif // _ARCHI_EXE_BUILTIN_VAR_H_
 

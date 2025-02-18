@@ -27,34 +27,54 @@
 #ifndef _ARCHI_APP_LOADER_FUN_H_
 #define _ARCHI_APP_LOADER_FUN_H_
 
-#include "archi/util/container.typ.h"
+#include "archi/app/loader.typ.h"
+#include "archi/util/status.typ.h"
+
+struct archi_application;
 
 /**
- * @brief Container element function for loading of a library.
+ * @brief Load a library to an application.
  *
- * Container element type is expected to be archi_app_loader_library_t.
+ * @return Status code.
  */
-ARCHI_CONTAINER_ELEMENT_FUNC(archi_app_load_library);
+archi_status_t
+archi_app_add_library(
+        struct archi_application *app, ///< [in] Application instance.
+        archi_app_loader_library_t lib ///< [in] Library to load.
+);
 
 /**
- * @brief Container element function for unloading of a library.
- */
-ARCHI_CONTAINER_ELEMENT_FUNC(archi_app_unload_library);
-
-/**
- * @brief Container element function for getting a library content.
+ * @brief Unload a library from an application.
  *
- * Container element type is expected to be archi_app_loader_library_symbol_t.
+ * @return Status code.
  */
-ARCHI_CONTAINER_ELEMENT_FUNC(archi_app_get_library_content);
+archi_status_t
+archi_app_remove_library(
+        struct archi_application *app, ///< [in] Application instance.
+        const void *key ///< [in] Library key.
+);
 
 /**
- * @brief Data for library content getter function.
+ * @brief Add a context interface to an application.
+ *
+ * @return Status code.
  */
-typedef struct archi_app_get_library_content_data {
-    archi_container_t contents; ///< Ponters to symbols of loaded libraries.
-    archi_container_t loaded_libraries; ///< Loaded libraries.
-} archi_app_get_library_content_data_t;
+archi_status_t
+archi_app_add_interface(
+        struct archi_application *app, ///< [in] Application instance.
+        archi_app_loader_library_symbol_t sym ///< [in] Library symbol to get.
+);
+
+/**
+ * @brief Remove a context interface from an application.
+ *
+ * @return Status code.
+ */
+archi_status_t
+archi_app_remove_interface(
+        struct archi_application *app, ///< [in] Application instance.
+        const void *key ///< [in] Interface key.
+);
 
 #endif // _ARCHI_APP_LOADER_FUN_H_
 

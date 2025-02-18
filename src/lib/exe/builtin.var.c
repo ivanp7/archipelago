@@ -20,29 +20,33 @@
 
 /**
  * @file
- * @brief Command line arguments parsing.
+ * @brief Built-in context interfaces.
  */
 
-#pragma once
-#ifndef _ARCHI_EXE_ARGS_FUN_H_
-#define _ARCHI_EXE_ARGS_FUN_H_
+#include "archi/exe/builtin.var.h"
 
-#include "archi/util/status.typ.h"
+#include "archi/plugin/files/interface.fun.h"
+#include "archi/plugin/shared_memory/interface.fun.h"
+#include "archi/plugin/shared_libraries/interface.fun.h"
+#include "archi/plugin/threads/interface.fun.h"
+#include "archi/plugin/threads/queue.fun.h"
 
-struct archi_args;
+const archi_context_interface_t *const archi_builtin_interfaces[] = {
+    &archi_file_context_interface,
+    &archi_shared_library_context_interface,
+    &archi_shared_memory_context_interface,
+    &archi_threads_context_interface,
+    &archi_queue_context_interface,
+};
 
-/**
- * @brief Parse command line arguments.
- *
- * @return Zero on success, non-zero error code otherwise.
- */
-archi_status_t
-archi_args_parse(
-        struct archi_args *args, ///< [out] Parsed values of command line arguments.
+const char *const archi_builtin_interfaces_aliases[] = {
+    ARCHI_FILE_CONTEXT_INTERFACE_ALIAS,
+    ARCHI_SHARED_LIBRARY_CONTEXT_INTERFACE_ALIAS,
+    ARCHI_SHARED_MEMORY_CONTEXT_INTERFACE_ALIAS,
+    ARCHI_THREADS_CONTEXT_INTERFACE_ALIAS,
+    ARCHI_QUEUE_CONTEXT_INTERFACE_ALIAS,
+};
 
-        int argc,    ///< [in] Number of command line arguments.
-        char *argv[] ///< [in] Command line arguments.
-);
-
-#endif // _ARCHI_EXE_ARGS_FUN_H_
+const size_t archi_builtin_interfaces_num_of = sizeof(archi_builtin_interfaces) /
+    sizeof(archi_builtin_interfaces[0]);
 

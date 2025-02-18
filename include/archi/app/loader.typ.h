@@ -33,7 +33,7 @@
  * @brief Loader configuration for a library.
  */
 typedef struct archi_app_loader_library {
-    const void *key; ///< Library handle key.
+    const void *key; ///< Library key.
 
     const char *pathname; ///< Pathname of library file.
     bool lazy;   ///< Whether to perform lazy binding.
@@ -44,9 +44,9 @@ typedef struct archi_app_loader_library {
  * @brief Loader configuration for a library symbol.
  */
 typedef struct archi_app_loader_library_symbol {
-    const void *key; ///< Symbol address key.
+    const void *key; ///< Symbol key.
 
-    const void *library_key; ///< Library handle key.
+    const void *library_key; ///< Library key.
     const char *symbol_name; ///< Symbol name.
 } archi_app_loader_library_symbol_t;
 

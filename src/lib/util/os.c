@@ -27,6 +27,7 @@
 #include "archi/util/os/lib.fun.h"
 #include "archi/util/os/signal.fun.h"
 
+#include <stdatomic.h> // for atomic_flag
 #include <stdlib.h> // for malloc()
 
 #include <sys/shm.h> // for ftok()
@@ -38,7 +39,7 @@
 #include <pthread.h> // for pthread_t, pthread_create(), phtread_join()
 #include <time.h> // for timespec
 
-void**
+void*
 archi_shared_memory_create(
         const char *pathname,
         int proj_id,
@@ -58,11 +59,11 @@ archi_shared_memory_create(
     if (shmid == -1)
         return NULL;
 
-    void **shmaddr = shmat(shmid, NULL, 0);
+    void *shmaddr = shmat(shmid, NULL, 0);
     if (shmaddr == (void*)-1)
         goto failure;
 
-    shmaddr[0] = shmaddr;
+    *(void**)shmaddr = shmaddr;
 
     return shmaddr;
 
@@ -93,7 +94,7 @@ archi_shared_memory_destroy(
     return true;
 }
 
-void**
+void*
 archi_shared_memory_attach(
         const char *pathname,
         const int proj_id,
@@ -113,11 +114,11 @@ archi_shared_memory_attach(
 
     int shmflg = writable ? 0 : SHM_RDONLY;
 
-    void **current_shmaddr = shmat(shmid, NULL, shmflg);
+    void *current_shmaddr = shmat(shmid, NULL, shmflg);
     if (current_shmaddr == (void*)-1)
         return NULL;
 
-    void *shmaddr = current_shmaddr[0];
+    void *shmaddr = *(void**)current_shmaddr;
 
     if (shmaddr != current_shmaddr)
     {
@@ -283,7 +284,9 @@ archi_signal_flags_alloc(void)
 struct archi_signal_management_context
 {
     archi_signal_flags_t *flags;
+
     archi_signal_handler_t signal_handler;
+    atomic_flag spinlock;
 
     pthread_t thread;
     sigset_t set;
@@ -308,14 +311,10 @@ archi_signal_management_thread(
         if (signal <= 0)
             continue;
 
-        bool set_flag;
-        if (context->signal_handler.function != NULL)
-            set_flag = context->signal_handler.function(signal, &siginfo,
-                    context->flags, context->signal_handler.data);
-        else
-            set_flag = true;
+        archi_signal_handler_t signal_handler = archi_signal_management_handler(context);
 
-        if (!set_flag)
+        if ((signal_handler.function != NULL) &&
+                !signal_handler.function(signal, &siginfo, context->flags, signal_handler.data))
             continue;
 
         switch (signal)
@@ -363,7 +362,7 @@ archi_signal_management_thread(
 }
 
 struct archi_signal_management_context*
-archi_signal_management_thread_start(
+archi_signal_management_start(
         const archi_signal_watch_set_t *signals,
         archi_signal_handler_t signal_handler)
 {
@@ -374,13 +373,14 @@ archi_signal_management_thread_start(
     if (context == NULL)
         return NULL;
 
-    *context = (struct archi_signal_management_context){0};
+    *context = (struct archi_signal_management_context){
+        .signal_handler = signal_handler,
+        .spinlock = ATOMIC_FLAG_INIT,
+    };
 
     context->flags = archi_signal_flags_alloc();
     if (context->flags == NULL)
         goto failure;
-
-    context->signal_handler = signal_handler;
 
     sigemptyset(&context->set);
 
@@ -440,12 +440,12 @@ archi_signal_management_thread_start(
     return context;
 
 failure:
-    archi_signal_management_thread_stop(context);
+    archi_signal_management_stop(context);
     return NULL;
 }
 
 void
-archi_signal_management_thread_stop(
+archi_signal_management_stop(
         struct archi_signal_management_context *context)
 {
     if (context == NULL)
@@ -462,20 +462,44 @@ archi_signal_management_thread_stop(
     free(context);
 }
 
+archi_signal_flags_t*
+archi_signal_management_flags(
+        struct archi_signal_management_context *context)
+{
+    if (context == NULL)
+        return NULL;
+
+    return context->flags;
+}
+
+archi_signal_handler_t
+archi_signal_management_handler(
+        struct archi_signal_management_context *context)
+{
+    if (context == NULL)
+        return (archi_signal_handler_t){0};
+
+    archi_signal_handler_t signal_handler;
+    {
+        while (atomic_flag_test_and_set_explicit(&context->spinlock, memory_order_acquire)); // lock
+        signal_handler = context->signal_handler;
+        atomic_flag_clear_explicit(&context->spinlock, memory_order_release); // unlock
+    }
+
+    return signal_handler;
+}
+
 void
-archi_signal_management_thread_get_properties(
+archi_signal_management_set_handler(
         struct archi_signal_management_context *context,
 
-        archi_signal_flags_t **flags,
-        archi_signal_handler_t *signal_handler)
+        archi_signal_handler_t signal_handler)
 {
     if (context == NULL)
         return;
 
-    if (flags != NULL)
-        *flags = context->flags;
-
-    if (signal_handler != NULL)
-        *signal_handler = context->signal_handler;
+    while (atomic_flag_test_and_set_explicit(&context->spinlock, memory_order_acquire)); // lock
+    context->signal_handler = signal_handler;
+    atomic_flag_clear_explicit(&context->spinlock, memory_order_release); // unlock
 }
 

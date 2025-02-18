@@ -290,14 +290,14 @@ TEST(archi_list_remove_nodes)
     list.tail = &node[4];
     ASSERT_EQ(archi_list_remove_nodes(&list, archi_list_node_func_select_every_nth, &nth,
                 NULL, NULL, true, 0, &num_removed),
-            ARCHI_ERROR_MISUSE, archi_status_t, "%i");
+            0, archi_status_t, "%i");
     ASSERT_EQ(num_removed, 0, unsigned, "%u");
 
     list.head = &node[0];
     list.tail = NULL;
     ASSERT_EQ(archi_list_remove_nodes(&list, archi_list_node_func_select_every_nth, &nth,
                 NULL, NULL, false, 0, &num_removed),
-            ARCHI_ERROR_MISUSE, archi_status_t, "%i");
+            0, archi_status_t, "%i");
     ASSERT_EQ(num_removed, 0, unsigned, "%u");
 
     list.head = &node[0];
@@ -390,14 +390,14 @@ TEST(archi_list_traverse)
     list.tail = &node[4];
     ASSERT_EQ(archi_list_traverse(&list, archi_list_node_func_select_every_nth, &nth,
                 flip_bit, &mask, true, 0, &num_counted),
-            ARCHI_ERROR_MISUSE, archi_status_t, "%i");
+            0, archi_status_t, "%i");
     ASSERT_EQ(num_counted, 0, unsigned, "%u");
 
     list.head = &node[0];
     list.tail = NULL;
     ASSERT_EQ(archi_list_traverse(&list, archi_list_node_func_select_every_nth, &nth,
                 flip_bit, &mask, false, 0, &num_counted),
-            ARCHI_ERROR_MISUSE, archi_status_t, "%i");
+            0, archi_status_t, "%i");
     ASSERT_EQ(num_counted, 0, unsigned, "%u");
 
     list.head = &node[0];
