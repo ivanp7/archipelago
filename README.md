@@ -1,4 +1,4 @@
-# Archipelago, a dynamic finite state machine implementation
+# Archipelago, a dynamic application framework
 
 The executable:
 
