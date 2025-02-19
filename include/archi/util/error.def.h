@@ -32,7 +32,7 @@
 #define ARCHI_ERROR_CONFIG      -3  ///< Error: incorrect configuration provided.
 #define ARCHI_ERROR_INIT        -4  ///< Error: couldn't initialize a resource.
 #define ARCHI_ERROR_ALLOC       -5  ///< Error: couldn't allocate memory.
-#define ARCHI_ERROR_ATTACH      -6  ///< Error: couldn't attach shared memory.
+#define ARCHI_ERROR_MAP         -6  ///< Error: couldn't map memory.
 #define ARCHI_ERROR_LOAD        -7  ///< Error: couldn't load shared library.
 #define ARCHI_ERROR_SYMBOL      -8  ///< Error: couldn't find a symbol in shared library.
 #define ARCHI_ERROR_FORMAT      -9  ///< Error: data format is incorrect.

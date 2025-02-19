@@ -20,25 +20,25 @@
 
 /**
  * @file
- * @brief Context interface of the plugin.
+ * @brief Types for shared memory operations.
  */
 
 #pragma once
-#ifndef _ARCHI_PLUGIN_SHARED_MEMORY_INTERFACE_FUN_H_
-#define _ARCHI_PLUGIN_SHARED_MEMORY_INTERFACE_FUN_H_
-
-#include "archi/app/context.typ.h"
-
-ARCHI_CONTEXT_INIT_FUNC(archi_plugin_shared_memory_context_init);   ///< Shared memory context initialization function.
-ARCHI_CONTEXT_FINAL_FUNC(archi_plugin_shared_memory_context_final); ///< Shared memory context finalization function.
-
-extern
-const archi_context_interface_t archi_plugin_shared_memory_context_interface; ///< Shared memory context interface functions.
+#ifndef _ARCHI_UTIL_OS_SHM_TYP_H_
+#define _ARCHI_UTIL_OS_SHM_TYP_H_
 
 /**
- * @brief Alias name of shared memory context interface.
+ * @brief Shared memory header.
+ *
+ * If header is an object in shared memory,
+ * header.shmaddr must be equal to &header.
+ *
+ * (header.shmend - header.shmaddr) is the full size of shared memory.
  */
-#define ARCHI_SHARED_MEMORY_CONTEXT_INTERFACE_ALIAS "shared_memory"
+typedef struct archi_shm_header {
+    void *shmaddr; ///< Address of the shared memory starting location.
+    void *shmend;  ///< Address of the first location beyond shared memory end.
+} archi_shm_header_t;
 
-#endif // _ARCHI_PLUGIN_SHARED_MEMORY_INTERFACE_FUN_H_
+#endif // _ARCHI_UTIL_OS_SHM_TYP_H_
 

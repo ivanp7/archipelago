@@ -28,21 +28,19 @@
 #define _ARCHI_EXE_CONFIG_TYP_H_
 
 #include "archi/app/instance.typ.h"
+#include "archi/util/os/shm.typ.h"
 
 struct archi_signal_watch_set;
 
 /**
  * @brief Configuration of the process in shared memory.
- *
- * If config is an object in shared memory,
- * config.shmaddr must be equal to &config.
  */
-typedef struct archi_process_config_shmaddr {
-    void *shmaddr; ///< Address of the structure object itself.
+typedef struct archi_process_config_shm {
+    archi_shm_header_t shm_header; ///< Shared memory header.
 
     struct archi_signal_watch_set *signal_watch_set; ///< Signal watch set.
     archi_app_config_t app_config; ///< Application configuration.
-} archi_process_config_shmaddr_t;
+} archi_process_config_shm_t;
 
 #endif // _ARCHI_EXE_CONFIG_TYP_H_
 

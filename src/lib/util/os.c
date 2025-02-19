@@ -30,8 +30,9 @@
 #include <stdatomic.h> // for atomic_flag
 #include <stdlib.h> // for malloc()
 
-#include <sys/shm.h> // for ftok()
-#include <sys/ipc.h> // for shmget(), shmat(), shmdt()
+#include <fcntl.h> // for open()
+#include <unistd.h> // for close()
+#include <sys/mman.h> // for mmap(), munmap()
 
 #include <dlfcn.h> // for dlopen(), dlclose(), dlsym()
 
@@ -39,114 +40,84 @@
 #include <pthread.h> // for pthread_t, pthread_create(), phtread_join()
 #include <time.h> // for timespec
 
-void*
-archi_shared_memory_create(
+int
+archi_shm_open_file(
         const char *pathname,
-        int proj_id,
 
-        size_t size)
+        bool readable,
+        bool writable)
 {
-    if (pathname == NULL)
-        return NULL;
-    else if (size <= sizeof(void*))
+    int flags = O_NONBLOCK;
+
+    if (readable && writable)
+        flags |= O_RDWR;
+    else if (readable)
+        flags |= O_RDONLY;
+    else
+        flags |= O_WRONLY;
+
+    return open(pathname, flags);
+}
+
+bool
+archi_shm_close(
+        int fd)
+{
+    return close(fd) == 0;
+}
+
+archi_shm_header_t*
+archi_shm_map(
+        int fd,
+
+        bool readable,
+        bool writable,
+        bool shared,
+        int flags)
+{
+    int prot = (readable ? PROT_READ : 0) | (writable ? PROT_WRITE : 0);
+    int all_flags = (shared ? MAP_SHARED_VALIDATE : MAP_PRIVATE) | MAP_FIXED_NOREPLACE | flags;
+
+    // Map the memory the initial time to extract its header
+    archi_shm_header_t *shm = mmap(NULL, sizeof(*shm), prot, all_flags, fd, 0);
+    if (shm == MAP_FAILED)
         return NULL;
 
-    key_t key = ftok(pathname, proj_id);
-    if (key == -1)
-        return NULL;
-
-    int shmid = shmget(key, size, IPC_CREAT | IPC_EXCL | 0640);
-    if (shmid == -1)
-        return NULL;
-
-    void *shmaddr = shmat(shmid, NULL, 0);
-    if (shmaddr == (void*)-1)
+    archi_shm_header_t header = *shm;
+    if (header.shmaddr > header.shmend)
         goto failure;
 
-    *(void**)shmaddr = shmaddr;
+    size_t size = (char*)header.shmend - (char*)header.shmaddr;
+    if (size < sizeof(*shm))
+        goto failure;
 
-    return shmaddr;
+    // Remap the memory of the correct size at the correct address
+    munmap(shm, sizeof(*shm));
+
+    shm = mmap(header.shmaddr, size, prot, all_flags, fd, 0);
+    if (shm == MAP_FAILED)
+        return NULL;
+
+    return shm;
 
 failure:
-    archi_shared_memory_destroy(pathname, proj_id);
+    munmap(shm, sizeof(*shm));
+
     return NULL;
 }
 
 bool
-archi_shared_memory_destroy(
-        const char *pathname,
-        int proj_id)
+archi_shm_unmap(
+        archi_shm_header_t *shm)
 {
-    if (pathname == NULL)
+    if (shm == NULL)
+        return false;
+    else if (shm->shmaddr > shm->shmend)
         return false;
 
-    key_t key = ftok(pathname, proj_id);
-    if (key == -1)
-        return false;
+    size_t size = (char*)shm->shmend - (char*)shm->shmaddr;
 
-    int shmid = shmget(key, 0, 0);
-    if (shmid == -1)
-        return false;
-
-    if (shmctl(shmid, IPC_RMID, NULL) == -1)
-        return false;
-
-    return true;
-}
-
-void*
-archi_shared_memory_attach(
-        const char *pathname,
-        const int proj_id,
-
-        bool writable)
-{
-    if (pathname == NULL)
-        return NULL;
-
-    key_t key = ftok(pathname, proj_id);
-    if (key == -1)
-        return NULL;
-
-    int shmid = shmget(key, 0, 0);
-    if (shmid == -1)
-        return NULL;
-
-    int shmflg = writable ? 0 : SHM_RDONLY;
-
-    void *current_shmaddr = shmat(shmid, NULL, shmflg);
-    if (current_shmaddr == (void*)-1)
-        return NULL;
-
-    void *shmaddr = *(void**)current_shmaddr;
-
-    if (shmaddr != current_shmaddr)
-    {
-        if (shmdt(current_shmaddr) == -1)
-            return NULL;
-
-        current_shmaddr = shmat(shmid, shmaddr, SHM_RND | shmflg);
-        if (current_shmaddr == (void*)-1)
-            return NULL;
-
-        if (current_shmaddr != shmaddr)
-        {
-            shmdt(current_shmaddr);
-            return NULL;
-        }
-    }
-
-    return shmaddr;
-}
-
-bool
-archi_shared_memory_detach(
-        const void *shmaddr)
-{
-    if (shmaddr == NULL)
-        return true;
-
-    return shmdt(shmaddr) == 0;
+    return munmap(shm, size) == 0;
 }
 
 /*****************************************************************************/

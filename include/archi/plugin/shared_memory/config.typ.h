@@ -33,10 +33,12 @@
  * @brief Shared memory configuration.
  */
 typedef struct archi_shared_memory_config {
-    const char *pathname; ///< Pathname of shared memory key.
-    int proj_id;   ///< Project identifier of shared memory key.
+    const char *file; ///< Pathname of a memory-mapped file.
 
-    bool writable; ///< Whether shared memory is writable.
+    bool readable; ///< Whether is shared memory readable.
+    bool writable; ///< Whether is shared memory writable.
+    bool shared;   ///< Whether updates to the mapping are visible to other processes.
+    int flags;     ///< Other mmap() flags.
 } archi_shared_memory_config_t;
 
 /**
@@ -45,19 +47,29 @@ typedef struct archi_shared_memory_config {
 #define ARCHI_SHARED_MEMORY_CONFIG_KEY "config"
 
 /**
- * @brief Shared memory configuration key -- pathname.
+ * @brief Shared memory configuration key -- pathname of a memory-mapped file.
  */
-#define ARCHI_SHARED_MEMORY_CONFIG_KEY_PATHNAME "pathname"
+#define ARCHI_SHARED_MEMORY_CONFIG_KEY_FILE "file"
 
 /**
- * @brief Shared memory configuration key -- project identifier.
+ * @brief Shared memory configuration key -- whether is shared memory readable.
  */
-#define ARCHI_SHARED_MEMORY_CONFIG_KEY_PROJECT_ID "proj_id"
+#define ARCHI_SHARED_MEMORY_CONFIG_KEY_READABLE "readable"
 
 /**
- * @brief Shared memory configuration key -- whether shared memory is writable.
+ * @brief Shared memory configuration key -- whether is shared memory writable.
  */
 #define ARCHI_SHARED_MEMORY_CONFIG_KEY_WRITABLE "writable"
+
+/**
+ * @brief Shared memory configuration key -- whether updates to the mapping are visible to other processes.
+ */
+#define ARCHI_SHARED_MEMORY_CONFIG_KEY_SHARED "shared"
+
+/**
+ * @brief Shared memory configuration key -- other mmap() flags.
+ */
+#define ARCHI_SHARED_MEMORY_CONFIG_KEY_FLAGS "flags"
 
 #endif // _ARCHI_PLUGIN_SHARED_MEMORY_CONFIG_TYP_H_
 

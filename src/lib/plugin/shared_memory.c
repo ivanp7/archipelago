@@ -32,7 +32,7 @@
 #include <string.h> // for strcmp(), memcpy()
 
 static
-ARCHI_LIST_ACT_FUNC(archi_shared_memory_context_init_config)
+ARCHI_LIST_ACT_FUNC(archi_plugin_shared_memory_context_init_config)
 {
     (void) position;
 
@@ -48,22 +48,29 @@ ARCHI_LIST_ACT_FUNC(archi_shared_memory_context_init_config)
         memcpy(config, config_node->value.ptr, sizeof(*config));
         return 0;
     }
-    else if (strcmp(config_node->base.name, ARCHI_SHARED_MEMORY_CONFIG_KEY_PATHNAME) == 0)
+    else if (strcmp(config_node->base.name, ARCHI_SHARED_MEMORY_CONFIG_KEY_FILE) == 0)
     {
         if ((config_node->value.type != ARCHI_VALUE_STRING) || (config_node->value.ptr == NULL))
             return ARCHI_ERROR_CONFIG;
 
-        config->pathname = config_node->value.ptr;
+        config->file = config_node->value.ptr;
         return 0;
     }
-    else if (strcmp(config_node->base.name, ARCHI_SHARED_MEMORY_CONFIG_KEY_PROJECT_ID) == 0)
+    else if (strcmp(config_node->base.name, ARCHI_SHARED_MEMORY_CONFIG_KEY_READABLE) == 0)
     {
-        if ((config_node->value.type != ARCHI_VALUE_UINT) || (config_node->value.ptr == NULL) ||
-                (config_node->value.size != 1) || (config_node->value.num_of == 0))
-            return ARCHI_ERROR_CONFIG;
+        switch (config_node->value.type)
+        {
+            case ARCHI_VALUE_FALSE:
+                config->readable = false;
+                return 0;
 
-        config->proj_id = *(unsigned char*)config_node->value.ptr;
-        return 0;
+            case ARCHI_VALUE_TRUE:
+                config->readable = true;
+                return 0;
+
+            default:
+                return ARCHI_ERROR_CONFIG;
+        }
     }
     else if (strcmp(config_node->base.name, ARCHI_SHARED_MEMORY_CONFIG_KEY_WRITABLE) == 0)
     {
@@ -81,11 +88,36 @@ ARCHI_LIST_ACT_FUNC(archi_shared_memory_context_init_config)
                 return ARCHI_ERROR_CONFIG;
         }
     }
+    else if (strcmp(config_node->base.name, ARCHI_SHARED_MEMORY_CONFIG_KEY_SHARED) == 0)
+    {
+        switch (config_node->value.type)
+        {
+            case ARCHI_VALUE_FALSE:
+                config->shared = false;
+                return 0;
+
+            case ARCHI_VALUE_TRUE:
+                config->shared = true;
+                return 0;
+
+            default:
+                return ARCHI_ERROR_CONFIG;
+        }
+    }
+    else if (strcmp(config_node->base.name, ARCHI_SHARED_MEMORY_CONFIG_KEY_FLAGS) == 0)
+    {
+        if ((config_node->value.type != ARCHI_VALUE_SINT) || (config_node->value.ptr == NULL) ||
+                (config_node->value.size != sizeof(int)) || (config_node->value.num_of == 0))
+            return ARCHI_ERROR_CONFIG;
+
+        config->flags = *(int*)config_node->value.ptr;
+        return 0;
+    }
     else
         return ARCHI_ERROR_CONFIG;
 }
 
-ARCHI_CONTEXT_INIT_FUNC(archi_shared_memory_context_init)
+ARCHI_CONTEXT_INIT_FUNC(archi_plugin_shared_memory_context_init)
 {
     if (context == NULL)
         return ARCHI_ERROR_MISUSE;
@@ -97,30 +129,40 @@ ARCHI_CONTEXT_INIT_FUNC(archi_shared_memory_context_init)
     {
         archi_list_t config_list = {.head = (archi_list_node_t*)config};
         code = archi_list_traverse(&config_list, NULL, NULL,
-                archi_shared_memory_context_init_config, &shared_memory_config, true, 0, NULL);
+                archi_plugin_shared_memory_context_init_config, &shared_memory_config, true, 0, NULL);
         if (code != 0)
             return code;
     }
 
-    if ((shared_memory_config.pathname == NULL) || (shared_memory_config.proj_id == 0))
+    if (shared_memory_config.file == NULL)
         return ARCHI_ERROR_CONFIG;
 
-    void **shmaddr = archi_shared_memory_attach(shared_memory_config.pathname,
-            shared_memory_config.proj_id, shared_memory_config.writable);
-    if (shmaddr == NULL)
-        return ARCHI_ERROR_ATTACH;
+    int fd = archi_shm_open_file(shared_memory_config.file,
+            shared_memory_config.readable, shared_memory_config.writable);
+    if (fd == -1)
+        return ARCHI_ERROR_MAP;
 
-    *context = shmaddr;
+    archi_shm_header_t *shm = archi_shm_map(fd, shared_memory_config.readable,
+            shared_memory_config.writable, shared_memory_config.shared, shared_memory_config.flags);
+    if (shm == NULL)
+    {
+        archi_shm_close(fd);
+        return ARCHI_ERROR_MAP;
+    }
+
+    archi_shm_close(fd);
+
+    *context = shm;
     return 0;
 }
 
-ARCHI_CONTEXT_FINAL_FUNC(archi_shared_memory_context_final)
+ARCHI_CONTEXT_FINAL_FUNC(archi_plugin_shared_memory_context_final)
 {
-    archi_shared_memory_detach(context);
+    archi_shm_unmap(context);
 }
 
-const archi_context_interface_t archi_shared_memory_context_interface = {
-    .init_fn = archi_shared_memory_context_init,
-    .final_fn = archi_shared_memory_context_final,
+const archi_context_interface_t archi_plugin_shared_memory_context_interface = {
+    .init_fn = archi_plugin_shared_memory_context_init,
+    .final_fn = archi_plugin_shared_memory_context_final,
 };
 

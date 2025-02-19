@@ -27,61 +27,61 @@
 #ifndef _ARCHI_UTIL_OS_SHM_FUN_H_
 #define _ARCHI_UTIL_OS_SHM_FUN_H_
 
+#include "archi/util/os/shm.typ.h"
+
 #include <stdbool.h>
 #include <stddef.h>
 
 /**
- * @brief Create and attach pointer-aware shared memory.
+ * @brief Open a memory-mapped file.
  *
- * The first object in the shared memory is the pointer to itself.
- * It is needed to attach the shared memory at the correct address,
- * so all pointers in the shared memory are valid.
- *
- * @return Shared memory address or NULL in case of failure.
+ * @return File descriptor.
  */
-void*
-archi_shared_memory_create(
-        const char *pathname, ///< [in] Pathname associated with shared memory.
-        int proj_id,          ///< [in] Project identifier associated with shared memory.
+int
+archi_shm_open_file(
+        const char *pathname, ///< Pathname of a memory-mapped file.
 
-        size_t size ///< [in] Shared memory size.
+        bool readable, ///< [in] Whether is shared memory readable.
+        bool writable  ///< [in] Whether is shared memory writable.
 );
 
 /**
- * @brief Destroy shared memory.
+ * @brief Close a memory-mapped object.
+ *
+ * @return File descriptor.
+ */
+bool
+archi_shm_close(
+        int fd ///< [in] File descriptor of the mapped object.
+);
+
+/**
+ * @brief Map a pointer-aware memory-mapped file.
+ *
+ * The first object in the shared memory is void* pointer,
+ * which must be equal to its own location address.
+ * Pointers in the memory will be invalid if that's not the case.
+ *
+ * @return Shared memory address or NULL in case of failure.
+ */
+archi_shm_header_t*
+archi_shm_map(
+        int fd, ///< [in] File descriptor of the mapped object.
+
+        bool readable, ///< [in] Whether is shared memory readable.
+        bool writable, ///< [in] Whether is shared memory writable.
+        bool shared,   ///< [in] Whether updates to the mapping are visible to other processes.
+        int flags      ///< [in] Other mmap() flags.
+);
+
+/**
+ * @brief Unmap a pointer-aware memory-mapped file.
  *
  * @return True on success, otherwise false.
  */
 bool
-archi_shared_memory_destroy(
-        const char *pathname, ///< [in] Pathname associated with shared memory.
-        int proj_id           ///< [in] Project identifier associated with shared memory.
-);
-
-/**
- * @brief Attach pointer-aware shared memory.
- *
- * The first object in the shared memory is the pointer to itself.
- * It must not be meddled with.
- *
- * @return Shared memory address or NULL in case of failure.
- */
-void*
-archi_shared_memory_attach(
-        const char *pathname, ///< [in] Pathname associated with shared memory.
-        int proj_id,          ///< [in] Project identifier associated with shared memory.
-
-        bool writable ///< [in] Whether is shared memory attached for writing.
-);
-
-/**
- * @brief Detach shared memory.
- *
- * @return True on success, otherwise false.
- */
-bool
-archi_shared_memory_detach(
-        const void *shmaddr ///< [in] Shared memory address.
+archi_shm_unmap(
+        archi_shm_header_t *shm ///< [in] Shared memory header.
 );
 
 #endif // _ARCHI_UTIL_OS_SHM_FUN_H_

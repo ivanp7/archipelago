@@ -103,11 +103,11 @@ archi_threads_config(
 
 /*****************************************************************************/
 
-ARCHI_CONTEXT_INIT_FUNC(archi_threads_context_init);   ///< Threaded processing context initialization function.
-ARCHI_CONTEXT_FINAL_FUNC(archi_threads_context_final); ///< Threaded processing context finalization function.
+ARCHI_CONTEXT_INIT_FUNC(archi_plugin_threads_context_init);   ///< Threaded processing context initialization function.
+ARCHI_CONTEXT_FINAL_FUNC(archi_plugin_threads_context_final); ///< Threaded processing context finalization function.
 
 extern
-const archi_context_interface_t archi_threads_context_interface; ///< Threaded processing context interface functions.
+const archi_context_interface_t archi_plugin_threads_context_interface; ///< Threaded processing context interface functions.
 
 /**
  * @brief Alias name of threaded processing context interface.

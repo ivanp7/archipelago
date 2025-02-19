@@ -111,7 +111,7 @@ typedef struct archi_list {
 /*****************************************************************************/
 
 /**
- * @brief Named node.
+ * @brief Named list node.
  */
 typedef struct archi_list_node_named {
     archi_list_node_t link; ///< Node links.

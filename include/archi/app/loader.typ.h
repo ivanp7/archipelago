@@ -20,7 +20,7 @@
 
 /**
  * @file
- * @brief Types for application plugin loader.
+ * @brief Shared library loader configuration types.
  */
 
 #pragma once
@@ -30,7 +30,7 @@
 #include <stdbool.h>
 
 /**
- * @brief Loader configuration for a library.
+ * @brief Shared library loader configuration.
  */
 typedef struct archi_app_loader_library {
     const void *key; ///< Library key.
@@ -41,13 +41,13 @@ typedef struct archi_app_loader_library {
 } archi_app_loader_library_t;
 
 /**
- * @brief Loader configuration for a library symbol.
+ * @brief Shared library symbol getter configuration.
  */
 typedef struct archi_app_loader_library_symbol {
     const void *key; ///< Symbol key.
 
-    const void *library_key; ///< Library key.
     const char *symbol_name; ///< Symbol name.
+    const void *library_key; ///< Library key.
 } archi_app_loader_library_symbol_t;
 
 #endif // _ARCHI_APP_LOADER_TYP_H_

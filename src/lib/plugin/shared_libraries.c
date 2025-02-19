@@ -32,7 +32,7 @@
 #include <string.h> // for strcmp(), memcpy()
 
 static
-ARCHI_LIST_ACT_FUNC(archi_shared_library_context_init_config)
+ARCHI_LIST_ACT_FUNC(archi_plugin_shared_library_context_init_config)
 {
     (void) position;
 
@@ -92,7 +92,7 @@ ARCHI_LIST_ACT_FUNC(archi_shared_library_context_init_config)
         return ARCHI_ERROR_CONFIG;
 }
 
-ARCHI_CONTEXT_INIT_FUNC(archi_shared_library_context_init)
+ARCHI_CONTEXT_INIT_FUNC(archi_plugin_shared_library_context_init)
 {
     if (context == NULL)
         return ARCHI_ERROR_MISUSE;
@@ -104,7 +104,7 @@ ARCHI_CONTEXT_INIT_FUNC(archi_shared_library_context_init)
     {
         archi_list_t config_list = {.head = (archi_list_node_t*)config};
         code = archi_list_traverse(&config_list, NULL, NULL,
-                archi_shared_library_context_init_config, &shared_library_config, true, 0, NULL);
+                archi_plugin_shared_library_context_init_config, &shared_library_config, true, 0, NULL);
         if (code != 0)
             return code;
     }
@@ -121,12 +121,12 @@ ARCHI_CONTEXT_INIT_FUNC(archi_shared_library_context_init)
     return 0;
 }
 
-ARCHI_CONTEXT_FINAL_FUNC(archi_shared_library_context_final)
+ARCHI_CONTEXT_FINAL_FUNC(archi_plugin_shared_library_context_final)
 {
     archi_library_unload(context);
 }
 
-ARCHI_CONTEXT_GET_FUNC(archi_shared_library_context_get)
+ARCHI_CONTEXT_GET_FUNC(archi_plugin_shared_library_context_get)
 {
     if ((context == NULL) || (slot == NULL) || (value == NULL))
         return ARCHI_ERROR_MISUSE;
@@ -145,9 +145,9 @@ ARCHI_CONTEXT_GET_FUNC(archi_shared_library_context_get)
     return 0;
 }
 
-const archi_context_interface_t archi_shared_library_context_interface = {
-    .init_fn = archi_shared_library_context_init,
-    .final_fn = archi_shared_library_context_final,
-    .get_fn = archi_shared_library_context_get,
+const archi_context_interface_t archi_plugin_shared_library_context_interface = {
+    .init_fn = archi_plugin_shared_library_context_init,
+    .final_fn = archi_plugin_shared_library_context_final,
+    .get_fn = archi_plugin_shared_library_context_get,
 };
 

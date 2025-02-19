@@ -36,8 +36,7 @@
 #define STRINGIFY(x) _STR(x)
 
 enum {
-    ARGKEY_SHM_PATHNAME = 'i',
-    ARGKEY_SHM_PROJ_ID = 'j',
+    ARGKEY_SHM_FILE = 'f',
 
     ARGKEY_NO_LOGO = 'q',
     ARGKEY_VERBOSITY = 'v',
@@ -47,24 +46,20 @@ enum {
 
 static
 const struct argp_option args_options[] = {
-    {.doc = "Shared memory key options:"},
+    {.doc = "Configuration options:"},
 
-    {.key = ARGKEY_SHM_PATHNAME,    .name = "path", .arg = "PATHNAME",
-                                        .doc = "Change pathname (default: argv[0])"
-                                               " of shared memory containing app configuration"},
-    {.key = ARGKEY_SHM_PROJ_ID,     .name = "proj", .arg = "ID",
-                                        .doc = "Change project identifier (1-255, default: 1)"
-                                               " of shared memory containing app configuration"},
+    {.key = ARGKEY_SHM_FILE,    .name = "file", .arg = "PATHNAME",
+                                    .doc = "Map a configuration file into memory"},
 
     {.doc = "Verbosity options:"},
 
-    {.key = ARGKEY_NO_LOGO,     .name = "no-logo",  .doc = "Don't display the logo"},
+    {.key = ARGKEY_NO_LOGO,     .name = "no-logo", .doc = "Don't display the logo"},
     {.key = ARGKEY_VERBOSITY,   .name = "verbose", .arg = "LEVEL", .flags = OPTION_ARG_OPTIONAL,
                                     .doc = "Set verbosity level (0-" STRINGIFY(ARCHI_LOG_VERBOSITY_MAX)
                                            ", or one of: quiet, error, warning, notice, info, debug, max; "
                                            "default: info)"},
 
-    {.key = ARGKEY_HELP,        .name = "help",     .doc = "Display a short help message and exit",     .group = -1},
+    {.key = ARGKEY_HELP,        .name = "help",    .doc = "Display a short help message and exit",     .group = -1},
 
     {0}
 };
@@ -77,22 +72,11 @@ args_parse(int key, char *arg, struct argp_state *state)
 
     switch (key)
     {
-        case ARGKEY_SHM_PATHNAME:
-            if (args->pathname != NULL)
+        case ARGKEY_SHM_FILE:
+            if (args->file != NULL)
                 return EINVAL; // setting multiple configuration pathnames is not supported
 
-            args->pathname = arg;
-            break;
-
-        case ARGKEY_SHM_PROJ_ID:
-            if (args->proj_id != 0)
-                return EINVAL; // setting multiple configuration project identifiers is not supported
-
-            int proj_id = atoi(arg);
-            if ((proj_id <= 0) || (proj_id > 0xFF))
-                return EINVAL; // project identifier is invalid
-
-            args->proj_id = proj_id;
+            args->file = arg;
             break;
 
         case ARGKEY_NO_LOGO:
@@ -173,11 +157,8 @@ provided via shared memory and execute the finite state machine.\n\
     archi_status_t code = argp_parse(&args_parser, argc, argv,
             ARGP_NO_EXIT | ARGP_NO_HELP, NULL, args);
 
-    if (args->pathname == NULL)
-        args->pathname = argv[0];
-
-    if (args->proj_id == 0)
-        args->proj_id = 1;
+    if (args->file == NULL)
+        return 0;
 
     return code;
 }

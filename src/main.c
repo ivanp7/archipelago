@@ -41,7 +41,8 @@
 #include "archi/util/os/signal.fun.h"
 
 #include <stdlib.h> // for atexit()
-#include <errno.h> // for error codes
+#include <string.h> // for strerror()
+#include <errno.h> // for error codes and errno
 
 /*****************************************************************************/
 
@@ -53,7 +54,7 @@
 
 static
 struct {
-    archi_process_config_shmaddr_t *shmaddr; ///< Configuration of the process in shared memory.
+    const archi_process_config_shm_t *config; ///< Configuration of the process in shared memory.
 
     struct archi_signal_management_context *signal_management; ///< Signal management context.
 
@@ -111,44 +112,59 @@ main(
     // Set logging verbosity
     archi_log_set_verbosity(args.verbosity_level);
 
-    // Set cleanup function
-    atexit(archi_exit_cleanup);
-
-    //////////////////////////////
-    // Display application logo //
-    //////////////////////////////
-
+    // Display application logo
     archi_print(ARCHI_COLOR_RESET "\n");
     if (!args.no_logo)
         archi_print(ARCHI_COLOR_FG_BRI_WHITE "%s" ARCHI_COLOR_RESET "\n\n", ARCHI_PELAGO_LOGO);
 
-    //////////////////////////
-    // Attach shared memory //
-    //////////////////////////
+    // Exit if there is nothing to do
+    if (args.file == NULL)
+        return 0;
 
-    archi_log_debug(M, "(ini) Attaching shared memory at pathname '%s', project id %i...",
-            args.pathname, args.proj_id);
+    // Set cleanup function
+    atexit(archi_exit_cleanup);
 
-    archi_process.shmaddr = archi_shared_memory_attach(args.pathname, args.proj_id, false);
+    ///////////////////////
+    // Map shared memory //
+    ///////////////////////
 
-    if (archi_process.shmaddr == NULL)
     {
-        archi_log_error(M, "Couldn't attach to shared memory at pathname '%s', project id %i.",
-                args.pathname, args.proj_id);
+        archi_log_debug(M, "(ini) Opening memory-mapped configuration file '%s'...", args.file);
 
-        return ARCHI_EXIT_CODE(ARCHI_ERROR_ATTACH);
+        int fd = archi_shm_open_file(args.file, true, false);
+        if (fd == -1)
+        {
+            archi_log_error(M, "Couldn't open memory-mapped configuration file '%s': %s.", args.file, strerror(errno));
+            return ARCHI_EXIT_CODE(ARCHI_ERROR_FILE);
+        }
+
+        archi_log_debug(M, "(ini) Mapping memory-mapped configuration file '%s'...", args.file);
+
+        archi_process.config = (const archi_process_config_shm_t*)archi_shm_map(fd, true, false, false, 0);
+        if (archi_process.config == NULL)
+        {
+            archi_log_error(M, "Couldn't map memory-mapped configuration file '%s': %s.", args.file, strerror(errno));
+
+            archi_shm_close(fd);
+            return ARCHI_EXIT_CODE(ARCHI_ERROR_MAP);
+        }
+
+        archi_log_debug(M, "(ini) Closing memory-mapped configuration file...");
+
+        if (!archi_shm_close(fd))
+            archi_log_warning(M, "Couldn't close memory-mapped configuration file '%s': %s.", args.file, strerror(errno));
     }
 
     /////////////////////////////
     // Start signal management //
     /////////////////////////////
 
-    if (archi_process.shmaddr->signal_watch_set != NULL)
+    if (archi_process.config->signal_watch_set != NULL)
     {
         archi_log_debug(M, "(ini) Starting signal management...");
 
 #define LOG_SIGNAL(signal) do { \
-        if (archi_process.shmaddr->signal_watch_set->f_##signal) \
+        if (archi_process.config->signal_watch_set->f_##signal) \
             archi_log_debug(M, " - %s", #signal); \
 } while (0)
 
@@ -182,15 +198,18 @@ main(
 
         for (size_t i = 0; i < archi_signal_number_of_rt_signals(); i++)
         {
-            if (archi_process.shmaddr->signal_watch_set->f_SIGRTMIN[i])
+            if (archi_process.config->signal_watch_set->f_SIGRTMIN[i])
                 archi_log_debug(M, " - SIGRTMIN+%u", (unsigned)i);
         }
 
         archi_process.signal_management = archi_signal_management_start(
-                archi_process.shmaddr->signal_watch_set, (archi_signal_handler_t){0});
+                archi_process.config->signal_watch_set, (archi_signal_handler_t){0});
 
         if (archi_process.signal_management == NULL)
+        {
+            archi_log_error(M, "Couldn't start signal management: %s.", args.file, strerror(errno));
             return ARCHI_EXIT_CODE(ARCHI_ERROR_SIGNAL);
+        }
     }
 
     ////////////////////////////
@@ -285,18 +304,18 @@ main(
     }
 
     // Load libraries
-    if (archi_process.shmaddr->app_config.libraries != NULL)
+    if (archi_process.config->app_config.libraries != NULL)
     {
-        for (size_t i = 0; i < archi_process.shmaddr->app_config.num_libraries; i++)
+        for (size_t i = 0; i < archi_process.config->app_config.num_libraries; i++)
         {
             archi_log_debug(M, " - loading shared library '%s'...",
-                    SAFE(archi_process.shmaddr->app_config.libraries[i].key));
+                    SAFE(archi_process.config->app_config.libraries[i].key));
 
-            code = archi_app_add_library(&archi_process.app, archi_process.shmaddr->app_config.libraries[i]);
+            code = archi_app_add_library(&archi_process.app, archi_process.config->app_config.libraries[i]);
             if (code != 0)
             {
                 archi_log_error(M, "Couldn't load shared library '%s' (error %i).",
-                        SAFE(archi_process.shmaddr->app_config.libraries[i].key), code);
+                        SAFE(archi_process.config->app_config.libraries[i].key), code);
                 return ARCHI_EXIT_CODE(code);
             }
         }
@@ -305,18 +324,18 @@ main(
     }
 
     // Get context interfaces
-    if (archi_process.shmaddr->app_config.interfaces != NULL)
+    if (archi_process.config->app_config.interfaces != NULL)
     {
-        for (size_t i = 0; i < archi_process.shmaddr->app_config.num_interfaces; i++)
+        for (size_t i = 0; i < archi_process.config->app_config.num_interfaces; i++)
         {
             archi_log_debug(M, " - adding context interface '%s'...",
-                    SAFE(archi_process.shmaddr->app_config.interfaces[i].key));
+                    SAFE(archi_process.config->app_config.interfaces[i].key));
 
-            code = archi_app_add_interface(&archi_process.app, archi_process.shmaddr->app_config.interfaces[i]);
+            code = archi_app_add_interface(&archi_process.app, archi_process.config->app_config.interfaces[i]);
             if (code != 0)
             {
                 archi_log_error(M, "Couldn't extract context interface '%s' (error %i).",
-                        SAFE(archi_process.shmaddr->app_config.interfaces[i].key), code);
+                        SAFE(archi_process.config->app_config.interfaces[i].key), code);
                 return ARCHI_EXIT_CODE(code);
             }
         }
@@ -325,11 +344,11 @@ main(
     }
 
     // Configure the application
-    if (archi_process.shmaddr->app_config.steps != NULL)
+    if (archi_process.config->app_config.steps != NULL)
     {
-        for (size_t i = 0; i < archi_process.shmaddr->app_config.num_steps; i++)
+        for (size_t i = 0; i < archi_process.config->app_config.num_steps; i++)
         {
-            archi_app_config_step_t step = archi_process.shmaddr->app_config.steps[i];
+            archi_app_config_step_t step = archi_process.config->app_config.steps[i];
 
             switch (step.type)
             {
@@ -394,7 +413,7 @@ archi_exit_cleanup(void) // will be called on exit(), or if main() returns
     // Finalize the application //
     //////////////////////////////
 
-    if (archi_process.shmaddr != NULL)
+    if (archi_process.config != NULL)
     {
         archi_log_debug(M, "(fin) Finalizing the application...");
 
@@ -405,7 +424,7 @@ archi_exit_cleanup(void) // will be called on exit(), or if main() returns
 
             archi_log_debug(M, " - undoing configuration step #%u...", (unsigned)j);
 
-            code = archi_app_undo_config_step(&archi_process.app, archi_process.shmaddr->app_config.steps[j]);
+            code = archi_app_undo_config_step(&archi_process.app, archi_process.config->app_config.steps[j]);
             if (code != 0)
                 archi_log_error(M, "Couldn't undo configuration step #%u (error %i).", (unsigned)i, code);
         }
@@ -416,12 +435,12 @@ archi_exit_cleanup(void) // will be called on exit(), or if main() returns
             size_t j = (archi_process.counter.interfaces - 1) - i;
 
             archi_log_debug(M, " - removing context interface '%s'...",
-                    SAFE(archi_process.shmaddr->app_config.interfaces[j].key));
+                    SAFE(archi_process.config->app_config.interfaces[j].key));
 
-            code = archi_app_remove_interface(&archi_process.app, archi_process.shmaddr->app_config.interfaces[j].key);
+            code = archi_app_remove_interface(&archi_process.app, archi_process.config->app_config.interfaces[j].key);
             if (code != 0)
                 archi_log_error(M, "Couldn't remove context interface '%s' (error %i).",
-                        SAFE(archi_process.shmaddr->app_config.interfaces[j].key), code);
+                        SAFE(archi_process.config->app_config.interfaces[j].key), code);
         }
 
         // Unload libraries
@@ -430,12 +449,12 @@ archi_exit_cleanup(void) // will be called on exit(), or if main() returns
             size_t j = (archi_process.counter.libraries - 1) - i;
 
             archi_log_debug(M, " - unloading shared library '%s'...",
-                    SAFE(archi_process.shmaddr->app_config.libraries[j].key));
+                    SAFE(archi_process.config->app_config.libraries[j].key));
 
-            code = archi_app_remove_library(&archi_process.app, archi_process.shmaddr->app_config.libraries[j].key);
+            code = archi_app_remove_library(&archi_process.app, archi_process.config->app_config.libraries[j].key);
             if (code != 0)
                 archi_log_error(M, "Couldn't unload shared library '%s' (error %i).",
-                        SAFE(archi_process.shmaddr->app_config.libraries[j].key), code);
+                        SAFE(archi_process.config->app_config.libraries[j].key), code);
         }
 
         // Remove built-in contexts
@@ -482,14 +501,15 @@ archi_exit_cleanup(void) // will be called on exit(), or if main() returns
         archi_signal_management_stop(archi_process.signal_management);
     }
 
-    //////////////////////////
-    // Detach shared memory //
-    //////////////////////////
+    /////////////////////////
+    // Unmap shared memory //
+    /////////////////////////
 
-    if (archi_process.shmaddr != NULL)
+    if (archi_process.config != NULL)
     {
-        archi_log_debug(M, "(fin) Detaching shared memory...");
-        archi_shared_memory_detach(archi_process.shmaddr);
+        archi_log_debug(M, "(ini) Unmapping memory-mapped configuration file...");
+        if (!archi_shm_unmap((archi_shm_header_t*)archi_process.config))
+            archi_log_error(M, "Couldn't unmap memory-mapped configuration file: %s.", strerror(errno));
     }
 }
 

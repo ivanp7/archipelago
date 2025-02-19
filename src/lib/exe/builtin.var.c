@@ -32,10 +32,10 @@
 #include "archi/plugin/threads/queue.fun.h"
 
 const archi_context_interface_t *const archi_builtin_interfaces[] = {
-    &archi_file_context_interface,
-    &archi_shared_library_context_interface,
-    &archi_shared_memory_context_interface,
-    &archi_threads_context_interface,
+    &archi_plugin_file_context_interface,
+    &archi_plugin_shared_library_context_interface,
+    &archi_plugin_shared_memory_context_interface,
+    &archi_plugin_threads_context_interface,
     &archi_queue_context_interface,
 };
 

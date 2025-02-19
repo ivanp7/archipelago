@@ -57,7 +57,6 @@ typedef struct archi_app_config_step_set {
  */
 typedef struct archi_app_config_step_assign {
     const char *slot; ///< Destination context slot.
-
     const void *source_key; ///< Source context key.
     const char *source_slot; ///< Source context slot.
 } archi_app_config_step_assign_t;

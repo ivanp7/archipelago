@@ -33,8 +33,7 @@
  * @brief Values of command line arguments.
  */
 typedef struct archi_args {
-    const char *pathname; ///< Pathname of shared memory with configuration.
-    int proj_id; ///< Project identifier of shared memory with configuration.
+    const char *file; ///< Pathname of a memory-mapped file with configuration.
 
     int verbosity_level; ///< Application verbosity level.
     bool no_logo; ///< Whether to suppress display of the application logo.
