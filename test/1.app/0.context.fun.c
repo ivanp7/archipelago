@@ -120,7 +120,7 @@ TEST(archi_context_set)
             ARCHI_ERROR_MISUSE, archi_status_t, "%i");
 
     ASSERT_EQ(archi_context_set(context, "inc", &value),
-            ARCHI_ERROR_FUNCTION, archi_status_t, "%i");
+            ARCHI_ERROR_INTERFACE, archi_status_t, "%i");
 
     interface.set_fn = set_func;
     ASSERT_EQ(archi_context_set(context, "inc", &value),
@@ -181,7 +181,7 @@ TEST(archi_context_get)
             ARCHI_ERROR_MISUSE, archi_status_t, "%i");
 
     ASSERT_EQ(archi_context_get(context, "inc", &value),
-            ARCHI_ERROR_FUNCTION, archi_status_t, "%i");
+            ARCHI_ERROR_INTERFACE, archi_status_t, "%i");
 
     interface.get_fn = get_func;
 
@@ -223,7 +223,7 @@ TEST(archi_context_assign)
             ARCHI_ERROR_MISUSE, archi_status_t, "%i");
 
     ASSERT_EQ(archi_context_assign(context1, "inc", context2, "dec"),
-            ARCHI_ERROR_FUNCTION, archi_status_t, "%i");
+            ARCHI_ERROR_INTERFACE, archi_status_t, "%i");
 
     counter2 = 13;
 
@@ -283,7 +283,7 @@ TEST(archi_context_act)
 
     context.interface = &interface;
     ASSERT_EQ(archi_context_act(context, "inc", &params),
-            ARCHI_ERROR_FUNCTION, archi_status_t, "%i");
+            ARCHI_ERROR_INTERFACE, archi_status_t, "%i");
 
     interface.act_fn = act_func;
     ASSERT_EQ(archi_context_act(context, "inc", &params),

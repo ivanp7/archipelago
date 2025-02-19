@@ -10,6 +10,13 @@
 #include <stdint.h> // for uint32_t
 
 /**
+ * @brief SDL library configuration key for subsystem intitialization flags.
+ */
+#define PLUGIN_SDL_LIBRARY_CONFIG_KEY_FLAGS "flags"
+
+/*****************************************************************************/
+
+/**
  * @brief Properties of a created SDL window.
  *
  * If window width is 0, it is substituted with texture width.

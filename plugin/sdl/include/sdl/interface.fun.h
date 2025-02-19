@@ -7,7 +7,7 @@
 #ifndef _PLUGIN_SDL_INTERFACE_FUN_H_
 #define _PLUGIN_SDL_INTERFACE_FUN_H_
 
-#include "config.typ.h"
+#include "sdl/config.typ.h"
 #include "archi/app/context.typ.h"
 #include "archi/util/status.typ.h"
 
@@ -190,11 +190,6 @@ const archi_context_interface_t plugin_sdl_library_interface; ///< SDL library i
  * @brief Alias name of SDL library interface.
  */
 #define PLUGIN_SDL_LIBRARY_INTERFACE_ALIAS "sdl"
-
-/**
- * @brief SDL library configuration key for subsystem intitialization flags.
- */
-#define PLUGIN_SDL_LIBRARY_CONFIG_KEY_FLAGS "flags"
 
 /*****************************************************************************/
 

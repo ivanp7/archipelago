@@ -5,7 +5,7 @@ import pkgconfig
 
 #------------------------------------------------------------------------------
 
-PROJECT_NAME = "plugin_sdl"
+PROJECT_NAME = "archi-sdl"
 
 SLIB_NAME = f"lib{PROJECT_NAME}.a"
 DLIB_NAME = f"lib{PROJECT_NAME}.so"
@@ -16,15 +16,16 @@ INCLUDE_DIR = "include"
 SOURCE_DIR  = "src"
 BUILD_DIR   = "build"
 
-ARCHI_INC   = os.environ.get('ARCHI_INC', "../../include")                  ### <<<<<<<<<<<<<<<<<<<< INPUT ENVIRONMENT VARIABLE <<<<<<<<<<<<<<<<<<<<
+ARCHI_IDIR  = os.environ.get('ARCHI_IDIR', "../../include")                 ### <<<<<<<<<<<<<<<<<<<< INPUT ENVIRONMENT VARIABLE <<<<<<<<<<<<<<<<<<<<
 ARCHI_LIB   = os.environ.get('ARCHI_LIB', "../../build/libarchipelago.a")   ### <<<<<<<<<<<<<<<<<<<< INPUT ENVIRONMENT VARIABLE <<<<<<<<<<<<<<<<<<<<
 
 #------------------------------------------------------------------------------
 
 CFLAGS = ['-march=native', '-pipe', '-std=c17',
           '-Wall', '-Wextra', '-Wpedantic',
-          '-Wmissing-prototypes', '-Wstrict-prototypes', '-Wold-style-definition']
-LFLAGS = ['-shared', '-rdynamic']
+          '-Wmissing-prototypes', '-Wstrict-prototypes', '-Wold-style-definition',
+          '-fPIC']
+LFLAGS = ['-shared', '-rdynamic', '-fPIC']
 
 if 'DEBUG' in os.environ:                       ### <<<<<<<<<<<<<<<<<<<< INPUT ENVIRONMENT VARIABLE <<<<<<<<<<<<<<<<<<<<
     CFLAGS += ['-O0', '-g3', '-ggdb']
@@ -39,7 +40,7 @@ if 'PROFILE' in os.environ:                     ### <<<<<<<<<<<<<<<<<<<< INPUT E
 
 CFLAGS += [f'-I{INCLUDE_DIR}']
 
-CFLAGS += [f'-I{ARCHI_INC}']
+CFLAGS += [f'-I{ARCHI_IDIR}']
 
 CFLAGS += pkgconfig.cflags('sdl2').split(' ')
 LFLAGS += pkgconfig.libs('sdl2').split(' ')

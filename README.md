@@ -124,6 +124,7 @@ Examples of plugins can be found in the `plugin` subdirectory.
 
 Other projects using Archipelago:
 
+* [still-alive](https://github.com/ivanp7/still-alive) -- a demo implementation of a plugin.
 * [port](https://github.com/ivanp7/port) -- provides context interfaces for execution of kernel functions.
 
 # Documentation

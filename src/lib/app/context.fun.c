@@ -83,7 +83,7 @@ archi_context_set(
     else if ((slot == NULL) || (value == NULL))
         return ARCHI_ERROR_MISUSE;
     else if (context.interface->set_fn == NULL)
-        return ARCHI_ERROR_FUNCTION;
+        return ARCHI_ERROR_INTERFACE;
 
     if (context.handle == ARCHI_CONTEXT_DUMMY)
         context.handle = NULL;
@@ -103,7 +103,7 @@ archi_context_get(
     else if ((slot == NULL) || (value == NULL))
         return ARCHI_ERROR_MISUSE;
     else if (context.interface->get_fn == NULL)
-        return ARCHI_ERROR_FUNCTION;
+        return ARCHI_ERROR_INTERFACE;
 
     if (context.handle == ARCHI_CONTEXT_DUMMY)
         context.handle = NULL;
@@ -124,7 +124,7 @@ archi_context_assign(
     else if (dest_slot == NULL)
         return ARCHI_ERROR_MISUSE;
     else if (dest.interface->set_fn == NULL)
-        return ARCHI_ERROR_FUNCTION;
+        return ARCHI_ERROR_INTERFACE;
 
     if (dest.handle == ARCHI_CONTEXT_DUMMY)
         dest.handle = NULL;
@@ -134,7 +134,7 @@ archi_context_assign(
         if ((src.handle == NULL) || (src.interface == NULL))
             return ARCHI_ERROR_MISUSE;
         else if (src.interface->get_fn == NULL)
-            return ARCHI_ERROR_FUNCTION;
+            return ARCHI_ERROR_INTERFACE;
 
         if (src.handle == ARCHI_CONTEXT_DUMMY)
             src.handle = NULL;
@@ -175,7 +175,7 @@ archi_context_act(
     else if (action == NULL)
         return ARCHI_ERROR_MISUSE;
     else if (context.interface->act_fn == NULL)
-        return ARCHI_ERROR_FUNCTION;
+        return ARCHI_ERROR_INTERFACE;
 
     if (context.handle == ARCHI_CONTEXT_DUMMY)
         context.handle = NULL;

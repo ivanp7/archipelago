@@ -38,7 +38,7 @@ archi_container_insert(
     if ((container.data == NULL) || (container.interface == NULL))
         return ARCHI_ERROR_MISUSE;
     else if (container.interface->insert_fn == NULL)
-        return ARCHI_ERROR_FUNCTION;
+        return ARCHI_ERROR_INTERFACE;
 
     return container.interface->insert_fn(container.data, key, element);
 }
@@ -53,7 +53,7 @@ archi_container_remove(
     if ((container.data == NULL) || (container.interface == NULL))
         return ARCHI_ERROR_MISUSE;
     else if (container.interface->remove_fn == NULL)
-        return ARCHI_ERROR_FUNCTION;
+        return ARCHI_ERROR_INTERFACE;
 
     return container.interface->remove_fn(container.data, key, element);
 }
@@ -68,7 +68,7 @@ archi_container_extract(
     if ((container.data == NULL) || (container.interface == NULL))
         return ARCHI_ERROR_MISUSE;
     else if (container.interface->extract_fn == NULL)
-        return ARCHI_ERROR_FUNCTION;
+        return ARCHI_ERROR_INTERFACE;
 
     return container.interface->extract_fn(container.data, key, element);
 }
@@ -83,7 +83,7 @@ archi_container_traverse(
     if ((container.data == NULL) || (container.interface == NULL))
         return ARCHI_ERROR_MISUSE;
     else if (container.interface->traverse_fn == NULL)
-        return ARCHI_ERROR_FUNCTION;
+        return ARCHI_ERROR_INTERFACE;
 
     if (func == NULL)
         return ARCHI_ERROR_MISUSE;

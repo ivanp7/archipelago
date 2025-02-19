@@ -33,7 +33,7 @@ TEST(archi_container_insert)
     {
         archi_container_interface_t interface = {0};
         ASSERT_EQ(archi_container_insert((archi_container_t){.data = &counter, .interface = &interface}, "correct_key", "right_element"),
-                ARCHI_ERROR_FUNCTION, archi_status_t, "%u");
+                ARCHI_ERROR_INTERFACE, archi_status_t, "%u");
     }
 
     ASSERT_EQ(archi_container_insert(container, NULL, "right_element"),
@@ -82,7 +82,7 @@ TEST(archi_container_remove)
     {
         archi_container_interface_t interface = {0};
         ASSERT_EQ(archi_container_remove((archi_container_t){.data = &counter, .interface = &interface}, "correct_key", (void**)&element),
-                ARCHI_ERROR_FUNCTION, archi_status_t, "%u");
+                ARCHI_ERROR_INTERFACE, archi_status_t, "%u");
         ASSERT_EQ(element, NULL, const void*, "%p");
     }
 
@@ -134,7 +134,7 @@ TEST(archi_container_extract)
     {
         archi_container_interface_t interface = {0};
         ASSERT_EQ(archi_container_extract((archi_container_t){.data = &counter, .interface = &interface}, "correct_key", (void**)&element),
-                ARCHI_ERROR_FUNCTION, archi_status_t, "%u");
+                ARCHI_ERROR_INTERFACE, archi_status_t, "%u");
         ASSERT_EQ(element, NULL, const void*, "%p");
     }
 
@@ -188,7 +188,7 @@ TEST(archi_container_traverse)
     {
         archi_container_interface_t interface = {0};
         ASSERT_EQ(archi_container_traverse((archi_container_t){.data = &counter, .interface = &interface}, element_func, &counter),
-                ARCHI_ERROR_FUNCTION, archi_status_t, "%u");
+                ARCHI_ERROR_INTERFACE, archi_status_t, "%u");
     }
     ASSERT_EQ(archi_container_traverse(container, NULL, &counter),
             ARCHI_ERROR_MISUSE, archi_status_t, "%u");

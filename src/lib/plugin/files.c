@@ -90,7 +90,7 @@ ARCHI_CONTEXT_INIT_FUNC(archi_plugin_file_context_init)
 
     FILE *file = fopen(file_config.pathname, file_config.mode);
     if (file == NULL)
-        return ARCHI_ERROR_FILE;
+        return ARCHI_ERROR_RESOURCE;
 
     *context = file;
     return 0;

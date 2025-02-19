@@ -59,8 +59,6 @@ const struct argp_option args_options[] = {
                                            ", or one of: quiet, error, warning, notice, info, debug, max; "
                                            "default: info)"},
 
-    {.key = ARGKEY_HELP,        .name = "help",    .doc = "Display a short help message and exit",     .group = -1},
-
     {0}
 };
 
@@ -110,10 +108,6 @@ args_parse(int key, char *arg, struct argp_state *state)
                 return EINVAL;
             break;
 
-        case ARGKEY_HELP:
-            argp_state_help(state, state->out_stream, ARGP_HELP_STD_HELP);
-            exit(EXIT_SUCCESS);
-
         case ARGP_KEY_ARG:
         case ARGP_KEY_ARGS:
         case ARGP_KEY_NO_ARGS:
@@ -154,8 +148,7 @@ provided via shared memory and execute the finite state machine.\n\
 "
     };
 
-    archi_status_t code = argp_parse(&args_parser, argc, argv,
-            ARGP_NO_EXIT | ARGP_NO_HELP, NULL, args);
+    archi_status_t code = argp_parse(&args_parser, argc, argv, 0, NULL, args);
 
     if (args->file == NULL)
         return 0;

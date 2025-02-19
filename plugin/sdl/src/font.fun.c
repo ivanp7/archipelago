@@ -3,8 +3,9 @@
  * @brief Operations with fonts.
  */
 
-#include "font.fun.h"
-#include "archi/util/container.fun.h"
+#include "sdl/font.fun.h"
+#include "sdl/font.typ.h"
+#include "archi/util/list.fun.h"
 #include "archi/util/error.def.h"
 
 #include <stdlib.h> // for malloc(), free()
@@ -257,21 +258,20 @@ plugin_font_psf2_glyph_data_size(
 /*****************************************************************************/
 
 static
-ARCHI_CONTAINER_ELEMENT_FUNC(plugin_font_psf2_context_init_config)
+ARCHI_LIST_ACT_FUNC(plugin_font_psf2_context_init_config)
 {
-    if ((key == NULL) || (element == NULL) || (data == NULL))
-        return ARCHI_ERROR_MISUSE;
+    (void) position;
 
-    archi_value_t *value = element;
-    archi_value_t *bytes = data;
+    archi_list_node_named_value_t *config_node = (archi_list_node_named_value_t*)node;
+    archi_value_t *config = data;
 
-    if (strcmp(key, PLUGIN_FONT_PSF2_CONFIG_KEY_BYTES) == 0)
+    if (strcmp(config_node->base.name, PLUGIN_FONT_PSF2_CONFIG_KEY_BYTES) == 0)
     {
-        if ((value->type != ARCHI_VALUE_DATA) || (value->ptr == NULL) ||
-                (value->size == 0) || (value->num_of == 0))
+        if ((config_node->value.type != ARCHI_VALUE_DATA) || (config_node->value.ptr == NULL) ||
+                (config_node->value.size == 0) || (config_node->value.num_of == 0))
             return ARCHI_ERROR_CONFIG;
 
-        *bytes = *value;
+        *config = config_node->value;
         return 0;
     }
     else
@@ -286,9 +286,11 @@ ARCHI_CONTEXT_INIT_FUNC(plugin_font_psf2_context_init)
     archi_status_t code;
 
     archi_value_t font_bytes = {0};
-    if (config.data != NULL)
+    if (config != NULL)
     {
-        code = archi_container_traverse(config, plugin_font_psf2_context_init_config, &font_bytes);
+        archi_list_t config_list = {.head = (archi_list_node_t*)config};
+        code = archi_list_traverse(&config_list, NULL, NULL,
+                plugin_font_psf2_context_init_config, &font_bytes, true, 0, NULL);
         if (code != 0)
             return code;
     }

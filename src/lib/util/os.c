@@ -27,8 +27,11 @@
 #include "archi/util/os/lib.fun.h"
 #include "archi/util/os/signal.fun.h"
 
-#include <stdatomic.h> // for atomic_flag
 #include <stdlib.h> // for malloc()
+
+#ifndef __STDC_NO_ATOMICS__
+#  include <stdatomic.h> // for atomic_flag
+#endif
 
 #include <fcntl.h> // for open()
 #include <unistd.h> // for close()
@@ -257,7 +260,9 @@ struct archi_signal_management_context
     archi_signal_flags_t *flags;
 
     archi_signal_handler_t signal_handler;
+#ifndef __STDC_NO_ATOMICS__
     atomic_flag spinlock;
+#endif
 
     pthread_t thread;
     sigset_t set;
@@ -452,9 +457,13 @@ archi_signal_management_handler(
 
     archi_signal_handler_t signal_handler;
     {
+#ifndef __STDC_NO_ATOMICS__
         while (atomic_flag_test_and_set_explicit(&context->spinlock, memory_order_acquire)); // lock
+#endif
         signal_handler = context->signal_handler;
+#ifndef __STDC_NO_ATOMICS__
         atomic_flag_clear_explicit(&context->spinlock, memory_order_release); // unlock
+#endif
     }
 
     return signal_handler;
@@ -469,8 +478,12 @@ archi_signal_management_set_handler(
     if (context == NULL)
         return;
 
+#ifndef __STDC_NO_ATOMICS__
     while (atomic_flag_test_and_set_explicit(&context->spinlock, memory_order_acquire)); // lock
+#endif
     context->signal_handler = signal_handler;
+#ifndef __STDC_NO_ATOMICS__
     atomic_flag_clear_explicit(&context->spinlock, memory_order_release); // unlock
+#endif
 }
 

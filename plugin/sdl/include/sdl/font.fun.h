@@ -7,18 +7,20 @@
 #ifndef _PLUGIN_SDL_FONT_FUN_H_
 #define _PLUGIN_SDL_FONT_FUN_H_
 
-#include "font.typ.h"
 #include "archi/app/context.typ.h"
 #include "archi/util/status.typ.h"
 
 #include <stddef.h>
+
+struct plugin_font_psf2;
+struct plugin_font_psf2_header;
 
 /**
  * @brief Load PC Screen Font version 2 from buffer.
  *
  * @return Font.
  */
-plugin_font_psf2_t*
+struct plugin_font_psf2*
 plugin_font_psf2_load_from_bytes(
         const void *bytes, ///< [in] Buffer with font data.
         size_t num_bytes,  ///< [in] Size of the buffer.
@@ -31,7 +33,7 @@ plugin_font_psf2_load_from_bytes(
  */
 void
 plugin_font_psf2_unload(
-        plugin_font_psf2_t *font ///< [in] Font to unload.
+        struct plugin_font_psf2 *font ///< [in] Font to unload.
 );
 
 /**
@@ -41,7 +43,7 @@ plugin_font_psf2_unload(
  */
 const unsigned char*
 plugin_font_psf2_glyph(
-        const plugin_font_psf2_t *font, ///< [in] Font.
+        const struct plugin_font_psf2 *font, ///< [in] Font.
 
         const char *utf8_str, ///< [in] UTF-8 string.
         size_t utf8_str_len,  ///< [in] Length of UTF-8 string in bytes.
@@ -59,7 +61,7 @@ plugin_font_psf2_glyph(
  */
 size_t
 plugin_font_psf2_glyph_data_size(
-        plugin_font_psf2_header_t *header ///< [in] Font header.
+        struct plugin_font_psf2_header *header ///< [in] Font header.
 );
 
 /*****************************************************************************/

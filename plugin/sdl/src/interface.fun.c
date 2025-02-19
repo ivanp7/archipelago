@@ -3,8 +3,8 @@
  * @brief Operations with SDL windows.
  */
 
-#include "interface.fun.h"
-#include "archi/util/container.fun.h"
+#include "sdl/interface.fun.h"
+#include "archi/util/list.fun.h"
 #include "archi/util/error.def.h"
 
 #include <stdlib.h> // for malloc(), free()
@@ -410,21 +410,20 @@ plugin_sdl_window_get_texture_lock(
 /*****************************************************************************/
 
 static
-ARCHI_CONTAINER_ELEMENT_FUNC(plugin_sdl_library_init_config)
+ARCHI_LIST_ACT_FUNC(plugin_sdl_library_init_config)
 {
-    if ((key == NULL) || (element == NULL) || (data == NULL))
-        return ARCHI_ERROR_MISUSE;
+    (void) position;
 
-    archi_value_t *value = element;
+    archi_list_node_named_value_t *config_node = (archi_list_node_named_value_t*)node;
     uint32_t *config = data;
 
-    if (strcmp(key, PLUGIN_SDL_LIBRARY_CONFIG_KEY_FLAGS) == 0)
+    if (strcmp(config_node->base.name, PLUGIN_SDL_LIBRARY_CONFIG_KEY_FLAGS) == 0)
     {
-        if ((value->type != ARCHI_VALUE_UINT) || (value->ptr == NULL) ||
-                (value->size != sizeof(*config)) || (value->num_of == 0))
+        if ((config_node->value.type != ARCHI_VALUE_UINT) || (config_node->value.ptr == NULL) ||
+                (config_node->value.size != sizeof(*config)) || (config_node->value.num_of == 0))
             return ARCHI_ERROR_CONFIG;
 
-        *config = *(uint32_t*)value->ptr;
+        *config = *(uint32_t*)config_node->value.ptr;
         return 0;
     }
     else
@@ -439,9 +438,11 @@ ARCHI_CONTEXT_INIT_FUNC(plugin_sdl_library_init)
     archi_status_t code;
 
     uint32_t flags = SDL_INIT_VIDEO;
-    if (config.data != NULL)
+    if (config != NULL)
     {
-        code = archi_container_traverse(config, plugin_sdl_library_init_config, &flags);
+        archi_list_t config_list = {.head = (archi_list_node_t*)config};
+        code = archi_list_traverse(&config_list, NULL, NULL,
+                plugin_sdl_library_init_config, &flags, true, 0, NULL);
         if (code != 0)
             return code;
     }
@@ -469,74 +470,73 @@ const archi_context_interface_t plugin_sdl_library_interface = {
 /*****************************************************************************/
 
 static
-ARCHI_CONTAINER_ELEMENT_FUNC(plugin_sdl_window_context_init_config)
+ARCHI_LIST_ACT_FUNC(plugin_sdl_window_context_init_config)
 {
-    if ((key == NULL) || (element == NULL) || (data == NULL))
-        return ARCHI_ERROR_MISUSE;
+    (void) position;
 
-    archi_value_t *value = element;
+    archi_list_node_named_value_t *config_node = (archi_list_node_named_value_t*)node;
     plugin_sdl_window_config_t *config = data;
 
-    if (strcmp(key, PLUGIN_SDL_WINDOW_CONFIG_KEY) == 0)
+    if (strcmp(config_node->base.name, PLUGIN_SDL_WINDOW_CONFIG_KEY) == 0)
     {
-        if ((value->type != ARCHI_VALUE_DATA) || (value->ptr == NULL) ||
-                (value->size != sizeof(*config)) || (value->num_of == 0))
+        if ((config_node->value.type != ARCHI_VALUE_DATA) || (config_node->value.ptr == NULL) ||
+                (config_node->value.size != sizeof(*config)) || (config_node->value.num_of == 0))
             return ARCHI_ERROR_CONFIG;
 
-        memcpy(config, value->ptr, sizeof(*config));
+        memcpy(config, config_node->value.ptr, sizeof(*config));
         return 0;
     }
-    else if (strcmp(key, PLUGIN_SDL_WINDOW_CONFIG_KEY_TEXTURE_WIDTH) == 0)
+    else if (strcmp(config_node->base.name, PLUGIN_SDL_WINDOW_CONFIG_KEY_TEXTURE_WIDTH) == 0)
     {
-        if ((value->type != ARCHI_VALUE_SINT) || (value->ptr == NULL) ||
-                (value->size != sizeof(config->texture.width)) || (value->num_of == 0))
+        if ((config_node->value.type != ARCHI_VALUE_SINT) || (config_node->value.ptr == NULL) ||
+                (config_node->value.size != sizeof(config->texture.width)) || (config_node->value.num_of == 0))
             return ARCHI_ERROR_CONFIG;
 
-        config->texture.width = *(int*)value->ptr;
+        config->texture.width = *(int*)config_node->value.ptr;
         return 0;
     }
-    else if (strcmp(key, PLUGIN_SDL_WINDOW_CONFIG_KEY_TEXTURE_HEIGHT) == 0)
+    else if (strcmp(config_node->base.name, PLUGIN_SDL_WINDOW_CONFIG_KEY_TEXTURE_HEIGHT) == 0)
     {
-        if ((value->type != ARCHI_VALUE_SINT) || (value->ptr == NULL) ||
-                (value->size != sizeof(config->texture.height)) || (value->num_of == 0))
+        if ((config_node->value.type != ARCHI_VALUE_SINT) || (config_node->value.ptr == NULL) ||
+                (config_node->value.size != sizeof(config->texture.height)) || (config_node->value.num_of == 0))
             return ARCHI_ERROR_CONFIG;
 
-        config->texture.height = *(int*)value->ptr;
+        config->texture.height = *(int*)config_node->value.ptr;
         return 0;
     }
-    else if (strcmp(key, PLUGIN_SDL_WINDOW_CONFIG_KEY_WINDOW_WIDTH) == 0)
+    else if (strcmp(config_node->base.name, PLUGIN_SDL_WINDOW_CONFIG_KEY_WINDOW_WIDTH) == 0)
     {
-        if ((value->type != ARCHI_VALUE_SINT) || (value->ptr == NULL) ||
-                (value->size != sizeof(config->window.width)) || (value->num_of == 0))
+        if ((config_node->value.type != ARCHI_VALUE_SINT) || (config_node->value.ptr == NULL) ||
+                (config_node->value.size != sizeof(config->window.width)) || (config_node->value.num_of == 0))
             return ARCHI_ERROR_CONFIG;
 
-        config->window.width = *(int*)value->ptr;
+        config->window.width = *(int*)config_node->value.ptr;
         return 0;
     }
-    else if (strcmp(key, PLUGIN_SDL_WINDOW_CONFIG_KEY_WINDOW_HEIGHT) == 0)
+    else if (strcmp(config_node->base.name, PLUGIN_SDL_WINDOW_CONFIG_KEY_WINDOW_HEIGHT) == 0)
     {
-        if ((value->type != ARCHI_VALUE_SINT) || (value->ptr == NULL) ||
-                (value->size != sizeof(config->window.height)) || (value->num_of == 0))
+        if ((config_node->value.type != ARCHI_VALUE_SINT) || (config_node->value.ptr == NULL) ||
+                (config_node->value.size != sizeof(config->window.height)) || (config_node->value.num_of == 0))
             return ARCHI_ERROR_CONFIG;
 
-        config->window.height = *(int*)value->ptr;
+        config->window.height = *(int*)config_node->value.ptr;
         return 0;
     }
-    else if (strcmp(key, PLUGIN_SDL_WINDOW_CONFIG_KEY_WINDOW_FLAGS) == 0)
+    else if (strcmp(config_node->base.name, PLUGIN_SDL_WINDOW_CONFIG_KEY_WINDOW_FLAGS) == 0)
     {
-        if ((value->type != ARCHI_VALUE_UINT) || (value->ptr == NULL) ||
-                (value->size != sizeof(config->window.flags)) || (value->num_of == 0))
+        if ((config_node->value.type != ARCHI_VALUE_UINT) || (config_node->value.ptr == NULL) ||
+                (config_node->value.size != sizeof(config->window.flags)) || (config_node->value.num_of == 0))
             return ARCHI_ERROR_CONFIG;
 
-        config->window.flags = *(uint32_t*)value->ptr;
+        config->window.flags = *(uint32_t*)config_node->value.ptr;
         return 0;
     }
-    else if (strcmp(key, PLUGIN_SDL_WINDOW_CONFIG_KEY_WINDOW_TITLE) == 0)
+    else if (strcmp(config_node->base.name, PLUGIN_SDL_WINDOW_CONFIG_KEY_WINDOW_TITLE) == 0)
     {
-        if ((value->type != ARCHI_VALUE_STRING) || (value->ptr == NULL) || (value->num_of == 0))
+        if ((config_node->value.type != ARCHI_VALUE_STRING) || (config_node->value.ptr == NULL) || (config_node->value.num_of == 0))
             return ARCHI_ERROR_CONFIG;
 
-        config->window.title = value->ptr;
+        config->window.title = config_node->value.ptr;
         return 0;
     }
     else
@@ -551,9 +551,11 @@ ARCHI_CONTEXT_INIT_FUNC(plugin_sdl_window_context_init)
     archi_status_t code;
 
     plugin_sdl_window_config_t window_config = {0};
-    if (config.data != NULL)
+    if (config != NULL)
     {
-        code = archi_container_traverse(config, plugin_sdl_window_context_init_config, &window_config);
+        archi_list_t config_list = {.head = (archi_list_node_t*)config};
+        code = archi_list_traverse(&config_list, NULL, NULL,
+                plugin_sdl_window_context_init_config, &window_config, true, 0, NULL);
         if (code != 0)
             return code;
     }
