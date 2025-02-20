@@ -49,7 +49,7 @@ const struct argp_option args_options[] = {
     {.doc = "Configuration options:"},
 
     {.key = ARGKEY_SHM_FILE,    .name = "file", .arg = "PATHNAME",
-                                    .doc = "Map a configuration file into memory"},
+                                    .doc = "Use a memory-mapped configuration file"},
 
     {.doc = "Verbosity options:"},
 
@@ -142,8 +142,7 @@ archi_args_parse(
         .options = args_options,
         .parser = args_parse,
         .doc = "\n\
-Initialize an application according to configuration\n\
-provided via shared memory and execute the finite state machine.\n\
+General purpose application configured by the data structure in memory.\n\
 \v\
 "
     };

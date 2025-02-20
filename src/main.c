@@ -188,9 +188,8 @@ main(
     archi_log_set_verbosity(args.verbosity_level);
 
     // Display application logo
-    archi_print(ARCHI_COLOR_RESET "\n");
     if (!args.no_logo)
-        archi_print(ARCHI_COLOR_FG_BRI_WHITE "%s" ARCHI_COLOR_RESET "\n\n", ARCHI_PELAGO_LOGO);
+        archi_print(ARCHI_COLOR_RESET "\n" ARCHI_COLOR_FG_BRI_WHITE "%s" ARCHI_COLOR_RESET "\n\n", ARCHI_PELAGO_LOGO);
 
     // Exit if there is nothing to do
     if (args.file == NULL)
