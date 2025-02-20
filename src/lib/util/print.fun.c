@@ -163,14 +163,13 @@ archi_log(
 #endif
 
     // Set the color, print date/time and message type character
-    fprintf(stderr, ARCHI_COLOR_RESET "\r%s %li:%02li:%02li.%03li,%03li,%03li [%s] ",
+    fprintf(stderr, ARCHI_COLOR_RESET "\r%s %li:%02li:%02li.%03li,%03li [%s] ",
             message_color,
             (long)ts.tv_sec / 60 / 60,      // hours
             (long)ts.tv_sec / 60 % 60,      // minutes
             (long)ts.tv_sec % 60,           // seconds
             (long)ts.tv_nsec / 1000 / 1000, // milliseconds
             (long)ts.tv_nsec / 1000 % 1000, // microseconds
-            (long)ts.tv_nsec % 1000,        // nanoseconds
             message_char);
 
     // Print module name
