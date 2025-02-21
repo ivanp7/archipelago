@@ -14,6 +14,8 @@ The application does the initialization and finalization of resources
 for the user-written plugins, which don't need to bother to do it manually.
 This allows to separate resource consumers from producers.
 
+![Application example](docs/app_example.png)
+
 All contexts are created, shared around, and prepared according to the provided configuration
 during the initialization phase. After initialization phase comes execution phase,
 during which a finite state machine is run as described below.
