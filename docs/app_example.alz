@@ -1,0 +1,72 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<heimer-mind-map alz-format-version="2" application-version="4.4.0">
+ <style>
+  <color g="119" r="119" b="119"/>
+  <edge-color g="0" r="0" b="0"/>
+  <grid-color g="160" r="160" b="164"/>
+  <arrow-size>20000</arrow-size>
+  <edge-width>4000</edge-width>
+  <font-family overline="0" strike-out="0" italic="0" weight="50" underline="0" bold="0">Sans Serif</font-family>
+  <text-size>14000</text-size>
+  <corner-radius>5000</corner-radius>
+ </style>
+ <graph>
+  <node w="315000" x="0" y="500000" h="75000" i="7">
+   <text>Memory-mapped configuration file</text>
+   <color g="255" r="255" b="255"/>
+   <text-color g="0" r="0" b="0"/>
+  </node>
+  <node w="200000" x="300000" y="200000" h="75000" i="6">
+   <text>Plugin #4
+(libarchi-plugin4.so)</text>
+   <color g="226" r="138" b="52"/>
+   <text-color g="0" r="0" b="0"/>
+  </node>
+  <node w="200000" x="-300000" y="200000" h="75000" i="5">
+   <text>Plugin #5
+(libarchi-plugin5.so)</text>
+   <color g="159" r="114" b="207"/>
+   <text-color g="0" r="0" b="0"/>
+  </node>
+  <node w="200000" x="500000" y="0" h="75000" i="4">
+   <text>Plugin #3
+(libarchi-plugin3.so)</text>
+   <color g="233" r="252" b="79"/>
+   <text-color g="0" r="0" b="0"/>
+  </node>
+  <node w="200000" x="-500000" y="0" h="75000" i="3">
+   <text>Plugin #6
+(libarchi-plugin6.so)</text>
+   <color g="127" r="173" b="168"/>
+   <text-color g="0" r="0" b="0"/>
+  </node>
+  <node w="200000" x="300000" y="-200000" h="75000" i="2">
+   <text>Plugin #2
+(libarchi-plugin2.so)</text>
+   <color g="175" r="252" b="62"/>
+   <text-color g="0" r="0" b="0"/>
+  </node>
+  <node w="200000" x="-300000" y="-200000" h="75000" i="1">
+   <text>Plugin #1
+(libarchi-plugin1.so)</text>
+   <color g="41" r="239" b="41"/>
+   <text-color g="0" r="0" b="0"/>
+  </node>
+  <node w="225000" x="0" y="0" h="75000" i="0">
+   <text>Archipelago executable
+(archi)</text>
+   <color g="17" r="17" b="17"/>
+   <text-color g="255" r="255" b="255"/>
+  </node>
+  <edge i0="0" i1="7" reversed="1" arrow-mode="0"/>
+  <edge i0="0" i1="6" reversed="1" arrow-mode="0"/>
+  <edge i0="0" i1="5" reversed="1" arrow-mode="0"/>
+  <edge i0="0" i1="4" reversed="1" arrow-mode="0"/>
+  <edge i0="0" i1="3" reversed="1" arrow-mode="0"/>
+  <edge i0="0" i1="2" reversed="1" arrow-mode="0"/>
+  <edge i0="0" i1="1" reversed="1" arrow-mode="0"/>
+ </graph>
+ <metadata>
+  <layout-optimizer min-edge-length="100000" aspect-ratio="1000"/>
+ </metadata>
+</heimer-mind-map>

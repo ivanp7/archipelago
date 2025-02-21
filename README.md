@@ -1,20 +1,21 @@
 # Archipelago, a dynamic application framework
 
-The executable:
-
-1. obtains an application configuration from attached shared memory;
-2. loads shared libraries providing plugins as specified in the configuration;
-3. performs initialization instructions (creates contexts) as specified in the configuration;
-4. executes a finite state machine with the specified entry state and state transition;
-5. finalizes the application (destroys contexts).
-
-Application plugins serve to provide contexts of different kind
-to other plugins which implement application logic.
-The application does the initialization and finalization of resources
+Archipelago app does the initialization and finalization of resources
 for the user-written plugins, which don't need to bother to do it manually.
 This allows to separate resource consumers from producers.
 
 ![Application example](docs/app_example.png)
+
+Application plugins serve to provide contexts of different kind
+to other plugins which implement application logic.
+
+The executable:
+
+1. obtains an application configuration from a memory-mapped file;
+2. loads shared libraries providing plugins as specified in the configuration;
+3. performs initialization instructions (creates contexts) as specified in the configuration;
+4. executes a finite state machine with the specified entry state and state transition;
+5. finalizes the application (destroys contexts).
 
 All contexts are created, shared around, and prepared according to the provided configuration
 during the initialization phase. After initialization phase comes execution phase,
@@ -67,6 +68,8 @@ There are the several types of configuration steps:
 * `act`: call an actor function on a context.
 
 ## Finite state machine
+
+![Finite state machine example](docs/fsm_example.png)
 
 ### State
 
