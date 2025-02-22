@@ -1,13 +1,12 @@
 # Archipelago, a dynamic application framework
 
-Archipelago app does the initialization and finalization of resources
-for the user-written plugins, which don't need to bother to do it manually.
-This allows to separate resource consumers from producers.
+The Archipelago app handles the initialization and finalization of resources for user-written plugins,
+which do not need to bother doing it manually.
+This allows for the separation of resource consumers from producers.
 
 ![Application example](docs/app_example.png)
 
-Application plugins serve to provide contexts of different kind
-to other plugins which implement application logic.
+Application plugins serve to provide contexts of different kinds to other plugins that implement application logic.
 
 The executable:
 
@@ -17,14 +16,13 @@ The executable:
 4. executes a finite state machine with the specified entry state and state transition;
 5. finalizes the application (destroys contexts).
 
-All contexts are created, shared around, and prepared according to the provided configuration
-during the initialization phase. After initialization phase comes execution phase,
-during which a finite state machine is run as described below.
-The entry state and state transition of the FSM are specified by configuration in shared memory.
+All contexts are created, shared around, and prepared according to the provided configuration during the initialization phase.
+After the initialization phase comes the execution phase, during which a finite state machine is run as described below.
+The entry state and state transition of the FSM are specified by the configuration in shared memory.
 
-Archipelago library provides the following modules:
+The Archipelago library provides the following modules:
 
-* `util`: various auxiliary utilies, such as linked lists, logging, shared memory interface, shared libraries interface, signal management interface;
+* `util`: various auxiliary utilities, such as linked lists, logging, shared memory interface, shared libraries interface, signal management interface;
 * `app`: application plugin system (depends on `util`);
 * `fsm`: finite state machine implementation (depends on `util`);
 * `exe`: universal, multi-purpose executable configured via a shared memory (depends on `util`, `app`, `fsm`);
@@ -34,18 +32,18 @@ Archipelago library provides the following modules:
     - `shared_libraries`: loading shared libraries;
     - `threads`: creating threads for concurrent processing.
 
-This application was originally designed as a part of [Rayway](https://github.com/ivanp7/rayway)
-engine to implement a command pipeline.
+This application was originally designed as a part of
+the [Rayway](https://github.com/ivanp7/rayway) engine to implement a command pipeline.
 
 ## Application context interface
 
-Context interfaces are like very limited dynamic classes which produce context objects.
+Context interfaces serve as very limited dynamic classes of context objects.
 
 A context interface is a structure of pointers to the following functions:
 
-* `init(context_ptr, config) -> status`: creates and initializes new context according to `config`, and stores the pointer to `*context_ptr`;
+* `init(context_ptr, config) -> status`: creates and initializes a new context according to `config`, and stores the pointer in `*context_ptr`;
 * `final(context)`: finalizes and destroys `context` previously created by `init()`;
-* `set(context, slot, value) -> status`: accepts `value` for internal use by `context`, the meaning is specified by `slot`;
+* `set(context, slot, value) -> status`: accepts `value` for internal use by `context`, the meaning of which is specified by `slot`;
 * `get(context, slot, value) -> status`: retrieves data provided by `context` for `slot` to a location pointed to by `value`;
 * `act(context, action, params) -> status`: invokes an internal `action` for `context` with the specified `params`.
 
@@ -53,18 +51,15 @@ A plugin library can provide multiple context interfaces.
 
 ## Application configuration
 
-An application configuration is a container of steps, which describes what contexts to initialize and how,
-share pointers between contexts, invoke actions on contexts, etc.
+An application configuration is a list of steps that form an application ready for execution.
 
-Thus a container of contexts is formed, which is called an application.
+A configuration step is a structure containing a type ID and type-specific data.
+There are several types of configuration steps:
 
-A configuration step is a structure containing a type id and type-specific data.
-There are the several types of configuration steps:
-
-* `init`: create a context and add it to the container of application contexts;
-* `final`: destroy a context and remove it from the container of application contexts;
+* `init`: create a context and add it to the application contexts;
+* `final`: destroy a context and remove it from the application contexts;
 * `set`: call a setter function on a context;
-* `assign`: call a setter function on a context and pass another context or output of a getter function to it;
+* `assign`: call a setter function on a context and pass it another context or output of a getter function to it;
 * `act`: call an actor function on a context.
 
 ## Finite state machine
@@ -74,35 +69,33 @@ There are the several types of configuration steps:
 ### State
 
 A state of a finite state machine is a triple of:
+1. a pointer to a state function;
+2. a `void*` pointer to state data (optional);
+3. a `void*` pointer to state metadata (optional).
 
-1. a state function;
-2. a `void*` pointer to state data;
-3. a `void*` pointer to state metadata.
-
-State functions return nothing and accept a pointer to finite state machine context (`fsm`).
-State functions have access to state data & metadata via the FSM context pointer,
-and perform logically cohesive chunks of application logic.
+State functions return nothing and accept a pointer to a finite state machine context (`fsm`).
+State functions can access state data and metadata via the FSM context pointer,
+and also use it to manipulate the FSM state stack -- push and pop elements while initiating a state transition.
 
 During execution, a finite state machine maintains a stack of states.
-State functions can push and pop states while doing state transition.
+This stack is used to determine the next state during a transition -- the top element is popped and becomes the next state.
 
-State function initiates state transition by returning or by calling `proceed()`.
-`proceed()` accepts the following parameters:
+State functions initiate state transition simply by returning (no changes of stack) or by calling `fsm_proceed()` (states are popped and pushed to stack).
 
+`fsm_proceed()` accepts the following parameters:
 1. finite state machine context;
 2. number of states to pop from the stack;
-3. number of states to push from the stack;
+3. number of states to push to the stack;
 4. array of states to push.
 
-`proceed()` can be invoked not only from the state function itself, but from any nested function calls.
-`proceed()` unwinds the call stack up to the state function, eliminating the need of returning from multiple calls.
+`fsm_proceed()` works not only from the state function itself, but from any nested function calls, given a valid FSM context.
+If called from nested function calls, `fsm_proceed()` unwinds the call stack up to the state function via a `longjmp()`.
 
 ### Transition
 
 A transition of a finite state machine is a pair of:
-
-1. a transition function;
-2. a `void*` pointer to transition data.
+1. a pointer to a transition function;
+2. a `void*` pointer to transition data (optional).
 
 Transition functions return nothing and accept the following parameters:
 
@@ -112,16 +105,16 @@ Transition functions return nothing and accept the following parameters:
 * status code (`code`, input/output passed by pointer);
 * pointer to transition function data (`data`).
 
-Transition function is called every time the state changes,
-before the entry state (previous state is null),
-and after the exit state (next state is null).
+Transition function is called:
+* every time FSM state changes,
+* before an entry state (`prev_state` is null),
+* after an exit state (`next_state` is null).
 
-Transition function can provide a state as output (a transitional state),
-which is pushed to the stack top and executed before the next state.
+Transition function can provide a so-called transitional state
+which is immediately pushed to the stack, thus preceding the previous stack top.
 
-Transition is useful for debugging and profiling purposes.
-It is encapsulated from state functions -- they don't have access to the active transition.
-It stays the same during the whole finite state machine execution and cannot be changed.
+Transition is hidden from state functions, which don't have any access to it.
+The same transition is used between any states and cannot be changed during finite state machine execution.
 
 # Examples
 
