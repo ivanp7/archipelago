@@ -14,6 +14,52 @@
  */
 #define PLUGIN_SDL_LIBRARY_CONFIG_KEY_FLAGS "flags"
 
+/**
+ * @brief SDL library configuration key -- whether to initialize the timer subsystem.
+ */
+#define PLUGIN_SDL_LIBRARY_CONFIG_KEY_INIT_TIMER "timer"
+
+/**
+ * @brief SDL library configuration key -- whether to initialize the audio subsystem.
+ */
+#define PLUGIN_SDL_LIBRARY_CONFIG_KEY_INIT_AUDIO "audio"
+
+/**
+ * @brief SDL library configuration key -- whether to initialize the video subsystem.
+ *
+ * Automatically initializes the events subsystem.
+ */
+#define PLUGIN_SDL_LIBRARY_CONFIG_KEY_INIT_VIDEO "video"
+
+/**
+ * @brief SDL library configuration key -- whether to initialize the joystick subsystem.
+ *
+ * Automatically initializes the events subsystem.
+ */
+#define PLUGIN_SDL_LIBRARY_CONFIG_KEY_INIT_JOYSTICK "joystick"
+
+/**
+ * @brief SDL library configuration key -- whether to initialize the haptic subsystem.
+ */
+#define PLUGIN_SDL_LIBRARY_CONFIG_KEY_INIT_HAPTIC "haptic"
+
+/**
+ * @brief SDL library configuration key -- whether to initialize the controller subsystem.
+ *
+ * Automatically initializes the events subsystem.
+ */
+#define PLUGIN_SDL_LIBRARY_CONFIG_KEY_INIT_GAMECONTROLLER "controller"
+
+/**
+ * @brief SDL library configuration key -- whether to initialize the events subsystem.
+ */
+#define PLUGIN_SDL_LIBRARY_CONFIG_KEY_INIT_EVENTS "events"
+
+/**
+ * @brief SDL library configuration key -- whether to initialize all subsystems.
+ */
+#define PLUGIN_SDL_LIBRARY_CONFIG_KEY_INIT_EVERYTHING "everything"
+
 /*****************************************************************************/
 
 /**

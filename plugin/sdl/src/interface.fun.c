@@ -426,6 +426,46 @@ ARCHI_LIST_ACT_FUNC(plugin_sdl_library_init_config)
         *config = *(uint32_t*)config_node->value.ptr;
         return 0;
     }
+    else if (strcmp(config_node->base.name, PLUGIN_SDL_LIBRARY_CONFIG_KEY_INIT_TIMER) == 0)
+    {
+        *config |= SDL_INIT_TIMER;
+        return 0;
+    }
+    else if (strcmp(config_node->base.name, PLUGIN_SDL_LIBRARY_CONFIG_KEY_INIT_AUDIO) == 0)
+    {
+        *config |= SDL_INIT_AUDIO;
+        return 0;
+    }
+    else if (strcmp(config_node->base.name, PLUGIN_SDL_LIBRARY_CONFIG_KEY_INIT_VIDEO) == 0)
+    {
+        *config |= SDL_INIT_VIDEO;
+        return 0;
+    }
+    else if (strcmp(config_node->base.name, PLUGIN_SDL_LIBRARY_CONFIG_KEY_INIT_JOYSTICK) == 0)
+    {
+        *config |= SDL_INIT_JOYSTICK;
+        return 0;
+    }
+    else if (strcmp(config_node->base.name, PLUGIN_SDL_LIBRARY_CONFIG_KEY_INIT_HAPTIC) == 0)
+    {
+        *config |= SDL_INIT_HAPTIC;
+        return 0;
+    }
+    else if (strcmp(config_node->base.name, PLUGIN_SDL_LIBRARY_CONFIG_KEY_INIT_GAMECONTROLLER) == 0)
+    {
+        *config |= SDL_INIT_GAMECONTROLLER;
+        return 0;
+    }
+    else if (strcmp(config_node->base.name, PLUGIN_SDL_LIBRARY_CONFIG_KEY_INIT_EVENTS) == 0)
+    {
+        *config |= SDL_INIT_EVENTS;
+        return 0;
+    }
+    else if (strcmp(config_node->base.name, PLUGIN_SDL_LIBRARY_CONFIG_KEY_INIT_EVERYTHING) == 0)
+    {
+        *config |= SDL_INIT_EVERYTHING;
+        return 0;
+    }
     else
         return ARCHI_ERROR_CONFIG;
 }
@@ -437,7 +477,7 @@ ARCHI_CONTEXT_INIT_FUNC(plugin_sdl_library_init)
 
     archi_status_t code;
 
-    uint32_t flags = SDL_INIT_VIDEO;
+    uint32_t flags = 0;
     if (config != NULL)
     {
         archi_list_t config_list = {.head = (archi_list_node_t*)config};
