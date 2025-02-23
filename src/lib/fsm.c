@@ -33,7 +33,7 @@
 
 #define ARCHI_FSM_INITIAL_STACK_CAPACITY 32
 
-enum {
+enum archi_fsm_mode {
     J_STATE = 0,
     J_TRANSITION,
 };
@@ -48,7 +48,7 @@ struct archi_fsm_context {
 
     archi_status_t code;
 
-    bool in_state_function;
+    enum archi_fsm_mode mode;
     jmp_buf env; // non-local jumps
 };
 
@@ -103,6 +103,8 @@ archi_fsm_execute(
 
         .stack_size = 1,
         .stack_capacity = ARCHI_FSM_INITIAL_STACK_CAPACITY,
+
+        .mode = J_TRANSITION,
     };
 
     // Allocate the stack memory
@@ -137,7 +139,7 @@ archi_fsm_loop(
         switch (setjmp(context->env))
         {
             case J_STATE: // no jump were performed yet, call the state function
-                context->in_state_function = true;
+                context->mode = J_STATE;
                 {
                     /***************************************/
                     context->current_state.function(context);
@@ -145,7 +147,7 @@ archi_fsm_loop(
                 }
                 // fallthrough
             case J_TRANSITION: // returned from the state function, perform transition to the next state
-                context->in_state_function = false;
+                context->mode = J_TRANSITION;
                 continue;
 
             default: // shouldn't happen
@@ -226,7 +228,7 @@ archi_fsm_set_code(
 
         archi_status_t code)
 {
-    if ((context == NULL) || !context->in_state_function)
+    if ((context == NULL) || (context->mode != J_STATE))
         return;
 
     context->code = code;
@@ -262,7 +264,7 @@ archi_fsm_proceed(
         size_t num_pushed,
         const archi_fsm_state_t pushed[])
 {
-    if ((context == NULL) || !context->in_state_function)
+    if ((context == NULL) || (context->mode != J_STATE))
         return;
 
     if (num_popped > context->stack_size)
