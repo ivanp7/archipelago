@@ -1,14 +1,37 @@
 # Archipelago, a dynamic application framework
 
-The Archipelago app handles the initialization and finalization of resources for user-written plugins,
-which do not need to bother doing it manually.
-This allows for the separation of resource consumers from producers.
+Split an application into separate reusable modules, each doing its singular purpose,
+and connected at runtime using configuration in shared memory.
+
+During the initialization phase, the Archipelago application
+handles loading of plugins and execution of configuration steps,
+creating contexts of resources using producer interfaces,
+and providing the contexts to consumer interfaces.
 
 ![Application example](docs/app_example.png)
 
-Application plugins serve to provide contexts of different kinds to other plugins that implement application logic.
+During the execution phase, the Archipelago application runs the finite state machine.
+Each state of this FSM is a different function that does its piece of work and chooses the next state(s).
+A transition function that is called between state functions can also be specified.
 
-The executable:
+![Finite state machine example](docs/fsm_example.png)
+
+The Archipelago public API consists the following parts:
+
+* `util`: auxiliary utilities (linked lists, logging, shared memory interface, shared libraries interface, signal management interface, etc);
+* `app`: application context system;
+* `fsm`: finite state machine implementation;
+* `exe`: general purpose executable configured via shared memory;
+* `plugin`: built-in plugins providing most used types of resources:
+    - `files`: opening files;
+    - `shared_memory`: mapping files into memory;
+    - `shared_libraries`: loading shared libraries;
+    - `threads`: creating groups of threads for concurrent processing.
+
+This application was originally designed as a part of
+the [Rayway](https://github.com/ivanp7/rayway) engine to implement a command pipeline.
+
+## The executable
 
 1. obtains an application configuration from a memory-mapped file;
 2. loads shared libraries providing plugins as specified in the configuration;
@@ -16,26 +39,26 @@ The executable:
 4. executes a finite state machine with the specified entry state and state transition;
 5. finalizes the application (destroys contexts).
 
-All contexts are created, shared around, and prepared according to the provided configuration during the initialization phase.
+All contexts are initialized and provided to consumers according to the configuration during the initialization phase.
 After the initialization phase comes the execution phase, during which a finite state machine is run as described below.
 The entry state and state transition of the FSM are specified by the configuration in shared memory.
 
-The Archipelago library provides the following modules:
+## Important concepts
 
-* `util`: various auxiliary utilities, such as linked lists, logging, shared memory interface, shared libraries interface, signal management interface;
-* `app`: application plugin system (depends on `util`);
-* `fsm`: finite state machine implementation (depends on `util`);
-* `exe`: universal, multi-purpose executable configured via a shared memory (depends on `util`, `app`, `fsm`);
-* `plugin`: built-in plugins providing most used types of resources (depends on `util`, `app`, `fsm`):
-    - `files`: opening files;
-    - `shared_memory`: attaching shared memory;
-    - `shared_libraries`: loading shared libraries;
-    - `threads`: creating threads for concurrent processing.
+### Application configuration
 
-This application was originally designed as a part of
-the [Rayway](https://github.com/ivanp7/rayway) engine to implement a command pipeline.
+An application configuration is a list of steps that prepare an application for execution.
 
-## Application context interface
+A configuration step is a structure containing a type ID and type-specific data.
+There are several types of configuration steps:
+
+* `init`: create a context and add it to the application contexts;
+* `final`: destroy a context and remove it from the application contexts;
+* `set`: call a setter function on a context, providing it a value;
+* `assign`: call a setter function on a context, providing it another context or its getter function output value;
+* `act`: call an action function on a context.
+
+### Application context interface
 
 Context interfaces serve as very limited dynamic classes of context objects.
 
@@ -49,24 +72,7 @@ A context interface is a structure of pointers to the following functions:
 
 A plugin library can provide multiple context interfaces.
 
-## Application configuration
-
-An application configuration is a list of steps that form an application ready for execution.
-
-A configuration step is a structure containing a type ID and type-specific data.
-There are several types of configuration steps:
-
-* `init`: create a context and add it to the application contexts;
-* `final`: destroy a context and remove it from the application contexts;
-* `set`: call a setter function on a context;
-* `assign`: call a setter function on a context and pass it another context or output of a getter function to it;
-* `act`: call an actor function on a context.
-
-## Finite state machine
-
-![Finite state machine example](docs/fsm_example.png)
-
-### State
+### State of finite state machine
 
 A state of a finite state machine is a triple of:
 1. a pointer to a state function;
@@ -91,7 +97,7 @@ State functions initiate state transition simply by returning (no changes of sta
 `fsm_proceed()` works not only from the state function itself, but from any nested function calls, given a valid FSM context.
 If called from nested function calls, `fsm_proceed()` unwinds the call stack up to the state function via a `longjmp()`.
 
-### Transition
+### Transition of finite state machine
 
 A transition of a finite state machine is a pair of:
 1. a pointer to a transition function;
@@ -116,14 +122,11 @@ which is immediately pushed to the stack, thus preceding the previous stack top.
 Transition is hidden from state functions, which don't have any access to it.
 The same transition is used between any states and cannot be changed during finite state machine execution.
 
-# Examples
+# Example plugins and applications
 
-Examples of plugins can be found in the `plugin` subdirectory.
-
-Other projects using Archipelago:
-
-* [still-alive](https://github.com/ivanp7/still-alive) -- a demo implementation of a plugin.
-* [port](https://github.com/ivanp7/port) -- provides context interfaces for execution of kernel functions.
+* `plugin/sdl/` -- a plugin providing SDL2 windows and .psf2 fonts;
+* [port](https://github.com/ivanp7/port) -- efficient computations on GPUs and CPUs using OpenCL;
+* [still-alive](https://github.com/ivanp7/still-alive) -- a demo application.
 
 # Documentation
 
@@ -131,9 +134,9 @@ Doxygen documentation is available at `docs` subdirectory. To build it, run `mak
 
 # How to build
 
-0. change directory to the repository root;
-1. execute `configure.py` (providing optional environment variables) to generate `build.ninja`;
-2. execute `ninja` to build.
+0. go to the repository root directory;
+1. run `configure.py` (optionally optional environment variables) to generate `build.ninja`;
+2. run `ninja` to build the project.
 
 # Build dependencies
 
