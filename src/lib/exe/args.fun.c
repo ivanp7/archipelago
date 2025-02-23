@@ -36,8 +36,6 @@
 #define STRINGIFY(x) _STR(x)
 
 enum {
-    ARGKEY_SHM_FILE = 'f',
-
     ARGKEY_NO_LOGO = 'q',
     ARGKEY_VERBOSITY = 'v',
 
@@ -46,11 +44,6 @@ enum {
 
 static
 const struct argp_option args_options[] = {
-    {.doc = "Configuration options:"},
-
-    {.key = ARGKEY_SHM_FILE,    .name = "file", .arg = "PATHNAME",
-                                    .doc = "Use a memory-mapped configuration file"},
-
     {.doc = "Verbosity options:"},
 
     {.key = ARGKEY_NO_LOGO,     .name = "no-logo", .doc = "Don't display the logo"},
@@ -70,13 +63,6 @@ args_parse(int key, char *arg, struct argp_state *state)
 
     switch (key)
     {
-        case ARGKEY_SHM_FILE:
-            if (args->file != NULL)
-                return EINVAL; // setting multiple configuration pathnames is not supported
-
-            args->file = arg;
-            break;
-
         case ARGKEY_NO_LOGO:
             args->no_logo = true;
             break;
@@ -109,6 +95,12 @@ args_parse(int key, char *arg, struct argp_state *state)
             break;
 
         case ARGP_KEY_ARG:
+            if (args->file != NULL)
+                return EINVAL; // setting multiple configuration pathnames is not supported
+
+            args->file = arg;
+            break;
+
         case ARGP_KEY_ARGS:
         case ARGP_KEY_NO_ARGS:
         case ARGP_KEY_END:
@@ -141,8 +133,9 @@ archi_args_parse(
     struct argp args_parser = {
         .options = args_options,
         .parser = args_parse,
+        .args_doc = "PATHNAME",
         .doc = "\n\
-General purpose application configured by the data structure in memory.\n\
+General purpose, modular application configured by a memory-mapped file.\n\
 \v\
 "
     };

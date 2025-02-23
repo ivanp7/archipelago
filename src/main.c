@@ -143,7 +143,7 @@ configure_app(void);
 
 static
 void
-clean_app(void);
+reset_app(void);
 
 static
 void
@@ -176,11 +176,14 @@ main(
         case 0: // success
             break;
 
-        case EINVAL: // invalid arguments
+        case EINVAL: // incorrect arguments
+            archi_print("Error: incorrect command line arguments.\n");
             return ARCHI_EXIT_CODE(ARCHI_ERROR_MISUSE);
         case ENOMEM: // memory allocation error
+            archi_print("Error: memory allocation fail while parsing command line arguments.\n");
             return ARCHI_EXIT_CODE(ARCHI_ERROR_ALLOC);
         default: // unknown error
+            archi_print("Error: unknown fail while parsing command line arguments.\n");
             return ARCHI_EXIT_CODE(ARCHI_ERROR_UNKNOWN);
     }
 
@@ -189,7 +192,8 @@ main(
 
     // Display application logo
     if (!args.no_logo)
-        archi_print(ARCHI_COLOR_RESET "\n" ARCHI_COLOR_FG_BRI_WHITE "%s" ARCHI_COLOR_RESET "\n\n", ARCHI_PELAGO_LOGO);
+        archi_print(ARCHI_COLOR_RESET "\n" ARCHI_COLOR_FG_BRI_WHITE "%s"
+                ARCHI_COLOR_RESET "\n\n", ARCHI_PELAGO_LOGO);
 
     // Exit if there is nothing to do
     if (args.file == NULL)
@@ -199,9 +203,9 @@ main(
     atexit(exit_cleanup);
     at_quick_exit(exit_quick);
 
-    ////////////////////////////////
-    // Initialize the application //
-    ////////////////////////////////
+    //////////////////////////
+    // Initialization phase //
+    //////////////////////////
 
     archi_log_info(M, "Initializing the application...");
 
@@ -232,9 +236,9 @@ main(
     // Configure the application
     configure_app();
 
-    /////////////////////////////
-    // Execute the application //
-    /////////////////////////////
+    /////////////////////
+    // Execution phase //
+    /////////////////////
 
     if ((archi_process.fsm.entry_state.function != NULL) ||
             (archi_process.fsm.transition.function != NULL))
@@ -254,16 +258,16 @@ main(
 void
 exit_cleanup(void) // is called on exit() or if main() returns
 {
-    //////////////////////////////
-    // Finalize the application //
-    //////////////////////////////
+    ////////////////////////
+    // Finalization phase //
+    ////////////////////////
 
     archi_log_info(M, "Finalizing the application...");
 
     if (archi_process.config != NULL)
     {
         // Undo the configuration
-        clean_app();
+        reset_app();
 
         // Remove built-in contexts
         remove_builtin_contexts();
@@ -313,17 +317,20 @@ map_shared_memory(
     int fd = archi_shm_open_file(file, true, false); // open for read only
     if (fd == -1)
     {
-        archi_log_error(M, "Couldn't open memory-mapped configuration file '%s': %s.", file, strerror(errno));
+        archi_log_error(M, "Couldn't open memory-mapped configuration file '%s': %s.",
+                file, strerror(errno));
         exit(ARCHI_EXIT_CODE(ARCHI_ERROR_RESOURCE));
     }
 
     archi_log_debug(M, "Mapping memory-mapped configuration file '%s'...", file);
 
     errno = 0;
-    archi_process.config = (const archi_process_config_shm_t*)archi_shm_map(fd, true, false, false, 0); // map private read-only copy
+    archi_process.config = (const archi_process_config_shm_t*)
+        archi_shm_map(fd, true, false, false, 0); // map private read-only copy
     if (archi_process.config == NULL)
     {
-        archi_log_error(M, "Couldn't map memory-mapped configuration file '%s': %s.", file, strerror(errno));
+        archi_log_error(M, "Couldn't map memory-mapped configuration file '%s': %s.",
+                file, strerror(errno));
 
         archi_log_debug(M, "Closing memory-mapped configuration file '%s'...", file);
         archi_shm_close(fd);
@@ -335,7 +342,8 @@ map_shared_memory(
 
     errno = 0;
     if (!archi_shm_close(fd))
-        archi_log_warning(M, "Couldn't close memory-mapped configuration file '%s': %s.", file, strerror(errno));
+        archi_log_warning(M, "Couldn't close memory-mapped configuration file '%s': %s.",
+                file, strerror(errno));
 }
 
 #undef M
@@ -351,7 +359,8 @@ unmap_shared_memory(void)
 
     errno = 0;
     if (!archi_shm_unmap((archi_shm_header_t*)archi_process.config))
-        archi_log_error(M, "Couldn't unmap memory-mapped configuration file: %s.", strerror(errno));
+        archi_log_error(M, "Couldn't unmap memory-mapped configuration file: %s.",
+                strerror(errno));
 }
 
 #undef M
@@ -781,10 +790,10 @@ configure_app(void)
 }
 
 #undef M
-#define M "clean_app()"
+#define M "reset_app()"
 
 void
-clean_app(void)
+reset_app(void)
 {
     archi_log_debug(M, "Undoing the configuration...");
 
