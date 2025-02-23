@@ -298,7 +298,15 @@ exit_cleanup(void) // is called on exit() or if main() returns
 void
 exit_quick(void) // is called on quick_exit()
 {
-    archi_log_info(M, "The application has exited without cleanup.");
+    archi_log_info(M, "Finalizing the application without cleaning the resources...");
+
+    if (archi_process.config != NULL)
+    {
+        // Undo the configuration
+        reset_app();
+    }
+
+    archi_log_info(M, "The application has exited successfully without cleaning the resources.");
 }
 
 #undef M
