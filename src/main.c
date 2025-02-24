@@ -338,7 +338,7 @@ map_shared_memory(
     if (archi_process.config == NULL)
     {
         archi_log_error(M, "Couldn't map memory-mapped configuration file '%s': %s.",
-                file, strerror(errno));
+                file, (errno != 0) ? strerror(errno) : "file is mapped at a wrong address");
 
         archi_log_debug(M, "Closing memory-mapped configuration file '%s'...", file);
         archi_shm_close(fd);

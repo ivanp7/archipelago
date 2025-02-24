@@ -31,7 +31,7 @@
  * @brief Size of a structure with a flexible array member.
  */
 #define ARCHI_FLEXIBLE_SIZEOF(type, member, num_of) \
-    (sizeof(type*) + sizeof(((type*)NULL)->member[0]) * (num_of))
+    (sizeof(type) + sizeof(((type*)NULL)->member[0]) * (num_of))
 
 #endif // _ARCHI_UTIL_FLEXIBLE_DEF_H_
 

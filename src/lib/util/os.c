@@ -79,7 +79,7 @@ archi_shm_map(
         int flags)
 {
     int prot = (readable ? PROT_READ : 0) | (writable ? PROT_WRITE : 0);
-    int all_flags = (shared ? MAP_SHARED_VALIDATE : MAP_PRIVATE) | MAP_FIXED_NOREPLACE | flags;
+    int all_flags = (shared ? MAP_SHARED_VALIDATE : MAP_PRIVATE) | flags;
 
     // Map the memory the initial time to extract its header
     archi_shm_header_t *shm = mmap(NULL, sizeof(*shm), prot, all_flags, fd, 0);
@@ -94,12 +94,18 @@ archi_shm_map(
     if (size < sizeof(*shm))
         goto failure;
 
-    // Remap the memory of the correct size at the correct address
-    munmap(shm, sizeof(*shm));
+    if (header.shmaddr != shm)
+    {
+        // Remap the memory of the correct size at the correct address
+        munmap(shm, sizeof(*shm));
 
-    shm = mmap(header.shmaddr, size, prot, all_flags, fd, 0);
-    if (shm == MAP_FAILED)
-        return NULL;
+        shm = mmap(header.shmaddr, size, prot, all_flags, fd, 0);
+        if (shm == MAP_FAILED)
+            return NULL;
+
+        if (header.shmaddr != shm)
+            goto failure;
+    }
 
     return shm;
 
@@ -168,7 +174,8 @@ archi_signal_number_of_rt_signals(void)
 archi_signal_watch_set_t*
 archi_signal_watch_set_alloc(void)
 {
-    archi_signal_watch_set_t *signals = malloc(ARCHI_SIGNAL_WATCH_SET_SIZEOF);
+    size_t size = ARCHI_SIGNAL_WATCH_SET_SIZEOF;
+    archi_signal_watch_set_t *signals = malloc(size);
     if (signals == NULL)
         return NULL;
 
@@ -213,7 +220,8 @@ archi_signal_watch_set_alloc(void)
 archi_signal_flags_t*
 archi_signal_flags_alloc(void)
 {
-    archi_signal_flags_t *signals = malloc(ARCHI_SIGNAL_FLAGS_SIZEOF);
+    size_t size = ARCHI_SIGNAL_FLAGS_SIZEOF;
+    archi_signal_flags_t *signals = malloc(size);
     if (signals == NULL)
         return NULL;
 

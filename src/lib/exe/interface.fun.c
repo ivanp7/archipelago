@@ -108,6 +108,7 @@ ARCHI_CONTEXT_GET_FUNC(archi_app_signal_get)
     {
         *value = (archi_value_t){
             .ptr = archi_signal_management_flags(signal_management),
+            .size = ARCHI_SIGNAL_FLAGS_SIZEOF,
             .num_of = 1,
             .type = ARCHI_VALUE_DATA,
         };
