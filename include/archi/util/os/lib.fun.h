@@ -59,5 +59,13 @@ archi_library_get_symbol(
         const char *restrict symbol ///< [in] Symbol name.
 );
 
+/**
+ * @brief Initialize the logging subsystem for a library.
+ */
+void
+archi_library_initialize_logging(
+        void *handle ///< [in] Library handle.
+);
+
 #endif // _ARCHI_UTIL_OS_LIB_FUN_H_
 

@@ -167,7 +167,7 @@ main(
     //////////////////
 
     // Set the application start time
-    archi_log_set_start_time();
+    archi_log_set_start_time(NULL);
 
     // Parse command line arguments
     archi_args_t args;

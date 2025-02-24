@@ -59,6 +59,8 @@ archi_log_set_verbosity(
         int verbosity_level ///< [in] Default log verbosity level.
 );
 
+typedef void (*archi_log_set_verbosity_func_t)(int); ///< Function type of the verbosity level setter.
+
 /*****************************************************************************/
 
 struct timespec;
@@ -74,11 +76,17 @@ archi_log_start_time(
 /**
  * @brief Set log start time.
  *
+ * NULL time means the current time.
+ *
  * This function has effect only the first time called,
  * which is usually done automatically.
  */
 void
-archi_log_set_start_time(void);
+archi_log_set_start_time(
+        const struct timespec *ts ///< [in] Log start time or NULL.
+);
+
+typedef void (*archi_log_set_start_time_func_t)(const struct timespec*); ///< Function type of the application start time setter.
 
 /**
  * @brief Get log elapsed time.

@@ -26,6 +26,8 @@
 #include "archi/util/os/shm.fun.h"
 #include "archi/util/os/lib.fun.h"
 #include "archi/util/os/signal.fun.h"
+#include "archi/util/print.fun.h"
+#include "archi/util/value.typ.h"
 
 #include <stdlib.h> // for malloc()
 
@@ -161,6 +163,36 @@ archi_library_get_symbol(
         return NULL;
 
     return dlsym(handle, symbol);
+}
+
+void
+archi_library_initialize_logging(
+        void *handle)
+{
+    void *symbol;
+
+    // Set the application start time
+    symbol = archi_library_get_symbol(handle, "archi_log_set_start_time");
+    if (symbol != NULL)
+    {
+        archi_log_set_start_time_func_t *fptr =
+            (archi_log_set_start_time_func_t*)&symbol; // safe on POSIX systems
+
+        struct timespec ts;
+        archi_log_start_time(&ts);
+        (*fptr)(&ts); // archi_log_set_start_time(&ts);
+    }
+
+    // Set logging verbosity
+    symbol = archi_library_get_symbol(handle, "archi_log_set_verbosity");
+    if (symbol != NULL)
+    {
+        archi_log_set_verbosity_func_t *fptr =
+            (archi_log_set_verbosity_func_t*)&symbol; // safe on POSIX systems
+
+        int verbosity_level = archi_log_verbosity();
+        (*fptr)(verbosity_level); // archi_log_set_verbosity(verbosity_level);
+    }
 }
 
 /*****************************************************************************/

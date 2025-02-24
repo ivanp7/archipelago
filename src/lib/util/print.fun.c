@@ -107,14 +107,20 @@ archi_log_start_time(
 }
 
 void
-archi_log_set_start_time(void)
+archi_log_set_start_time(
+        const struct timespec *ts)
 {
     static bool start_time_set = false;
 
     if (!start_time_set)
     {
-        timespec_get(&archi_log_start_timespec, TIME_UTC);
-        start_time_set = true;
+        if (ts == NULL)
+        {
+            timespec_get(&archi_log_start_timespec, TIME_UTC);
+            start_time_set = true;
+        }
+        else
+            archi_log_start_timespec = *ts;
     }
 }
 

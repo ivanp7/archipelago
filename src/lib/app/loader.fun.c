@@ -47,6 +47,8 @@ archi_app_add_library(
     if (handle == NULL)
         return ARCHI_ERROR_LOAD;
 
+    archi_library_initialize_logging(handle);
+
     code = archi_container_insert(app->libraries, lib.key, handle);
     if (code != 0)
     {
