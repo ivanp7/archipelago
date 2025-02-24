@@ -35,16 +35,16 @@ const archi_context_interface_t *const archi_builtin_interfaces[] = {
     &archi_plugin_file_context_interface,
     &archi_plugin_shared_library_context_interface,
     &archi_plugin_shared_memory_context_interface,
-    &archi_plugin_threads_context_interface,
-    &archi_queue_context_interface,
+    &archi_plugin_thread_group_context_interface,
+    &archi_plugin_queue_context_interface,
 };
 
 const char *const archi_builtin_interfaces_aliases[] = {
-    ARCHI_FILE_CONTEXT_INTERFACE_ALIAS,
-    ARCHI_SHARED_LIBRARY_CONTEXT_INTERFACE_ALIAS,
-    ARCHI_SHARED_MEMORY_CONTEXT_INTERFACE_ALIAS,
-    ARCHI_THREADS_CONTEXT_INTERFACE_ALIAS,
-    ARCHI_QUEUE_CONTEXT_INTERFACE_ALIAS,
+    ARCHI_PLUGIN_FILE_CONTEXT_INTERFACE_ALIAS,
+    ARCHI_PLUGIN_SHARED_LIBRARY_CONTEXT_INTERFACE_ALIAS,
+    ARCHI_PLUGIN_SHARED_MEMORY_CONTEXT_INTERFACE_ALIAS,
+    ARCHI_PLUGIN_THREAD_GROUP_CONTEXT_INTERFACE_ALIAS,
+    ARCHI_PLUGIN_QUEUE_CONTEXT_INTERFACE_ALIAS,
 };
 
 const size_t archi_builtin_interfaces_num_of = sizeof(archi_builtin_interfaces) /

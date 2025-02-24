@@ -31,12 +31,12 @@
 #include <stdbool.h>
 
 /**
- * @brief Parameters for archi_threads_start().
+ * @brief Parameters for archi_thread_group_start().
  */
-typedef struct archi_threads_config {
+typedef struct archi_thread_group_config {
     size_t num_threads; ///< Number of threads to create.
     bool busy_wait;     ///< Whether busy-waiting for a job is enabled.
-} archi_threads_config_t;
+} archi_thread_group_config_t;
 
 /**
  * @brief Threaded processing configuration key for the whole configuration structure.
@@ -56,12 +56,12 @@ typedef struct archi_threads_config {
 /*****************************************************************************/
 
 /**
- * @brief Parameters for archi_threads_execute().
+ * @brief Parameters for archi_thread_group_execute().
  */
-typedef struct archi_threads_exec_config {
+typedef struct archi_thread_group_exec_config {
     size_t batch_size; ///< Number of tasks done by a thread at a time.
     bool busy_wait;    ///< Whether busy-waiting for job completion is enabled.
-} archi_threads_exec_config_t;
+} archi_thread_group_exec_config_t;
 
 /*****************************************************************************/
 

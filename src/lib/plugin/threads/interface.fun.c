@@ -33,10 +33,10 @@
 #include <string.h> // for strcmp(), memcpy()
 #include <assert.h>
 
-struct archi_threads_context {
+struct archi_thread_group_context {
     struct {
         thrd_t *threads;
-        archi_threads_config_t config;
+        archi_thread_group_config_t config;
 
         atomic_flag busy;
 
@@ -53,9 +53,9 @@ struct archi_threads_context {
     } persistent;
 
     struct {
-        archi_threads_job_t job;
-        archi_threads_callback_t callback;
-        archi_threads_exec_config_t config;
+        archi_thread_group_job_t job;
+        archi_thread_group_callback_t callback;
+        archi_thread_group_exec_config_t config;
 
         atomic_uint done_tasks;
         atomic_ushort thread_counter;
@@ -65,7 +65,7 @@ struct archi_threads_context {
 };
 
 struct archi_thread_arg {
-    struct archi_threads_context *context;
+    struct archi_thread_group_context *context;
     size_t thread_idx;
 };
 
@@ -74,7 +74,7 @@ int
 archi_thread(
         void *arg)
 {
-    struct archi_threads_context *context;
+    struct archi_thread_group_context *context;
     size_t thread_idx;
     {
         struct archi_thread_arg *thread_arg = arg;
@@ -134,7 +134,7 @@ archi_thread(
             break;
 
         // Copy the current job
-        archi_threads_job_t job = context->current.job;
+        archi_thread_group_job_t job = context->current.job;
         size_t batch_size = context->current.config.batch_size;
 
         // Acquire first task
@@ -198,9 +198,9 @@ archi_thread(
     return 0;
 }
 
-struct archi_threads_context*
-archi_threads_start(
-        archi_threads_config_t config,
+struct archi_thread_group_context*
+archi_thread_group_start(
+        archi_thread_group_config_t config,
 
         archi_status_t *code)
 {
@@ -209,14 +209,14 @@ archi_threads_start(
     size_t thread_idx = 0;
 
     // Initialize threads context
-    struct archi_threads_context *context = malloc(sizeof(*context));
+    struct archi_thread_group_context *context = malloc(sizeof(*context));
     if (context == NULL)
     {
         status = ARCHI_ERROR_ALLOC;
         goto failure;
     }
 
-    *context = (struct archi_threads_context){.persistent = {
+    *context = (struct archi_thread_group_context){.persistent = {
         .config = config,
         .busy = ATOMIC_FLAG_INIT,
     }};
@@ -321,7 +321,7 @@ failure:
     if (context != NULL)
     {
         context->persistent.config.num_threads = thread_idx; // number of created threads
-        archi_threads_stop(context);
+        archi_thread_group_stop(context);
     }
 
     if (code != NULL)
@@ -331,8 +331,8 @@ failure:
 }
 
 void
-archi_threads_stop(
-        struct archi_threads_context *context)
+archi_thread_group_stop(
+        struct archi_thread_group_context *context)
 {
     if (context == NULL)
         return;
@@ -386,12 +386,12 @@ archi_threads_stop(
 }
 
 archi_status_t
-archi_threads_execute(
-        struct archi_threads_context *context,
+archi_thread_group_execute(
+        struct archi_thread_group_context *context,
 
-        archi_threads_job_t job,
-        archi_threads_callback_t callback,
-        archi_threads_exec_config_t config)
+        archi_thread_group_job_t job,
+        archi_thread_group_callback_t callback,
+        archi_thread_group_exec_config_t config)
 {
     if ((context == NULL) || (job.function == NULL))
         return ARCHI_ERROR_MISUSE;
@@ -492,12 +492,12 @@ archi_threads_execute(
     return 0;
 }
 
-archi_threads_config_t
-archi_threads_config(
-        const struct archi_threads_context *context)
+archi_thread_group_config_t
+archi_thread_group_config(
+        const struct archi_thread_group_context *context)
 {
     if (context == NULL)
-        return (archi_threads_config_t){0};
+        return (archi_thread_group_config_t){0};
 
     return context->persistent.config;
 }
@@ -505,12 +505,12 @@ archi_threads_config(
 /*****************************************************************************/
 
 static
-ARCHI_LIST_ACT_FUNC(archi_plugin_threads_context_init_config)
+ARCHI_LIST_ACT_FUNC(archi_plugin_thread_group_context_init_config)
 {
     (void) position;
 
     archi_list_node_named_value_t *config_node = (archi_list_node_named_value_t*)node;
-    archi_threads_config_t *config = data;
+    archi_thread_group_config_t *config = data;
 
     if (strcmp(config_node->base.name, ARCHI_THREADS_CONFIG_KEY) == 0)
     {
@@ -550,38 +550,38 @@ ARCHI_LIST_ACT_FUNC(archi_plugin_threads_context_init_config)
         return ARCHI_ERROR_CONFIG;
 }
 
-ARCHI_CONTEXT_INIT_FUNC(archi_plugin_threads_context_init)
+ARCHI_CONTEXT_INIT_FUNC(archi_plugin_thread_group_context_init)
 {
     if (context == NULL)
         return ARCHI_ERROR_MISUSE;
 
     archi_status_t code;
 
-    archi_threads_config_t threads_config = {0};
+    archi_thread_group_config_t thread_group_config = {0};
     if (config != NULL)
     {
         archi_list_t config_list = {.head = (archi_list_node_t*)config};
         code = archi_list_traverse(&config_list, NULL, NULL,
-                archi_plugin_threads_context_init_config, &threads_config, true, 0, NULL);
+                archi_plugin_thread_group_context_init_config, &thread_group_config, true, 0, NULL);
         if (code != 0)
             return code;
     }
 
-    struct archi_threads_context *threads_context = archi_threads_start(threads_config, &code);
+    struct archi_thread_group_context *thread_group_context = archi_thread_group_start(thread_group_config, &code);
     if (code != 0)
         return code;
 
-    *context = threads_context;
+    *context = thread_group_context;
     return 0;
 }
 
-ARCHI_CONTEXT_FINAL_FUNC(archi_plugin_threads_context_final)
+ARCHI_CONTEXT_FINAL_FUNC(archi_plugin_thread_group_context_final)
 {
-    archi_threads_stop(context);
+    archi_thread_group_stop(context);
 }
 
-const archi_context_interface_t archi_plugin_threads_context_interface = {
-    .init_fn = archi_plugin_threads_context_init,
-    .final_fn = archi_plugin_threads_context_final,
+const archi_context_interface_t archi_plugin_thread_group_context_interface = {
+    .init_fn = archi_plugin_thread_group_context_init,
+    .final_fn = archi_plugin_thread_group_context_final,
 };
 

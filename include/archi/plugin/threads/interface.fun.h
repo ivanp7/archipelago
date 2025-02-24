@@ -32,7 +32,7 @@
 #include "archi/app/context.typ.h"
 #include "archi/util/status.typ.h"
 
-struct archi_threads_context;
+struct archi_thread_group_context;
 
 /**
  * @brief Initialize threaded processing context and create threads.
@@ -45,9 +45,9 @@ struct archi_threads_context;
  *
  * @return Threaded processing context.
  */
-struct archi_threads_context*
-archi_threads_start(
-        archi_threads_config_t config, ///< [in] Threaded processing context configuration.
+struct archi_thread_group_context*
+archi_thread_group_start(
+        archi_thread_group_config_t config, ///< [in] Threaded processing context configuration.
 
         archi_status_t *code ///< [out] Status code.
 );
@@ -56,8 +56,8 @@ archi_threads_start(
  * @brief Join threads and destroy threaded processing context.
  */
 void
-archi_threads_stop(
-        struct archi_threads_context *context ///< [in] Threaded processing context.
+archi_thread_group_stop(
+        struct archi_thread_group_context *context ///< [in] Threaded processing context.
 );
 
 /**
@@ -77,18 +77,18 @@ archi_threads_stop(
  *
  * Sometimes the call fails (if the threads were busy). This is indicated by returning false.
  * For that reason, a loop is needed to do the job robustly:
- * while (archi_threads_execute(...) == 1);
+ * while (archi_thread_group_execute(...) == 1);
  *
  * @return 0 if threads weren't busy and execution took place, 1 if threads were busy,
  * otherwise error code.
  */
 archi_status_t
-archi_threads_execute(
-        struct archi_threads_context *context, ///< [in] Threaded processing context.
+archi_thread_group_execute(
+        struct archi_thread_group_context *context, ///< [in] Threaded processing context.
 
-        archi_threads_job_t job, ///< [in] Threaded processing job.
-        archi_threads_callback_t callback, ///< [in] Threaded processing completion callback.
-        archi_threads_exec_config_t config ///< [in] Threaded processing configuration.
+        archi_thread_group_job_t job, ///< [in] Threaded processing job.
+        archi_thread_group_callback_t callback, ///< [in] Threaded processing completion callback.
+        archi_thread_group_exec_config_t config ///< [in] Threaded processing configuration.
 );
 
 /**
@@ -96,23 +96,23 @@ archi_threads_execute(
  *
  * @return Threaded processing context configuration.
  */
-archi_threads_config_t
-archi_threads_config(
-        const struct archi_threads_context *context ///< [in] Threaded processing context.
+archi_thread_group_config_t
+archi_thread_group_config(
+        const struct archi_thread_group_context *context ///< [in] Threaded processing context.
 );
 
 /*****************************************************************************/
 
-ARCHI_CONTEXT_INIT_FUNC(archi_plugin_threads_context_init);   ///< Threaded processing context initialization function.
-ARCHI_CONTEXT_FINAL_FUNC(archi_plugin_threads_context_final); ///< Threaded processing context finalization function.
+ARCHI_CONTEXT_INIT_FUNC(archi_plugin_thread_group_context_init);   ///< Threaded processing context initialization function.
+ARCHI_CONTEXT_FINAL_FUNC(archi_plugin_thread_group_context_final); ///< Threaded processing context finalization function.
 
 extern
-const archi_context_interface_t archi_plugin_threads_context_interface; ///< Threaded processing context interface functions.
+const archi_context_interface_t archi_plugin_thread_group_context_interface; ///< Threaded processing context interface functions.
 
 /**
  * @brief Alias name of threaded processing context interface.
  */
-#define ARCHI_THREADS_CONTEXT_INTERFACE_ALIAS "threads"
+#define ARCHI_PLUGIN_THREAD_GROUP_CONTEXT_INTERFACE_ALIAS "thread_group"
 
 #endif // _ARCHI_PLUGIN_THREADS_INTERFACE_FUN_H_
 

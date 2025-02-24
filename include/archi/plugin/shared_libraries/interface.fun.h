@@ -39,7 +39,7 @@ const archi_context_interface_t archi_plugin_shared_library_context_interface; /
 /**
  * @brief Alias name of shared library context interface.
  */
-#define ARCHI_SHARED_LIBRARY_CONTEXT_INTERFACE_ALIAS "shared_library"
+#define ARCHI_PLUGIN_SHARED_LIBRARY_CONTEXT_INTERFACE_ALIAS "shared_library"
 
 #endif // _ARCHI_PLUGIN_SHARED_LIBRARIES_INTERFACE_FUN_H_
 

@@ -35,7 +35,7 @@
  *
  * This function is called for each task in the job concurrently.
  *
- * @see archi_threads_task_func_t
+ * @see archi_thread_group_task_func_t
  */
 #define ARCHI_THREADS_TASK_FUNC(name) void name( \
         void *data, /* Job data. */ \
@@ -45,16 +45,16 @@
 /**
  * @brief Threaded processing function.
  */
-typedef ARCHI_THREADS_TASK_FUNC((*archi_threads_task_func_t));
+typedef ARCHI_THREADS_TASK_FUNC((*archi_thread_group_task_func_t));
 
 /**
  * @brief Threaded processing job.
  */
-typedef struct archi_threads_job {
-    archi_threads_task_func_t function; ///< [in] Job task function.
+typedef struct archi_thread_group_job {
+    archi_thread_group_task_func_t function; ///< [in] Job task function.
     void *data;        ///< [in] Job data.
     size_t num_tasks;  ///< [in] Number of tasks in the job.
-} archi_threads_job_t;
+} archi_thread_group_job_t;
 
 /*****************************************************************************/
 
@@ -63,7 +63,7 @@ typedef struct archi_threads_job {
  *
  * This function is called when all tasks have been complete.
  *
- * @see archi_threads_callback_func_t
+ * @see archi_thread_group_callback_func_t
  */
 #define ARCHI_THREADS_CALLBACK_FUNC(name) void name( \
         void *data, /* Callback data. */ \
@@ -73,15 +73,15 @@ typedef struct archi_threads_job {
 /**
  * @brief Threaded processing completion callback function.
  */
-typedef ARCHI_THREADS_CALLBACK_FUNC((*archi_threads_callback_func_t));
+typedef ARCHI_THREADS_CALLBACK_FUNC((*archi_thread_group_callback_func_t));
 
 /**
  * @brief Threaded processing completion callback.
  */
-typedef struct archi_threads_callback {
-    archi_threads_callback_func_t function; ///< [in] Callback function.
+typedef struct archi_thread_group_callback {
+    archi_thread_group_callback_func_t function; ///< [in] Callback function.
     void *data; ///< [in] Callback data.
-} archi_threads_callback_t;
+} archi_thread_group_callback_t;
 
 #endif // _ARCHI_PLUGIN_THREADS_INTERFACE_TYP_H_
 

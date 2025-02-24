@@ -38,7 +38,7 @@ const archi_context_interface_t archi_plugin_shared_memory_context_interface; //
 /**
  * @brief Alias name of shared memory context interface.
  */
-#define ARCHI_SHARED_MEMORY_CONTEXT_INTERFACE_ALIAS "shared_memory"
+#define ARCHI_PLUGIN_SHARED_MEMORY_CONTEXT_INTERFACE_ALIAS "shared_memory"
 
 #endif // _ARCHI_PLUGIN_SHARED_MEMORY_INTERFACE_FUN_H_
 
