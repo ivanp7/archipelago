@@ -387,7 +387,7 @@ start_signal_management(void)
 
 #define LOG_SIGNAL(signal) do { \
         if (archi_process.config->signal_watch_set->f_##signal) \
-            archi_log_debug(M, " - watching %s", #signal); \
+            archi_log_debug(M, "- watching %s", #signal); \
     } while (0)
 
     LOG_SIGNAL(SIGINT);
@@ -421,7 +421,7 @@ start_signal_management(void)
     for (size_t i = 0; i < archi_signal_number_of_rt_signals(); i++)
     {
         if (archi_process.config->signal_watch_set->f_SIGRTMIN[i])
-            archi_log_debug(M, " - watching SIGRTMIN+%u", (unsigned)i);
+            archi_log_debug(M, "- watching SIGRTMIN+%u", (unsigned)i);
     }
 
     errno = 0;
@@ -500,7 +500,7 @@ load_shared_libraries(void)
 
     for (size_t i = 0; i < archi_process.config->app_config.num_libraries; i++)
     {
-        archi_log_debug(M, " - loading shared library '%s' at '%s'...",
+        archi_log_debug(M, "- loading shared library '%s' at '%s'...",
                 SAFE(archi_process.config->app_config.libraries[i].key),
                 SAFE(archi_process.config->app_config.libraries[i].pathname));
 
@@ -530,7 +530,7 @@ unload_shared_libraries(void)
     {
         size_t j = (archi_process.counter.libraries - 1) - i;
 
-        archi_log_debug(M, " - unloading shared library '%s'...",
+        archi_log_debug(M, "- unloading shared library '%s'...",
                 SAFE(archi_process.config->app_config.libraries[j].key));
 
         archi_status_t code = archi_app_remove_library(&archi_process.app,
@@ -558,7 +558,7 @@ add_context_interfaces(void)
 
     for (size_t i = 0; i < archi_process.config->app_config.num_interfaces; i++)
     {
-        archi_log_debug(M, " - adding context interface '%s' as symbol '%s' from library '%s'...",
+        archi_log_debug(M, "- adding context interface '%s' as symbol '%s' from library '%s'...",
                 SAFE(archi_process.config->app_config.interfaces[i].key),
                 SAFE(archi_process.config->app_config.interfaces[i].symbol_name),
                 SAFE(archi_process.config->app_config.interfaces[i].library_key));
@@ -589,7 +589,7 @@ remove_context_interfaces(void)
     {
         size_t j = (archi_process.counter.interfaces - 1) - i;
 
-        archi_log_debug(M, " - removing context interface '%s'...",
+        archi_log_debug(M, "- removing context interface '%s'...",
                 SAFE(archi_process.config->app_config.interfaces[j].key));
 
         archi_status_t code = archi_app_remove_interface(&archi_process.app,
@@ -614,7 +614,7 @@ add_builtin_context_interfaces(void)
 
     for (size_t i = 0; i < archi_builtin_interfaces_num_of; i++)
     {
-        archi_log_debug(M, " - adding built-in context interface '%s'...",
+        archi_log_debug(M, "- adding built-in context interface '%s'...",
                 archi_builtin_interfaces_aliases[i]);
 
         archi_status_t code = archi_container_insert(archi_process.app.interfaces,
@@ -643,7 +643,7 @@ remove_builtin_context_interfaces(void)
     {
         size_t j = (archi_process.counter.builtin_interfaces - 1) - i;
 
-        archi_log_debug(M, " - removing built-in context interface '%s'...",
+        archi_log_debug(M, "- removing built-in context interface '%s'...",
                 archi_builtin_interfaces_aliases[j]);
 
         archi_status_t code = archi_container_remove(archi_process.app.interfaces,
@@ -689,7 +689,7 @@ add_builtin_contexts(void)
 
     for (size_t i = 0; i < NUM_BUILTIN_CONTEXTS; i++)
     {
-        archi_log_debug(M, " - adding built-in context '%s'...",
+        archi_log_debug(M, "- adding built-in context '%s'...",
                 archi_process.builtin.contexts_aliases[i]);
 
         archi_status_t code = archi_container_insert(archi_process.app.contexts,
@@ -718,7 +718,7 @@ remove_builtin_contexts(void)
     {
         size_t j = (archi_process.counter.builtin_contexts - 1) - i;
 
-        archi_log_debug(M, " - removing built-in context '%s'...",
+        archi_log_debug(M, "- removing built-in context '%s'...",
                 archi_process.builtin.contexts_aliases[j]);
 
         archi_status_t code = archi_container_remove(archi_process.app.contexts,
@@ -751,37 +751,37 @@ configure_app(void)
         switch (step.type)
         {
             case ARCHI_APP_CONFIG_STEP_INIT:
-                archi_log_debug(M, " - [%u] initializing context '%s' of type '%s'...",
+                archi_log_debug(M, "- [%u] initializing context '%s' of type '%s'...",
                         (unsigned)i, SAFE(step.key), SAFE(step.as_init.interface_key));
                 break;
 
             case ARCHI_APP_CONFIG_STEP_FINAL:
-                archi_log_debug(M, " - [%u] finalizing context '%s'...", (unsigned)i, SAFE(step.key));
+                archi_log_debug(M, "- [%u] finalizing context '%s'...", (unsigned)i, SAFE(step.key));
                 break;
 
             case ARCHI_APP_CONFIG_STEP_SET:
-                archi_log_debug(M, " - [%u] setting slot '%s' of context '%s' to value of type %u...",
+                archi_log_debug(M, "- [%u] setting slot '%s' of context '%s' to value of type %u...",
                         (unsigned)i, SAFE(step.as_set.slot), SAFE(step.key), step.as_set.value->type);
                 break;
 
             case ARCHI_APP_CONFIG_STEP_ASSIGN:
                 if (step.as_assign.source_slot != NULL)
-                    archi_log_debug(M, " - [%u] assigning slot '%s' of context '%s' to slot '%s' of context '%s'...",
+                    archi_log_debug(M, "- [%u] assigning slot '%s' of context '%s' to slot '%s' of context '%s'...",
                             (unsigned)i, SAFE(step.as_assign.source_slot), SAFE(step.as_assign.source_key),
                             SAFE(step.as_assign.slot), SAFE(step.key));
                 else
-                    archi_log_debug(M, " - [%u] assigning context '%s' to slot '%s' of context '%s'...",
+                    archi_log_debug(M, "- [%u] assigning context '%s' to slot '%s' of context '%s'...",
                             (unsigned)i, SAFE(step.as_assign.source_key),
                             SAFE(step.as_assign.slot), SAFE(step.key));
                 break;
 
             case ARCHI_APP_CONFIG_STEP_ACT:
-                archi_log_debug(M, " - [%u] invoking action '%s' of context '%s'...",
+                archi_log_debug(M, "- [%u] invoking action '%s' of context '%s'...",
                         (unsigned)i, SAFE(step.as_act.action), SAFE(step.key));
                 break;
 
             default:
-                archi_log_debug(M, " - [%u] unknown configuration step type for context '%s'...",
+                archi_log_debug(M, "- [%u] unknown configuration step type for context '%s'...",
                         (unsigned)i, SAFE(step.key));
         }
 
@@ -808,11 +808,11 @@ reset_app(void)
     for (size_t i = 0; i < archi_process.counter.steps; i++)
     {
         size_t j = (archi_process.counter.steps - 1) - i;
+        archi_app_config_step_t step = archi_process.config->app_config.steps[j];
 
-        archi_log_debug(M, " - undoing configuration step #%u...", (unsigned)j);
+        archi_log_debug(M, "- undoing configuration step #%u (type %i)...", (unsigned)j, step.type);
 
-        archi_status_t code = archi_app_undo_config_step(&archi_process.app,
-                archi_process.config->app_config.steps[j]);
+        archi_status_t code = archi_app_undo_config_step(&archi_process.app, step);
 
         if (code != 0)
             archi_log_error(M, "Couldn't undo configuration step #%u (error %i).", (unsigned)i, code);
