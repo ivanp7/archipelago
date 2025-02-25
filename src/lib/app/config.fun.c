@@ -276,3 +276,17 @@ archi_app_undo_config_step(
     }
 }
 
+bool
+archi_app_config_step_undoable(
+        archi_app_config_step_type_t type)
+{
+    switch (type)
+    {
+        case ARCHI_APP_CONFIG_STEP_INIT:
+            return true;
+
+        default:
+            return false;
+    }
+}
+

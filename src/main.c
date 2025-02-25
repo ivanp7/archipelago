@@ -812,33 +812,10 @@ reset_app(void)
         size_t j = (archi_process.counter.steps - 1) - i;
         archi_app_config_step_t step = archi_process.config->app_config.steps[j];
 
-        const char *type;
-        switch (step.type)
-        {
-            case ARCHI_APP_CONFIG_STEP_INIT:
-                type = "init";
-                break;
+        if (!archi_app_config_step_undoable(step.type))
+            continue;
 
-            case ARCHI_APP_CONFIG_STEP_FINAL:
-                type = "final";
-                break;
-
-            case ARCHI_APP_CONFIG_STEP_SET:
-                type = "set";
-                break;
-
-            case ARCHI_APP_CONFIG_STEP_ASSIGN:
-                type = "assign";
-                break;
-
-            case ARCHI_APP_CONFIG_STEP_ACT:
-                type = "act";
-                break;
-
-            default:
-                type = "unknown";
-        }
-        archi_log_debug(M, "> undo_configuration_step(%u, '%s')", (unsigned)j, type);
+        archi_log_debug(M, "> undo_configuration_step(%u, '%s')", (unsigned)j, step.key);
 
         archi_status_t code = archi_app_undo_config_step(&archi_process.app, step);
 

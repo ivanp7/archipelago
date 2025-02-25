@@ -30,6 +30,8 @@
 #include "archi/app/config.typ.h"
 #include "archi/util/status.typ.h"
 
+#include <stdbool.h>
+
 struct archi_application;
 struct archi_context_interface;
 struct archi_list_node_named_value;
@@ -84,6 +86,16 @@ archi_status_t
 archi_app_undo_config_step(
         struct archi_application *app, ///< [in] Application instance.
         archi_app_config_step_t step ///< [in] Configuration step.
+);
+
+/**
+ * @brief Check if a configuration step type is undoable.
+ *
+ * @return True if such a step can be undone, otherwise false.
+ */
+bool
+archi_app_config_step_undoable(
+        archi_app_config_step_type_t type ///< [in] Step type.
 );
 
 #endif // _ARCHI_APP_CONFIG_FUN_H_
