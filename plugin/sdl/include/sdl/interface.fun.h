@@ -189,7 +189,7 @@ const archi_context_interface_t plugin_sdl_library_interface; ///< SDL library i
 /**
  * @brief Alias name of SDL library interface.
  */
-#define PLUGIN_SDL_LIBRARY_INTERFACE_ALIAS "sdl"
+#define PLUGIN_SDL_LIBRARY_INTERFACE_KEY "sdl"
 
 /*****************************************************************************/
 
@@ -202,7 +202,7 @@ const archi_context_interface_t plugin_sdl_window_context_interface; ///< SDL wi
 /**
  * @brief Alias name of SDL window context interface.
  */
-#define PLUGIN_SDL_WINDOW_CONTEXT_INTERFACE_ALIAS "sdl_window"
+#define PLUGIN_SDL_WINDOW_CONTEXT_INTERFACE_KEY "sdl_window"
 
 #endif // _PLUGIN_SDL_INTERFACE_FUN_H_
 

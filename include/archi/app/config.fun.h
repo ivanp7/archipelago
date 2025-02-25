@@ -42,7 +42,7 @@ struct archi_list_node_named_value;
 archi_status_t
 archi_app_add_context(
         struct archi_application *app, ///< [in] Application instance.
-        const void *key, ///< [in] Context key.
+        const char *key, ///< [in] Context key.
         const struct archi_context_interface *interface, ///< [in] Context interface.
         const struct archi_list_node_named_value *config ///< [in] Context configuration.
 );
@@ -55,7 +55,7 @@ archi_app_add_context(
 archi_status_t
 archi_app_remove_context(
         struct archi_application *app, ///< [in] Application instance.
-        const void *key ///< [in] Context key.
+        const char *key ///< [in] Context key.
 );
 
 /*****************************************************************************/

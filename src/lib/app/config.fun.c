@@ -34,7 +34,7 @@
 archi_status_t
 archi_app_add_context(
         archi_application_t *app,
-        const void *key,
+        const char *key,
         const archi_context_interface_t *interface,
         const struct archi_list_node_named_value *config)
 {
@@ -72,7 +72,7 @@ archi_app_add_context(
 archi_status_t
 archi_app_remove_context(
         archi_application_t *app,
-        const void *key)
+        const char *key)
 {
     if (app == NULL)
         return ARCHI_ERROR_MISUSE;
@@ -103,7 +103,7 @@ archi_status_t
 archi_app_do_config_step_init(
         archi_application_t *app,
 
-        const void *context_key,
+        const char *context_key,
         archi_app_config_step_init_t step_init)
 {
     if (context_key == NULL)
@@ -126,7 +126,7 @@ archi_status_t
 archi_app_do_config_step_final(
         archi_application_t *app,
 
-        const void *context_key)
+        const char *context_key)
 {
     if (context_key == NULL)
         return ARCHI_ERROR_MISUSE;
@@ -139,7 +139,7 @@ archi_status_t
 archi_app_do_config_step_set(
         archi_application_t *app,
 
-        const void *context_key,
+        const char *context_key,
         archi_app_config_step_set_t step_set)
 {
     if ((context_key == NULL) || (step_set.slot == NULL) || (step_set.value == NULL))
@@ -168,7 +168,7 @@ archi_status_t
 archi_app_do_config_step_assign(
         archi_application_t *app,
 
-        const void *context_key,
+        const char *context_key,
         archi_app_config_step_assign_t step_assign)
 {
     if ((context_key == NULL) || (step_assign.slot == NULL))
@@ -204,7 +204,7 @@ archi_status_t
 archi_app_do_config_step_act(
         archi_application_t *app,
 
-        const void *context_key,
+        const char *context_key,
         archi_app_config_step_act_t step_act)
 {
     if ((context_key == NULL) || (step_act.action == NULL))

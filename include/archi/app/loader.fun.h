@@ -51,7 +51,7 @@ archi_app_add_library(
 archi_status_t
 archi_app_remove_library(
         struct archi_application *app, ///< [in] Application instance.
-        const void *key ///< [in] Library key.
+        const char *key ///< [in] Library key.
 );
 
 /**
@@ -73,7 +73,7 @@ archi_app_add_interface(
 archi_status_t
 archi_app_remove_interface(
         struct archi_application *app, ///< [in] Application instance.
-        const void *key ///< [in] Interface key.
+        const char *key ///< [in] Interface key.
 );
 
 #endif // _ARCHI_APP_LOADER_FUN_H_

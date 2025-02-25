@@ -1,6 +1,25 @@
-##########################################################################
-# Python module: shared memory utilities for the Archipelago application #
-##########################################################################
+ #############################################################################
+ # Copyright (C) 2023-2025 by Ivan Podmazov                                  #
+ #                                                                           #
+ # This file is part of Archipelago.                                         #
+ #                                                                           #
+ #   Archipelago is free software: you can redistribute it and/or modify it  #
+ #   under the terms of the GNU Lesser General Public License as published   #
+ #   by the Free Software Foundation, either version 3 of the License, or    #
+ #   (at your option) any later version.                                     #
+ #                                                                           #
+ #   Archipelago is distributed in the hope that it will be useful,          #
+ #   but WITHOUT ANY WARRANTY; without even the implied warranty of          #
+ #   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the           #
+ #   GNU Lesser General Public License for more details.                     #
+ #                                                                           #
+ #   You should have received a copy of the GNU Lesser General Public        #
+ #   License along with Archipelago. If not, see                             #
+ #   <http://www.gnu.org/licenses/>.                                         #
+ #############################################################################
+
+# @file
+# @brief Python module: Archipelago application configuration generator.
 
 import ctypes as c
 import mmap
@@ -9,163 +28,443 @@ import signal
 
 ###############################################################################
 
-NUM_RT_SIGNALS = signal.SIGRTMAX - signal.SIGRTMIN + 1
-
-###############################################################################
-
-class value_union_t(c.Union):
-    """Union of a pointer to data and a pointer to function.
-    """
-    _fields_ = [('ptr', c.c_void_p),
-                ('fptr', c.CFUNCTYPE(None))]
-
 VALUE_NULL      = 0  # No value.
-VALUE_FALSE     = 1 # Falsey boolean value.
-VALUE_TRUE      = 2 # Truthy boolean value.
-VALUE_UINT      = 3 # Unsigned integer.
-VALUE_SINT      = 4 # Signed integer.
-VALUE_FLOAT     = 5 # Floating-point number.
-VALUE_STRING    = 6 # Null-terminated string.
-VALUE_DATA      = 7 # Binary data.
-VALUE_NESTED    = 8 # Nested node.
-VALUE_LIST      = 9 # Nested list.
+VALUE_FALSE     = 1  # Falsey boolean value.
+VALUE_TRUE      = 2  # Truthy boolean value.
+VALUE_UINT      = 3  # Unsigned integer.
+VALUE_SINT      = 4  # Signed integer.
+VALUE_FLOAT     = 5  # Floating-point number.
+VALUE_STRING    = 6  # Null-terminated string.
+VALUE_DATA      = 7  # Binary data.
+VALUE_NESTED    = 8  # Nested node.
+VALUE_LIST      = 9  # Nested list.
 VALUE_FUNCTION  = 10 # Pointer to a function.
 
-class value_t(c.Structure):
-    """Value pointer with metadata.
-    """
-    _fields_ = [('as', value_union_t),
-                ('size', c.c_size_t),
-                ('num_of', c.c_size_t),
-                ('own_memory', c.c_bool),
-                ('type', c.c_int)]
-    _anonymous_ = ['as']
 
-class list_node_t(c.Structure):
-    """Linked list node base.
+class Value:
+    """High-level representation of a value_t object.
     """
-    pass
+    def __init__(self, object, size=None, num_of=1, type=VALUE_DATA):
+        """Create a value wrapper.
 
-list_node_t._fields_ = [('prev', c.POINTER(list_node_t)),
-                        ('next', c.POINTER(list_node_t))]
+        @param[in] object : a ctypes object
+        @param[in] size   : size of the object (if None, ctypes.sizeof() is used)
+        @param[in] num_of : number of array elements (1 if the object is singular)
+        @param[in] type   : type ID of the object (one of VALUE_* constants)
+        """
+        if (size is not None and size < 0) or num_of < 0:
+            ValueError(f'incorrect size ({size}) or number ({num_of})')
 
-class list_node_named_t(c.Structure):
-    """Named list node.
-    """
-    _fields_ = [('link', list_node_t),
-                ('name', c.c_char_p)]
+        self._object_ = object
 
-class list_node_named_value_t(c.Structure):
-    """Named value list node.
-    """
-    _fields_ = [('base', list_node_named_t),
-                ('value', value_t)]
+        if object:
+            self._size_ = size if size else c.sizeof(object)
+            self._num_of_ = num_of
+            self._type_ = type
+        else:
+            self._size_ = 0
+            self._num_of_ = 0
+            self._type_ = VALUE_NULL
 
 ###############################################################################
 
-class app_config_step_init_t(c.Structure):
-    """Specific configuration step data for context initialization.
+class ApplicationContextField:
+    """Representation of a context slot in the application configuration.
     """
-    _fields_ = [('interface_key', c.c_void_p),
-                ('config', c.POINTER(list_node_named_value_t))]
+    def __init__(self, context, name: str):
+        """Create a context field representation object.
+        """
+        if not isinstance(context, ApplicationContext):
+            raise TypeError("expected ApplicationContext")
 
-class app_config_step_set_t(c.Structure):
-    """Specific configuration step data for context slot value setting.
+        self._context_ = context
+        self._name_ = name
+
+
+    def __call__(self, **params):
+        """Invoke a context action.
+        """
+        self._context_._app_._steps_.append({'type': 'act',
+                                             'key': self._context_._key_,
+                                             'action': self._name_,
+                                             'params': params})
+
+
+class ApplicationContext:
+    """Representation of a context in the application configuration.
     """
-    _fields_ = [('slot', c.c_char_p),
-                ('value', c.POINTER(value_t))]
+    def __init__(self, app, key: str, interface_key: str=None, **config):
+        """Create a context.
+        """
+        if not isinstance(app, Application):
+            raise TypeError("expected Application")
 
-class app_config_step_assign_t(c.Structure):
-    """Specific configuration step data for context assignment.
+        self._app_ = app
+        self._key_ = key
+        self._interface_key_ = interface_key
+        self._builtin_ = interface_key is None
+
+        if not self._builtin_:
+            app._steps_.append({'type': 'init',
+                                'key': self._key_,
+                                'interface_key': interface_key,
+                                'config': config})
+
+
+    def __del__(self):
+        """Destroy a context.
+        """
+        if not self._builtin_:
+            self._app_._steps_.append({'type': 'final',
+                                       'key': self._key_})
+
+
+    def __getattr__(self, name):
+        """Get a context slot or a context action.
+        """
+        if name[0] == '_':
+            return self.__dict__[name]
+
+        return ApplicationContextField(self, name)
+
+
+    def __setattr__(self, name, value):
+        """Set a context slot.
+        """
+        if name[0] == '_':
+            self.__dict__[name] = value
+            return
+
+        if isinstance(value, ApplicationContext):
+            self._app_._steps_.append({'type': 'assign',
+                                       'key': self._key_,
+                                       'slot': name,
+                                       'source_key': value._key_})
+        elif isinstance(value, ApplicationContextField):
+            self._app_._steps_.append({'type': 'assign',
+                                       'key': self._key_,
+                                       'slot': name,
+                                       'source_key': value._context_._key_,
+                                       'source_slot': value._name_})
+        elif isinstance(value, Value):
+            self._app_._steps_.append({'type': 'set',
+                                       'key': self._key_,
+                                       'slot': name,
+                                       'value': value})
+        else:
+            raise TypeError(f'expected ApplicationContext, ApplicationContextField, or Value')
+
+
+NUM_RT_SIGNALS = signal.SIGRTMAX - signal.SIGRTMIN + 1
+
+class Application:
+    """Constructor of Archipelago application configurations.
     """
-    _fields_ = [('slot', c.c_char_p),
-                ('source_key', c.c_void_p),
-                ('source_slot', c.c_char_p)]
+    def __init__(self):
+        """Initialize an application configuration instance.
+        """
+        self._signals_ = set()
+        self._libraries_ = {}
+        self._interfaces_ = {}
+        self._steps_ = []
 
-class app_config_step_act_t(c.Structure):
-    """Specific configuration step data for context action.
-    """
-    _fields_ = [('action', c.c_char_p),
-                ('params', c.POINTER(list_node_named_value_t))]
 
-class app_config_step_union_t(c.Union):
-    """Union of specific step data in application configuration step.
-    """
-    _fields_ = [('as_init', app_config_step_init_t),
-                ('as_set', app_config_step_set_t),
-                ('as_assign', app_config_step_assign_t),
-                ('as_act', app_config_step_act_t)]
+    def watch_signal(self, signame: str, n: int=0):
+        """Add a signal to the watch set.
 
-APP_CONFIG_STEP_INIT    = 0 # Initialize a context.
-APP_CONFIG_STEP_FINAL   = 1 # Finalize a context.
-APP_CONFIG_STEP_SET     = 2 # Set a value to context slot.
-APP_CONFIG_STEP_ASSIGN  = 3 # Assign a value to context slot (get -> set).
-APP_CONFIG_STEP_ACT     = 4 # Perform a context action.
+        Parameter n is used when signame is 'SIGRTMIN' or 'SIGRTMAX'.
+        The watched signals are SIGRTMIN+n or SIGRTMAX-n, accordingly.
+        """
+        if not signame:
+            raise ValueError("null signal name")
+        elif signame[0:3] != 'SIG':
+            raise ValueError(f"invalid signal name '{signame}'")
+        elif n < 0:
+            raise ValueError(f"invalid signal number '{n}'")
+        elif signame == 'SIGRTMIN' and n > signal.SIGRTMAX - signal.SIGRTMIN:
+            raise ValueError(f"invalid signal SIGRTMIN+{n}")
+        elif signame == 'SIGRTMAX' and n > signal.SIGRTMAX - signal.SIGRTMIN:
+            raise ValueError(f"invalid signal SIGRTMAX-{n}")
 
-class app_config_step_t(c.Structure):
-    """Application configuration step.
-    """
-    _fields_ = [('type', c.c_int),
-                ('key', c.c_void_p),
-                ('as', app_config_step_union_t)]
-    _anonymous_ = ['as']
+        self._signals_.add((signame, n))
+
+
+    def load_library(self, key: str, pathname: str, flag_lazy: bool=False, flag_global: bool=False):
+        """Load a shared library and add it to the application.
+        """
+        if not key:
+            raise ValueError("null key")
+        elif key in self._libraries_:
+            raise KeyError("library '{key}' is added already")
+
+        self._libraries_[key] = {'pathname': pathname,
+                                 'lazy': flag_lazy,
+                                 'global': flag_global}
+
+
+    def register_interface(self, key: str, symbol_name: str, library_key: str):
+        """Get a context interface symbol and add it to the application.
+        """
+        if not key:
+            raise ValueError("null key")
+        elif not symbol_name:
+            raise ValueError("null symbol name")
+        elif key in self._interfaces_:
+            raise KeyError("interface '{key}' has been added already")
+        elif library_key not in self._libraries_:
+            raise KeyError(f"unknown library '{library_key}'")
+
+        self._interfaces_[key] = {'symbol_name': symbol_name,
+                                  'library_key': library_key}
+
+
+    def new_context(self, key: str, interface_key: str, **config) -> ApplicationContext:
+        """Return a new context.
+        """
+        return ApplicationContext(self, key, interface_key, **config)
+
+
+    def builtin_context(self, key: str) -> ApplicationContext:
+        """Return a built-in context.
+        """
+        return ApplicationContext(self, key)
+
+
+APP_SIGNAL_CONTEXT_KEY = "archi_app_signal"
+APP_FSM_CONTEXT_KEY = "archi_app_fsm"
 
 ###############################################################################
-
-class signal_watch_set_t(c.Structure):
-    """Flags designating which signals need to be watched.
-    """
-    _fields_ = [('f_SIGINT', c.c_bool), ('f_SIGQUIT', c.c_bool),
-                ('f_SIGTERM', c.c_bool), ('f_SIGCHLD', c.c_bool),
-                ('f_SIGCONT', c.c_bool), ('f_SIGTSTP', c.c_bool),
-                ('f_SIGXCPU', c.c_bool), ('f_SIGXFSZ', c.c_bool),
-                ('f_SIGPIPE', c.c_bool), ('f_SIGPOLL', c.c_bool),
-                ('f_SIGURG', c.c_bool), ('f_SIGALRM', c.c_bool),
-                ('f_SIGVTALRM', c.c_bool), ('f_SIGPROF', c.c_bool),
-                ('f_SIGHUP', c.c_bool), ('f_SIGTTIN', c.c_bool),
-                ('f_SIGTTOU', c.c_bool), ('f_SIGWINCH', c.c_bool),
-                ('f_SIGUSR1', c.c_bool), ('f_SIGUSR2', c.c_bool),
-                ('f_SIGRTMIN', c.c_bool * int(NUM_RT_SIGNALS))]
-
-class app_loader_library_t(c.Structure):
-    """Shared library loader configuration.
-    """
-    _fields_ = [('key', c.c_void_p),
-                ('pathname', c.c_char_p),
-                ('lazy', c.c_bool),
-                ('global', c.c_bool)]
-
-class app_loader_library_symbol_t(c.Structure):
-    """Shared library symbol getter configuration.
-    """
-    _fields_ = [('key', c.c_void_p),
-                ('symbol_name', c.c_char_p),
-                ('library_key', c.c_void_p)]
-
-class app_config_t(c.Structure):
-    """Application configuration.
-    """
-    _fields_ = [('libraries', c.POINTER(app_loader_library_t)),
-                ('interfaces', c.POINTER(app_loader_library_symbol_t)),
-                ('steps', c.POINTER(app_config_step_t)),
-                ('num_libraries', c.c_size_t),
-                ('num_interfaces', c.c_size_t),
-                ('num_steps', c.c_size_t)]
-
-class shm_header_t(c.Structure):
-    """Shared memory header.
-    """
-    _fields_ = [('shmaddr', c.c_void_p),
-                ('shmend', c.c_void_p)]
-
-class process_config_shm_t(c.Structure):
-    """Configuration of the process in shared memory.
-    """
-    _fields_ = [('shm_header', shm_header_t),
-                ('signal_watch_set', c.POINTER(signal_watch_set_t)),
-                ('app_config', app_config_t)]
-
 ###############################################################################
+
+def fossilize(app: Application, pathname: str):
+    """Create a memory-mapped file and write the configuration into it.
+    """
+    if not isinstance(app, Application):
+        raise TypeError("expected Application")
+
+    address = None   # address of the mapped memory
+    total_size = 0   # total size of the configuration
+    all_strings = {} # dictionary of string objects
+
+    def allocate(ctype): # allocate a new object
+        nonlocal total_size
+
+        size = c.sizeof(ctype)
+        alignment = c.alignment(ctype)
+
+        # fulfill the alignment requirement
+        total_size = (total_size + (alignment - 1)) & ~(alignment - 1)
+
+        object = ctype.from_address(address + total_size) if address else None
+        total_size += size
+
+        return object
+
+
+    def allocate_object(obj): # allocate an object copy
+        object = allocate(type(obj))
+        if address:
+            try:
+                c.memmove(object, obj, c.sizeof(obj)) # buffer-based object
+            except:
+                object.value = obj.value # value-based object
+
+        return object
+
+
+    def allocate_string(bstr): # allocate a string copy
+        if bstr in all_strings:
+            return all_strings[bstr]
+
+        object = allocate_object(c.create_string_buffer(bstr.encode()))
+        all_strings[bstr] = object
+
+        return object
+
+
+    def allocate_value(v): # allocate a value wrapper
+        if not isinstance(v, Value):
+            raise TypeError("expected Value")
+
+        value = allocate(value_t)
+        object = allocate_object(v._object_) if v._object_ else None
+
+        if address:
+            if object:
+                value.ptr = c.addressof(object)
+                value.size = v._size_
+                value.num_of = v._num_of_
+            value.type = v._type_
+
+        return value
+
+
+    def allocate_named_value_list(values): # allocate a list of nodes with names and values
+        if len(values) == 0:
+            return None
+
+        nodes = allocate(list_node_named_value_t * len(values))
+
+        for i, (key, value) in enumerate(values.items()):
+            if not isinstance(value, Value):
+                raise TypeError("expected Value")
+
+            name = allocate_string(key)
+            object = allocate_object(value._object_) if value._object_ else None
+
+            if address:
+                if i > 0:
+                    nodes[i].base.link.prev = c.cast(c.pointer(nodes[i - 1]), c.POINTER(list_node_t))
+                if i < len(values) - 1:
+                    nodes[i].base.link.next = c.cast(c.pointer(nodes[i + 1]), c.POINTER(list_node_t))
+
+                nodes[i].base.name = c.addressof(name)
+
+                if object:
+                    nodes[i].value.ptr = c.addressof(object)
+                    nodes[i].value.size = value._size_
+                    nodes[i].value.num_of = value._num_of_
+                nodes[i].value.type = value._type_
+
+        return nodes
+
+
+    def construct_configuration(): # construct the whole configuration
+        nonlocal total_size
+        nonlocal all_strings
+
+        total_size = 0
+        all_strings = {}
+
+        # Allocate the main structure
+        shm_config = allocate(process_config_shm_t)
+
+        # Allocate the signal watch set
+        signal_watch_set = allocate(signal_watch_set_t)
+
+        if address:
+            shm_config.signal_watch_set = c.pointer(signal_watch_set)
+
+            for signame, n in app._signals_:
+                if signame == 'SIGRTMIN':
+                    signal_watch_set.f_SIGRTMIN[n] = True
+                elif signame == 'SIGRTMAX':
+                    signal_watch_set.f_SIGRTMIN[(signal.SIGRTMAX - signal.SIGRTMIN) - n] = True
+                else:
+                    setattr(signal_watch_set, f'f_{signame}', True)
+
+        # Allocate the configuration arrays
+        libraries = allocate(app_loader_library_t * len(app._libraries_))
+        interfaces = allocate(app_loader_library_symbol_t * len(app._interfaces_))
+        steps = allocate(app_config_step_t * len(app._steps_))
+
+        if address:
+            shm_config.app_config.libraries = c.pointer(libraries[0])
+            shm_config.app_config.interfaces = c.pointer(interfaces[0])
+            shm_config.app_config.steps = c.pointer(steps[0])
+
+            shm_config.app_config.num_libraries = len(app._libraries_)
+            shm_config.app_config.num_interfaces = len(app._interfaces_)
+            shm_config.app_config.num_steps = len(app._steps_)
+
+        # Construct the configuration of libraries
+        for i, (key, value) in enumerate(app._libraries_.items()):
+            library_key = allocate_string(key)
+            pathname = allocate_string(value['pathname'])
+
+            if address:
+                libraries[i].key = c.addressof(library_key)
+                libraries[i].pathname = c.addressof(pathname)
+                setattr(libraries[i], 'lazy', value['lazy'])
+                setattr(libraries[i], 'global', value['global'])
+
+        # Construct the configuration of interfaces
+        for i, (key, value) in enumerate(app._interfaces_.items()):
+            interface_key = allocate_string(key)
+            symbol_name = allocate_string(value['symbol_name'])
+            library_key = allocate_string(value['library_key'])
+
+            if address:
+                interfaces[i].key = c.addressof(interface_key)
+                interfaces[i].symbol_name = c.addressof(symbol_name)
+                interfaces[i].library_key = c.addressof(library_key)
+
+        # Construct the configuration steps
+        for i, step in enumerate(app._steps_):
+            context_key = allocate_string(step['key'])
+
+            if step['type'] == 'init':
+                interface_key = allocate_string(step['interface_key'])
+                config = allocate_named_value_list(step['config'])
+
+                if address:
+                    steps[i].type = APP_CONFIG_STEP_INIT
+                    steps[i].key = c.addressof(context_key)
+                    steps[i].as_init.interface_key = c.addressof(interface_key)
+                    if config:
+                        steps[i].as_init.config = c.pointer(config[0])
+
+            elif step['type'] == 'final':
+                if address:
+                    steps[i].type = APP_CONFIG_STEP_FINAL
+                    steps[i].key = c.addressof(context_key)
+
+            elif step['type'] == 'set':
+                slot = allocate_string(step['slot'])
+                value = allocate_value(step['value'])
+
+                if address:
+                    steps[i].type = APP_CONFIG_STEP_SET
+                    steps[i].key = c.addressof(context_key)
+                    steps[i].as_set.slot = c.addressof(slot)
+                    steps[i].as_set.value = c.pointer(value)
+
+            elif step['type'] == 'assign':
+                slot = allocate_string(step['slot'])
+                source_key = allocate_string(step['source_key'])
+                source_slot = allocate_string(step['source_slot']) if 'source_slot' in step else None
+
+                if address:
+                    steps[i].type = APP_CONFIG_STEP_ASSIGN
+                    steps[i].key = c.addressof(context_key)
+                    steps[i].as_assign.slot = c.addressof(slot)
+                    steps[i].as_assign.source_key = c.addressof(source_key)
+                    if source_slot:
+                        steps[i].as_assign.source_slot = c.addressof(source_slot)
+
+            elif step['type'] == 'act':
+                action = allocate_string(step['action'])
+                params = allocate_named_value_list(step['params'])
+
+                if address:
+                    steps[i].type = APP_CONFIG_STEP_ACT
+                    steps[i].key = c.addressof(context_key)
+                    steps[i].as_act.action = c.addressof(action)
+                    if params:
+                        steps[i].as_act.params = c.pointer(params[0])
+
+    ### Do the job ###
+
+    # Count total used bytes
+    construct_configuration()
+
+    # Create the memory-mapped configuration file
+    mm = create_mmap_file(pathname, total_size)
+
+    # Get shared memory address
+    address = c.addressof(c.c_char.from_buffer(mm))
+
+    # Write configuration to memory
+    construct_configuration()
+
+    # Initialize the header of pointers-containing data
+    init_mmap_file_header(mm, total_size)
+
+    # Unmap the memory
+    mm.close()
+
+    print(f"Wrote {total_size} bytes to '{pathname}'")
+
 ###############################################################################
 
 def create_mmap_file(pathname: str, size: int):
@@ -201,64 +500,160 @@ def init_mmap_file_header(mm, size: int):
     shm_header.shmend = address + size
 
 ###############################################################################
+###############################################################################
 
-class memory_manager:
-    """Count number of used bytes and allocate memory in memory-mapped file.
+class value_union_t(c.Union):
+    """Union of a pointer to data and a pointer to function.
     """
-    def __init__(self, mm=None):
-        self._size = 0
+    _fields_ = [('ptr', c.c_void_p),
+                ('fptr', c.CFUNCTYPE(None))]
 
-        if mm:
-            self._address = c.addressof(c.c_char.from_buffer(mm))
-        else:
-            self._address = None
 
-    def total_used_size(self):
-        return self._size
+class value_t(c.Structure):
+    """Value pointer with metadata.
+    """
+    _fields_ = [('as', value_union_t),
+                ('size', c.c_size_t),
+                ('num_of', c.c_size_t),
+                ('own_memory', c.c_bool),
+                ('type', c.c_int)]
+    _anonymous_ = ['as']
 
-    def allocate(self, typ):
-        size = c.sizeof(typ)
-        alignment = c.alignment(typ)
 
-        self._size = (self._size + (alignment - 1)) & ~(alignment - 1) # fulfill the alignment requirement
+class list_node_t(c.Structure):
+    """Linked list node base.
+    """
+    pass
 
-        if self._address:
-            obj = typ.from_address(self._address + self._size)
-        else:
-            obj = None
+list_node_t._fields_ = [('prev', c.POINTER(list_node_t)),
+                        ('next', c.POINTER(list_node_t))]
 
-        self._size += size
-        return obj
 
-    def allocate_string(self, value):
-        size = len(value) + 1
+class list_node_named_t(c.Structure):
+    """Named list node.
+    """
+    _fields_ = [('link', list_node_t),
+                ('name', c.c_char_p)]
 
-        if self._address:
-            buf = c.create_string_buffer(value)
-            obj = self.allocate(type(buf))
-            c.memmove(obj, buf, size)
-        else:
-            obj = None
-            self._size += size
 
-        return obj
+class list_node_named_value_t(c.Structure):
+    """Named value list node.
+    """
+    _fields_ = [('base', list_node_named_t),
+                ('value', value_t)]
 
 ###############################################################################
 
-def create_mmap_config_file(pathname: str, constr_func):
-    """Create a pointer-aware memory-mapped file and
-    form the configuration in it using the provided constructor function.
+class app_config_step_init_t(c.Structure):
+    """Specific configuration step data for context initialization.
     """
-    # Compute total size of the configuration
-    manager_dummy = memory_manager()
-    constr_func(manager_dummy)
-    total_size = manager_dummy.total_used_size()
+    _fields_ = [('interface_key', c.c_char_p),
+                ('config', c.POINTER(list_node_named_value_t))]
 
-    # Create the memory-mapped file
-    mm = create_mmap_file(pathname, total_size)
 
-    # Form the configuration objects in the memory-mapped file
-    manager_shm = memory_manager(mm)
-    constr_func(manager_shm)
-    init_mmap_file_header(mm, total_size)
+class app_config_step_set_t(c.Structure):
+    """Specific configuration step data for context slot value setting.
+    """
+    _fields_ = [('slot', c.c_char_p),
+                ('value', c.POINTER(value_t))]
+
+
+class app_config_step_assign_t(c.Structure):
+    """Specific configuration step data for context assignment.
+    """
+    _fields_ = [('slot', c.c_char_p),
+                ('source_key', c.c_char_p),
+                ('source_slot', c.c_char_p)]
+
+
+class app_config_step_act_t(c.Structure):
+    """Specific configuration step data for context action.
+    """
+    _fields_ = [('action', c.c_char_p),
+                ('params', c.POINTER(list_node_named_value_t))]
+
+
+class app_config_step_union_t(c.Union):
+    """Union of specific step data in application configuration step.
+    """
+    _fields_ = [('as_init', app_config_step_init_t),
+                ('as_set', app_config_step_set_t),
+                ('as_assign', app_config_step_assign_t),
+                ('as_act', app_config_step_act_t)]
+
+
+APP_CONFIG_STEP_INIT    = 0 # Initialize a context.
+APP_CONFIG_STEP_FINAL   = 1 # Finalize a context.
+APP_CONFIG_STEP_SET     = 2 # Set a value to context slot.
+APP_CONFIG_STEP_ASSIGN  = 3 # Assign a value to context slot (get -> set).
+APP_CONFIG_STEP_ACT     = 4 # Perform a context action.
+
+
+class app_config_step_t(c.Structure):
+    """Application configuration step.
+    """
+    _fields_ = [('type', c.c_int),
+                ('key', c.c_char_p),
+                ('as', app_config_step_union_t)]
+    _anonymous_ = ['as']
+
+###############################################################################
+
+class signal_watch_set_t(c.Structure):
+    """Flags designating which signals need to be watched.
+    """
+    _fields_ = [('f_SIGINT', c.c_bool), ('f_SIGQUIT', c.c_bool),
+                ('f_SIGTERM', c.c_bool), ('f_SIGCHLD', c.c_bool),
+                ('f_SIGCONT', c.c_bool), ('f_SIGTSTP', c.c_bool),
+                ('f_SIGXCPU', c.c_bool), ('f_SIGXFSZ', c.c_bool),
+                ('f_SIGPIPE', c.c_bool), ('f_SIGPOLL', c.c_bool),
+                ('f_SIGURG', c.c_bool), ('f_SIGALRM', c.c_bool),
+                ('f_SIGVTALRM', c.c_bool), ('f_SIGPROF', c.c_bool),
+                ('f_SIGHUP', c.c_bool), ('f_SIGTTIN', c.c_bool),
+                ('f_SIGTTOU', c.c_bool), ('f_SIGWINCH', c.c_bool),
+                ('f_SIGUSR1', c.c_bool), ('f_SIGUSR2', c.c_bool),
+                ('f_SIGRTMIN', c.c_bool * int(NUM_RT_SIGNALS))]
+
+
+class app_loader_library_t(c.Structure):
+    """Shared library loader configuration.
+    """
+    _fields_ = [('key', c.c_char_p),
+                ('pathname', c.c_char_p),
+                ('lazy', c.c_bool),
+                ('global', c.c_bool)]
+
+
+class app_loader_library_symbol_t(c.Structure):
+    """Shared library symbol getter configuration.
+    """
+    _fields_ = [('key', c.c_char_p),
+                ('symbol_name', c.c_char_p),
+                ('library_key', c.c_char_p)]
+
+
+class app_config_t(c.Structure):
+    """Application configuration.
+    """
+    _fields_ = [('libraries', c.POINTER(app_loader_library_t)),
+                ('interfaces', c.POINTER(app_loader_library_symbol_t)),
+                ('steps', c.POINTER(app_config_step_t)),
+                ('num_libraries', c.c_size_t),
+                ('num_interfaces', c.c_size_t),
+                ('num_steps', c.c_size_t)]
+
+
+class shm_header_t(c.Structure):
+    """Shared memory header.
+    """
+    _fields_ = [('shmaddr', c.c_void_p),
+                ('shmend', c.c_void_p)]
+
+
+class process_config_shm_t(c.Structure):
+    """Configuration of the process in shared memory.
+    """
+    _fields_ = [('shm_header', shm_header_t),
+                ('signal_watch_set', c.POINTER(signal_watch_set_t)),
+                ('app_config', app_config_t)]
 

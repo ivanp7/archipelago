@@ -38,6 +38,12 @@ All contexts are initialized and provided to consumers according to the configur
 After the initialization phase comes the execution phase, during which a finite state machine is run as described below.
 The entry state and state transition of the FSM are specified by the configuration in shared memory.
 
+## Memory-mapped configuration file
+
+There is a Python module in the `python/` subdirectory that helps in generation of configuration files.
+Once created, these configuration files are reusable.
+However, the format is considered fragile and is not guaranteed to be backward-compatible.
+
 ## Important concepts
 
 ### Application context system

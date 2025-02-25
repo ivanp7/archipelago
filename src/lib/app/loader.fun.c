@@ -62,7 +62,7 @@ archi_app_add_library(
 archi_status_t
 archi_app_remove_library(
         archi_application_t *app,
-        const void *key)
+        const char *key)
 {
     if (app == NULL)
         return ARCHI_ERROR_MISUSE;
@@ -116,7 +116,7 @@ archi_app_add_interface(
 archi_status_t
 archi_app_remove_interface(
         archi_application_t *app,
-        const void *key)
+        const char *key)
 {
     if (app == NULL)
         return ARCHI_ERROR_MISUSE;

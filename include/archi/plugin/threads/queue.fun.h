@@ -107,7 +107,7 @@ const archi_context_interface_t archi_plugin_queue_context_interface; ///< Lock-
 /**
  * @brief Alias name of lock-free queue interface.
  */
-#define ARCHI_PLUGIN_QUEUE_CONTEXT_INTERFACE_ALIAS "lockless_queue"
+#define ARCHI_PLUGIN_QUEUE_CONTEXT_INTERFACE_KEY "lockless_queue"
 
 #endif // _ARCHI_PLUGIN_THREADS_QUEUE_FUN_H_
 

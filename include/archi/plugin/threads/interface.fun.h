@@ -112,7 +112,7 @@ const archi_context_interface_t archi_plugin_thread_group_context_interface; ///
 /**
  * @brief Alias name of threaded processing context interface.
  */
-#define ARCHI_PLUGIN_THREAD_GROUP_CONTEXT_INTERFACE_ALIAS "thread_group"
+#define ARCHI_PLUGIN_THREAD_GROUP_CONTEXT_INTERFACE_KEY "thread_group"
 
 #endif // _ARCHI_PLUGIN_THREADS_INTERFACE_FUN_H_
 

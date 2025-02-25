@@ -35,13 +35,13 @@ ARCHI_CONTEXT_GET_FUNC(archi_app_signal_get); ///< Signal management context slo
 extern
 const archi_context_interface_t archi_app_signal_interface; ///< Signal management context interface.
 
-#define ARCHI_APP_SIGNAL_SLOT_SIGNAL_HANDLER "signal.handler" ///< Input slot: signal handler.
-#define ARCHI_APP_SIGNAL_SLOT_SIGNAL_HANDLER_FUNC "signal.handler.function" ///< Input/output slot: signal handler function.
-#define ARCHI_APP_SIGNAL_SLOT_SIGNAL_HANDLER_DATA "signal.handler.data" ///< Input/output slot: signal handler data.
+#define ARCHI_APP_SIGNAL_SLOT_SIGNAL_HANDLER "signal_handler" ///< Input slot: signal handler.
+#define ARCHI_APP_SIGNAL_SLOT_SIGNAL_HANDLER_FUNC "signal_handler_function" ///< Input/output slot: signal handler function.
+#define ARCHI_APP_SIGNAL_SLOT_SIGNAL_HANDLER_DATA "signal_handler_data" ///< Input/output slot: signal handler data.
 
-#define ARCHI_APP_SIGNAL_SLOT_SIGNAL_FLAGS "signal.flags" ///< Output slot: signal flags.
+#define ARCHI_APP_SIGNAL_SLOT_SIGNAL_FLAGS "signal_flags" ///< Output slot: signal flags.
 
-#define ARCHI_APP_SIGNAL_ALIAS "exe.signal" ///< Alias name of the application signal management context.
+#define ARCHI_APP_SIGNAL_CONTEXT_KEY "archi_app_signal" ///< Alias name of the application signal management context.
 
 /*****************************************************************************/
 
@@ -52,15 +52,15 @@ extern
 const archi_context_interface_t archi_app_fsm_interface; ///< FSM context interface.
 
 #define ARCHI_APP_FSM_SLOT_ENTRY_STATE "entry_state" ///< Input/output slot: entry state.
-#define ARCHI_APP_FSM_SLOT_ENTRY_STATE_FUNC "entry_state.function" ///< Input/output slot: entry state function.
-#define ARCHI_APP_FSM_SLOT_ENTRY_STATE_DATA "entry_state.data" ///< Input/output slot: entry state data.
-#define ARCHI_APP_FSM_SLOT_ENTRY_STATE_METADATA "entry_state.metadata" ///< Input/output slot: entry state metadata.
+#define ARCHI_APP_FSM_SLOT_ENTRY_STATE_FUNC "entry_state_function" ///< Input/output slot: entry state function.
+#define ARCHI_APP_FSM_SLOT_ENTRY_STATE_DATA "entry_state_data" ///< Input/output slot: entry state data.
+#define ARCHI_APP_FSM_SLOT_ENTRY_STATE_METADATA "entry_state_metadata" ///< Input/output slot: entry state metadata.
 
 #define ARCHI_APP_FSM_SLOT_TRANSITION "transition" ///< Input/output slot: state transition.
-#define ARCHI_APP_FSM_SLOT_TRANSITION_FUNC "transition.function" ///< Input/output slot: state transition function.
-#define ARCHI_APP_FSM_SLOT_TRANSITION_DATA "transition.data" ///< Input/output slot: state transition data.
+#define ARCHI_APP_FSM_SLOT_TRANSITION_FUNC "transition_function" ///< Input/output slot: state transition function.
+#define ARCHI_APP_FSM_SLOT_TRANSITION_DATA "transition_data" ///< Input/output slot: state transition data.
 
-#define ARCHI_APP_FSM_ALIAS "exe.fsm" ///< Alias name of the application FSM context.
+#define ARCHI_APP_FSM_CONTEXT_KEY "archi_app_fsm" ///< Alias name of the application FSM context.
 
 #endif // _ARCHI_EXE_INTERFACE_FUN_H_
 

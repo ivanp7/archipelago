@@ -38,7 +38,7 @@ const archi_context_interface_t archi_plugin_file_context_interface; ///< File c
 /**
  * @brief Alias name of file context interface.
  */
-#define ARCHI_PLUGIN_FILE_CONTEXT_INTERFACE_ALIAS "file"
+#define ARCHI_PLUGIN_FILE_CONTEXT_INTERFACE_KEY "file"
 
 #endif // _ARCHI_PLUGIN_FILES_INTERFACE_FUN_H_
 

@@ -92,32 +92,32 @@ typedef struct plugin_sdl_window_config {
 /**
  * @brief SDL window configuration key -- texture width.
  */
-#define PLUGIN_SDL_WINDOW_CONFIG_KEY_TEXTURE_WIDTH "texture.width"
+#define PLUGIN_SDL_WINDOW_CONFIG_KEY_TEXTURE_WIDTH "texture_width"
 
 /**
  * @brief SDL window configuration key --  height.
  */
-#define PLUGIN_SDL_WINDOW_CONFIG_KEY_TEXTURE_HEIGHT "texture.height"
+#define PLUGIN_SDL_WINDOW_CONFIG_KEY_TEXTURE_HEIGHT "texture_height"
 
 /**
  * @brief SDL window configuration key -- window width.
  */
-#define PLUGIN_SDL_WINDOW_CONFIG_KEY_WINDOW_WIDTH "window.width"
+#define PLUGIN_SDL_WINDOW_CONFIG_KEY_WINDOW_WIDTH "window_width"
 
 /**
  * @brief SDL window configuration key -- window height.
  */
-#define PLUGIN_SDL_WINDOW_CONFIG_KEY_WINDOW_HEIGHT "window.height"
+#define PLUGIN_SDL_WINDOW_CONFIG_KEY_WINDOW_HEIGHT "window_height"
 
 /**
  * @brief SDL window configuration key -- window flags.
  */
-#define PLUGIN_SDL_WINDOW_CONFIG_KEY_WINDOW_FLAGS "window.flags"
+#define PLUGIN_SDL_WINDOW_CONFIG_KEY_WINDOW_FLAGS "window_flags"
 
 /**
  * @brief SDL window configuration key -- window title.
  */
-#define PLUGIN_SDL_WINDOW_CONFIG_KEY_WINDOW_TITLE "window.title"
+#define PLUGIN_SDL_WINDOW_CONFIG_KEY_WINDOW_TITLE "window_title"
 
 #endif // _PLUGIN_SDL_CONFIG_TYP_H_
 

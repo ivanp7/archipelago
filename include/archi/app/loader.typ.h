@@ -33,7 +33,7 @@
  * @brief Shared library loader configuration.
  */
 typedef struct archi_app_loader_library {
-    const void *key; ///< Library key.
+    const char *key; ///< Library key.
 
     const char *pathname; ///< Pathname of library file.
     bool lazy;   ///< Whether to perform lazy binding.
@@ -44,10 +44,10 @@ typedef struct archi_app_loader_library {
  * @brief Shared library symbol getter configuration.
  */
 typedef struct archi_app_loader_library_symbol {
-    const void *key; ///< Symbol key.
+    const char *key; ///< Symbol key.
 
     const char *symbol_name; ///< Symbol name.
-    const void *library_key; ///< Library key.
+    const char *library_key; ///< Library key.
 } archi_app_loader_library_symbol_t;
 
 #endif // _ARCHI_APP_LOADER_TYP_H_

@@ -39,7 +39,7 @@ const archi_context_interface_t *const archi_builtin_interfaces[];
  * @brief Aliases of built-in context interfaces.
  */
 extern
-const char *const archi_builtin_interfaces_aliases[];
+const char *const archi_builtin_interfaces_keys[];
 
 /**
  * @brief Number of built-in context interfaces.

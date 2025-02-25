@@ -36,7 +36,7 @@ struct archi_value;
  * @warning Null key is forbidden.
  */
 typedef struct archi_app_config_step_init {
-    const void *interface_key; ///< Context interface key.
+    const char *interface_key; ///< Context interface key.
     const struct archi_list_node_named_value *config; ///< Context configuration.
 } archi_app_config_step_init_t;
 
@@ -57,7 +57,7 @@ typedef struct archi_app_config_step_set {
  */
 typedef struct archi_app_config_step_assign {
     const char *slot; ///< Destination context slot.
-    const void *source_key; ///< Source context key.
+    const char *source_key; ///< Source context key.
     const char *source_slot; ///< Source context slot.
 } archi_app_config_step_assign_t;
 
@@ -88,7 +88,7 @@ typedef enum archi_app_config_step_type {
 typedef struct archi_app_config_step {
     archi_app_config_step_type_t type; ///< Step type.
 
-    const void *key; ///< Key of the context being acted on.
+    const char *key; ///< Key of the context being acted on.
 
     union {
         archi_app_config_step_init_t as_init;     ///< Context initialization.
