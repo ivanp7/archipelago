@@ -124,7 +124,7 @@
 
 #define ARCHI_LOG_TYPESTR_ERROR     "ERR" ///< Type string designating error messages.
 #define ARCHI_LOG_TYPESTR_WARNING   "WRN" ///< Type string designating warning messages.
-#define ARCHI_LOG_TYPESTR_NOTICE    "NOT" ///< Type string designating warning messages.
+#define ARCHI_LOG_TYPESTR_NOTICE    "NTC" ///< Type string designating notice messages.
 #define ARCHI_LOG_TYPESTR_INFO      "INF" ///< Type string designating info messages.
 #define ARCHI_LOG_TYPESTR_DEBUG     "DBG" ///< Type string designating debug messages.
 
