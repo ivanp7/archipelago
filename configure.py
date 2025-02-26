@@ -5,9 +5,10 @@ import os
 #------------------------------------------------------------------------------
 
 PROJECT_NAME = "archipelago"
+PROJECT_NAME_SHORT = "archi"
 
 LIB_NAME = f"lib{PROJECT_NAME}.a"
-EXEC_NAME = "archi"
+EXEC_NAME = f"{PROJECT_NAME_SHORT}"
 TESTS_NAME = f"{EXEC_NAME}-tests"
 
 #------------------------------------------------------------------------------

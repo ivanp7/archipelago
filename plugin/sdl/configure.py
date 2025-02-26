@@ -39,7 +39,6 @@ if 'PROFILE' in os.environ:                     ### <<<<<<<<<<<<<<<<<<<< INPUT E
 #------------------------------------------------------------------------------
 
 CFLAGS += [f'-I{INCLUDE_DIR}']
-
 CFLAGS += [f'-I{ARCHI_IDIR}']
 
 CFLAGS += pkgconfig.cflags('sdl2').split(' ')
