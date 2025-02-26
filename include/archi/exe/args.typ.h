@@ -35,6 +35,8 @@
 typedef struct archi_args {
     const char *file; ///< Pathname of a memory-mapped file with configuration.
 
+    bool no_fsm; ///< Whether to skip FSM execution.
+
     int verbosity_level; ///< Application verbosity level.
     bool no_logo; ///< Whether to suppress display of the application logo.
 } archi_args_t;

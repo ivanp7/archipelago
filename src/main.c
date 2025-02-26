@@ -242,8 +242,8 @@ main(
     // Execution phase //
     /////////////////////
 
-    if ((archi_process.fsm.entry_state.function != NULL) ||
-            (archi_process.fsm.transition.function != NULL))
+    if (!args.no_fsm && ((archi_process.fsm.entry_state.function != NULL) ||
+                (archi_process.fsm.transition.function != NULL)))
     {
         archi_log_info(M, "Executing the finite state machine...");
 

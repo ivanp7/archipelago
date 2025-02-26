@@ -36,6 +36,8 @@
 #define STRINGIFY(x) _STR(x)
 
 enum {
+    ARGKEY_NO_FSM = 'n',
+
     ARGKEY_NO_LOGO = 'q',
     ARGKEY_VERBOSITY = 'v',
 
@@ -44,6 +46,10 @@ enum {
 
 static
 const struct argp_option args_options[] = {
+    {.doc = "Application options:"},
+
+    {.key = ARGKEY_NO_FSM,      .name = "no-fsm", .doc = "Don't execute the application FSM"},
+
     {.doc = "Verbosity options:"},
 
     {.key = ARGKEY_NO_LOGO,     .name = "no-logo", .doc = "Don't display the logo"},
@@ -63,6 +69,10 @@ args_parse(int key, char *arg, struct argp_state *state)
 
     switch (key)
     {
+        case ARGKEY_NO_FSM:
+            args->no_fsm = true;
+            break;
+
         case ARGKEY_NO_LOGO:
             args->no_logo = true;
             break;
