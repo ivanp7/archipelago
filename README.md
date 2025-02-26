@@ -40,7 +40,8 @@ The entry state and state transition of the FSM are specified by the configurati
 
 ## Memory-mapped configuration file
 
-There is a Python module in the `python/` subdirectory that helps in generation of configuration files.
+There is a Python module in the `python/` subdirectory that [helps](https://github.com/ivanp7/still-alive/still-alive.py) in generation of configuration files.
+
 Once created, these configuration files are reusable.
 However, the format is considered fragile and is not guaranteed to be backward-compatible.
 
