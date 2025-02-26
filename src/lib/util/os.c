@@ -101,11 +101,11 @@ archi_shm_map(
         // Remap the memory of the correct size at the correct address
         munmap(shm, sizeof(*shm));
 
-        shm = mmap(header.shmaddr, size, prot, all_flags, fd, 0);
+        shm = mmap(header.shmaddr, size, prot, all_flags | MAP_FIXED_NOREPLACE, fd, 0);
         if (shm == MAP_FAILED)
             return NULL;
 
-        if (header.shmaddr != shm)
+        if (shm != header.shmaddr)
             goto failure;
     }
 
