@@ -96,7 +96,6 @@ archi_shm_map(
     if (size < sizeof(*shm))
         goto failure;
 
-    if (header.shmaddr != shm)
     {
         // Remap the memory of the correct size at the correct address
         munmap(shm, sizeof(*shm));
