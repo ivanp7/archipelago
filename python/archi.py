@@ -172,8 +172,8 @@ class Application:
     def watch_signal(self, signame: str, n: int=0):
         """Add a signal to the watch set.
 
-        Parameter n is used when signame is 'SIGRTMIN' or 'SIGRTMAX'.
-        The watched signals are SIGRTMIN+n or SIGRTMAX-n, accordingly.
+        @param[in] signame : signal name (such as 'SIGINT', 'SIGTERM', 'SIGRTMIN', etc)
+        @param[in] n       : signal number (for real-time signals SIGRTMIN+n and SIGRTMAX-n)
         """
         if not signame:
             raise ValueError("null signal name")
@@ -191,6 +191,11 @@ class Application:
 
     def load_library(self, key: str, pathname: str, flag_lazy: bool=False, flag_global: bool=False):
         """Load a shared library and add it to the application.
+
+        @param[in] key         : alias of the loaded library
+        @param[in] pathname    : pathname of the library file
+        @param[in] flag_lazy   : whether is lazy binding performed
+        @param[in] flag_global : whether are the symbols made available to subsequent loaded libraries
         """
         if not key:
             raise ValueError("null key")
@@ -204,6 +209,10 @@ class Application:
 
     def register_interface(self, key: str, symbol_name: str, library_key: str):
         """Get a context interface symbol and add it to the application.
+
+        @param[in] key         : alias of the context interface
+        @param[in] symbol_name : name of the symbol defining the context interface
+        @param[in] library_key : alias of the library from which the symbol is obtained
         """
         if not key:
             raise ValueError("null key")
@@ -220,12 +229,18 @@ class Application:
 
     def new_context(self, key: str, interface_key: str, **config) -> ApplicationContext:
         """Return a new context.
+
+        @param[in] key           : alias of the created context
+        @param[in] interface_key : alias of the context interface to use for the created context
+        @param[in] **config      : configuration of the created context
         """
         return ApplicationContext(self, key, interface_key, **config)
 
 
     def context(self, key: str) -> ApplicationContext:
         """Return an existing context.
+
+        @param[in] key : alias of the existing context
         """
         return ApplicationContext(self, key)
 
@@ -238,6 +253,9 @@ APP_FSM_CONTEXT_KEY = "archi_app_fsm"
 
 def fossilize(app: Application, pathname: str):
     """Create a memory-mapped file and write the configuration into it.
+
+    @param[in] app      : an application object
+    @param[in] pathname : pathname of the created memory-mapped configuration file
     """
     if not isinstance(app, Application):
         raise TypeError("expected Application")
@@ -477,6 +495,9 @@ def fossilize(app: Application, pathname: str):
 
 def create_mmap_file(pathname: str, size: int):
     """Create a memory-mapped file.
+
+    @param[in] pathname : pathname of a created memory-mapped file
+    @param[in] size     : size in bytes of the created memory-mapped file
     """
     if size < c.sizeof(shm_header_t):
         raise ValueError("File size is too small -- can't fit the header.")
@@ -499,6 +520,9 @@ def create_mmap_file(pathname: str, size: int):
 
 def init_mmap_file_header(mm, size: int):
     """Initialize the header of a pointer-aware memory-mapped file.
+
+    @param[in] mm   : a memory-mapped file
+    @param[in] size : size in bytes of the memory-mapped file
     """
     shm_header = shm_header_t.from_buffer(mm)
 
