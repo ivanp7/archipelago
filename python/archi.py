@@ -340,11 +340,12 @@ def fossilize(app: Application, pathname: str):
         shm_config = allocate(process_config_shm_t)
 
         # Allocate the signal watch set
-        signal_watch_set = allocate(signal_watch_set_t)
+        if len(app._signals_) > 0:
+            signal_watch_set = allocate(signal_watch_set_t)
+            if address:
+                shm_config.signal_watch_set = c.pointer(signal_watch_set)
 
         if address:
-            shm_config.signal_watch_set = c.pointer(signal_watch_set)
-
             for signame, n in app._signals_:
                 if signame == 'SIGRTMIN':
                     signal_watch_set.f_SIGRTMIN[n] = True
@@ -354,15 +355,22 @@ def fossilize(app: Application, pathname: str):
                     setattr(signal_watch_set, f'f_{signame}', True)
 
         # Allocate the configuration arrays
-        libraries = allocate(app_loader_library_t * len(app._libraries_))
-        interfaces = allocate(app_loader_library_symbol_t * len(app._interfaces_))
-        steps = allocate(app_config_step_t * len(app._steps_))
+        if len(app._libraries_) > 0:
+            libraries = allocate(app_loader_library_t * len(app._libraries_))
+            if address:
+                shm_config.app_config.libraries = c.pointer(libraries[0])
+
+        if len(app._interfaces_) > 0:
+            interfaces = allocate(app_loader_library_symbol_t * len(app._interfaces_))
+            if address:
+                shm_config.app_config.interfaces = c.pointer(interfaces[0])
+
+        if len(app._steps_):
+            steps = allocate(app_config_step_t * len(app._steps_))
+            if address:
+                shm_config.app_config.steps = c.pointer(steps[0])
 
         if address:
-            shm_config.app_config.libraries = c.pointer(libraries[0])
-            shm_config.app_config.interfaces = c.pointer(interfaces[0])
-            shm_config.app_config.steps = c.pointer(steps[0])
-
             shm_config.app_config.num_libraries = len(app._libraries_)
             shm_config.app_config.num_interfaces = len(app._interfaces_)
             shm_config.app_config.num_steps = len(app._steps_)
