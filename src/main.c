@@ -908,20 +908,22 @@ configure_app_log_value(
                 switch (value->size)
                 {
                     case 0: break;
-
-                    case 1: archi_log_debug(M, SPACE SPACE "%02x", mem[0]); break;
-                    case 2: archi_log_debug(M, SPACE SPACE "%02x%02x", mem[0], mem[1]); break;
-                    case 3: archi_log_debug(M, SPACE SPACE "%02x%02x %02x", mem[0], mem[1], mem[2]); break;
-                    case 4: archi_log_debug(M, SPACE SPACE "%02x%02x %02x%02x", mem[0], mem[1], mem[2], mem[3]); break;
-
-                    case 5: archi_log_debug(M, SPACE SPACE "%02x%02x %02x%02x %02x", mem[0], mem[1], mem[2], mem[3],
-                                    mem[4]); break;
-                    case 6: archi_log_debug(M, SPACE SPACE "%02x%02x %02x%02x %02x%02x", mem[0], mem[1], mem[2], mem[3],
-                                    mem[4], mem[5]); break;
-                    case 7: archi_log_debug(M, SPACE SPACE "%02x%02x %02x%02x %02x%02x %02x", mem[0], mem[1], mem[2], mem[3],
-                                    mem[4], mem[5], mem[6]); break;
-                    default: archi_log_debug(M, SPACE SPACE "%02x%02x %02x%02x %02x%02x %02x%02x", mem[0], mem[1], mem[2], mem[3],
-                                     mem[4], mem[5], mem[6], mem[7]); break;
+                    case 1: archi_log_debug(M, SPACE SPACE "%02x",
+                                    mem[0]); break;
+                    case 2: archi_log_debug(M, SPACE SPACE "%02x%02x",
+                                    mem[0], mem[1]); break;
+                    case 3: archi_log_debug(M, SPACE SPACE "%02x%02x %02x",
+                                    mem[0], mem[1], mem[2]); break;
+                    case 4: archi_log_debug(M, SPACE SPACE "%02x%02x %02x%02x",
+                                    mem[0], mem[1], mem[2], mem[3]); break;
+                    case 5: archi_log_debug(M, SPACE SPACE "%02x%02x %02x%02x %02x",
+                                    mem[0], mem[1], mem[2], mem[3], mem[4]); break;
+                    case 6: archi_log_debug(M, SPACE SPACE "%02x%02x %02x%02x %02x%02x",
+                                    mem[0], mem[1], mem[2], mem[3], mem[4], mem[5]); break;
+                    case 7: archi_log_debug(M, SPACE SPACE "%02x%02x %02x%02x %02x%02x %02x",
+                                    mem[0], mem[1], mem[2], mem[3], mem[4], mem[5], mem[6]); break;
+                    default: archi_log_debug(M, SPACE SPACE "%02x%02x %02x%02x %02x%02x %02x%02x",
+                                     mem[0], mem[1], mem[2], mem[3], mem[4], mem[5], mem[6], mem[7]); break;
                 }
             }
 
@@ -965,7 +967,7 @@ ARCHI_LIST_ACT_FUNC(configure_app_log_node)
         default: value_type = "unknown";
     }
 
-    archi_log_debug(M, SPACE "%s = Value<ptr = %p, size = %u, num_of = %u, type = %s>",
+    archi_log_debug(M, SPACE "%s = <ptr = %p, size = %u, num_of = %u, type = %s>",
             vnode->base.name, vnode->value.ptr, (unsigned)vnode->value.size, (unsigned)vnode->value.num_of, value_type);
     if (vnode->value.ptr != NULL)
         configure_app_log_value(&vnode->value);
@@ -991,7 +993,7 @@ configure_app(
         {
             case ARCHI_APP_CONFIG_STEP_INIT:
                 {
-                    archi_log_debug(M, "> [%u] %s = %s(...)", (unsigned)i,
+                    archi_log_debug(M, "> [%u] %s = %s()", (unsigned)i,
                             SAFE(step.key), SAFE(step.as_init.interface_key));
 
                     archi_list_t list = {.head = (archi_list_node_t*)step.as_init.config};
@@ -1032,7 +1034,7 @@ configure_app(
                         default: value_type = "unknown";
                     }
 
-                    archi_log_debug(M, "> [%u] %s.%s = Value<ptr = %p, size = %u, num_of = %u, type = %s>",
+                    archi_log_debug(M, "> [%u] %s.%s = <ptr = %p, size = %u, num_of = %u, type = %s>",
                             (unsigned)i, SAFE(step.key), SAFE(step.as_set.slot),
                             step.as_set.value->ptr, step.as_set.value->size, step.as_set.value->num_of, value_type);
 
@@ -1053,7 +1055,7 @@ configure_app(
 
             case ARCHI_APP_CONFIG_STEP_ACT:
                 {
-                    archi_log_debug(M, "> [%u] %s.%s(...)", (unsigned)i,
+                    archi_log_debug(M, "> [%u] %s.%s()", (unsigned)i,
                             SAFE(step.key), SAFE(step.as_act.action));
 
                     archi_list_t list = {.head = (archi_list_node_t*)step.as_act.params};
