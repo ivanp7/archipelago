@@ -102,9 +102,9 @@ class ApplicationContext:
         self._app_ = app
         self._key_ = key
         self._interface_key_ = interface_key
-        self._builtin_ = interface_key is None
+        self._existing_ = interface_key is None
 
-        if not self._builtin_:
+        if not self._existing_:
             app._steps_.append({'type': 'init',
                                 'key': self._key_,
                                 'interface_key': interface_key,
@@ -114,7 +114,7 @@ class ApplicationContext:
     def __del__(self):
         """Destroy a context.
         """
-        if not self._builtin_:
+        if not self._existing_:
             self._app_._steps_.append({'type': 'final',
                                        'key': self._key_})
 
@@ -224,8 +224,8 @@ class Application:
         return ApplicationContext(self, key, interface_key, **config)
 
 
-    def builtin_context(self, key: str) -> ApplicationContext:
-        """Return a built-in context.
+    def context(self, key: str) -> ApplicationContext:
+        """Return an existing context.
         """
         return ApplicationContext(self, key)
 
