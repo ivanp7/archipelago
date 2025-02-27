@@ -43,6 +43,15 @@ size_t
 archi_signal_number_of_rt_signals(void);
 
 /**
+ * @brief Join two signal watch sets.
+ */
+void
+archi_signal_watch_set_join(
+        archi_signal_watch_set_t *out,     ///< [in,out] First set.
+        const archi_signal_watch_set_t *in ///< [in] Second set.
+);
+
+/**
  * @brief Allocate and initialize signal watch set structure.
  *
  * The pointer must be deallocated with free().

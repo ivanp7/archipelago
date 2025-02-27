@@ -28,17 +28,19 @@
 #define _ARCHI_EXE_ARGS_TYP_H_
 
 #include <stdbool.h>
+#include <stddef.h>
 
 /**
  * @brief Values of command line arguments.
  */
 typedef struct archi_args {
-    const char *file; ///< Pathname of a memory-mapped file with configuration.
+    char **inputs;     ///< Array of pathnames of input memory-mapped configuration files.
+    size_t num_inputs; ///< Number of input configuration files.
 
     bool no_fsm; ///< Whether to skip FSM execution.
 
-    int verbosity_level; ///< Application verbosity level.
     bool no_logo; ///< Whether to suppress display of the application logo.
+    int verbosity_level; ///< Application verbosity level.
 } archi_args_t;
 
 #endif // _ARCHI_EXE_ARGS_TYP_H_

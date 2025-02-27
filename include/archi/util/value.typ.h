@@ -51,7 +51,7 @@ typedef enum archi_value_type {
     ARCHI_VALUE_STRING,     ///< Null-terminated string.
     ARCHI_VALUE_DATA,       ///< Binary data.
 
-    ARCHI_VALUE_NESTED,     ///< Nested node.
+    ARCHI_VALUE_NODE,       ///< Nested node.
     ARCHI_VALUE_LIST,       ///< Nested list.
 
     ARCHI_VALUE_FUNCTION,   ///< Pointer to a function.

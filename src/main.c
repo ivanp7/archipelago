@@ -42,17 +42,23 @@
 
 #include <stdlib.h> // for atexit()
 #include <string.h> // for strerror()
+#include <stdint.h> // for fixed-width integer types
 #include <errno.h> // for error codes and errno
 
 
 #define SAFE(str) ((str) != NULL ? (str) : "[NULL]")
 
+#define SPACE "        "
+
 ///////////////////////////////////////////////////////////////////////////////
 
 static
 struct {
-    const archi_process_config_shm_t *config; ///< Configuration of the process in shared memory.
+    archi_args_t args; ///< Command line arguments.
 
+    const archi_process_config_shm_t **config; ///< Configurations of the process in shared memory.
+
+    archi_signal_watch_set_t *signal_watch_set; ///< Signal watch set.
     struct archi_signal_management_context *signal_management; ///< Signal management context.
     archi_fsm_t fsm; ///< Finite state machine.
     archi_application_t app; ///< Application instance.
@@ -61,7 +67,7 @@ struct {
         archi_list_container_data_t libraries;  ///< Data for the libraries container.
         archi_list_container_data_t interfaces; ///< Data for the context interfaces container.
         archi_list_container_data_t contexts;   ///< Data for the contexts container.
-    } app_containers;
+    } app_containers; ///< Application containers.
 
     struct {
 #define NUM_BUILTIN_CONTEXTS 2 // (Signal management context) + (finite state machine).
@@ -71,21 +77,28 @@ struct {
     } builtin;
 
     struct {
-        size_t builtin_interfaces; ///< Number of registered built-in context interfaces.
-        size_t builtin_contexts;   ///< Number of registered built-in contexts.
-        size_t libraries;          ///< Number of loaded shared libraries.
-        size_t interfaces;         ///< Number of extracted context interfaces.
-        size_t steps;              ///< Number of steps in the configuration.
-    } counter;
+        size_t inputs; ///< Number of processed configurations
+        size_t steps;  ///< Number of processed steps in the processed configuration
+    } count;
 } archi_process;
 
 ///////////////////////////////////////////////////////////////////////////////
 
 static
 void
-map_shared_memory(
-        const char *file
-);
+init_app_containers(void);
+
+static
+void
+alloc_config_array(void);
+
+static
+void
+free_config_array(void);
+
+static
+void
+map_shared_memory(void);
 
 static
 void
@@ -101,23 +114,7 @@ stop_signal_management(void);
 
 static
 void
-init_app_containers(void);
-
-static
-void
-load_shared_libraries(void);
-
-static
-void
-unload_shared_libraries(void);
-
-static
-void
-add_context_interfaces(void);
-
-static
-void
-remove_context_interfaces(void);
+init_builtin_contexts(void);
 
 static
 void
@@ -129,10 +126,6 @@ remove_builtin_context_interfaces(void);
 
 static
 void
-init_builtin_contexts(void);
-
-static
-void
 add_builtin_contexts(void);
 
 static
@@ -141,7 +134,29 @@ remove_builtin_contexts(void);
 
 static
 void
-configure_app(void);
+load_shared_libraries(
+        size_t index
+);
+
+static
+void
+unload_shared_libraries(void);
+
+static
+void
+add_context_interfaces(
+        size_t index
+);
+
+static
+void
+remove_context_interfaces(void);
+
+static
+void
+configure_app(
+        size_t index
+);
 
 static
 void
@@ -168,12 +183,11 @@ main(
     // Preparations //
     //////////////////
 
-    // Set the application start time
+    // Record the application start time
     archi_log_set_start_time(NULL);
 
     // Parse command line arguments
-    archi_args_t args;
-    switch (archi_args_parse(&args, argc, argv))
+    switch (archi_args_parse(&archi_process.args, argc, argv))
     {
         case 0: // success
             break;
@@ -190,15 +204,15 @@ main(
     }
 
     // Set logging verbosity
-    archi_log_set_verbosity(args.verbosity_level);
+    archi_log_set_verbosity(archi_process.args.verbosity_level);
 
     // Display application logo
-    if (!args.no_logo)
+    if (!archi_process.args.no_logo)
         archi_print(ARCHI_COLOR_RESET "\n" ARCHI_COLOR_FG_BRI_WHITE "%s"
                 ARCHI_COLOR_RESET "\n\n", ARCHI_PELAGO_LOGO);
 
     // Exit if there is nothing to do
-    if (args.file == NULL)
+    if (archi_process.args.num_inputs == 0)
         return 0;
 
     // Set exit functions
@@ -211,39 +225,50 @@ main(
 
     archi_log_info(M, "Initializing the application...");
 
+    // Initialize application containers
+    init_app_containers();
+
+    // Allocate array of configurations
+    alloc_config_array();
+
     // Map shared memory
-    map_shared_memory(args.file);
+    map_shared_memory();
 
     // Start signal management
     start_signal_management();
 
-    // Initialize application containers
-    init_app_containers();
-
-    // Load shared libraries
-    load_shared_libraries();
-
-    // Add context interfaces from libraries
-    add_context_interfaces();
+    // Initialize built-in contexts
+    init_builtin_contexts();
 
     // Add built-in context interfaces
     add_builtin_context_interfaces();
 
-    // Initialize built-in contexts
-    init_builtin_contexts();
-
     // Add built-in contexts
     add_builtin_contexts();
 
-    // Configure the application
-    configure_app();
+    // Process the inputs sequentially
+    for (size_t i = 0; i < archi_process.args.num_inputs; i++)
+    {
+        archi_log_debug(M, "[%u] Processing input configuration '%s'...",
+                (unsigned)i, archi_process.args.inputs[i]);
+
+        // Load shared libraries
+        load_shared_libraries(i);
+
+        // Add context interfaces from libraries
+        add_context_interfaces(i);
+
+        // Configure the application
+        configure_app(i);
+    }
 
     /////////////////////
     // Execution phase //
     /////////////////////
 
-    if (!args.no_fsm && ((archi_process.fsm.entry_state.function != NULL) ||
-                (archi_process.fsm.transition.function != NULL)))
+    if (!archi_process.args.no_fsm &&
+            ((archi_process.fsm.entry_state.function != NULL) ||
+             (archi_process.fsm.transition.function != NULL)))
     {
         archi_log_info(M, "Executing the finite state machine...");
 
@@ -271,12 +296,6 @@ exit_cleanup(void) // is called on exit() or if main() returns
         // Undo the configuration
         reset_app();
 
-        // Remove built-in contexts
-        remove_builtin_contexts();
-
-        // Remove built-in context interfaces
-        remove_builtin_context_interfaces();
-
         // Remove context interfaces
         remove_context_interfaces();
 
@@ -284,13 +303,22 @@ exit_cleanup(void) // is called on exit() or if main() returns
         unload_shared_libraries();
     }
 
+    // Remove built-in contexts
+    remove_builtin_contexts();
+
+    // Remove built-in context interfaces
+    remove_builtin_context_interfaces();
+
     // Stop signal management
     stop_signal_management();
 
     // Unmap shared memory
     unmap_shared_memory();
 
-    // Everything is cleaned up
+    // Free array of configurations
+    free_config_array();
+
+    // Finalization is done
     archi_log_info(M, "The application has exited successfully.");
 }
 
@@ -308,7 +336,75 @@ exit_quick(void) // is called on quick_exit()
         reset_app();
     }
 
+    // Finalization is done
     archi_log_info(M, "The application has exited successfully without cleaning the resources.");
+}
+
+#undef M
+
+///////////////////////////////////////////////////////////////////////////////
+
+#define M "init_app_containers()"
+
+void
+init_app_containers(void)
+{
+    archi_process.app = (archi_application_t){
+        .libraries = {
+            .data = &archi_process.app_containers.libraries,
+            .interface = &archi_list_container_interface,
+        },
+        .interfaces = {
+            .data = &archi_process.app_containers.interfaces,
+            .interface = &archi_list_container_interface,
+        },
+        .contexts = {
+            .data = &archi_process.app_containers.contexts,
+            .interface = &archi_list_container_interface,
+        },
+    };
+
+    archi_process.app_containers.libraries =
+        archi_process.app_containers.interfaces =
+        archi_process.app_containers.contexts =
+        (archi_list_container_data_t){
+            .insert_to_head = false,
+            .traverse_from_head = false,
+        };
+}
+
+#undef M
+
+///////////////////////////////////////////////////////////////////////////////
+
+#define M "alloc_config_array()"
+
+void
+alloc_config_array(void)
+{
+    archi_log_debug(M, "Allocating the array of %u configuration pointers...",
+            (unsigned)archi_process.args.num_inputs);
+
+    archi_process.config = malloc(sizeof(*archi_process.config) * archi_process.args.num_inputs);
+    if (archi_process.config == NULL)
+    {
+        archi_log_error(M, "Couldn't allocate the array of configuration pointers.");
+        exit(ARCHI_EXIT_CODE(ARCHI_ERROR_ALLOC));
+    }
+
+    for (size_t i = 0; i < archi_process.args.num_inputs; i++)
+        archi_process.config[i] = NULL;
+}
+
+#undef M
+#define M "free_config_array()"
+
+void
+free_config_array(void)
+{
+    archi_log_debug(M, "Freeing the array of configuration pointers...");
+
+    free(archi_process.config);
 }
 
 #undef M
@@ -318,42 +414,46 @@ exit_quick(void) // is called on quick_exit()
 #define M "map_shared_memory()"
 
 void
-map_shared_memory(
-        const char *file)
+map_shared_memory(void)
 {
-    archi_log_debug(M, "Opening memory-mapped configuration file '%s'...", file);
+    archi_log_debug(M, "Mapping %u configuration files...", (unsigned)archi_process.args.num_inputs);
 
-    errno = 0;
-    int fd = archi_shm_open_file(file, true, false); // open for read only
-    if (fd == -1)
+    for (size_t i = 0; i < archi_process.args.num_inputs; i++)
     {
-        archi_log_error(M, "Couldn't open memory-mapped configuration file '%s': %s.",
-                file, strerror(errno));
-        exit(ARCHI_EXIT_CODE(ARCHI_ERROR_RESOURCE));
+        archi_log_debug(M, "> open('%s')", archi_process.args.inputs[i]);
+
+        errno = 0;
+        int fd = archi_shm_open_file(archi_process.args.inputs[i], true, false); // open for read only
+        if (fd == -1)
+        {
+            archi_log_error(M, "Couldn't open memory-mapped configuration file '%s': %s.",
+                    archi_process.args.inputs[i], strerror(errno));
+            exit(ARCHI_EXIT_CODE(ARCHI_ERROR_RESOURCE));
+        }
+
+        archi_log_debug(M, "> mmap('%s')", archi_process.args.inputs[i]);
+
+        errno = 0;
+        archi_process.config[i] = (const archi_process_config_shm_t*)
+            archi_shm_map(fd, true, false, false, 0); // map private read-only copy
+        if (archi_process.config[i] == NULL)
+        {
+            archi_log_error(M, "Couldn't map memory-mapped configuration file '%s': %s.",
+                    archi_process.args.inputs[i], (errno != 0) ? strerror(errno) : "file is mapped at a wrong address");
+
+            archi_log_debug(M, "> close('%s')", archi_process.args.inputs[i]);
+            archi_shm_close(fd);
+
+            exit(ARCHI_EXIT_CODE(ARCHI_ERROR_MAP));
+        }
+
+        archi_log_debug(M, "> close('%s')", archi_process.args.inputs[i]);
+
+        errno = 0;
+        if (!archi_shm_close(fd))
+            archi_log_warning(M, "Couldn't close memory-mapped configuration file '%s': %s.",
+                    archi_process.args.inputs[i], strerror(errno));
     }
-
-    archi_log_debug(M, "Mapping memory-mapped configuration file '%s'...", file);
-
-    errno = 0;
-    archi_process.config = (const archi_process_config_shm_t*)
-        archi_shm_map(fd, true, false, false, 0); // map private read-only copy
-    if (archi_process.config == NULL)
-    {
-        archi_log_error(M, "Couldn't map memory-mapped configuration file '%s': %s.",
-                file, (errno != 0) ? strerror(errno) : "file is mapped at a wrong address");
-
-        archi_log_debug(M, "Closing memory-mapped configuration file '%s'...", file);
-        archi_shm_close(fd);
-
-        exit(ARCHI_EXIT_CODE(ARCHI_ERROR_MAP));
-    }
-
-    archi_log_debug(M, "Closing memory-mapped configuration file '%s'...", file);
-
-    errno = 0;
-    if (!archi_shm_close(fd))
-        archi_log_warning(M, "Couldn't close memory-mapped configuration file '%s': %s.",
-                file, strerror(errno));
 }
 
 #undef M
@@ -362,15 +462,22 @@ map_shared_memory(
 void
 unmap_shared_memory(void)
 {
-    if (archi_process.config == NULL)
-        return;
+    archi_log_debug(M, "Unmapping memory-mapped configuration files...");
 
-    archi_log_debug(M, "Unmapping memory-mapped configuration file...");
+    for (size_t i = 0; i < archi_process.args.num_inputs; i++)
+    {
+        size_t index = (archi_process.args.num_inputs - 1) - i; // reverse order
 
-    errno = 0;
-    if (!archi_shm_unmap((archi_shm_header_t*)archi_process.config))
-        archi_log_error(M, "Couldn't unmap memory-mapped configuration file: %s.",
-                strerror(errno));
+        if (archi_process.config[index] == NULL)
+            continue;
+
+        archi_log_debug(M, "> munmap('%s')", archi_process.args.inputs[index]);
+
+        errno = 0;
+        if (!archi_shm_unmap((archi_shm_header_t*)archi_process.config[index]))
+            archi_log_error(M, "Couldn't unmap memory-mapped configuration file '%s': %s.",
+                    archi_process.args.inputs[index], strerror(errno));
+    }
 }
 
 #undef M
@@ -382,15 +489,26 @@ unmap_shared_memory(void)
 void
 start_signal_management(void)
 {
-    if (archi_process.config->signal_watch_set == NULL)
-        return;
+    archi_log_debug(M, "Joining signal watch sets...");
 
-    archi_log_debug(M, "Starting signal management...");
+    archi_process.signal_watch_set = archi_signal_watch_set_alloc();
+    if (archi_process.signal_watch_set == NULL)
+    {
+        archi_log_error(M, "Couldn't allocate the application signal watch set.");
+        exit(ARCHI_EXIT_CODE(ARCHI_ERROR_ALLOC));
+    }
+
+    for (size_t i = 0; i < archi_process.args.num_inputs; i++)
+        archi_signal_watch_set_join(archi_process.signal_watch_set,
+                archi_process.config[i]->signal_watch_set);
+
+    bool signal_management_needed = false;
 
 #define LOG_SIGNAL(signal) do { \
-        if (archi_process.config->signal_watch_set->f_##signal) \
-            archi_log_debug(M, "> watch_signal(%s)", #signal); \
-    } while (0)
+    if (archi_process.signal_watch_set->f_##signal) { \
+        archi_log_debug(M, "> watch_signal(%s)", #signal); \
+        signal_management_needed = true; \
+    } } while (0)
 
     LOG_SIGNAL(SIGINT);
     LOG_SIGNAL(SIGQUIT);
@@ -422,18 +540,26 @@ start_signal_management(void)
 
     for (size_t i = 0; i < archi_signal_number_of_rt_signals(); i++)
     {
-        if (archi_process.config->signal_watch_set->f_SIGRTMIN[i])
+        if (archi_process.signal_watch_set->f_SIGRTMIN[i])
+        {
             archi_log_debug(M, "> watch_signal(SIGRTMIN+%u)", (unsigned)i);
+            signal_management_needed = true;
+        }
     }
 
-    errno = 0;
-    archi_process.signal_management = archi_signal_management_start(
-            archi_process.config->signal_watch_set, (archi_signal_handler_t){0});
-
-    if (archi_process.signal_management == NULL)
+    if (signal_management_needed)
     {
-        archi_log_error(M, "Couldn't start signal management: %s.", strerror(errno));
-        exit(ARCHI_EXIT_CODE(ARCHI_ERROR_INIT));
+        archi_log_debug(M, "Starting signal management...");
+
+        errno = 0;
+        archi_process.signal_management = archi_signal_management_start(
+                archi_process.signal_watch_set, (archi_signal_handler_t){0});
+
+        if (archi_process.signal_management == NULL)
+        {
+            archi_log_error(M, "Couldn't start signal management: %s.", strerror(errno));
+            exit(ARCHI_EXIT_CODE(ARCHI_ERROR_INIT));
+        }
     }
 }
 
@@ -443,218 +569,16 @@ start_signal_management(void)
 void
 stop_signal_management(void)
 {
-    if (archi_process.signal_management == NULL)
-        return;
-
-    archi_log_debug(M, "Stopping signal management...");
-
-    archi_signal_management_stop(archi_process.signal_management);
-}
-
-#undef M
-
-///////////////////////////////////////////////////////////////////////////////
-
-#define M "init_app_containers()"
-
-void
-init_app_containers(void)
-{
-    archi_log_debug(M, "Initializing the application containers...");
-
-    archi_process.app = (archi_application_t){
-        .libraries = {
-            .data = &archi_process.app_containers.libraries,
-            .interface = &archi_list_container_interface,
-        },
-        .interfaces = {
-            .data = &archi_process.app_containers.interfaces,
-            .interface = &archi_list_container_interface,
-        },
-        .contexts = {
-            .data = &archi_process.app_containers.contexts,
-            .interface = &archi_list_container_interface,
-        },
-    };
-
-    archi_process.app_containers.libraries =
-        archi_process.app_containers.interfaces =
-        archi_process.app_containers.contexts =
-        (archi_list_container_data_t){
-            .insert_to_head = false,
-            .traverse_from_head = false,
-        };
-}
-
-#undef M
-
-///////////////////////////////////////////////////////////////////////////////
-
-#define M "load_shared_libraries()"
-
-void
-load_shared_libraries(void)
-{
-    if (archi_process.config->app_config.libraries == NULL)
-        return;
-
-    archi_log_debug(M, "Loading shared libraries...");
-
-    for (size_t i = 0; i < archi_process.config->app_config.num_libraries; i++)
+    if (archi_process.signal_management != NULL)
     {
-        archi_log_debug(M, "> load_library('%s', '%s')",
-                SAFE(archi_process.config->app_config.libraries[i].key),
-                SAFE(archi_process.config->app_config.libraries[i].pathname));
+        archi_log_debug(M, "Stopping signal management...");
 
-        archi_status_t code = archi_app_add_library(&archi_process.app,
-            archi_process.config->app_config.libraries[i]);
-
-        if (code != 0)
-        {
-            archi_log_error(M, "Couldn't load shared library '%s' (error %i).",
-                    SAFE(archi_process.config->app_config.libraries[i].key), code);
-            exit(ARCHI_EXIT_CODE(code));
-        }
-
-        archi_process.counter.libraries++;
+        archi_signal_management_stop(archi_process.signal_management);
     }
-}
 
-#undef M
-#define M "unload_shared_libraries()"
+    archi_log_debug(M, "Freeing the application signal watch set...");
 
-void
-unload_shared_libraries(void)
-{
-    archi_log_debug(M, "Unloading shared libraries...");
-
-    for (size_t i = 0; i < archi_process.counter.libraries; i++)
-    {
-        size_t j = (archi_process.counter.libraries - 1) - i;
-
-        archi_log_debug(M, "> unload_library('%s')",
-                SAFE(archi_process.config->app_config.libraries[j].key));
-
-        archi_status_t code = archi_app_remove_library(&archi_process.app,
-                archi_process.config->app_config.libraries[j].key);
-
-        if (code != 0)
-            archi_log_error(M, "Couldn't unload shared library '%s' (error %i).",
-                    SAFE(archi_process.config->app_config.libraries[j].key), code);
-    }
-}
-
-#undef M
-
-///////////////////////////////////////////////////////////////////////////////
-
-#define M "add_context_interfaces()"
-
-void
-add_context_interfaces(void)
-{
-    if (archi_process.config->app_config.interfaces == NULL)
-        return;
-
-    archi_log_debug(M, "Registering context interfaces...");
-
-    for (size_t i = 0; i < archi_process.config->app_config.num_interfaces; i++)
-    {
-        archi_log_debug(M, "> register_interface('%s', '%s', '%s')",
-                SAFE(archi_process.config->app_config.interfaces[i].key),
-                SAFE(archi_process.config->app_config.interfaces[i].symbol_name),
-                SAFE(archi_process.config->app_config.interfaces[i].library_key));
-
-        archi_status_t code = archi_app_add_interface(&archi_process.app,
-                archi_process.config->app_config.interfaces[i]);
-
-        if (code != 0)
-        {
-            archi_log_error(M, "Couldn't register context interface '%s' (error %i).",
-                    SAFE(archi_process.config->app_config.interfaces[i].key), code);
-            exit(ARCHI_EXIT_CODE(code));
-        }
-
-        archi_process.counter.interfaces++;
-    }
-}
-
-#undef M
-#define M "remove_context_interfaces()"
-
-void
-remove_context_interfaces(void)
-{
-    archi_log_debug(M, "Unregistering context interfaces...");
-
-    for (size_t i = 0; i < archi_process.counter.interfaces; i++)
-    {
-        size_t j = (archi_process.counter.interfaces - 1) - i;
-
-        archi_log_debug(M, "> unregister_interface('%s')",
-                SAFE(archi_process.config->app_config.interfaces[j].key));
-
-        archi_status_t code = archi_app_remove_interface(&archi_process.app,
-                archi_process.config->app_config.interfaces[j].key);
-
-        if (code != 0)
-            archi_log_error(M, "Couldn't unregister context interface '%s' (error %i).",
-                    SAFE(archi_process.config->app_config.interfaces[j].key), code);
-    }
-}
-
-#undef M
-
-///////////////////////////////////////////////////////////////////////////////
-
-#define M "add_builtin_context_interfaces()"
-
-void
-add_builtin_context_interfaces(void)
-{
-    archi_log_debug(M, "Registering built-in context interfaces...");
-
-    for (size_t i = 0; i < archi_builtin_interfaces_num_of; i++)
-    {
-        archi_log_debug(M, "> register_builtin_interface('%s')",
-                archi_builtin_interfaces_keys[i]);
-
-        archi_status_t code = archi_container_insert(archi_process.app.interfaces,
-                archi_builtin_interfaces_keys[i], (void*)archi_builtin_interfaces[i]);
-
-        if (code != 0)
-        {
-            archi_log_error(M, "Couldn't register built-in context interface '%s' (error %i).",
-                    (unsigned)i, archi_builtin_interfaces_keys[i], code);
-            exit(ARCHI_EXIT_CODE(code));
-        }
-
-        archi_process.counter.builtin_interfaces++;
-    }
-}
-
-#undef M
-#define M "remove_builtin_context_interfaces()"
-
-void
-remove_builtin_context_interfaces(void)
-{
-    archi_log_debug(M, "Unregistering built-in context interfaces...");
-
-    for (size_t i = 0; i < archi_process.counter.builtin_interfaces; i++)
-    {
-        size_t j = (archi_process.counter.builtin_interfaces - 1) - i;
-
-        archi_log_debug(M, "> unregister_builtin_interface('%s')",
-                archi_builtin_interfaces_keys[j]);
-
-        archi_status_t code = archi_container_remove(archi_process.app.interfaces,
-                archi_builtin_interfaces_keys[j], NULL);
-
-        if (code != 0)
-            archi_log_error(M, "Couldn't unregister built-in context interface '%s' (error %i).",
-                    archi_builtin_interfaces_keys[j], code);
-    }
+    free(archi_process.signal_watch_set);
 }
 
 #undef M
@@ -682,6 +606,61 @@ init_builtin_contexts(void)
 }
 
 #undef M
+
+///////////////////////////////////////////////////////////////////////////////
+
+#define M "add_builtin_context_interfaces()"
+
+void
+add_builtin_context_interfaces(void)
+{
+    archi_log_debug(M, "Registering built-in context interfaces...");
+
+    for (size_t i = 0; i < archi_builtin_interfaces_num_of; i++)
+    {
+        archi_log_debug(M, "> register_builtin_interface('%s')",
+                archi_builtin_interfaces_keys[i]);
+
+        archi_status_t code = archi_container_insert(archi_process.app.interfaces,
+                archi_builtin_interfaces_keys[i], (void*)archi_builtin_interfaces[i]);
+
+        if (code != 0)
+        {
+            archi_log_error(M, "Couldn't register built-in context interface '%s' (error %i).",
+                    (unsigned)i, archi_builtin_interfaces_keys[i], code);
+            exit(ARCHI_EXIT_CODE(code));
+        }
+    }
+}
+
+#undef M
+#define M "remove_builtin_context_interfaces()"
+
+void
+remove_builtin_context_interfaces(void)
+{
+    archi_log_debug(M, "Unregistering built-in context interfaces...");
+
+    for (size_t i = 0; i < archi_builtin_interfaces_num_of; i++)
+    {
+        size_t index = (archi_builtin_interfaces_num_of - 1) - i; // reverse order
+
+        archi_log_debug(M, "> unregister_builtin_interface('%s')",
+                archi_builtin_interfaces_keys[index]);
+
+        archi_status_t code = archi_container_remove(archi_process.app.interfaces,
+                archi_builtin_interfaces_keys[index], NULL);
+
+        if (code < 0) // ignore 'not found' error
+            archi_log_error(M, "Couldn't unregister built-in context interface '%s' (error %i).",
+                    archi_builtin_interfaces_keys[index], code);
+    }
+}
+
+#undef M
+
+///////////////////////////////////////////////////////////////////////////////
+
 #define M "add_builtin_contexts()"
 
 void
@@ -703,8 +682,6 @@ add_builtin_contexts(void)
                     (unsigned)i, archi_process.builtin.contexts_keys[i], code);
             exit(ARCHI_EXIT_CODE(code));
         }
-
-        archi_process.counter.builtin_contexts++;
     }
 }
 
@@ -716,19 +693,154 @@ remove_builtin_contexts(void)
 {
     archi_log_debug(M, "Unregistering built-in contexts...");
 
-    for (size_t i = 0; i < archi_process.counter.builtin_contexts; i++)
+    for (size_t i = 0; i < NUM_BUILTIN_CONTEXTS; i++)
     {
-        size_t j = (archi_process.counter.builtin_contexts - 1) - i;
+        size_t index = (NUM_BUILTIN_CONTEXTS - 1) - i; // reverse order
 
         archi_log_debug(M, "> unregister_builtin_context('%s')",
-                archi_process.builtin.contexts_keys[j]);
+                archi_process.builtin.contexts_keys[index]);
 
         archi_status_t code = archi_container_remove(archi_process.app.contexts,
-                archi_process.builtin.contexts_keys[j], NULL);
+                archi_process.builtin.contexts_keys[index], NULL);
+
+        if (code < 0) // ignore 'not found' error
+            archi_log_error(M, "Couldn't unregister built-in context '%s' (error %i).",
+                    archi_process.builtin.contexts_keys[index], code);
+    }
+}
+
+#undef M
+
+///////////////////////////////////////////////////////////////////////////////
+
+#define M "load_shared_libraries()"
+
+void
+load_shared_libraries(
+        size_t index)
+{
+    if (archi_process.config[index]->app_config.libraries == NULL)
+        return;
+
+    archi_log_debug(M, "Loading %u shared libraries...",
+            (unsigned)archi_process.config[index]->app_config.num_libraries);
+
+    for (size_t i = 0; i < archi_process.config[index]->app_config.num_libraries; i++)
+    {
+        archi_log_debug(M, "> load_library('%s', '%s')",
+                SAFE(archi_process.config[index]->app_config.libraries[i].key),
+                SAFE(archi_process.config[index]->app_config.libraries[i].pathname));
+
+        archi_status_t code = archi_app_add_library(&archi_process.app,
+                archi_process.config[index]->app_config.libraries[i]);
 
         if (code != 0)
-            archi_log_error(M, "Couldn't unregister built-in context '%s' (error %i).",
-                    archi_process.builtin.contexts_keys[j], code);
+        {
+            archi_log_error(M, "Couldn't load shared library '%s' (error %i).",
+                    SAFE(archi_process.config[index]->app_config.libraries[i].key), code);
+            exit(ARCHI_EXIT_CODE(code));
+        }
+    }
+}
+
+#undef M
+#define M "unload_shared_libraries()"
+
+void
+unload_shared_libraries(void)
+{
+    archi_log_debug(M, "Unloading shared libraries...");
+
+    for (size_t i = 0; i < archi_process.args.num_inputs; i++)
+    {
+        size_t input_index = (archi_process.args.num_inputs - 1) - i; // reverse order
+
+        if (archi_process.config[input_index] == NULL)
+            continue;
+
+        for (size_t j = 0; j < archi_process.config[input_index]->app_config.num_libraries; j++)
+        {
+            size_t index = (archi_process.config[input_index]->app_config.num_libraries - 1) - j; // reverse order
+
+            const char *key = archi_process.config[input_index]->app_config.libraries[index].key;
+            if (archi_container_extract(archi_process.app.libraries, key, NULL) == 0)
+            {
+                archi_log_debug(M, "> unload_library('%s')", SAFE(key));
+
+                archi_status_t code = archi_app_remove_library(&archi_process.app, key);
+
+                if (code != 0)
+                    archi_log_error(M, "Couldn't unload shared library '%s' (error %i).", SAFE(key), code);
+            }
+        }
+    }
+}
+
+#undef M
+
+///////////////////////////////////////////////////////////////////////////////
+
+#define M "add_context_interfaces()"
+
+void
+add_context_interfaces(
+        size_t index)
+{
+    if (archi_process.config[index]->app_config.interfaces == NULL)
+        return;
+
+    archi_log_debug(M, "Registering %u context interfaces...",
+            (unsigned)archi_process.config[index]->app_config.num_interfaces);
+
+    for (size_t i = 0; i < archi_process.config[index]->app_config.num_interfaces; i++)
+    {
+        archi_log_debug(M, "> register_interface('%s', '%s', '%s')",
+                SAFE(archi_process.config[index]->app_config.interfaces[i].key),
+                SAFE(archi_process.config[index]->app_config.interfaces[i].symbol_name),
+                SAFE(archi_process.config[index]->app_config.interfaces[i].library_key));
+
+        archi_status_t code = archi_app_add_interface(&archi_process.app,
+                archi_process.config[index]->app_config.interfaces[i]);
+
+        if (code != 0)
+        {
+            archi_log_error(M, "Couldn't register context interface '%s' (error %i).",
+                    SAFE(archi_process.config[index]->app_config.interfaces[i].key), code);
+            exit(ARCHI_EXIT_CODE(code));
+        }
+    }
+}
+
+#undef M
+#define M "remove_context_interfaces()"
+
+void
+remove_context_interfaces(void)
+{
+    archi_log_debug(M, "Unregistering context interfaces...");
+
+    for (size_t i = 0; i < archi_process.args.num_inputs; i++)
+    {
+        size_t input_index = (archi_process.args.num_inputs - 1) - i; // reverse order
+
+        if (archi_process.config[input_index] == NULL)
+            continue;
+
+        for (size_t j = 0; j < archi_process.config[input_index]->app_config.num_interfaces; j++)
+        {
+            size_t index = (archi_process.config[input_index]->app_config.num_interfaces - 1) - j; // reverse order
+
+            const char *key = archi_process.config[input_index]->app_config.interfaces[index].key;
+            if (archi_container_extract(archi_process.app.interfaces, key, NULL) == 0)
+            {
+                archi_log_debug(M, "> unregister_interface('%s')", SAFE(key));
+
+                archi_status_t code = archi_app_remove_interface(&archi_process.app, key);
+
+                if (code != 0)
+                    archi_log_error(M, "Couldn't unregister context interface '%s' (error %i).", SAFE(key), code);
+            }
+        }
     }
 }
 
@@ -738,23 +850,153 @@ remove_builtin_contexts(void)
 
 #define M "configure_app()"
 
+static
 void
-configure_app(void)
+configure_app_log_value(
+        const archi_value_t *value)
 {
-    if (archi_process.config->app_config.steps == NULL)
+    switch (value->type)
+    {
+        case ARCHI_VALUE_NULL:
+            break;
+
+        case ARCHI_VALUE_FALSE:
+            archi_log_debug(M, SPACE SPACE "false");
+            break;
+
+        case ARCHI_VALUE_TRUE:
+            archi_log_debug(M, SPACE SPACE "true");
+            break;
+
+        case ARCHI_VALUE_UINT:
+            switch (value->size)
+            {
+                case sizeof(uint8_t): archi_log_debug(M, SPACE SPACE "%u", *(uint8_t*)value->ptr); break;
+                case sizeof(uint16_t): archi_log_debug(M, SPACE SPACE "%u", *(uint16_t*)value->ptr); break;
+                case sizeof(uint32_t): archi_log_debug(M, SPACE SPACE "%lu", *(uint32_t*)value->ptr); break;
+                case sizeof(uint64_t): archi_log_debug(M, SPACE SPACE "%llu", *(uint64_t*)value->ptr); break;
+            }
+            break;
+
+        case ARCHI_VALUE_SINT:
+            switch (value->size)
+            {
+                case sizeof(int8_t): archi_log_debug(M, SPACE SPACE "%i", *(int8_t*)value->ptr); break;
+                case sizeof(int16_t): archi_log_debug(M, SPACE SPACE "%i", *(int16_t*)value->ptr); break;
+                case sizeof(int32_t): archi_log_debug(M, SPACE SPACE "%li", *(int32_t*)value->ptr); break;
+                case sizeof(int64_t): archi_log_debug(M, SPACE SPACE "%lli", *(int64_t*)value->ptr); break;
+            }
+            break;
+
+        case ARCHI_VALUE_FLOAT:
+            switch (value->size)
+            {
+                case sizeof(float): archi_log_debug(M, SPACE SPACE "%g", *(float*)value->ptr); break;
+                case sizeof(double): archi_log_debug(M, SPACE SPACE "%g", *(double*)value->ptr); break;
+                case sizeof(long double): archi_log_debug(M, SPACE SPACE "%lg", *(long double*)value->ptr); break;
+            }
+            break;
+
+        case ARCHI_VALUE_STRING:
+            archi_log_debug(M, SPACE SPACE "%s", value->ptr);
+            break;
+
+        case ARCHI_VALUE_DATA:
+            {
+                unsigned char *mem = value->ptr;
+
+                switch (value->size)
+                {
+                    case 0: break;
+
+                    case 1: archi_log_debug(M, SPACE SPACE "%02x", mem[0]); break;
+                    case 2: archi_log_debug(M, SPACE SPACE "%02x%02x", mem[0], mem[1]); break;
+                    case 3: archi_log_debug(M, SPACE SPACE "%02x%02x %02x", mem[0], mem[1], mem[2]); break;
+                    case 4: archi_log_debug(M, SPACE SPACE "%02x%02x %02x%02x", mem[0], mem[1], mem[2], mem[3]); break;
+
+                    case 5: archi_log_debug(M, SPACE SPACE "%02x%02x %02x%02x %02x", mem[0], mem[1], mem[2], mem[3],
+                                    mem[4]); break;
+                    case 6: archi_log_debug(M, SPACE SPACE "%02x%02x %02x%02x %02x%02x", mem[0], mem[1], mem[2], mem[3],
+                                    mem[4], mem[5]); break;
+                    case 7: archi_log_debug(M, SPACE SPACE "%02x%02x %02x%02x %02x%02x %02x", mem[0], mem[1], mem[2], mem[3],
+                                    mem[4], mem[5], mem[6]); break;
+                    default: archi_log_debug(M, SPACE SPACE "%02x%02x %02x%02x %02x%02x %02x%02x", mem[0], mem[1], mem[2], mem[3],
+                                     mem[4], mem[5], mem[6], mem[7]); break;
+                }
+            }
+
+        default:
+            break;
+    }
+}
+
+static
+ARCHI_LIST_ACT_FUNC(configure_app_log_node)
+{
+    (void) position;
+    (void) data;
+
+    const archi_list_node_named_value_t *vnode = (const archi_list_node_named_value_t*)node;
+
+    const char *value_type;
+    switch (vnode->value.type)
+    {
+#define VALUE_TYPE(v) case ARCHI_VALUE_##v: value_type = #v; break
+
+        VALUE_TYPE(NULL);
+
+        VALUE_TYPE(FALSE);
+        VALUE_TYPE(TRUE);
+
+        VALUE_TYPE(UINT);
+        VALUE_TYPE(SINT);
+        VALUE_TYPE(FLOAT);
+
+        VALUE_TYPE(STRING);
+        VALUE_TYPE(DATA);
+
+        VALUE_TYPE(NODE);
+        VALUE_TYPE(LIST);
+
+        VALUE_TYPE(FUNCTION);
+
+#undef VALUE_TYPE
+
+        default: value_type = "unknown";
+    }
+
+    archi_log_debug(M, SPACE "%s = Value<ptr = %p, size = %u, num_of = %u, type = %s>",
+            vnode->base.name, vnode->value.ptr, (unsigned)vnode->value.size, (unsigned)vnode->value.num_of, value_type);
+    if (vnode->value.ptr != NULL)
+        configure_app_log_value(&vnode->value);
+
+    return 0;
+}
+
+void
+configure_app(
+        size_t index)
+{
+    if (archi_process.config[index]->app_config.steps == NULL)
         return;
 
-    archi_log_debug(M, "Configuring the application...");
+    archi_log_debug(M, "Performing %u configuration steps...",
+            (unsigned)archi_process.config[index]->app_config.num_steps);
 
-    for (size_t i = 0; i < archi_process.config->app_config.num_steps; i++)
+    for (size_t i = 0; i < archi_process.config[index]->app_config.num_steps; i++)
     {
-        archi_app_config_step_t step = archi_process.config->app_config.steps[i];
+        archi_app_config_step_t step = archi_process.config[index]->app_config.steps[i];
 
         switch (step.type)
         {
             case ARCHI_APP_CONFIG_STEP_INIT:
-                archi_log_debug(M, "> [%u] %s = %s(...)", (unsigned)i,
-                        SAFE(step.key), SAFE(step.as_init.interface_key));
+                {
+                    archi_log_debug(M, "> [%u] %s = %s(...)", (unsigned)i,
+                            SAFE(step.key), SAFE(step.as_init.interface_key));
+
+                    archi_list_t list = {.head = (archi_list_node_t*)step.as_init.config};
+                    archi_list_traverse(&list, NULL, NULL, configure_app_log_node, NULL, true, 0, NULL);
+                }
                 break;
 
             case ARCHI_APP_CONFIG_STEP_FINAL:
@@ -762,9 +1004,40 @@ configure_app(void)
                 break;
 
             case ARCHI_APP_CONFIG_STEP_SET:
-                archi_log_debug(M, "> [%u] %s.%s = Value<size = %u, num_of = %u, type = %u>",
-                        (unsigned)i, SAFE(step.key), SAFE(step.as_set.slot),
-                        step.as_set.value->size, step.as_set.value->num_of, step.as_set.value->type);
+                {
+                    const char *value_type;
+                    switch (step.as_set.value->type)
+                    {
+#define VALUE_TYPE(v) case ARCHI_VALUE_##v: value_type = #v; break
+
+                        VALUE_TYPE(NULL);
+
+                        VALUE_TYPE(FALSE);
+                        VALUE_TYPE(TRUE);
+
+                        VALUE_TYPE(UINT);
+                        VALUE_TYPE(SINT);
+                        VALUE_TYPE(FLOAT);
+
+                        VALUE_TYPE(STRING);
+                        VALUE_TYPE(DATA);
+
+                        VALUE_TYPE(NODE);
+                        VALUE_TYPE(LIST);
+
+                        VALUE_TYPE(FUNCTION);
+
+#undef VALUE_TYPE
+
+                        default: value_type = "unknown";
+                    }
+
+                    archi_log_debug(M, "> [%u] %s.%s = Value<ptr = %p, size = %u, num_of = %u, type = %s>",
+                            (unsigned)i, SAFE(step.key), SAFE(step.as_set.slot),
+                            step.as_set.value->ptr, step.as_set.value->size, step.as_set.value->num_of, value_type);
+
+                    configure_app_log_value(step.as_set.value);
+                }
                 break;
 
             case ARCHI_APP_CONFIG_STEP_ASSIGN:
@@ -779,8 +1052,13 @@ configure_app(void)
                 break;
 
             case ARCHI_APP_CONFIG_STEP_ACT:
-                archi_log_debug(M, "> [%u] %s.%s(...)", (unsigned)i,
-                        SAFE(step.key), SAFE(step.as_act.action));
+                {
+                    archi_log_debug(M, "> [%u] %s.%s(...)", (unsigned)i,
+                            SAFE(step.key), SAFE(step.as_act.action));
+
+                    archi_list_t list = {.head = (archi_list_node_t*)step.as_act.params};
+                    archi_list_traverse(&list, NULL, NULL, configure_app_log_node, NULL, true, 0, NULL);
+                }
                 break;
 
             default:
@@ -795,8 +1073,11 @@ configure_app(void)
             exit(ARCHI_EXIT_CODE(code));
         }
 
-        archi_process.counter.steps++;
+        archi_process.count.steps++;
     }
+
+    archi_process.count.inputs = index + 1;
+    archi_process.count.steps = 0;
 }
 
 #undef M
@@ -807,20 +1088,32 @@ reset_app(void)
 {
     archi_log_debug(M, "Undoing the configuration...");
 
-    for (size_t i = 0; i < archi_process.counter.steps; i++)
+    for (size_t i = 0; i < archi_process.args.num_inputs; i++)
     {
-        size_t j = (archi_process.counter.steps - 1) - i;
-        archi_app_config_step_t step = archi_process.config->app_config.steps[j];
+        size_t input_index = (archi_process.args.num_inputs - 1) - i; // reverse order
 
-        if (!archi_app_config_step_undoable(step.type))
-            continue;
+        if (input_index > archi_process.count.inputs)
+            continue; // this configuration file was never used
 
-        archi_log_debug(M, "> undo_configuration_step(%u, '%s')", (unsigned)j, step.key);
+        for (size_t j = 0; j < archi_process.config[input_index]->app_config.num_steps; j++)
+        {
+            size_t index = (archi_process.config[input_index]->app_config.num_steps - 1) - j; // reverse order
 
-        archi_status_t code = archi_app_undo_config_step(&archi_process.app, step);
+            if ((input_index == archi_process.count.inputs) && (index >= archi_process.count.steps))
+                continue; // this configuration step was never done
 
-        if (code != 0)
-            archi_log_error(M, "Couldn't undo configuration step #%u (error %i).", (unsigned)i, code);
+            archi_app_config_step_t step = archi_process.config[input_index]->app_config.steps[index];
+            if (archi_app_config_step_undoable(step.type))
+            {
+                archi_log_debug(M, "> undo_configuration_step(%u, %u, '%s')",
+                        (unsigned)input_index, (unsigned)index, step.key);
+
+                archi_status_t code = archi_app_undo_config_step(&archi_process.app, step);
+
+                if (code != 0)
+                    archi_log_error(M, "Couldn't undo configuration step #%u (error %i).", (unsigned)index, code);
+            }
+        }
     }
 }
 

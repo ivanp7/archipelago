@@ -38,7 +38,7 @@ archi_status_t
 archi_container_insert(
         archi_container_t container, ///< [in] Container.
 
-        const void *restrict key, ///< [in] Element key.
+        const char *restrict key, ///< [in] Element key.
         void *restrict element ///< [in] Element value.
 );
 
@@ -51,7 +51,7 @@ archi_status_t
 archi_container_remove(
         archi_container_t container, ///< [in] Container.
 
-        const void *restrict key, ///< [in] Element key.
+        const char *restrict key, ///< [in] Element key.
         void *restrict *restrict element ///< [out] Place for element value.
 );
 
@@ -64,7 +64,7 @@ archi_status_t
 archi_container_extract(
         archi_container_t container, ///< [in] Container.
 
-        const void *restrict key, ///< [in] Element key.
+        const char *restrict key, ///< [in] Element key.
         void *restrict *restrict element ///< [out] Place for element value.
 );
 

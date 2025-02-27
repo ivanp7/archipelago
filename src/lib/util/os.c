@@ -83,21 +83,27 @@ archi_shm_map(
     int prot = (readable ? PROT_READ : 0) | (writable ? PROT_WRITE : 0);
     int all_flags = (shared ? MAP_SHARED_VALIDATE : MAP_PRIVATE) | flags;
 
+    archi_shm_header_t *shm;
+    archi_shm_header_t header;
+    size_t size;
+
     // Map the memory the initial time to extract its header
-    archi_shm_header_t *shm = mmap(NULL, sizeof(*shm), prot, all_flags, fd, 0);
-    if (shm == MAP_FAILED)
-        return NULL;
-
-    archi_shm_header_t header = *shm;
-    if (header.shmaddr > header.shmend)
-        goto failure;
-
-    size_t size = (char*)header.shmend - (char*)header.shmaddr;
-    if (size < sizeof(*shm))
-        goto failure;
-
     {
-        // Remap the memory of the correct size at the correct address
+        shm = mmap(NULL, sizeof(*shm), prot, all_flags, fd, 0);
+        if (shm == MAP_FAILED)
+            return NULL;
+
+        header = *shm;
+        if (header.shmaddr > header.shmend)
+            goto failure;
+
+        size = (char*)header.shmend - (char*)header.shmaddr;
+        if (size < sizeof(*shm))
+            goto failure;
+    }
+
+    // Remap the memory of the correct size at the correct address
+    {
         munmap(shm, sizeof(*shm));
 
         shm = mmap(header.shmaddr, size, prot, all_flags | MAP_FIXED_NOREPLACE, fd, 0);
@@ -202,6 +208,50 @@ archi_signal_number_of_rt_signals(void)
     return (SIGRTMAX - SIGRTMIN + 1);
 }
 
+void
+archi_signal_watch_set_join(
+        archi_signal_watch_set_t *out,
+        const archi_signal_watch_set_t *in)
+{
+    if ((out == NULL) || (in == NULL))
+        return;
+
+#define JOIN_SIGNAL(signal) do { \
+        out->f_##signal = out->f_##signal || in->f_##signal; \
+    } while (0)
+
+    JOIN_SIGNAL(SIGINT);
+    JOIN_SIGNAL(SIGQUIT);
+    JOIN_SIGNAL(SIGTERM);
+
+    JOIN_SIGNAL(SIGCHLD);
+    JOIN_SIGNAL(SIGCONT);
+    JOIN_SIGNAL(SIGTSTP);
+    JOIN_SIGNAL(SIGXCPU);
+    JOIN_SIGNAL(SIGXFSZ);
+
+    JOIN_SIGNAL(SIGPIPE);
+    JOIN_SIGNAL(SIGPOLL);
+    JOIN_SIGNAL(SIGURG);
+
+    JOIN_SIGNAL(SIGALRM);
+    JOIN_SIGNAL(SIGVTALRM);
+    JOIN_SIGNAL(SIGPROF);
+
+    JOIN_SIGNAL(SIGHUP);
+    JOIN_SIGNAL(SIGTTIN);
+    JOIN_SIGNAL(SIGTTOU);
+    JOIN_SIGNAL(SIGWINCH);
+
+    JOIN_SIGNAL(SIGUSR1);
+    JOIN_SIGNAL(SIGUSR2);
+
+#undef JOIN_SIGNAL
+
+    for (int i = 0; i < archi_signal_number_of_rt_signals(); i++)
+        out->f_SIGRTMIN[i] = out->f_SIGRTMIN[i] || in->f_SIGRTMIN[i];
+}
+
 archi_signal_watch_set_t*
 archi_signal_watch_set_alloc(void)
 {
@@ -242,8 +292,8 @@ archi_signal_watch_set_alloc(void)
 
 #undef INIT_SIGNAL
 
-    for (int signal = SIGRTMIN; signal <= SIGRTMAX; signal++)
-        signals->f_SIGRTMIN[signal - SIGRTMIN] = false;
+    for (int i = 0; i < archi_signal_number_of_rt_signals(); i++)
+        signals->f_SIGRTMIN[i] = false;
 
     return signals;
 }
@@ -288,8 +338,8 @@ archi_signal_flags_alloc(void)
 
 #undef INIT_SIGNAL
 
-    for (int signal = SIGRTMIN; signal <= SIGRTMAX; signal++)
-        ARCHI_SIGNAL_INIT_FLAG(signals->f_SIGRTMIN[signal - SIGRTMIN]);
+    for (int i = 0; i < archi_signal_number_of_rt_signals(); i++)
+        ARCHI_SIGNAL_INIT_FLAG(signals->f_SIGRTMIN[i]);
 
     return signals;
 }
@@ -434,10 +484,10 @@ archi_signal_management_start(
 
 #undef ADD_SIGNAL
 
-        for (int signal = SIGRTMIN; signal <= SIGRTMAX; signal++)
+        for (int i = 0; i < archi_signal_number_of_rt_signals(); i++)
         {
-            if (signals->f_SIGRTMIN[signal - SIGRTMIN])
-                sigaddset(&context->set, signal);
+            if (signals->f_SIGRTMIN[i])
+                sigaddset(&context->set, SIGRTMIN+i);
         }
     }
 

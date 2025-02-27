@@ -35,7 +35,7 @@
  * @return Status code.
  */
 #define ARCHI_CONTAINER_ELEMENT_FUNC(name) archi_status_t name( \
-        const void *const restrict key, /* Element key. */ \
+        const char *const restrict key, /* Element key. */ \
         void *const restrict element, /* Element value. */ \
         void *const restrict data) /* Function data. */
 
@@ -53,7 +53,7 @@ typedef ARCHI_CONTAINER_ELEMENT_FUNC((*archi_container_element_func_t));
  */
 #define ARCHI_CONTAINER_INSERT_FUNC(func_name) archi_status_t func_name( \
         void *const restrict container, /* Container. */ \
-        const void *const restrict key, /* Element key. */ \
+        const char *const restrict key, /* Element key. */ \
         void *const restrict element) /* Element value. */
 
 /**
@@ -68,7 +68,7 @@ typedef ARCHI_CONTAINER_INSERT_FUNC((*archi_container_insert_func_t));
  */
 #define ARCHI_CONTAINER_REMOVE_FUNC(func_name) archi_status_t func_name( \
         void *const restrict container, /* Container. */ \
-        const void *const restrict key, /* Element key. */ \
+        const char *const restrict key, /* Element key. */ \
         void *restrict *const restrict element) /* Element value. */
 
 /**
@@ -83,7 +83,7 @@ typedef ARCHI_CONTAINER_REMOVE_FUNC((*archi_container_remove_func_t));
  */
 #define ARCHI_CONTAINER_EXTRACT_FUNC(func_name) archi_status_t func_name( \
         void *const restrict container, /* Container. */ \
-        const void *const restrict key, /* Element key. */ \
+        const char *const restrict key, /* Element key. */ \
         void *restrict *const restrict element) /* Element value. */
 
 /**

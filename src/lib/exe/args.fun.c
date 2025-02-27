@@ -55,7 +55,7 @@ const struct argp_option args_options[] = {
     {.key = ARGKEY_NO_LOGO,     .name = "no-logo", .doc = "Don't display the logo"},
     {.key = ARGKEY_VERBOSITY,   .name = "verbose", .arg = "LEVEL", .flags = OPTION_ARG_OPTIONAL,
                                     .doc = "Set verbosity level (0-" STRINGIFY(ARCHI_LOG_VERBOSITY_MAX)
-                                           ", or one of: quiet, error, warning, notice, info, debug, max; "
+                                           ", or one of: none, error, warning, notice, info, debug, all; "
                                            "default: info)"},
 
     {0}
@@ -80,7 +80,7 @@ args_parse(int key, char *arg, struct argp_state *state)
         case ARGKEY_VERBOSITY:
             if (arg == NULL)
                 args->verbosity_level = ARCHI_LOG_VERBOSITY_DEFAULT_HIGHER;
-            else if (!strcmp(arg, "quiet"))
+            else if (!strcmp(arg, "none"))
                 args->verbosity_level = ARCHI_LOG_VERBOSITY_QUIET;
             else if (!strcmp(arg, "error"))
                 args->verbosity_level = ARCHI_LOG_VERBOSITY_ERROR;
@@ -92,7 +92,7 @@ args_parse(int key, char *arg, struct argp_state *state)
                 args->verbosity_level = ARCHI_LOG_VERBOSITY_INFO;
             else if (!strcmp(arg, "debug"))
                 args->verbosity_level = ARCHI_LOG_VERBOSITY_DEBUG;
-            else if (!strcmp(arg, "max"))
+            else if (!strcmp(arg, "all"))
                 args->verbosity_level = ARCHI_LOG_VERBOSITY_MAX;
             else if (strlen(arg) == 1)
             {
@@ -105,13 +105,14 @@ args_parse(int key, char *arg, struct argp_state *state)
             break;
 
         case ARGP_KEY_ARG:
-            if (args->file != NULL)
-                return EINVAL; // setting multiple configuration pathnames is not supported
-
-            args->file = arg;
-            break;
+            /* Let the ARGP_KEY_ARGS case parse it.  */
+            return ARGP_ERR_UNKNOWN;
 
         case ARGP_KEY_ARGS:
+            args->inputs = state->argv + state->next;
+            args->num_inputs = state->argc - state->next;
+            break;
+
         case ARGP_KEY_NO_ARGS:
         case ARGP_KEY_END:
         case ARGP_KEY_INIT:
@@ -143,18 +144,13 @@ archi_args_parse(
     struct argp args_parser = {
         .options = args_options,
         .parser = args_parse,
-        .args_doc = "PATHNAME",
+        .args_doc = "[PATHNAME...]",
         .doc = "\n\
-General purpose, modular application configured by a memory-mapped file.\n\
+General purpose, modular application configured by memory-mapped files.\n\
 \v\
 "
     };
 
-    archi_status_t code = argp_parse(&args_parser, argc, argv, 0, NULL, args);
-
-    if (args->file == NULL)
-        return 0;
-
-    return code;
+    return argp_parse(&args_parser, argc, argv, 0, NULL, args);
 }
 

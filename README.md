@@ -16,19 +16,12 @@ A transition function that is called between state functions can also be specifi
 
 ![Finite state machine example](docs/fsm_example.png)
 
-The Archipelago public API consists the following parts:
-* `util`: auxiliary utilities (linked lists, logging, shared memory interface, shared libraries interface, signal management interface, etc);
-* `app`: application context system;
-* `fsm`: finite state machine implementation;
-* `exe`: general purpose executable configured via shared memory;
-* `plugin`: built-in plugins providing most used types of resources.
-
 This application was originally designed as a part of
 the [Rayway](https://github.com/ivanp7/rayway) engine to implement a command pipeline.
 
 ## The executable
 
-1. obtains an application configuration from a memory-mapped file;
+1. obtains an application configuration from a list of memory-mapped files;
 2. loads shared libraries providing plugins as specified in the configuration;
 3. performs initialization instructions (creates contexts) as specified in the configuration;
 4. executes a finite state machine with the specified entry state and state transition;
@@ -38,12 +31,15 @@ All contexts are initialized and provided to consumers according to the configur
 After the initialization phase comes the execution phase, during which a finite state machine is run as described below.
 The entry state and state transition of the FSM are specified by the configuration in shared memory.
 
-## Memory-mapped configuration file
+## Memory-mapped configuration files
 
-There is a Python module in the `python/` subdirectory that [helps](https://github.com/ivanp7/still-alive/still-alive.py) in generation of configuration files.
+Configuration files contain information about libraries to load, contexts to create, signals to watch, application data, etc.
 
-Once created, these configuration files are reusable.
-However, the format is considered fragile and is not guaranteed to be backward-compatible.
+The Archipelago executable loads and processes configuration files sequentially.
+Each configuration modifies the state left after the previous configuration.
+
+There is a Python module in the `python/` subdirectory that [helps](https://github.com/ivanp7/still-alive/still-alive.py)
+in generation of configuration files.
 
 ## Important concepts
 
@@ -157,6 +153,15 @@ which is immediately pushed to the stack, thus preceding the previous stack top.
 
 Transition is hidden from state functions, which don't have any access to it.
 The same transition is used between any states and cannot be changed during finite state machine execution.
+
+# Public API
+
+The Archipelago public API consists the following parts:
+* `util`: auxiliary utilities (linked lists, logging, shared memory interface, shared libraries interface, signal management interface, etc);
+* `app`: application context system;
+* `fsm`: finite state machine implementation;
+* `exe`: general purpose executable configured via shared memory;
+* `plugin`: built-in plugins providing most used types of resources.
 
 # Example plugins and applications
 

@@ -32,7 +32,7 @@ archi_status_t
 archi_container_insert(
         archi_container_t container,
 
-        const void *restrict key,
+        const char *restrict key,
         void *restrict element)
 {
     if ((container.data == NULL) || (container.interface == NULL))
@@ -47,7 +47,7 @@ archi_status_t
 archi_container_remove(
         archi_container_t container,
 
-        const void *restrict key,
+        const char *restrict key,
         void *restrict *restrict element)
 {
     if ((container.data == NULL) || (container.interface == NULL))
@@ -62,7 +62,7 @@ archi_status_t
 archi_container_extract(
         archi_container_t container,
 
-        const void *restrict key,
+        const char *restrict key,
         void *restrict *restrict element)
 {
     if ((container.data == NULL) || (container.interface == NULL))

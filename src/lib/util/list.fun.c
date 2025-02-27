@@ -612,10 +612,10 @@ ARCHI_CONTAINER_REMOVE_FUNC(archi_list_container_remove)
     if (!archi_list_cut_node(&list_data->list, (archi_list_node_t*)node))
         return ARCHI_ERROR_UNKNOWN; // this should not happen
 
-    archi_list_act_func_free_named((archi_list_node_t*)node, 0, NULL);
-
     if (element != NULL)
         *element = node->value.ptr;
+
+    archi_list_act_func_free_named((archi_list_node_t*)node, 0, NULL);
 
     return 0;
 }
