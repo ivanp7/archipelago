@@ -28,18 +28,22 @@
 #define _ARCHI_UTIL_ERROR_DEF_H_
 
 #define ARCHI_ERROR_UNKNOWN     -1  ///< Unknown error.
-#define ARCHI_ERROR_MISUSE      -2  ///< Error: incorrect use of an interface (incorrect arguments such as null pointers and out-of-range values).
-#define ARCHI_ERROR_CONFIG      -3  ///< Error: incorrect configuration provided.
-#define ARCHI_ERROR_INIT        -4  ///< Error: couldn't perform initialization (of a resource).
-#define ARCHI_ERROR_OPERATION   -5  ///< Error: couldn't perform an operation.
-#define ARCHI_ERROR_ALLOC       -6  ///< Error: couldn't allocate memory.
-#define ARCHI_ERROR_MAP         -7  ///< Error: couldn't map memory.
-#define ARCHI_ERROR_LOAD        -8  ///< Error: couldn't load shared library.
-#define ARCHI_ERROR_SYMBOL      -9  ///< Error: couldn't find a symbol in shared library.
-#define ARCHI_ERROR_INTERFACE   -10 ///< Error: required function is not available in interface.
-#define ARCHI_ERROR_RESOURCE    -11 ///< Error: required resource is not available.
-#define ARCHI_ERROR_FORMAT      -12 ///< Error: data format is incorrect.
 
+// incorrect input
+#define ARCHI_ERROR_MISUSE      -2  ///< Error: incorrect use of an interface (forbidden value passed).
+#define ARCHI_ERROR_CONFIG      -3  ///< Error: incorrect configuration provided.
+#define ARCHI_ERROR_FORMAT      -4  ///< Error: data format is incorrect.
+#define ARCHI_ERROR_INTERFACE   -5  ///< Error: required function is not available in interface.
+
+// operation failure
+#define ARCHI_ERROR_OPERATION   -6  ///< Error: couldn't perform an operation.
+#define ARCHI_ERROR_ALLOC       -7  ///< Error: couldn't allocate memory.
+#define ARCHI_ERROR_OPEN        -8  ///< Error: couldn't open file.
+#define ARCHI_ERROR_MAP         -9  ///< Error: couldn't map memory.
+#define ARCHI_ERROR_LOAD        -10 ///< Error: couldn't load shared library.
+#define ARCHI_ERROR_SYMBOL      -11 ///< Error: couldn't find a symbol in shared library.
+
+// user error code base
 #define ARCHI_ERROR_USER        -16 ///< First error code reserved for user.
 
 /**

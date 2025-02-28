@@ -20,52 +20,43 @@
 
 /**
  * @file
- * @brief Shared library operations.
+ * @brief File descriptors and mapped memory.
  */
 
 #pragma once
-#ifndef _ARCHI_UTIL_OS_LIB_FUN_H_
-#define _ARCHI_UTIL_OS_LIB_FUN_H_
+#ifndef _ARCHI_PLUGIN_FILES_H_
+#define _ARCHI_PLUGIN_FILES_H_
 
-#include <stdbool.h>
+#include "archi/app/context.typ.h"
 
-/**
- * @brief Load shared library.
- *
- * @return Handle of the loaded library, or NULL in case of failure.
- */
-void*
-archi_library_load(
-        const char *pathname, ///< [in] Path to the loaded library.
+ARCHI_CONTEXT_INIT_FUNC(archi_plugin_file_context_init);   ///< File context initialization function.
+ARCHI_CONTEXT_FINAL_FUNC(archi_plugin_file_context_final); ///< File context finalization function.
 
-        bool lazy,  ///< [in] Whether to perform lazy binding.
-        bool global ///< [in] Whether defined symbols are available in subsequently loaded libraries.
-);
+extern
+const archi_context_interface_t archi_plugin_file_context_interface; ///< File context interface functions.
 
 /**
- * @brief Unload shared library.
+ * @brief Alias name of file context interface.
  */
-void
-archi_library_unload(
-        void *handle ///< [in] Handle of the unloaded library.
-);
+#define ARCHI_PLUGIN_FILE_INTERFACE "file"
+
+/*****************************************************************************/
+
+ARCHI_CONTEXT_INIT_FUNC(archi_plugin_file_map_context_init);   ///< File mapping context initialization function.
+ARCHI_CONTEXT_FINAL_FUNC(archi_plugin_file_map_context_final); ///< File mapping context finalization function.
+
+extern
+const archi_context_interface_t archi_plugin_file_map_context_interface; ///< File mapping context interface functions.
 
 /**
- * @brief Get a symbol from shared library.
+ * @brief Alias name of file mapping context interface.
  */
-void*
-archi_library_get_symbol(
-        void *restrict handle, ///< [in] Handle of the library.
-        const char *restrict symbol ///< [in] Symbol name.
-);
+#define ARCHI_PLUGIN_FILE_MAP_INTERFACE "file_map"
 
 /**
- * @brief Initialize the logging subsystem for a library.
+ * @brief File mapping context configuration key -- pathname.
  */
-void
-archi_library_initialize_logging(
-        void *handle ///< [in] Library handle.
-);
+#define ARCHI_PLUGIN_FILE_MAP_CONFIG_KEY_PATHNAME "pathname"
 
-#endif // _ARCHI_UTIL_OS_LIB_FUN_H_
+#endif // _ARCHI_PLUGIN_FILES_H_
 

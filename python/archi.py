@@ -189,13 +189,15 @@ class Application:
         self._signals_.add((signame, n))
 
 
-    def load_library(self, key: str, pathname: str, flag_lazy: bool=False, flag_global: bool=False):
+    def load_library(self, key: str, pathname: str,
+                     flag_lazy: bool=False, flag_global: bool=False, flags: int=0):
         """Load a shared library and add it to the application.
 
         @param[in] key         : alias of the loaded library
         @param[in] pathname    : pathname of the library file
         @param[in] flag_lazy   : whether is lazy binding performed
         @param[in] flag_global : whether are the symbols made available to subsequent loaded libraries
+        @param[in] flags       : other flags for dlopen()
         """
         if not key:
             raise ValueError("null key")
@@ -204,7 +206,8 @@ class Application:
 
         self._libraries_[key] = {'pathname': pathname,
                                  'lazy': flag_lazy,
-                                 'global': flag_global}
+                                 'global': flag_global,
+                                 'flags': flags}
 
 
     def register_interface(self, key: str, symbol_name: str, library_key: str):
@@ -355,7 +358,7 @@ def fossilize(app: Application, pathname: str):
         all_strings = {}
 
         # Allocate the main structure
-        shm_config = allocate(process_config_shm_t)
+        shm_config = allocate(configuration_t)
 
         # Allocate the signal watch set
         if len(app._signals_) > 0:
@@ -400,9 +403,10 @@ def fossilize(app: Application, pathname: str):
 
             if address:
                 libraries[i].key = c.addressof(library_key)
-                libraries[i].pathname = c.addressof(pathname)
-                setattr(libraries[i], 'lazy', value['lazy'])
-                setattr(libraries[i], 'global', value['global'])
+                libraries[i].param.pathname = c.addressof(pathname)
+                libraries[i].param.lazy = value['lazy']
+                setattr(libraries[i].param, 'global', value['global'])
+                libraries[i].param.flags = value['flags']
 
         # Construct the configuration of interfaces
         for i, (key, value) in enumerate(app._interfaces_.items()):
@@ -477,7 +481,7 @@ def fossilize(app: Application, pathname: str):
     # Create the memory-mapped configuration file
     mm = create_mmap_file(pathname, total_size)
 
-    # Get shared memory address
+    # Get memory address
     address = c.addressof(c.c_char.from_buffer(mm))
 
     # Write configuration to memory
@@ -499,7 +503,7 @@ def create_mmap_file(pathname: str, size: int):
     @param[in] pathname : pathname of a created memory-mapped file
     @param[in] size     : size in bytes of the created memory-mapped file
     """
-    if size < c.sizeof(shm_header_t):
+    if size < c.sizeof(mmap_header_t):
         raise ValueError("File size is too small -- can't fit the header.")
 
     # Create a memory-mapped file
@@ -514,7 +518,7 @@ def create_mmap_file(pathname: str, size: int):
     # Close the file descriptor
     os.close(fd)
 
-    # Return the shared memory
+    # Return the memory
     return mm
 
 
@@ -524,12 +528,12 @@ def init_mmap_file_header(mm, size: int):
     @param[in] mm   : a memory-mapped file
     @param[in] size : size in bytes of the memory-mapped file
     """
-    shm_header = shm_header_t.from_buffer(mm)
+    mmap_header = mmap_header_t.from_buffer(mm)
 
     address = c.addressof(c.c_char.from_buffer(mm))
 
-    shm_header.shmaddr = address
-    shm_header.shmend = address + size
+    mmap_header.addr = address
+    mmap_header.end = address + size
 
 ###############################################################################
 ###############################################################################
@@ -632,7 +636,7 @@ class app_config_step_t(c.Structure):
 ###############################################################################
 
 class signal_watch_set_t(c.Structure):
-    """Flags designating which signals need to be watched.
+    """Set of signals to be watched.
     """
     _fields_ = [('f_SIGINT', c.c_bool), ('f_SIGQUIT', c.c_bool),
                 ('f_SIGTERM', c.c_bool), ('f_SIGCHLD', c.c_bool),
@@ -647,13 +651,20 @@ class signal_watch_set_t(c.Structure):
                 ('f_SIGRTMIN', c.c_bool * int(NUM_RT_SIGNALS))]
 
 
+class library_load_config_t(c.Structure):
+    """Parameters for archi_library_load().
+    """
+    _fields_ = [('pathname', c.c_char_p),
+                ('lazy', c.c_bool),
+                ('global', c.c_bool),
+                ('flags', c.c_int)]
+
+
 class app_loader_library_t(c.Structure):
     """Shared library loader configuration.
     """
     _fields_ = [('key', c.c_char_p),
-                ('pathname', c.c_char_p),
-                ('lazy', c.c_bool),
-                ('global', c.c_bool)]
+                ('param', library_load_config_t)]
 
 
 class app_loader_library_symbol_t(c.Structure):
@@ -675,17 +686,17 @@ class app_config_t(c.Structure):
                 ('num_steps', c.c_size_t)]
 
 
-class shm_header_t(c.Structure):
-    """Shared memory header.
+class mmap_header_t(c.Structure):
+    """Mapped memory header.
     """
-    _fields_ = [('shmaddr', c.c_void_p),
-                ('shmend', c.c_void_p)]
+    _fields_ = [('addr', c.c_void_p),
+                ('end', c.c_void_p)]
 
 
-class process_config_shm_t(c.Structure):
-    """Configuration of the process in shared memory.
+class configuration_t(c.Structure):
+    """Full application configuration in memory.
     """
-    _fields_ = [('shm_header', shm_header_t),
+    _fields_ = [('mmap_header', mmap_header_t),
                 ('signal_watch_set', c.POINTER(signal_watch_set_t)),
                 ('app_config', app_config_t)]
 

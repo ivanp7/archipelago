@@ -25,7 +25,7 @@
 
 #include "archi/app/loader.fun.h"
 #include "archi/app/instance.typ.h"
-#include "archi/util/os/lib.fun.h"
+#include "archi/util/os/library.fun.h"
 #include "archi/util/container.fun.h"
 #include "archi/util/error.def.h"
 
@@ -43,7 +43,7 @@ archi_app_add_library(
 
     archi_status_t code;
 
-    void *handle = archi_library_load(lib.pathname, lib.lazy, lib.global);
+    void *handle = archi_library_load(lib.param);
     if (handle == NULL)
         return ARCHI_ERROR_LOAD;
 

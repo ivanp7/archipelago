@@ -20,56 +20,49 @@
 
 /**
  * @file
- * @brief Context configuration types of the plugin.
+ * @brief Operations with shared libraries.
  */
 
 #pragma once
-#ifndef _ARCHI_PLUGIN_SHARED_MEMORY_CONFIG_TYP_H_
-#define _ARCHI_PLUGIN_SHARED_MEMORY_CONFIG_TYP_H_
+#ifndef _ARCHI_UTIL_OS_LIBRARY_FUN_H_
+#define _ARCHI_UTIL_OS_LIBRARY_FUN_H_
 
-#include <stdbool.h>
-
-/**
- * @brief Shared memory configuration.
- */
-typedef struct archi_shared_memory_config {
-    const char *file; ///< Pathname of a memory-mapped file.
-
-    bool readable; ///< Whether is shared memory readable.
-    bool writable; ///< Whether is shared memory writable.
-    bool shared;   ///< Whether updates to the mapping are visible to other processes.
-    int flags;     ///< Other mmap() flags.
-} archi_shared_memory_config_t;
+#include "archi/util/os/library.typ.h"
 
 /**
- * @brief Shared memory configuration key for the whole configuration structure.
+ * @brief Load shared library.
+ *
+ * @return Handle of the loaded library, or NULL in case of failure.
  */
-#define ARCHI_SHARED_MEMORY_CONFIG_KEY "config"
+void*
+archi_library_load(
+        archi_library_load_config_t config ///< [in] Shared library configuration.
+);
 
 /**
- * @brief Shared memory configuration key -- pathname of a memory-mapped file.
+ * @brief Unload shared library.
  */
-#define ARCHI_SHARED_MEMORY_CONFIG_KEY_FILE "file"
+void
+archi_library_unload(
+        void *handle ///< [in] Handle of the unloaded library.
+);
 
 /**
- * @brief Shared memory configuration key -- whether is shared memory readable.
+ * @brief Get a symbol from shared library.
  */
-#define ARCHI_SHARED_MEMORY_CONFIG_KEY_READABLE "readable"
+void*
+archi_library_get_symbol(
+        void *restrict handle, ///< [in] Handle of the library.
+        const char *restrict symbol ///< [in] Symbol name.
+);
 
 /**
- * @brief Shared memory configuration key -- whether is shared memory writable.
+ * @brief Initialize the logging subsystem for a library.
  */
-#define ARCHI_SHARED_MEMORY_CONFIG_KEY_WRITABLE "writable"
+void
+archi_library_initialize_logging(
+        void *handle ///< [in] Library handle.
+);
 
-/**
- * @brief Shared memory configuration key -- whether updates to the mapping are visible to other processes.
- */
-#define ARCHI_SHARED_MEMORY_CONFIG_KEY_SHARED "shared"
-
-/**
- * @brief Shared memory configuration key -- other mmap() flags.
- */
-#define ARCHI_SHARED_MEMORY_CONFIG_KEY_FLAGS "flags"
-
-#endif // _ARCHI_PLUGIN_SHARED_MEMORY_CONFIG_TYP_H_
+#endif // _ARCHI_UTIL_OS_LIBRARY_FUN_H_
 

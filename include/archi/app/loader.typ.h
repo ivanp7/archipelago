@@ -27,7 +27,7 @@
 #ifndef _ARCHI_APP_LOADER_TYP_H_
 #define _ARCHI_APP_LOADER_TYP_H_
 
-#include <stdbool.h>
+#include "archi/util/os/library.typ.h"
 
 /**
  * @brief Shared library loader configuration.
@@ -35,9 +35,7 @@
 typedef struct archi_app_loader_library {
     const char *key; ///< Library key.
 
-    const char *pathname; ///< Pathname of library file.
-    bool lazy;   ///< Whether to perform lazy binding.
-    bool global; ///< Whether defined symbols are available in subsequently loaded libraries.
+    archi_library_load_config_t param; ///< Parameters for archi_library_load().
 } archi_app_loader_library_t;
 
 /**

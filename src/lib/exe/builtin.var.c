@@ -25,26 +25,24 @@
 
 #include "archi/exe/builtin.var.h"
 
-#include "archi/plugin/files/interface.fun.h"
-#include "archi/plugin/shared_memory/interface.fun.h"
-#include "archi/plugin/shared_libraries/interface.fun.h"
-#include "archi/plugin/threads/interface.fun.h"
-#include "archi/plugin/threads/queue.fun.h"
+#include "archi/plugin/files.h"
+#include "archi/plugin/shared_libraries.h"
+#include "archi/plugin/threads.h"
 
 const archi_context_interface_t *const archi_builtin_interfaces[] = {
     &archi_plugin_file_context_interface,
+    &archi_plugin_file_map_context_interface,
     &archi_plugin_shared_library_context_interface,
-    &archi_plugin_shared_memory_context_interface,
     &archi_plugin_thread_group_context_interface,
     &archi_plugin_queue_context_interface,
 };
 
 const char *const archi_builtin_interfaces_keys[] = {
-    ARCHI_PLUGIN_FILE_CONTEXT_INTERFACE_KEY,
-    ARCHI_PLUGIN_SHARED_LIBRARY_CONTEXT_INTERFACE_KEY,
-    ARCHI_PLUGIN_SHARED_MEMORY_CONTEXT_INTERFACE_KEY,
-    ARCHI_PLUGIN_THREAD_GROUP_CONTEXT_INTERFACE_KEY,
-    ARCHI_PLUGIN_QUEUE_CONTEXT_INTERFACE_KEY,
+    ARCHI_PLUGIN_FILE_INTERFACE,
+    ARCHI_PLUGIN_FILE_MAP_INTERFACE,
+    ARCHI_PLUGIN_SHARED_LIBRARY_INTERFACE,
+    ARCHI_PLUGIN_THREAD_GROUP_INTERFACE,
+    ARCHI_PLUGIN_QUEUE_INTERFACE,
 };
 
 const size_t archi_builtin_interfaces_num_of = sizeof(archi_builtin_interfaces) /

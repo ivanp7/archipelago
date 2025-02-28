@@ -27,8 +27,7 @@
 #ifndef _ARCHI_PLUGIN_THREADS_QUEUE_FUN_H_
 #define _ARCHI_PLUGIN_THREADS_QUEUE_FUN_H_
 
-#include "archi/plugin/threads/config.typ.h"
-#include "archi/app/context.typ.h"
+#include "archi/util/os/queue.typ.h"
 
 struct archi_queue;
 
@@ -95,19 +94,6 @@ size_t
 archi_queue_element_size(
         struct archi_queue *queue ///< [in] Queue.
 );
-
-/*****************************************************************************/
-
-ARCHI_CONTEXT_INIT_FUNC(archi_plugin_queue_context_init);   ///< Lock-free queue initialization function.
-ARCHI_CONTEXT_FINAL_FUNC(archi_plugin_queue_context_final); ///< Lock-free queue finalization function.
-
-extern
-const archi_context_interface_t archi_plugin_queue_context_interface; ///< Lock-free queue interface functions.
-
-/**
- * @brief Alias name of lock-free queue interface.
- */
-#define ARCHI_PLUGIN_QUEUE_CONTEXT_INTERFACE_KEY "lockless_queue"
 
 #endif // _ARCHI_PLUGIN_THREADS_QUEUE_FUN_H_
 

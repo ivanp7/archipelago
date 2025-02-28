@@ -37,7 +37,7 @@
 #include "archi/util/error.def.h"
 #include "archi/util/print.fun.h"
 #include "archi/util/print.def.h"
-#include "archi/util/os/shm.fun.h"
+#include "archi/util/os/file.fun.h"
 #include "archi/util/os/signal.fun.h"
 
 #include <stdlib.h> // for atexit()
@@ -56,7 +56,7 @@ static
 struct {
     archi_args_t args; ///< Command line arguments.
 
-    const archi_process_config_shm_t **config; ///< Configurations of the process in shared memory.
+    const archi_process_config_mem_t **config; ///< Configurations of the process in shared memory.
 
     archi_signal_watch_set_t *signal_watch_set; ///< Signal watch set.
     struct archi_signal_management_context *signal_management; ///< Signal management context.
@@ -249,7 +249,7 @@ main(
     // Process the inputs sequentially
     for (size_t i = 0; i < archi_process.args.num_inputs; i++)
     {
-        archi_log_debug(M, "[%u] Processing input configuration '%s'...",
+        archi_log_debug(M, "---- [%u] Processing '%s'...",
                 (unsigned)i, archi_process.args.inputs[i]);
 
         // Load shared libraries
@@ -423,26 +423,34 @@ map_shared_memory(void)
         archi_log_debug(M, "> open('%s')", archi_process.args.inputs[i]);
 
         errno = 0;
-        int fd = archi_shm_open_file(archi_process.args.inputs[i], true, false); // open for read only
+        int fd = archi_file_open((archi_file_open_config_t){
+                .pathname = archi_process.args.inputs[i],
+                .readable = true,
+                .nonblock = true,
+                });
+
         if (fd == -1)
         {
             archi_log_error(M, "Couldn't open memory-mapped configuration file '%s': %s.",
                     archi_process.args.inputs[i], strerror(errno));
-            exit(ARCHI_EXIT_CODE(ARCHI_ERROR_RESOURCE));
+            exit(ARCHI_EXIT_CODE(ARCHI_ERROR_OPEN));
         }
 
         archi_log_debug(M, "> mmap('%s')", archi_process.args.inputs[i]);
 
         errno = 0;
-        archi_process.config[i] = (const archi_process_config_shm_t*)
-            archi_shm_map(fd, true, false, false, 0); // map private read-only copy
+        archi_process.config[i] = (const archi_process_config_mem_t*)
+            archi_file_map(fd, (archi_file_map_config_t){
+                    .readable = true,
+                    });
+
         if (archi_process.config[i] == NULL)
         {
             archi_log_error(M, "Couldn't map memory-mapped configuration file '%s': %s.",
                     archi_process.args.inputs[i], (errno != 0) ? strerror(errno) : "file is mapped at a wrong address");
 
             archi_log_debug(M, "> close('%s')", archi_process.args.inputs[i]);
-            archi_shm_close(fd);
+            archi_file_close(fd);
 
             exit(ARCHI_EXIT_CODE(ARCHI_ERROR_MAP));
         }
@@ -450,7 +458,7 @@ map_shared_memory(void)
         archi_log_debug(M, "> close('%s')", archi_process.args.inputs[i]);
 
         errno = 0;
-        if (!archi_shm_close(fd))
+        if (!archi_file_close(fd))
             archi_log_warning(M, "Couldn't close memory-mapped configuration file '%s': %s.",
                     archi_process.args.inputs[i], strerror(errno));
     }
@@ -474,7 +482,7 @@ unmap_shared_memory(void)
         archi_log_debug(M, "> munmap('%s')", archi_process.args.inputs[index]);
 
         errno = 0;
-        if (!archi_shm_unmap((archi_shm_header_t*)archi_process.config[index]))
+        if (!archi_file_unmap((archi_mmap_header_t*)archi_process.config[index]))
             archi_log_error(M, "Couldn't unmap memory-mapped configuration file '%s': %s.",
                     archi_process.args.inputs[index], strerror(errno));
     }
@@ -558,7 +566,7 @@ start_signal_management(void)
         if (archi_process.signal_management == NULL)
         {
             archi_log_error(M, "Couldn't start signal management: %s.", strerror(errno));
-            exit(ARCHI_EXIT_CODE(ARCHI_ERROR_INIT));
+            exit(ARCHI_EXIT_CODE(ARCHI_ERROR_OPERATION));
         }
     }
 }
@@ -729,7 +737,7 @@ load_shared_libraries(
     {
         archi_log_debug(M, "> load_library('%s', '%s')",
                 SAFE(archi_process.config[index]->app_config.libraries[i].key),
-                SAFE(archi_process.config[index]->app_config.libraries[i].pathname));
+                SAFE(archi_process.config[index]->app_config.libraries[i].param.pathname));
 
         archi_status_t code = archi_app_add_library(&archi_process.app,
                 archi_process.config[index]->app_config.libraries[i]);

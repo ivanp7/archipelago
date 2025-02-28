@@ -20,44 +20,38 @@
 
 /**
  * @file
- * @brief Context configuration types of the plugin.
+ * @brief Thread groups and lockless queues.
  */
 
 #pragma once
-#ifndef _ARCHI_PLUGIN_SHARED_LIBRARIES_CONFIG_TYP_H_
-#define _ARCHI_PLUGIN_SHARED_LIBRARIES_CONFIG_TYP_H_
+#ifndef _ARCHI_PLUGIN_THREADS_H_
+#define _ARCHI_PLUGIN_THREADS_H_
 
-#include <stdbool.h>
+#include "archi/app/context.typ.h"
 
-/**
- * @brief Shared library configuration.
- */
-typedef struct archi_shared_library_config {
-    const char *pathname; ///< Pathname of library file.
+ARCHI_CONTEXT_INIT_FUNC(archi_plugin_thread_group_context_init);   ///< Threaded processing context initialization function.
+ARCHI_CONTEXT_FINAL_FUNC(archi_plugin_thread_group_context_final); ///< Threaded processing context finalization function.
 
-    bool lazy;   ///< Whether to perform lazy binding.
-    bool global; ///< Whether defined symbols are available in subsequently loaded libraries.
-} archi_shared_library_config_t;
+extern
+const archi_context_interface_t archi_plugin_thread_group_context_interface; ///< Threaded processing context interface functions.
 
 /**
- * @brief Shared library configuration key for the whole configuration structure.
+ * @brief Alias name of threaded processing context interface.
  */
-#define ARCHI_SHARED_LIBRARY_CONFIG_KEY "config"
+#define ARCHI_PLUGIN_THREAD_GROUP_INTERFACE "thread_group"
+
+/*****************************************************************************/
+
+ARCHI_CONTEXT_INIT_FUNC(archi_plugin_queue_context_init);   ///< Lock-free queue initialization function.
+ARCHI_CONTEXT_FINAL_FUNC(archi_plugin_queue_context_final); ///< Lock-free queue finalization function.
+
+extern
+const archi_context_interface_t archi_plugin_queue_context_interface; ///< Lock-free queue interface functions.
 
 /**
- * @brief Shared library context configuration key -- path to library file.
+ * @brief Alias name of lock-free queue interface.
  */
-#define ARCHI_SHARED_LIBRARY_CONFIG_KEY_PATHNAME "pathname"
+#define ARCHI_PLUGIN_QUEUE_INTERFACE "lockless_queue"
 
-/**
- * @brief Shared library context configuration key -- whether to perform lazy binding.
- */
-#define ARCHI_SHARED_LIBRARY_CONFIG_KEY_LAZY "lazy"
-
-/**
- * @brief Shared library context configuration key -- whether defined symbols are available in subsequently loaded libraries.
- */
-#define ARCHI_SHARED_LIBRARY_CONFIG_KEY_GLOBAL "global"
-
-#endif // _ARCHI_PLUGIN_SHARED_LIBRARIES_CONFIG_TYP_H_
+#endif // _ARCHI_PLUGIN_THREADS_H_
 

@@ -20,12 +20,12 @@
 
 /**
  * @file
- * @brief Context interface of the plugin.
+ * @brief Shared library handles.
  */
 
 #pragma once
-#ifndef _ARCHI_PLUGIN_SHARED_LIBRARIES_INTERFACE_FUN_H_
-#define _ARCHI_PLUGIN_SHARED_LIBRARIES_INTERFACE_FUN_H_
+#ifndef _ARCHI_PLUGIN_SHARED_LIBRARIES_H_
+#define _ARCHI_PLUGIN_SHARED_LIBRARIES_H_
 
 #include "archi/app/context.typ.h"
 
@@ -39,7 +39,7 @@ const archi_context_interface_t archi_plugin_shared_library_context_interface; /
 /**
  * @brief Alias name of shared library context interface.
  */
-#define ARCHI_PLUGIN_SHARED_LIBRARY_CONTEXT_INTERFACE_KEY "shared_library"
+#define ARCHI_PLUGIN_SHARED_LIBRARY_INTERFACE "shared_library"
 
-#endif // _ARCHI_PLUGIN_SHARED_LIBRARIES_INTERFACE_FUN_H_
+#endif // _ARCHI_PLUGIN_SHARED_LIBRARIES_H_
 

@@ -23,17 +23,20 @@
  * @brief OS-specific utilities.
  */
 
-#include "archi/util/os/shm.fun.h"
-#include "archi/util/os/lib.fun.h"
+#include "archi/util/os/file.fun.h"
+#include "archi/util/os/library.fun.h"
 #include "archi/util/os/signal.fun.h"
+#include "archi/util/os/threads.fun.h"
+#include "archi/util/os/queue.fun.h"
+#include "archi/util/error.def.h"
 #include "archi/util/print.fun.h"
 #include "archi/util/value.typ.h"
 
-#include <stdlib.h> // for malloc()
+#include <stdlib.h> // for malloc(), free()
+#include <string.h> // for memcpy(), memset()
 
-#ifndef __STDC_NO_ATOMICS__
-#  include <stdatomic.h> // for atomic_flag
-#endif
+#include <stdatomic.h> // for atomic_flag
+#include <threads.h> // for thrd* functions and types
 
 #include <fcntl.h> // for open()
 #include <unistd.h> // for close()
@@ -45,110 +48,131 @@
 #include <pthread.h> // for pthread_t, pthread_create(), phtread_join()
 #include <time.h> // for timespec
 
+#include <stdint.h> // for uint_fast*_t
+#include <limits.h> // for CHAR_BIT
+
+#include <assert.h>
+
+/*****************************************************************************/
+
 int
-archi_shm_open_file(
-        const char *pathname,
-
-        bool readable,
-        bool writable)
+archi_file_open(
+        archi_file_open_config_t config)
 {
-    int flags = O_NONBLOCK;
+    int flags = config.flags;
 
-    if (readable && writable)
+    if (config.readable && config.writable)
         flags |= O_RDWR;
-    else if (readable)
+    else if (config.readable)
         flags |= O_RDONLY;
     else
         flags |= O_WRONLY;
 
-    return open(pathname, flags);
+    if (config.nonblock)
+        flags |= O_NONBLOCK;
+
+    return open(config.pathname, flags);
 }
 
 bool
-archi_shm_close(
+archi_file_close(
         int fd)
 {
     return close(fd) == 0;
 }
 
-archi_shm_header_t*
-archi_shm_map(
+archi_mmap_header_t*
+archi_file_map(
         int fd,
 
-        bool readable,
-        bool writable,
-        bool shared,
-        int flags)
+        archi_file_map_config_t config)
 {
-    int prot = (readable ? PROT_READ : 0) | (writable ? PROT_WRITE : 0);
-    int all_flags = (shared ? MAP_SHARED_VALIDATE : MAP_PRIVATE) | flags;
+    int prot = (config.readable ? PROT_READ : 0) | (config.writable ? PROT_WRITE : 0);
+    int all_flags = (config.shared ? MAP_SHARED_VALIDATE : MAP_PRIVATE) | config.flags;
 
-    archi_shm_header_t *shm;
-    archi_shm_header_t header;
-    size_t size;
+    archi_mmap_header_t *mm;
+    archi_mmap_header_t header;
 
-    // Map the memory the initial time to extract its header
+    if (config.size > 0)
     {
-        shm = mmap(NULL, sizeof(*shm), prot, all_flags, fd, 0);
-        if (shm == MAP_FAILED)
+        mm = mmap(NULL, config.size, prot, all_flags, fd, config.offset);
+        if (mm == MAP_FAILED)
+            return NULL;
+    }
+    else
+    {
+        // Map the memory the initial time to extract its header
+        mm = mmap(NULL, sizeof(*mm), prot, all_flags, fd, config.offset);
+        if (mm == MAP_FAILED)
             return NULL;
 
-        header = *shm;
-        if (header.shmaddr > header.shmend)
-            goto failure;
+        header = *mm;
+        if (header.addr > header.end)
+        {
+            munmap(mm, sizeof(*mm));
+            return NULL;
+        }
 
-        size = (char*)header.shmend - (char*)header.shmaddr;
-        if (size < sizeof(*shm))
-            goto failure;
-    }
+        config.size = (char*)header.end - (char*)header.addr;
+        if (config.size < sizeof(*mm))
+        {
+            munmap(mm, sizeof(*mm));
+            return NULL;
+        }
 
-    // Remap the memory of the correct size at the correct address
-    {
-        munmap(shm, sizeof(*shm));
+        // Remap the memory of the correct size at the correct address
+        munmap(mm, sizeof(*mm));
 
-        shm = mmap(header.shmaddr, size, prot, all_flags | MAP_FIXED_NOREPLACE, fd, 0);
-        if (shm == MAP_FAILED)
+        mm = mmap(header.addr, config.size, prot, all_flags | MAP_FIXED_NOREPLACE, fd, config.offset);
+        if (mm == MAP_FAILED)
             return NULL;
 
-        if (shm != header.shmaddr)
-            goto failure;
+        if (mm != header.addr)
+        {
+            munmap(mm, config.size);
+            return NULL;
+        }
     }
 
-    return shm;
-
-failure:
-    munmap(shm, sizeof(*shm));
-
-    return NULL;
+    return mm;
 }
 
 bool
-archi_shm_unmap(
-        archi_shm_header_t *shm)
+archi_file_unmap(
+        archi_mmap_header_t *mm)
 {
-    if (shm == NULL)
+    if (mm == NULL)
         return false;
-    else if (shm->shmaddr > shm->shmend)
+    else if (mm->addr > mm->end)
         return false;
 
-    size_t size = (char*)shm->shmend - (char*)shm->shmaddr;
+    size_t size = (char*)mm->end - (char*)mm->addr;
 
-    return munmap(shm, size) == 0;
+    return munmap(mm, size) == 0;
 }
 
 /*****************************************************************************/
 
 void*
 archi_library_load(
-        const char *pathname,
-
-        bool lazy,
-        bool global)
+        archi_library_load_config_t config)
 {
-    if (pathname == NULL)
+    if (config.pathname == NULL)
         return NULL;
 
-    return dlopen(pathname, (lazy ? RTLD_LAZY : RTLD_NOW) | (global ? RTLD_GLOBAL : RTLD_LOCAL));
+    int flags = config.flags;
+
+    if (config.lazy)
+        flags |= RTLD_LAZY;
+    else
+        flags |= RTLD_NOW;
+
+    if (config.global)
+        flags |= RTLD_GLOBAL;
+    else
+        flags |= RTLD_LOCAL;
+
+    return dlopen(config.pathname, flags);
 }
 
 void
@@ -248,7 +272,7 @@ archi_signal_watch_set_join(
 
 #undef JOIN_SIGNAL
 
-    for (int i = 0; i < archi_signal_number_of_rt_signals(); i++)
+    for (size_t i = 0; i < archi_signal_number_of_rt_signals(); i++)
         out->f_SIGRTMIN[i] = out->f_SIGRTMIN[i] || in->f_SIGRTMIN[i];
 }
 
@@ -292,7 +316,7 @@ archi_signal_watch_set_alloc(void)
 
 #undef INIT_SIGNAL
 
-    for (int i = 0; i < archi_signal_number_of_rt_signals(); i++)
+    for (size_t i = 0; i < archi_signal_number_of_rt_signals(); i++)
         signals->f_SIGRTMIN[i] = false;
 
     return signals;
@@ -338,7 +362,7 @@ archi_signal_flags_alloc(void)
 
 #undef INIT_SIGNAL
 
-    for (int i = 0; i < archi_signal_number_of_rt_signals(); i++)
+    for (size_t i = 0; i < archi_signal_number_of_rt_signals(); i++)
         ARCHI_SIGNAL_INIT_FLAG(signals->f_SIGRTMIN[i]);
 
     return signals;
@@ -484,7 +508,7 @@ archi_signal_management_start(
 
 #undef ADD_SIGNAL
 
-        for (int i = 0; i < archi_signal_number_of_rt_signals(); i++)
+        for (size_t i = 0; i < archi_signal_number_of_rt_signals(); i++)
         {
             if (signals->f_SIGRTMIN[i])
                 sigaddset(&context->set, SIGRTMIN+i);
@@ -574,5 +598,722 @@ archi_signal_management_set_handler(
 #ifndef __STDC_NO_ATOMICS__
     atomic_flag_clear_explicit(&context->spinlock, memory_order_release); // unlock
 #endif
+}
+
+/*****************************************************************************/
+
+struct archi_thread_group_context {
+    struct {
+        thrd_t *threads;
+        archi_thread_group_config_t config;
+
+        atomic_flag busy;
+
+        atomic_bool ping_flag;
+        atomic_bool pong_flag;
+        bool ping_sense;
+        bool pong_sense;
+
+        cnd_t ping_cnd;
+        mtx_t ping_mtx;
+
+        cnd_t pong_cnd;
+        mtx_t pong_mtx;
+    } persistent;
+
+    struct {
+        archi_thread_group_job_t job;
+        archi_thread_group_callback_t callback;
+        archi_thread_group_exec_config_t config;
+
+        atomic_uint done_tasks;
+        atomic_ushort thread_counter;
+    } current;
+
+    bool terminate;
+};
+
+struct archi_thread_arg {
+    struct archi_thread_group_context *context;
+    size_t thread_idx;
+};
+
+static
+int
+archi_thread(
+        void *arg)
+{
+    struct archi_thread_group_context *context;
+    size_t thread_idx;
+    {
+        struct archi_thread_arg *thread_arg = arg;
+        assert(thread_arg != NULL);
+
+        context = thread_arg->context;
+        thread_idx = thread_arg->thread_idx;
+
+        // Free a temporary object
+        free(thread_arg);
+    }
+
+    size_t thread_counter_last = context->persistent.config.num_threads - 1;
+    bool use_ping_cnd = !context->persistent.config.busy_wait;
+
+    bool ping_sense = false, pong_sense = false;
+
+    for (;;)
+    {
+        ping_sense = !ping_sense;
+        pong_sense = !pong_sense;
+
+        if (use_ping_cnd)
+        {
+#ifndef NDEBUG
+            int res =
+#endif
+                mtx_lock(&context->persistent.ping_mtx);
+            assert(res == thrd_success);
+        }
+
+        // Wait until signal
+        while (atomic_load_explicit(&context->persistent.ping_flag,
+                    memory_order_acquire) != ping_sense)
+        {
+            if (use_ping_cnd)
+            {
+#ifndef NDEBUG
+                int res =
+#endif
+                    cnd_wait(&context->persistent.ping_cnd,
+                            &context->persistent.ping_mtx);
+                assert(res == thrd_success);
+            }
+        }
+
+        if (use_ping_cnd)
+        {
+#ifndef NDEBUG
+            int res =
+#endif
+                mtx_unlock(&context->persistent.ping_mtx);
+            assert(res == thrd_success);
+        }
+
+        if (context->terminate)
+            break;
+
+        // Copy the current job
+        archi_thread_group_job_t job = context->current.job;
+        size_t batch_size = context->current.config.batch_size;
+
+        // Acquire first task
+        size_t task_idx = atomic_fetch_add_explicit(
+                &context->current.done_tasks, batch_size, memory_order_relaxed);
+        size_t remaining_tasks = batch_size;
+
+        // Loop until no subtasks left
+        while (task_idx < job.num_tasks)
+        {
+            // Execute concurrent processing function
+            job.function(job.data, task_idx, thread_idx);
+            remaining_tasks--;
+
+            // Acquire next task
+            if (remaining_tasks > 0)
+                task_idx++;
+            else
+            {
+                task_idx = atomic_fetch_add_explicit(
+                        &context->current.done_tasks, batch_size, memory_order_relaxed);
+                remaining_tasks = batch_size;
+            }
+        }
+
+        // Check if the current thread is the last
+        if (atomic_fetch_add_explicit(&context->current.thread_counter, 1,
+                    memory_order_acq_rel) == thread_counter_last)
+        {
+            // Wake master thread or execute callback function
+            atomic_store_explicit(&context->persistent.pong_flag,
+                    pong_sense, memory_order_release);
+
+            if (context->current.callback.function != NULL)
+                context->current.callback.function(
+                        context->current.callback.data, job.num_tasks, thread_idx);
+            else if (!context->current.config.busy_wait)
+            {
+                {
+#ifndef NDEBUG
+                    int res =
+#endif
+                        mtx_lock(&context->persistent.pong_mtx);
+                    assert(res == thrd_success);
+                }
+                cnd_broadcast(&context->persistent.pong_cnd);
+                {
+#ifndef NDEBUG
+                    int res =
+#endif
+                        mtx_unlock(&context->persistent.pong_mtx);
+                    assert(res == thrd_success);
+                }
+            }
+
+            // Threads are no longer busy
+            atomic_flag_clear_explicit(&context->persistent.busy, memory_order_release);
+        }
+    }
+
+    return 0;
+}
+
+struct archi_thread_group_context*
+archi_thread_group_start(
+        archi_thread_group_config_t config,
+
+        archi_status_t *code)
+{
+    archi_status_t status = 0;
+
+    size_t thread_idx = 0;
+
+    // Initialize threads context
+    struct archi_thread_group_context *context = malloc(sizeof(*context));
+    if (context == NULL)
+    {
+        status = ARCHI_ERROR_ALLOC;
+        goto failure;
+    }
+
+    *context = (struct archi_thread_group_context){.persistent = {
+        .config = config,
+        .busy = ATOMIC_FLAG_INIT,
+    }};
+
+    // Create mutexes and condition variables
+    if (!config.busy_wait)
+    {
+        int res;
+
+        res = cnd_init(&context->persistent.ping_cnd);
+        if (res != thrd_success)
+        {
+            if (res == thrd_nomem)
+                status = ARCHI_ERROR_ALLOC;
+            else
+                status = ARCHI_ERROR_UNKNOWN;
+
+            goto failure;
+        }
+
+        res = mtx_init(&context->persistent.ping_mtx, mtx_plain);
+        if (res != thrd_success)
+        {
+            cnd_destroy(&context->persistent.ping_cnd);
+
+            status = ARCHI_ERROR_UNKNOWN;
+            goto failure;
+        }
+    }
+
+    {
+        int res;
+
+        res = cnd_init(&context->persistent.pong_cnd);
+        if (res != thrd_success)
+        {
+            cnd_destroy(&context->persistent.ping_cnd);
+            mtx_destroy(&context->persistent.ping_mtx);
+
+            if (res == thrd_nomem)
+                status = ARCHI_ERROR_ALLOC;
+            else
+                status = ARCHI_ERROR_UNKNOWN;
+
+            goto failure;
+        }
+
+        res = mtx_init(&context->persistent.pong_mtx, mtx_plain);
+        if (res != thrd_success)
+        {
+            cnd_destroy(&context->persistent.ping_cnd);
+            mtx_destroy(&context->persistent.ping_mtx);
+            cnd_destroy(&context->persistent.pong_cnd);
+
+            status = ARCHI_ERROR_UNKNOWN;
+            goto failure;
+        }
+    }
+
+    // Create threads
+    if (config.num_threads > 0)
+    {
+        context->persistent.threads = malloc(sizeof(*context->persistent.threads) * config.num_threads);
+        if (context->persistent.threads == NULL)
+        {
+            status = ARCHI_ERROR_ALLOC;
+            goto failure;
+        }
+    }
+
+    for (thread_idx = 0; thread_idx < config.num_threads; thread_idx++)
+    {
+        struct archi_thread_arg *thread_arg = malloc(sizeof(*thread_arg));
+        if (thread_arg == NULL)
+        {
+            status = ARCHI_ERROR_ALLOC;
+            goto failure;
+        }
+
+        *thread_arg = (struct archi_thread_arg){.context = context, .thread_idx = thread_idx};
+
+        int res = thrd_create(&context->persistent.threads[thread_idx], archi_thread, thread_arg);
+        if (res != thrd_success)
+        {
+            free(thread_arg);
+
+            if (res == thrd_nomem)
+                status = ARCHI_ERROR_ALLOC;
+            else
+                status = ARCHI_ERROR_UNKNOWN;
+
+            goto failure;
+        }
+    }
+
+    if (code != NULL)
+        *code = status;
+
+    return context;
+
+failure:
+    if (context != NULL)
+    {
+        context->persistent.config.num_threads = thread_idx; // number of created threads
+        archi_thread_group_stop(context);
+    }
+
+    if (code != NULL)
+        *code = status;
+
+    return NULL;
+}
+
+void
+archi_thread_group_stop(
+        struct archi_thread_group_context *context)
+{
+    if (context == NULL)
+        return;
+
+    // Wake threads
+    context->terminate = true;
+
+    atomic_store_explicit(&context->persistent.ping_flag,
+            !context->persistent.ping_sense, memory_order_release);
+
+    bool use_ping_cnd = !context->persistent.config.busy_wait;
+
+    if (use_ping_cnd)
+    {
+        {
+#ifndef NDEBUG
+            int res =
+#endif
+                mtx_lock(&context->persistent.ping_mtx);
+            assert(res == thrd_success);
+        }
+        cnd_broadcast(&context->persistent.ping_cnd);
+        {
+#ifndef NDEBUG
+            int res =
+#endif
+                mtx_unlock(&context->persistent.ping_mtx);
+            assert(res == thrd_success);
+        }
+    }
+
+    // Join threads
+    for (size_t i = 0; i < context->persistent.config.num_threads; i++)
+        thrd_join(context->persistent.threads[i], (int*)NULL);
+
+    // Destroy mutexes, condition variables, and free memory
+    free(context->persistent.threads);
+
+    if (use_ping_cnd)
+    {
+        cnd_destroy(&context->persistent.ping_cnd);
+        mtx_destroy(&context->persistent.ping_mtx);
+    }
+
+    {
+        cnd_destroy(&context->persistent.pong_cnd);
+        mtx_destroy(&context->persistent.pong_mtx);
+    }
+
+    free(context);
+}
+
+archi_status_t
+archi_thread_group_execute(
+        struct archi_thread_group_context *context,
+
+        archi_thread_group_job_t job,
+        archi_thread_group_callback_t callback,
+        archi_thread_group_exec_config_t config)
+{
+    if ((context == NULL) || (job.function == NULL))
+        return ARCHI_ERROR_MISUSE;
+
+    if (job.num_tasks == 0)
+        return 0;
+
+    if (context->persistent.config.num_threads > 0)
+    {
+        // Check if threads are busy, and set the flag if not
+        if (atomic_flag_test_and_set_explicit(&context->persistent.busy, memory_order_acquire))
+            return 1;
+
+        // Assign the job
+        if (config.batch_size == 0) // automatic batch size
+            config.batch_size = (job.num_tasks - 1) / context->persistent.config.num_threads + 1;
+
+        context->current.job = job;
+        context->current.callback = callback;
+        context->current.config = config;
+
+        // Initialize counters and flags
+        context->current.done_tasks = 0;
+        context->current.thread_counter = 0;
+
+        bool ping_sense = context->persistent.ping_sense =
+            !context->persistent.ping_sense;
+        bool pong_sense = context->persistent.pong_sense =
+            !context->persistent.pong_sense;
+
+        // Wake slave threads
+        atomic_store_explicit(&context->persistent.ping_flag, ping_sense, memory_order_release);
+
+        if (!context->persistent.config.busy_wait)
+        {
+            {
+#ifndef NDEBUG
+                int res =
+#endif
+                    mtx_lock(&context->persistent.ping_mtx);
+                assert(res == thrd_success);
+            }
+            cnd_broadcast(&context->persistent.ping_cnd);
+            {
+#ifndef NDEBUG
+                int res =
+#endif
+                    mtx_unlock(&context->persistent.ping_mtx);
+                assert(res == thrd_success);
+            }
+        }
+
+        if (callback.function == NULL)
+        {
+            if (!config.busy_wait)
+            {
+#ifndef NDEBUG
+                int res =
+#endif
+                    mtx_lock(&context->persistent.pong_mtx);
+                assert(res == thrd_success);
+            }
+
+            // Wait until all tasks are done
+            while (atomic_load_explicit(&context->persistent.pong_flag,
+                        memory_order_acquire) != pong_sense)
+            {
+                if (!config.busy_wait)
+                {
+#ifndef NDEBUG
+                    int res =
+#endif
+                        cnd_wait(&context->persistent.pong_cnd,
+                                &context->persistent.pong_mtx);
+                    assert(res == thrd_success);
+                }
+            }
+
+            if (!config.busy_wait)
+            {
+#ifndef NDEBUG
+                int res =
+#endif
+                    mtx_unlock(&context->persistent.pong_mtx);
+                assert(res == thrd_success);
+            }
+        }
+    }
+    else
+    {
+        for (size_t task_idx = 0; task_idx < job.num_tasks; task_idx++)
+            job.function(job.data, task_idx, 0);
+
+        if (callback.function != NULL)
+            callback.function(callback.data, job.num_tasks, 0);
+    }
+
+    return 0;
+}
+
+archi_thread_group_config_t
+archi_thread_group_config(
+        const struct archi_thread_group_context *context)
+{
+    if (context == NULL)
+        return (archi_thread_group_config_t){0};
+
+    return context->persistent.config;
+}
+
+/*****************************************************************************/
+
+#ifdef ARCHI_FEATURE_QUEUE32
+
+typedef uint_fast32_t archi_queue_count_t;
+typedef uint_fast64_t archi_queue_count2_t;
+
+typedef atomic_uint_fast32_t archi_queue_atomic_count_t;
+typedef atomic_uint_fast64_t archi_queue_atomic_count2_t;
+
+#else
+
+typedef uint_fast16_t archi_queue_count_t;
+typedef uint_fast32_t archi_queue_count2_t;
+
+typedef atomic_uint_fast16_t archi_queue_atomic_count_t;
+typedef atomic_uint_fast32_t archi_queue_atomic_count2_t;
+
+#endif
+
+struct archi_queue {
+    char *buffer;
+
+    struct {
+        size_t full;
+        size_t used;
+    } element_size;
+
+    archi_queue_count_t mask_bits;
+
+    archi_queue_atomic_count_t *push_count, *pop_count;
+    archi_queue_atomic_count2_t total_push_count, total_pop_count;
+};
+
+struct archi_queue*
+archi_queue_alloc(
+        archi_queue_config_t config)
+{
+    if (config.capacity_log2 > sizeof(archi_queue_count_t) * CHAR_BIT)
+        return NULL;
+
+    if ((config.element_size > 0) && (config.element_alignment_log2 >= sizeof(size_t) * CHAR_BIT))
+        return NULL;
+
+    struct archi_queue *queue = malloc(sizeof(*queue));
+    if (queue == NULL)
+        return NULL;
+
+    size_t capacity = (size_t)1 << config.capacity_log2;
+
+    if (config.element_size > 0)
+    {
+        size_t element_alignment = (size_t)1 << config.element_alignment_log2;
+        size_t element_size_full = (config.element_size + (element_alignment - 1)) & ~(element_alignment - 1);
+
+        size_t memory_size = element_size_full * capacity;
+        if (memory_size / capacity != element_size_full) // overflow
+        {
+            free(queue);
+            return NULL;
+        }
+
+        queue->buffer = aligned_alloc(element_alignment, memory_size);
+        if (queue->buffer == NULL)
+        {
+            free(queue);
+            return NULL;
+        }
+
+        queue->element_size.full = element_size_full;
+        queue->element_size.used = config.element_size;
+    }
+    else
+    {
+        queue->buffer = NULL;
+        queue->element_size.full = 0;
+        queue->element_size.used = 0;
+    }
+
+    queue->mask_bits = config.capacity_log2;
+
+    {
+        size_t memory_size = sizeof(*queue->push_count) * capacity;
+
+        if (memory_size / capacity != sizeof(*queue->push_count))
+        {
+            free(queue->buffer);
+            free(queue);
+            return NULL;
+        }
+
+        queue->push_count = malloc(memory_size);
+        if (queue->push_count == NULL)
+        {
+            free(queue->buffer);
+            free(queue);
+            return NULL;
+        }
+
+        queue->pop_count = malloc(memory_size);
+        if (queue->pop_count == NULL)
+        {
+            free(queue->push_count);
+            free(queue->buffer);
+            free(queue);
+            return NULL;
+        }
+    }
+
+    for (size_t i = 0; i < capacity; i++)
+    {
+        atomic_init(&queue->push_count[i], 0);
+        atomic_init(&queue->pop_count[i], 0);
+    }
+
+    atomic_init(&queue->total_push_count, 0);
+    atomic_init(&queue->total_pop_count, 0);
+
+    return queue;
+}
+
+void
+archi_queue_free(
+        struct archi_queue *queue)
+{
+    if (queue != NULL)
+    {
+        free(queue->push_count);
+        free(queue->pop_count);
+        free(queue->buffer);
+
+        free(queue);
+    }
+}
+
+bool
+archi_queue_push(
+        struct archi_queue *queue,
+        const void *value)
+{
+    if (queue == NULL)
+        return false;
+
+    archi_queue_count_t mask_bits = queue->mask_bits;
+    archi_queue_count_t mask = ((archi_queue_count_t)1 << mask_bits) - 1;
+
+    archi_queue_count2_t total_push_count = atomic_load_explicit(&queue->total_push_count, memory_order_relaxed);
+
+    for (;;)
+    {
+        archi_queue_count_t index = total_push_count & mask;
+
+        archi_queue_count_t push_count = atomic_load_explicit(&queue->push_count[index], memory_order_acquire);
+        archi_queue_count_t pop_count = atomic_load_explicit(&queue->pop_count[index], memory_order_relaxed);
+
+        if (push_count != pop_count) // queue is full
+            return false;
+
+        archi_queue_count_t revolution_count = total_push_count >> mask_bits;
+        if (revolution_count == push_count) // current turn is ours
+        {
+            // Try to acquire the slot
+            if (atomic_compare_exchange_weak_explicit(&queue->total_push_count,
+                        &total_push_count, total_push_count + 1,
+                        memory_order_relaxed, memory_order_relaxed))
+            {
+                if (queue->buffer != NULL)
+                {
+                    if (value != NULL)
+                        memcpy(queue->buffer + queue->element_size.full * index, value, queue->element_size.used);
+                    else
+                        memset(queue->buffer + queue->element_size.full * index, 0, queue->element_size.used);
+                }
+
+                atomic_store_explicit(&queue->push_count[index], push_count + 1, memory_order_release);
+                return true;
+            }
+        }
+        else
+            total_push_count = atomic_load_explicit(&queue->total_push_count, memory_order_relaxed);
+    }
+}
+
+bool
+archi_queue_pop(
+        struct archi_queue *queue,
+        void *value)
+{
+    if (queue == NULL)
+        return false;
+
+    archi_queue_count_t mask_bits = queue->mask_bits;
+    archi_queue_count_t mask = ((archi_queue_count_t)1 << mask_bits) - 1;
+
+    archi_queue_count2_t total_pop_count = atomic_load_explicit(&queue->total_pop_count, memory_order_relaxed);
+
+    for (;;)
+    {
+        archi_queue_count_t index = total_pop_count & mask;
+
+        archi_queue_count_t pop_count = atomic_load_explicit(&queue->pop_count[index], memory_order_acquire);
+        archi_queue_count_t push_count = atomic_load_explicit(&queue->push_count[index], memory_order_relaxed);
+
+        if (pop_count == push_count) // queue is empty
+            return false;
+
+        archi_queue_count_t revolution_count = total_pop_count >> mask_bits;
+        if (revolution_count == pop_count) // current turn is ours
+        {
+            // Try to acquire the slot
+            if (atomic_compare_exchange_weak_explicit(&queue->total_pop_count,
+                        &total_pop_count, total_pop_count + 1,
+                        memory_order_relaxed, memory_order_relaxed))
+            {
+                if ((queue->buffer != NULL) && (value != NULL))
+                    memcpy(value, queue->buffer + queue->element_size.full * index, queue->element_size.used);
+
+                atomic_store_explicit(&queue->pop_count[index], pop_count + 1, memory_order_release);
+                return true;
+            }
+        }
+        else
+            total_pop_count = atomic_load_explicit(&queue->total_pop_count, memory_order_relaxed);
+    }
+}
+
+size_t
+archi_queue_capacity(
+        struct archi_queue *queue)
+{
+    if (queue == NULL)
+        return 0;
+
+    return (size_t)1 << queue->mask_bits;
+}
+
+size_t
+archi_queue_element_size(
+        struct archi_queue *queue)
+{
+    if (queue == NULL)
+        return 0;
+
+    return queue->element_size.used;
 }
 

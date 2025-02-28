@@ -23,9 +23,8 @@
  * @brief Built-in plugin for loading shared libraries.
  */
 
-#include "archi/plugin/shared_libraries/interface.fun.h"
-#include "archi/plugin/shared_libraries/config.typ.h"
-#include "archi/util/os/lib.fun.h"
+#include "archi/plugin/shared_libraries.h"
+#include "archi/util/os/library.fun.h"
 #include "archi/util/list.fun.h"
 #include "archi/util/error.def.h"
 
@@ -37,9 +36,9 @@ ARCHI_LIST_ACT_FUNC(archi_plugin_shared_library_context_init_config)
     (void) position;
 
     archi_list_node_named_value_t *config_node = (archi_list_node_named_value_t*)node;
-    archi_shared_library_config_t *config = data;
+    archi_library_load_config_t *config = data;
 
-    if (strcmp(config_node->base.name, ARCHI_SHARED_LIBRARY_CONFIG_KEY) == 0)
+    if (strcmp(config_node->base.name, ARCHI_LIBRARY_LOAD_CONFIG_KEY) == 0)
     {
         if ((config_node->value.type != ARCHI_VALUE_DATA) || (config_node->value.ptr == NULL) ||
                 (config_node->value.size != sizeof(*config)) || (config_node->value.num_of == 0))
@@ -48,7 +47,7 @@ ARCHI_LIST_ACT_FUNC(archi_plugin_shared_library_context_init_config)
         memcpy(config, config_node->value.ptr, sizeof(*config));
         return 0;
     }
-    else if (strcmp(config_node->base.name, ARCHI_SHARED_LIBRARY_CONFIG_KEY_PATHNAME) == 0)
+    else if (strcmp(config_node->base.name, ARCHI_LIBRARY_LOAD_CONFIG_KEY_PATHNAME) == 0)
     {
         if ((config_node->value.type != ARCHI_VALUE_STRING) || (config_node->value.ptr == NULL))
             return ARCHI_ERROR_CONFIG;
@@ -56,7 +55,7 @@ ARCHI_LIST_ACT_FUNC(archi_plugin_shared_library_context_init_config)
         config->pathname = config_node->value.ptr;
         return 0;
     }
-    else if (strcmp(config_node->base.name, ARCHI_SHARED_LIBRARY_CONFIG_KEY_LAZY) == 0)
+    else if (strcmp(config_node->base.name, ARCHI_LIBRARY_LOAD_CONFIG_KEY_LAZY) == 0)
     {
         switch (config_node->value.type)
         {
@@ -72,7 +71,7 @@ ARCHI_LIST_ACT_FUNC(archi_plugin_shared_library_context_init_config)
                 return ARCHI_ERROR_CONFIG;
         }
     }
-    else if (strcmp(config_node->base.name, ARCHI_SHARED_LIBRARY_CONFIG_KEY_GLOBAL) == 0)
+    else if (strcmp(config_node->base.name, ARCHI_LIBRARY_LOAD_CONFIG_KEY_GLOBAL) == 0)
     {
         switch (config_node->value.type)
         {
@@ -88,6 +87,15 @@ ARCHI_LIST_ACT_FUNC(archi_plugin_shared_library_context_init_config)
                 return ARCHI_ERROR_CONFIG;
         }
     }
+    else if (strcmp(config_node->base.name, ARCHI_LIBRARY_LOAD_CONFIG_KEY_FLAGS) == 0)
+    {
+        if ((config_node->value.type != ARCHI_VALUE_SINT) || (config_node->value.ptr == NULL) ||
+                (config_node->value.size != sizeof(int)) || (config_node->value.num_of == 0))
+            return ARCHI_ERROR_CONFIG;
+
+        config->flags = *(int*)config_node->value.ptr;
+        return 0;
+    }
     else
         return ARCHI_ERROR_CONFIG;
 }
@@ -99,7 +107,7 @@ ARCHI_CONTEXT_INIT_FUNC(archi_plugin_shared_library_context_init)
 
     archi_status_t code;
 
-    archi_shared_library_config_t shared_library_config = {0};
+    archi_library_load_config_t shared_library_config = {0};
     if (config != NULL)
     {
         archi_list_t config_list = {.head = (archi_list_node_t*)config};
@@ -112,8 +120,7 @@ ARCHI_CONTEXT_INIT_FUNC(archi_plugin_shared_library_context_init)
     if (shared_library_config.pathname == NULL)
         return ARCHI_ERROR_CONFIG;
 
-    void *handle = archi_library_load(shared_library_config.pathname,
-            shared_library_config.lazy, shared_library_config.global);
+    void *handle = archi_library_load(shared_library_config);
     if (handle == NULL)
         return ARCHI_ERROR_LOAD;
 

@@ -28,19 +28,19 @@
 #define _ARCHI_EXE_CONFIG_TYP_H_
 
 #include "archi/app/instance.typ.h"
-#include "archi/util/os/shm.typ.h"
+#include "archi/util/os/file.typ.h"
 
 struct archi_signal_watch_set;
 
 /**
- * @brief Configuration of the process in shared memory.
+ * @brief Process configuration in memory.
  */
-typedef struct archi_process_config_shm {
-    archi_shm_header_t shm_header; ///< Shared memory header.
+typedef struct archi_process_config_mem {
+    archi_mmap_header_t mmap_header; ///< Shared memory header.
 
     struct archi_signal_watch_set *signal_watch_set; ///< Signal watch set.
     archi_app_config_t app_config; ///< Application configuration.
-} archi_process_config_shm_t;
+} archi_process_config_mem_t;
 
 #endif // _ARCHI_EXE_CONFIG_TYP_H_
 

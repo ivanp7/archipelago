@@ -24,11 +24,10 @@
  */
 
 #pragma once
-#ifndef _ARCHI_PLUGIN_THREADS_INTERFACE_FUN_H_
-#define _ARCHI_PLUGIN_THREADS_INTERFACE_FUN_H_
+#ifndef _ARCHI_UTIL_OS_THREADS_FUN_H_
+#define _ARCHI_UTIL_OS_THREADS_FUN_H_
 
-#include "archi/plugin/threads/interface.typ.h"
-#include "archi/plugin/threads/config.typ.h"
+#include "archi/util/os/threads.typ.h"
 #include "archi/app/context.typ.h"
 #include "archi/util/status.typ.h"
 
@@ -101,18 +100,5 @@ archi_thread_group_config(
         const struct archi_thread_group_context *context ///< [in] Threaded processing context.
 );
 
-/*****************************************************************************/
-
-ARCHI_CONTEXT_INIT_FUNC(archi_plugin_thread_group_context_init);   ///< Threaded processing context initialization function.
-ARCHI_CONTEXT_FINAL_FUNC(archi_plugin_thread_group_context_final); ///< Threaded processing context finalization function.
-
-extern
-const archi_context_interface_t archi_plugin_thread_group_context_interface; ///< Threaded processing context interface functions.
-
-/**
- * @brief Alias name of threaded processing context interface.
- */
-#define ARCHI_PLUGIN_THREAD_GROUP_CONTEXT_INTERFACE_KEY "thread_group"
-
-#endif // _ARCHI_PLUGIN_THREADS_INTERFACE_FUN_H_
+#endif // _ARCHI_UTIL_OS_THREADS_FUN_H_
 

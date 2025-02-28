@@ -75,7 +75,7 @@ const archi_context_interface_t plugin_font_psf2_context_interface; ///< Font co
 /**
  * @brief Alias name of font context interface.
  */
-#define PLUGIN_FONT_PSF2_CONTEXT_INTERFACE_KEY "font.psf2"
+#define PLUGIN_FONT_PSF2_INTERFACE "font.psf2"
 
 /**
  * @brief Font configuration key for data buffer.

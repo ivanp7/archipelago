@@ -31,7 +31,7 @@
 #include <stdbool.h>
 
 /**
- * @brief Flags designating which signals need to be watched.
+ * @brief Set of signals to be watched.
  */
 typedef struct archi_signal_watch_set {
     // Interruption events

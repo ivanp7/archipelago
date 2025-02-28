@@ -20,12 +20,12 @@
 
 /**
  * @file
- * @brief Types of the plugin.
+ * @brief Types for operations with threads and concurrent processing.
  */
 
 #pragma once
-#ifndef _ARCHI_PLUGIN_THREADS_INTERFACE_TYP_H_
-#define _ARCHI_PLUGIN_THREADS_INTERFACE_TYP_H_
+#ifndef _ARCHI_UTIL_OS_THREADS_TYP_H_
+#define _ARCHI_UTIL_OS_THREADS_TYP_H_
 
 #include <stddef.h>
 #include <stdbool.h>
@@ -83,5 +83,40 @@ typedef struct archi_thread_group_callback {
     void *data; ///< [in] Callback data.
 } archi_thread_group_callback_t;
 
-#endif // _ARCHI_PLUGIN_THREADS_INTERFACE_TYP_H_
+/*****************************************************************************/
+
+/**
+ * @brief Parameters for archi_thread_group_start().
+ */
+typedef struct archi_thread_group_config {
+    size_t num_threads; ///< Number of threads to create.
+    bool busy_wait;     ///< Whether busy-waiting for a job is enabled.
+} archi_thread_group_config_t;
+
+/**
+ * @brief Threaded processing configuration key for the whole configuration structure.
+ */
+#define ARCHI_THREADS_CONFIG_KEY "config"
+
+/**
+ * @brief Threaded processing configuration key -- number of threads to create.
+ */
+#define ARCHI_THREADS_CONFIG_KEY_NUM_THREADS "num_threads"
+
+/**
+ * @brief Threaded processing configuration key -- whether to enable busy-waiting for a job.
+ */
+#define ARCHI_THREADS_CONFIG_KEY_BUSY_WAIT "busy_wait"
+
+/*****************************************************************************/
+
+/**
+ * @brief Parameters for archi_thread_group_execute().
+ */
+typedef struct archi_thread_group_exec_config {
+    size_t batch_size; ///< Number of tasks done by a thread at a time.
+    bool busy_wait;    ///< Whether busy-waiting for job completion is enabled.
+} archi_thread_group_exec_config_t;
+
+#endif // _ARCHI_UTIL_OS_THREADS_TYP_H_
 

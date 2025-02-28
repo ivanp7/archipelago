@@ -20,69 +20,45 @@
 
 /**
  * @file
- * @brief Shared memory operations.
+ * @brief Context configuration types of the plugin.
  */
 
 #pragma once
-#ifndef _ARCHI_UTIL_OS_SHM_FUN_H_
-#define _ARCHI_UTIL_OS_SHM_FUN_H_
+#ifndef _ARCHI_UTIL_OS_QUEUE_TYP_H_
+#define _ARCHI_UTIL_OS_QUEUE_TYP_H_
 
-#include "archi/util/os/shm.typ.h"
-
-#include <stdbool.h>
 #include <stddef.h>
+#include <stdbool.h>
 
 /**
- * @brief Open a memory-mapped file.
- *
- * @return File descriptor.
+ * @brief Parameters for archi_queue_alloc().
  */
-int
-archi_shm_open_file(
-        const char *pathname, ///< Pathname of a memory-mapped file.
+typedef struct archi_queue_config {
+    size_t capacity_log2; ///< Log2 of maximum capacity of queue.
 
-        bool readable, ///< [in] Whether is shared memory readable.
-        bool writable  ///< [in] Whether is shared memory writable.
-);
+    size_t element_alignment_log2; ///< Log2 of queue element alignment in bytes.
+    size_t element_size; ///< Queue element size in bytes.
+} archi_queue_config_t;
 
 /**
- * @brief Close a memory-mapped object.
- *
- * @return File descriptor.
+ * @brief Lock-less queue configuration key for the whole configuration structure.
  */
-bool
-archi_shm_close(
-        int fd ///< [in] File descriptor of the mapped object.
-);
+#define ARCHI_QUEUE_CONFIG_KEY "config"
 
 /**
- * @brief Map a pointer-aware memory-mapped file.
- *
- * The first object in the shared memory is void* pointer,
- * which must be equal to its own location address.
- * Pointers in the memory will be invalid if that's not the case.
- *
- * @return Shared memory address or NULL in case of failure.
+ * @brief Lock-less queue configuration key -- log2 of maximum capacity of queue.
  */
-archi_shm_header_t*
-archi_shm_map(
-        int fd, ///< [in] File descriptor of the mapped object.
-
-        bool readable, ///< [in] Whether is shared memory readable.
-        bool writable, ///< [in] Whether is shared memory writable.
-        bool shared,   ///< [in] Whether updates to the mapping are visible to other processes.
-        int flags      ///< [in] Other mmap() flags.
-);
+#define ARCHI_QUEUE_CONFIG_KEY_CAPACITY_LOG2 "capacity_log2"
 
 /**
- * @brief Unmap a pointer-aware memory-mapped file.
- *
- * @return True on success, otherwise false.
+ * @brief Lock-less queue configuration key -- log2 of queue element alignment in bytes.
  */
-bool
-archi_shm_unmap(
-        archi_shm_header_t *shm ///< [in] Shared memory header.
-);
+#define ARCHI_QUEUE_CONFIG_KEY_ELEMENT_ALIGNMENT_LOG2 "element_alignment_log2"
 
-#endif // _ARCHI_UTIL_OS_SHM_FUN_H_
+/**
+ * @brief Lock-less queue configuration key -- queue element size in bytes.
+ */
+#define ARCHI_QUEUE_CONFIG_KEY_ELEMENT_SIZE "element_size"
+
+#endif // _ARCHI_UTIL_OS_QUEUE_TYP_H_
 

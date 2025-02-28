@@ -20,25 +20,63 @@
 
 /**
  * @file
- * @brief Context interface of the plugin.
+ * @brief File and memory operations.
  */
 
 #pragma once
-#ifndef _ARCHI_PLUGIN_FILES_INTERFACE_FUN_H_
-#define _ARCHI_PLUGIN_FILES_INTERFACE_FUN_H_
+#ifndef _ARCHI_UTIL_OS_FILE_FUN_H_
+#define _ARCHI_UTIL_OS_FILE_FUN_H_
 
-#include "archi/app/context.typ.h"
+#include "archi/util/os/file.typ.h"
 
-ARCHI_CONTEXT_INIT_FUNC(archi_plugin_file_context_init);   ///< File context initialization function.
-ARCHI_CONTEXT_FINAL_FUNC(archi_plugin_file_context_final); ///< File context finalization function.
-
-extern
-const archi_context_interface_t archi_plugin_file_context_interface; ///< File context interface functions.
+#include <stdbool.h>
+#include <stddef.h>
 
 /**
- * @brief Alias name of file context interface.
+ * @brief Open a file.
+ *
+ * @return File descriptor.
  */
-#define ARCHI_PLUGIN_FILE_CONTEXT_INTERFACE_KEY "file"
+int
+archi_file_open(
+        archi_file_open_config_t config ///< [in] File configuration.
+);
 
-#endif // _ARCHI_PLUGIN_FILES_INTERFACE_FUN_H_
+/**
+ * @brief Close a file.
+ *
+ * @return True if there were no errors, otherwise false.
+ */
+bool
+archi_file_close(
+        int fd ///< [in] File descriptor.
+);
+
+/**
+ * @brief Map a file into memory.
+ *
+ * If config.size is 0, it is determined automatically,
+ * and the memory is considered to have the header.
+ * The header determines the mapping address and size.
+ *
+ * @return Mapped memory address or NULL in case of failure.
+ */
+archi_mmap_header_t*
+archi_file_map(
+        int fd, ///< [in] File descriptor.
+
+        archi_file_map_config_t config ///< File mapping configuration.
+);
+
+/**
+ * @brief Unmap a pointer-aware memory-mapped file.
+ *
+ * @return True on success, otherwise false.
+ */
+bool
+archi_file_unmap(
+        archi_mmap_header_t *mm ///< [in] Mapped memory header.
+);
+
+#endif // _ARCHI_UTIL_OS_FILE_FUN_H_
 
