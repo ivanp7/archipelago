@@ -1,11 +1,11 @@
 /**
  * @file
- * @brief Configuration types of the plugin.
+ * @brief Types for operations with SDL windows.
  */
 
 #pragma once
-#ifndef _PLUGIN_SDL_CONFIG_TYP_H_
-#define _PLUGIN_SDL_CONFIG_TYP_H_
+#ifndef _PLUGIN_SDL_WINDOW_TYP_H_
+#define _PLUGIN_SDL_WINDOW_TYP_H_
 
 #include <stdint.h> // for uint32_t
 
@@ -119,5 +119,5 @@ typedef struct plugin_sdl_window_config {
  */
 #define PLUGIN_SDL_WINDOW_CONFIG_KEY_WINDOW_TITLE "window_title"
 
-#endif // _PLUGIN_SDL_CONFIG_TYP_H_
+#endif // _PLUGIN_SDL_WINDOW_TYP_H_
 

@@ -4,12 +4,10 @@
  */
 
 #include "sdl/font.fun.h"
-#include "sdl/font.typ.h"
 #include "archi/util/list.fun.h"
 #include "archi/util/error.def.h"
 
 #include <stdlib.h> // for malloc(), free()
-#include <string.h> // for strcmp()
 
 #define NUM_UNICODE_CODE_POINTS (1 + 0x10FFFF) // 0 - 0x10FFFF
 
@@ -254,62 +252,4 @@ plugin_font_psf2_glyph_data_size(
 
     return header->header_size + (size_t)header->bytes_per_glyph * header->num_glyphs;
 }
-
-/*****************************************************************************/
-
-static
-ARCHI_LIST_ACT_FUNC(plugin_font_psf2_context_init_config)
-{
-    (void) position;
-
-    archi_list_node_named_value_t *config_node = (archi_list_node_named_value_t*)node;
-    archi_value_t *config = data;
-
-    if (strcmp(config_node->base.name, PLUGIN_FONT_PSF2_CONFIG_KEY_BYTES) == 0)
-    {
-        if ((config_node->value.type != ARCHI_VALUE_DATA) || (config_node->value.ptr == NULL) ||
-                (config_node->value.size == 0) || (config_node->value.num_of == 0))
-            return ARCHI_ERROR_CONFIG;
-
-        *config = config_node->value;
-        return 0;
-    }
-    else
-        return ARCHI_ERROR_CONFIG;
-}
-
-ARCHI_CONTEXT_INIT_FUNC(plugin_font_psf2_context_init)
-{
-    if (context == NULL)
-        return ARCHI_ERROR_MISUSE;
-
-    archi_status_t code;
-
-    archi_value_t font_bytes = {0};
-    if (config != NULL)
-    {
-        archi_list_t config_list = {.head = (archi_list_node_t*)config};
-        code = archi_list_traverse(&config_list, NULL, NULL,
-                plugin_font_psf2_context_init_config, &font_bytes, true, 0, NULL);
-        if (code != 0)
-            return code;
-    }
-
-    plugin_font_psf2_t *font_context = plugin_font_psf2_load_from_bytes(font_bytes.ptr, font_bytes.size, &code);
-    if (code != 0)
-        return code;
-
-    *context = font_context;
-    return 0;
-}
-
-ARCHI_CONTEXT_FINAL_FUNC(plugin_font_psf2_context_final)
-{
-    plugin_font_psf2_unload(context);
-}
-
-const archi_context_interface_t plugin_font_psf2_context_interface = {
-    .init_fn = plugin_font_psf2_context_init,
-    .final_fn = plugin_font_psf2_context_final,
-};
 
