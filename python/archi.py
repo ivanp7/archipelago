@@ -265,7 +265,6 @@ def fossilize(app: Application, pathname: str):
 
     address = None   # address of the mapped memory
     total_size = 0   # total size of the configuration
-    all_strings = {} # dictionary of string objects
 
     def allocate(ctype): # allocate a new object
         nonlocal total_size
@@ -293,12 +292,46 @@ def fossilize(app: Application, pathname: str):
         return object
 
 
+    all_strings = None # set of strings
+
+    def collect_strings(): # collect all strings of the configuration
+        nonlocal all_strings
+
+        all_strings = set()
+
+        all_strings.update(app._libraries_.keys())
+        all_strings.update(value['pathname'] for value in app._libraries_.values())
+
+        all_strings.update(app._interfaces_.keys())
+        all_strings.update(value['symbol_name'] for value in app._interfaces_.values())
+        all_strings.update(value['library_key'] for value in app._interfaces_.values())
+
+        all_strings.update(step['key'] for step in app._steps_)
+
+        for step in app._steps_:
+            if step['type'] == 'init':
+                all_strings.add(step['interface_key'])
+                all_strings.update(step['config'].keys())
+            elif step['type'] == 'set':
+                all_strings.add(step['slot'])
+            elif step['type'] == 'assign':
+                all_strings.add(step['slot'])
+                all_strings.add(step['source_key'])
+                if 'source_slot' in step:
+                    all_strings.add(step['source_slot'])
+            elif step['type'] == 'act':
+                all_strings.add(step['action'])
+                all_strings.update(step['params'].keys())
+
+
+    string_objects = {} # dictionary of string objects
+
     def allocate_string(bstr): # allocate a string copy
-        if bstr in all_strings:
-            return all_strings[bstr]
+        if bstr in string_objects:
+            return string_objects[bstr]
 
         object = allocate_object(c.create_string_buffer(bstr.encode()))
-        all_strings[bstr] = object
+        string_objects[bstr] = object
 
         return object
 
@@ -352,13 +385,17 @@ def fossilize(app: Application, pathname: str):
 
     def construct_configuration(): # construct the whole configuration
         nonlocal total_size
-        nonlocal all_strings
+        nonlocal string_objects
 
         total_size = 0
-        all_strings = {}
+        string_objects = {}
 
         # Allocate the main structure
         shm_config = allocate(configuration_t)
+
+        # Preallocate all strings at once
+        for s in all_strings:
+            allocate_string(s)
 
         # Allocate the signal watch set
         if len(app._signals_) > 0:
@@ -474,6 +511,9 @@ def fossilize(app: Application, pathname: str):
                         steps[i].as_act.params = c.pointer(params[0])
 
     ### Do the job ###
+
+    # Create the set of all strings in the configuration
+    collect_strings()
 
     # Count total used bytes
     construct_configuration()
