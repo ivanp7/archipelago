@@ -156,7 +156,7 @@ archi_app_do_config_step_set(
     if (context == NULL)
         return ARCHI_ERROR_CONFIG;
 
-    code = archi_context_set(*context, step_set.slot, step_set.value);
+    code = archi_context_set(context, step_set.slot, step_set.value);
     if (code != 0)
         return code;
 
@@ -191,8 +191,8 @@ archi_app_do_config_step_assign(
     if ((dest_context == NULL) || (src_context == NULL))
         return ARCHI_ERROR_CONFIG;
 
-    code = archi_context_assign(*dest_context, step_assign.slot,
-            *src_context, step_assign.source_slot);
+    code = archi_context_assign(dest_context, step_assign.slot,
+            src_context, step_assign.source_slot);
     if (code != 0)
         return code;
 
@@ -221,7 +221,7 @@ archi_app_do_config_step_act(
     if (context == NULL)
         return ARCHI_ERROR_CONFIG;
 
-    code = archi_context_act(*context, step_act.action, step_act.params);
+    code = archi_context_act(context, step_act.action, step_act.params);
     if (code != 0)
         return code;
 

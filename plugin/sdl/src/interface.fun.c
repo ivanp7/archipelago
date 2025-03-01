@@ -95,7 +95,6 @@ ARCHI_CONTEXT_INIT_FUNC(plugin_sdl_library_init)
     if (code < 0)
         return ARCHI_ERROR_OPERATION;
 
-    *context = ARCHI_CONTEXT_DUMMY;
     return 0;
 }
 

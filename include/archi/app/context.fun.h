@@ -59,7 +59,7 @@ archi_context_finalize(
  */
 archi_status_t
 archi_context_set(
-        archi_context_t context, ///< [in] Context.
+        archi_context_t *context, ///< [in,out] Context.
 
         const char *slot, ///< [in] Context slot.
         const archi_value_t *value ///< [in] Value to set.
@@ -72,7 +72,7 @@ archi_context_set(
  */
 archi_status_t
 archi_context_get(
-        archi_context_t context, ///< [in] Context.
+        archi_context_t *context, ///< [in,out] Context.
 
         const char *slot, ///< [in] Context slot.
         archi_value_t *value ///< [out] Gotten value.
@@ -90,11 +90,11 @@ archi_context_get(
  */
 archi_status_t
 archi_context_assign(
-        archi_context_t dest,  ///< [in] Destination context.
+        archi_context_t *dest, ///< [in,out] Destination context.
         const char *dest_slot, ///< [in] Destination context slot.
 
-        archi_context_t src, ///< [in] Source context.
-        const char *src_slot ///< [in] Source context slot.
+        archi_context_t *src, ///< [in,out] Source context.
+        const char *src_slot  ///< [in] Source context slot.
 );
 
 /**
@@ -104,7 +104,7 @@ archi_context_assign(
  */
 archi_status_t
 archi_context_act(
-        archi_context_t context, ///< [in] Initialized context.
+        archi_context_t *context, ///< [in,out] Initialized context.
 
         const char *action, ///< [in] Action type.
         const struct archi_list_node_named_value *params ///< [in] Action parameters.

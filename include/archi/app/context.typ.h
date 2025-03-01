@@ -33,17 +33,6 @@
 struct archi_list_node_named_value;
 
 /**
- * @brief Dummy context pointer used when the context initialization function is null.
- *
- * This pointer designates that there is no meaningful context pointer
- * to be used with a context interface. It is distinguished from the null pointer,
- * which signifies a failure of context initialization.
- * This pointer is not passed to context interface functions,
- * being replaced with the null pointer instead.
- */
-#define ARCHI_CONTEXT_DUMMY ((void*)-1)
-
-/**
  * @brief Declare/define context initialization function.
  *
  * This function is intended to initialize/allocate resources (contexts).
@@ -80,7 +69,7 @@ typedef ARCHI_CONTEXT_FINAL_FUNC((*archi_context_final_func_t));
  * @return Status code.
  */
 #define ARCHI_CONTEXT_SET_FUNC(func_name) archi_status_t func_name( \
-        void *const restrict context, /* Context. */ \
+        void **const restrict context, /* Context. */ \
         const char *const restrict slot, /* Slot. */ \
         const archi_value_t *const restrict value) /* Value to set. */
 
@@ -97,7 +86,7 @@ typedef ARCHI_CONTEXT_SET_FUNC((*archi_context_set_func_t));
  * @return Status code.
  */
 #define ARCHI_CONTEXT_GET_FUNC(func_name) archi_status_t func_name( \
-        void *const restrict context, /* Context. */ \
+        void **const restrict context, /* Context. */ \
         const char *const restrict slot, /* Slot. */ \
         archi_value_t *const restrict value) /* Gotten value. */
 
@@ -114,7 +103,7 @@ typedef ARCHI_CONTEXT_GET_FUNC((*archi_context_get_func_t));
  * @return Status code.
  */
 #define ARCHI_CONTEXT_ACT_FUNC(func_name) archi_status_t func_name( \
-        void *const restrict context, /* Context. */ \
+        void **const restrict context, /* Context. */ \
         const char *const restrict action, /* Action type. */ \
         const struct archi_list_node_named_value *params) /* Action parameters. */
 

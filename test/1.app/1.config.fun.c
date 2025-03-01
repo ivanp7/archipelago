@@ -64,7 +64,7 @@ ARCHI_CONTEXT_FINAL_FUNC(final_func)
 static
 ARCHI_CONTEXT_SET_FUNC(set_func)
 {
-    struct context *context_ptr = context;
+    struct context *context_ptr = *context;
 
     if (strcmp(slot, "plus") == 0)
     {
@@ -85,7 +85,7 @@ ARCHI_CONTEXT_SET_FUNC(set_func)
 static
 ARCHI_CONTEXT_GET_FUNC(get_func)
 {
-    struct context *context_ptr = context;
+    struct context *context_ptr = *context;
 
     if (strcmp(slot, "value") == 0)
     {
@@ -102,7 +102,7 @@ ARCHI_CONTEXT_ACT_FUNC(act_func)
 {
     (void) params;
 
-    struct context *context_ptr = context;
+    struct context *context_ptr = *context;
 
     if (strcmp(action, "leet") == 0)
     {
