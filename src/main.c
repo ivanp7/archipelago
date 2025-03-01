@@ -249,8 +249,7 @@ main(
     // Process the inputs sequentially
     for (size_t i = 0; i < archi_process.args.num_inputs; i++)
     {
-        archi_log_debug(M, "---- [%u] Processing '%s'...",
-                (unsigned)i, archi_process.args.inputs[i]);
+        archi_log_debug(M, "---- [%llu] Processing '%s'...", i, archi_process.args.inputs[i]);
 
         // Load shared libraries
         load_shared_libraries(i);
@@ -382,8 +381,8 @@ init_app_containers(void)
 void
 alloc_config_array(void)
 {
-    archi_log_debug(M, "Allocating the array of %u configuration pointers...",
-            (unsigned)archi_process.args.num_inputs);
+    archi_log_debug(M, "Allocating the array of %llu configuration pointers...",
+            archi_process.args.num_inputs);
 
     archi_process.config = malloc(sizeof(*archi_process.config) * archi_process.args.num_inputs);
     if (archi_process.config == NULL)
@@ -416,7 +415,7 @@ free_config_array(void)
 void
 map_shared_memory(void)
 {
-    archi_log_debug(M, "Mapping %u configuration files...", (unsigned)archi_process.args.num_inputs);
+    archi_log_debug(M, "Mapping %llu configuration files...", archi_process.args.num_inputs);
 
     for (size_t i = 0; i < archi_process.args.num_inputs; i++)
     {
@@ -550,7 +549,7 @@ start_signal_management(void)
     {
         if (archi_process.signal_watch_set->f_SIGRTMIN[i])
         {
-            archi_log_debug(M, "> watch_signal(SIGRTMIN+%u)", (unsigned)i);
+            archi_log_debug(M, "> watch_signal(SIGRTMIN+%llu)", i);
             signal_management_needed = true;
         }
     }
@@ -635,7 +634,7 @@ add_builtin_context_interfaces(void)
         if (code != 0)
         {
             archi_log_error(M, "Couldn't register built-in context interface '%s' (error %i).",
-                    (unsigned)i, archi_builtin_interfaces_keys[i], code);
+                    archi_builtin_interfaces_keys[i], code);
             exit(ARCHI_EXIT_CODE(code));
         }
     }
@@ -687,7 +686,7 @@ add_builtin_contexts(void)
         if (code != 0)
         {
             archi_log_error(M, "Couldn't register built-in context '%s' (error %i).",
-                    (unsigned)i, archi_process.builtin.contexts_keys[i], code);
+                    archi_process.builtin.contexts_keys[i], code);
             exit(ARCHI_EXIT_CODE(code));
         }
     }
@@ -730,8 +729,8 @@ load_shared_libraries(
     if (archi_process.config[index]->app_config.libraries == NULL)
         return;
 
-    archi_log_debug(M, "Loading %u shared libraries...",
-            (unsigned)archi_process.config[index]->app_config.num_libraries);
+    archi_log_debug(M, "Loading %llu shared libraries...",
+            archi_process.config[index]->app_config.num_libraries);
 
     for (size_t i = 0; i < archi_process.config[index]->app_config.num_libraries; i++)
     {
@@ -797,8 +796,8 @@ add_context_interfaces(
     if (archi_process.config[index]->app_config.interfaces == NULL)
         return;
 
-    archi_log_debug(M, "Registering %u context interfaces...",
-            (unsigned)archi_process.config[index]->app_config.num_interfaces);
+    archi_log_debug(M, "Registering %llu context interfaces...",
+            archi_process.config[index]->app_config.num_interfaces);
 
     for (size_t i = 0; i < archi_process.config[index]->app_config.num_interfaces; i++)
     {
@@ -975,8 +974,8 @@ ARCHI_LIST_ACT_FUNC(configure_app_log_node)
         default: value_type = "unknown";
     }
 
-    archi_log_debug(M, SPACE "%s = <ptr = %p, size = %u, num_of = %u, type = %s>",
-            vnode->base.name, vnode->value.ptr, (unsigned)vnode->value.size, (unsigned)vnode->value.num_of, value_type);
+    archi_log_debug(M, SPACE "%s = <ptr = %p, size = %llu, num_of = %llu, type = %s>",
+            vnode->base.name, vnode->value.ptr, vnode->value.size, vnode->value.num_of, value_type);
     if (vnode->value.ptr != NULL)
         configure_app_log_value(&vnode->value);
 
@@ -990,8 +989,8 @@ configure_app(
     if (archi_process.config[index]->app_config.steps == NULL)
         return;
 
-    archi_log_debug(M, "Performing %u configuration steps...",
-            (unsigned)archi_process.config[index]->app_config.num_steps);
+    archi_log_debug(M, "Performing %llu configuration steps...",
+            archi_process.config[index]->app_config.num_steps);
 
     for (size_t i = 0; i < archi_process.config[index]->app_config.num_steps; i++)
     {
@@ -1001,7 +1000,7 @@ configure_app(
         {
             case ARCHI_APP_CONFIG_STEP_INIT:
                 {
-                    archi_log_debug(M, "> [%u] %s = %s()", (unsigned)i,
+                    archi_log_debug(M, "> [%llu] %s = %s()", i,
                             SAFE(step.key), SAFE(step.as_init.interface_key));
 
                     archi_list_t list = {.head = (archi_list_node_t*)step.as_init.config};
@@ -1010,7 +1009,7 @@ configure_app(
                 break;
 
             case ARCHI_APP_CONFIG_STEP_FINAL:
-                archi_log_debug(M, "> [%u] free(%s)", (unsigned)i, SAFE(step.key));
+                archi_log_debug(M, "> [%llu] free(%s)", i, SAFE(step.key));
                 break;
 
             case ARCHI_APP_CONFIG_STEP_SET:
@@ -1042,8 +1041,8 @@ configure_app(
                         default: value_type = "unknown";
                     }
 
-                    archi_log_debug(M, "> [%u] %s.%s = <ptr = %p, size = %u, num_of = %u, type = %s>",
-                            (unsigned)i, SAFE(step.key), SAFE(step.as_set.slot),
+                    archi_log_debug(M, "> [%llu] %s.%s = <ptr = %p, size = %u, num_of = %u, type = %s>", i,
+                            SAFE(step.key), SAFE(step.as_set.slot),
                             step.as_set.value->ptr, step.as_set.value->size, step.as_set.value->num_of, value_type);
 
                     configure_app_log_value(step.as_set.value);
@@ -1052,18 +1051,18 @@ configure_app(
 
             case ARCHI_APP_CONFIG_STEP_ASSIGN:
                 if (step.as_assign.source_slot != NULL)
-                    archi_log_debug(M, "> [%u] %s.%s = %s.%s", (unsigned)i,
+                    archi_log_debug(M, "> [%llu] %s.%s = %s.%s", i,
                             SAFE(step.key), SAFE(step.as_assign.slot),
                             SAFE(step.as_assign.source_key), SAFE(step.as_assign.source_slot));
                 else
-                    archi_log_debug(M, "> [%u] %s.%s = %s", (unsigned)i,
+                    archi_log_debug(M, "> [%llu] %s.%s = %s", i,
                             SAFE(step.key), SAFE(step.as_assign.slot),
                             SAFE(step.as_assign.source_key));
                 break;
 
             case ARCHI_APP_CONFIG_STEP_ACT:
                 {
-                    archi_log_debug(M, "> [%u] %s.%s()", (unsigned)i,
+                    archi_log_debug(M, "> [%llu] %s.%s()", i,
                             SAFE(step.key), SAFE(step.as_act.action));
 
                     archi_list_t list = {.head = (archi_list_node_t*)step.as_act.params};
@@ -1072,14 +1071,14 @@ configure_app(
                 break;
 
             default:
-                archi_log_debug(M, "> [%u] unknown_step(%s)", (unsigned)i, SAFE(step.key));
+                archi_log_debug(M, "> [%llu] unknown_step(%s)", i, SAFE(step.key));
         }
 
         archi_status_t code = archi_app_do_config_step(&archi_process.app, step);
 
         if (code != 0)
         {
-            archi_log_error(M, "Couldn't do configuration step #%u (error %i).", (unsigned)i, code);
+            archi_log_error(M, "Couldn't do configuration step #%llu (error %i).", i, code);
             exit(ARCHI_EXIT_CODE(code));
         }
 
@@ -1115,13 +1114,13 @@ reset_app(void)
             archi_app_config_step_t step = archi_process.config[input_index]->app_config.steps[index];
             if (archi_app_config_step_undoable(step.type))
             {
-                archi_log_debug(M, "> undo_configuration_step(%u, %u, '%s')",
-                        (unsigned)input_index, (unsigned)index, step.key);
+                archi_log_debug(M, "> undo_configuration_step(%llu, %llu, '%s')",
+                        input_index, index, step.key);
 
                 archi_status_t code = archi_app_undo_config_step(&archi_process.app, step);
 
                 if (code != 0)
-                    archi_log_error(M, "Couldn't undo configuration step #%u (error %i).", (unsigned)index, code);
+                    archi_log_error(M, "Couldn't undo configuration step #%llu (error %i).", index, code);
             }
         }
     }
