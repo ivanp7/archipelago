@@ -102,6 +102,8 @@ ARCHI_LIST_ACT_FUNC(archi_plugin_shared_library_context_init_config)
 
 ARCHI_CONTEXT_INIT_FUNC(archi_plugin_shared_library_context_init)
 {
+    (void) metadata;
+
     if (context == NULL)
         return ARCHI_ERROR_MISUSE;
 
@@ -130,11 +132,15 @@ ARCHI_CONTEXT_INIT_FUNC(archi_plugin_shared_library_context_init)
 
 ARCHI_CONTEXT_FINAL_FUNC(archi_plugin_shared_library_context_final)
 {
+    (void) metadata;
+
     archi_library_unload(context);
 }
 
 ARCHI_CONTEXT_GET_FUNC(archi_plugin_shared_library_context_get)
 {
+    (void) metadata;
+
     if ((context == NULL) || (slot == NULL) || (value == NULL))
         return ARCHI_ERROR_MISUSE;
 

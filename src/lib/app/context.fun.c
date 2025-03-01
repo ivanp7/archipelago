@@ -38,9 +38,10 @@ archi_context_initialize(
         return ARCHI_ERROR_MISUSE;
 
     context->handle = NULL;
+    context->metadata = NULL;
 
     if (context->interface->init_fn != NULL)
-        return context->interface->init_fn(&context->handle, config);
+        return context->interface->init_fn(&context->handle, &context->metadata, config);
     else
         return 0;
 }
@@ -53,9 +54,10 @@ archi_context_finalize(
         return;
 
     if (context->interface->final_fn != NULL)
-        context->interface->final_fn(context->handle);
+        context->interface->final_fn(context->handle, context->metadata);
 
     context->handle = NULL;
+    context->metadata = NULL;
 }
 
 archi_status_t
@@ -72,7 +74,7 @@ archi_context_set(
     else if (context->interface->set_fn == NULL)
         return ARCHI_ERROR_INTERFACE;
 
-    return context->interface->set_fn(&context->handle, slot, value);
+    return context->interface->set_fn(&context->handle, context->metadata, slot, value);
 }
 
 archi_status_t
@@ -89,7 +91,7 @@ archi_context_get(
     else if (context->interface->get_fn == NULL)
         return ARCHI_ERROR_INTERFACE;
 
-    return context->interface->get_fn(&context->handle, slot, value);
+    return context->interface->get_fn(&context->handle, context->metadata, slot, value);
 }
 
 archi_status_t
@@ -116,7 +118,7 @@ archi_context_assign(
 
     if (src_slot != NULL)
     {
-        archi_status_t code = src->interface->get_fn(&src->handle, src_slot, &value);
+        archi_status_t code = src->interface->get_fn(&src->handle, src->metadata, src_slot, &value);
         if (code != 0)
             return code;
     }
@@ -127,7 +129,7 @@ archi_context_assign(
         value.type = ARCHI_VALUE_DATA;
     }
 
-    return dest->interface->set_fn(&dest->handle, dest_slot, &value);
+    return dest->interface->set_fn(&dest->handle, dest->metadata, dest_slot, &value);
 }
 
 archi_status_t
@@ -144,6 +146,6 @@ archi_context_act(
     else if (context->interface->act_fn == NULL)
         return ARCHI_ERROR_INTERFACE;
 
-    return context->interface->act_fn(&context->handle, action, params);
+    return context->interface->act_fn(&context->handle, context->metadata, action, params);
 }
 

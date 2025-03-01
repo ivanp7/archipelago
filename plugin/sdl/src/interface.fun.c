@@ -76,6 +76,8 @@ ARCHI_LIST_ACT_FUNC(plugin_sdl_library_init_config)
 
 ARCHI_CONTEXT_INIT_FUNC(plugin_sdl_library_init)
 {
+    (void) metadata;
+
     if (context == NULL)
         return ARCHI_ERROR_MISUSE;
 
@@ -101,6 +103,7 @@ ARCHI_CONTEXT_INIT_FUNC(plugin_sdl_library_init)
 ARCHI_CONTEXT_FINAL_FUNC(plugin_sdl_library_final)
 {
     (void) context;
+    (void) metadata;
 
     SDL_Quit();
 }
@@ -188,6 +191,8 @@ ARCHI_LIST_ACT_FUNC(plugin_sdl_window_context_init_config)
 
 ARCHI_CONTEXT_INIT_FUNC(plugin_sdl_window_context_init)
 {
+    (void) metadata;
+
     if (context == NULL)
         return ARCHI_ERROR_MISUSE;
 
@@ -213,6 +218,8 @@ ARCHI_CONTEXT_INIT_FUNC(plugin_sdl_window_context_init)
 
 ARCHI_CONTEXT_FINAL_FUNC(plugin_sdl_window_context_final)
 {
+    (void) metadata;
+
     plugin_sdl_window_destroy(context);
 }
 
@@ -246,6 +253,8 @@ ARCHI_LIST_ACT_FUNC(plugin_font_psf2_context_init_config)
 
 ARCHI_CONTEXT_INIT_FUNC(plugin_font_psf2_context_init)
 {
+    (void) metadata;
+
     if (context == NULL)
         return ARCHI_ERROR_MISUSE;
 
@@ -271,6 +280,8 @@ ARCHI_CONTEXT_INIT_FUNC(plugin_font_psf2_context_init)
 
 ARCHI_CONTEXT_FINAL_FUNC(plugin_font_psf2_context_final)
 {
+    (void) metadata;
+
     plugin_font_psf2_unload(context);
 }
 

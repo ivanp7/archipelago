@@ -31,7 +31,6 @@
 
 const archi_context_interface_t *const archi_builtin_interfaces[] = {
     &archi_plugin_file_context_interface,
-    &archi_plugin_file_map_context_interface,
     &archi_plugin_shared_library_context_interface,
     &archi_plugin_thread_group_context_interface,
     &archi_plugin_queue_context_interface,
@@ -39,7 +38,6 @@ const archi_context_interface_t *const archi_builtin_interfaces[] = {
 
 const char *const archi_builtin_interfaces_keys[] = {
     ARCHI_PLUGIN_FILE_INTERFACE,
-    ARCHI_PLUGIN_FILE_MAP_INTERFACE,
     ARCHI_PLUGIN_SHARED_LIBRARY_INTERFACE,
     ARCHI_PLUGIN_THREAD_GROUP_INTERFACE,
     ARCHI_PLUGIN_QUEUE_INTERFACE,

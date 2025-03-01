@@ -40,8 +40,9 @@ struct archi_list_node_named_value;
  * @return Status code.
  */
 #define ARCHI_CONTEXT_INIT_FUNC(func_name) archi_status_t func_name( \
-        void **const restrict context, /* Place for pointer to the new context. */ \
-        const struct archi_list_node_named_value *config) /* Context configuration. */
+        void **const restrict context, /* [out] Place for pointer to the new context. */ \
+        void **const restrict metadata, /* [out] Place for pointer to the context metadata (optional). */ \
+        const struct archi_list_node_named_value *config) /* [in] Context configuration. */
 
 /**
  * @brief Context initialization function.
@@ -54,7 +55,8 @@ typedef ARCHI_CONTEXT_INIT_FUNC((*archi_context_init_func_t));
  * This function is intended to finalize/release resources (contexts).
  */
 #define ARCHI_CONTEXT_FINAL_FUNC(func_name) void func_name( \
-        void *const context) /* Context to destroy. */
+        void *const restrict context, /* Context to destroy. */ \
+        void *const restrict metadata) /* Context metadata to destroy. */
 
 /**
  * @brief Context finalization function.
@@ -70,6 +72,7 @@ typedef ARCHI_CONTEXT_FINAL_FUNC((*archi_context_final_func_t));
  */
 #define ARCHI_CONTEXT_SET_FUNC(func_name) archi_status_t func_name( \
         void **const restrict context, /* Context. */ \
+        void *const restrict metadata, /* Context metadata. */ \
         const char *const restrict slot, /* Slot. */ \
         const archi_value_t *const restrict value) /* Value to set. */
 
@@ -87,6 +90,7 @@ typedef ARCHI_CONTEXT_SET_FUNC((*archi_context_set_func_t));
  */
 #define ARCHI_CONTEXT_GET_FUNC(func_name) archi_status_t func_name( \
         void **const restrict context, /* Context. */ \
+        void *const restrict metadata, /* Context metadata. */ \
         const char *const restrict slot, /* Slot. */ \
         archi_value_t *const restrict value) /* Gotten value. */
 
@@ -104,6 +108,7 @@ typedef ARCHI_CONTEXT_GET_FUNC((*archi_context_get_func_t));
  */
 #define ARCHI_CONTEXT_ACT_FUNC(func_name) archi_status_t func_name( \
         void **const restrict context, /* Context. */ \
+        void *const restrict metadata, /* Context metadata. */ \
         const char *const restrict action, /* Action type. */ \
         const struct archi_list_node_named_value *params) /* Action parameters. */
 
@@ -131,7 +136,9 @@ typedef struct archi_context_interface {
  * @brief A context.
  */
 typedef struct archi_context {
-    void *handle; ///< Context handle.
+    void *handle;   ///< Context handle.
+    void *metadata; ///< Context metadata.
+
     const archi_context_interface_t *interface; ///< Context interface.
 } archi_context_t;
 

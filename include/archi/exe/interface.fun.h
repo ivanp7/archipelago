@@ -41,7 +41,7 @@ const archi_context_interface_t archi_app_signal_interface; ///< Signal manageme
 
 #define ARCHI_APP_SIGNAL_SLOT_SIGNAL_FLAGS "signal_flags" ///< Output slot: signal flags.
 
-#define ARCHI_APP_SIGNAL_CONTEXT_KEY "archi_app_signal" ///< Alias name of the application signal management context.
+#define ARCHI_APP_SIGNAL_CONTEXT_KEY "archi_app_signal" ///< Key of the application signal management context.
 
 /*****************************************************************************/
 
@@ -60,7 +60,7 @@ const archi_context_interface_t archi_app_fsm_interface; ///< FSM context interf
 #define ARCHI_APP_FSM_SLOT_TRANSITION_FUNC "transition_function" ///< Input/output slot: state transition function.
 #define ARCHI_APP_FSM_SLOT_TRANSITION_DATA "transition_data" ///< Input/output slot: state transition data.
 
-#define ARCHI_APP_FSM_CONTEXT_KEY "archi_app_fsm" ///< Alias name of the application FSM context.
+#define ARCHI_APP_FSM_CONTEXT_KEY "archi_app_fsm" ///< Key of the application FSM context.
 
 #endif // _ARCHI_EXE_INTERFACE_FUN_H_
 

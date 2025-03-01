@@ -29,34 +29,34 @@
 
 #include "archi/app/context.typ.h"
 
+/**
+ * @brief File context structure.
+ */
+typedef struct archi_plugin_file_context {
+    int fd;   ///< File descriptor.
+    void *mm; ///< Mapped memory.
+    size_t mm_size; ///< Mapped memory size.
+} archi_plugin_file_context_t;
+
+#define ARCHI_PLUGIN_FILE_SLOT_FILE_DESCRIPTOR "fd" ///< Output slot: file descriptor.
+#define ARCHI_PLUGIN_FILE_SLOT_MAPPED_MEMORY "mm" ///< Output slot: mapped memory.
+
 ARCHI_CONTEXT_INIT_FUNC(archi_plugin_file_context_init);   ///< File context initialization function.
 ARCHI_CONTEXT_FINAL_FUNC(archi_plugin_file_context_final); ///< File context finalization function.
+ARCHI_CONTEXT_GET_FUNC(archi_plugin_file_context_get);     ///< File context getter function.
+ARCHI_CONTEXT_ACT_FUNC(archi_plugin_file_context_act);     ///< File context finalization function.
 
 extern
 const archi_context_interface_t archi_plugin_file_context_interface; ///< File context interface functions.
 
 /**
- * @brief Alias name of file context interface.
+ * @brief Key of file context interface.
  */
 #define ARCHI_PLUGIN_FILE_INTERFACE "file"
 
-/*****************************************************************************/
+#define ARCHI_PLUGIN_FILE_ACTION_MAP "map" ///< Action: map the file into memory.
 
-ARCHI_CONTEXT_INIT_FUNC(archi_plugin_file_map_context_init);   ///< File mapping context initialization function.
-ARCHI_CONTEXT_FINAL_FUNC(archi_plugin_file_map_context_final); ///< File mapping context finalization function.
-
-extern
-const archi_context_interface_t archi_plugin_file_map_context_interface; ///< File mapping context interface functions.
-
-/**
- * @brief Alias name of file mapping context interface.
- */
-#define ARCHI_PLUGIN_FILE_MAP_INTERFACE "file_map"
-
-/**
- * @brief File mapping context configuration key -- pathname.
- */
-#define ARCHI_PLUGIN_FILE_MAP_CONFIG_KEY_PATHNAME "pathname"
+#define ARCHI_PLUGIN_FILE_ACTION_MAP_PARAM_CLOSE "close" ///< Action parameter: whether to close the file descriptor.
 
 #endif // _ARCHI_PLUGIN_FILES_H_
 

@@ -88,39 +88,39 @@ typedef struct archi_file_map_config {
 } archi_file_map_config_t;
 
 /**
- * @brief File mapping configuration key for the whole configuration structure.
+ * @brief File mapping parameter key for the whole structure of parameters.
  */
-#define ARCHI_FILE_MAP_CONFIG_KEY "config"
+#define ARCHI_FILE_MAP_PARAM_KEY "params"
 
 /**
- * @brief File mapping configuration key -- size of the mapped memory.
+ * @brief File mapping parameter key -- size of the mapped memory.
  */
-#define ARCHI_FILE_MAP_CONFIG_KEY_SIZE "size"
+#define ARCHI_FILE_MAP_PARAM_KEY_SIZE "size"
 
 /**
- * @brief File mapping configuration key -- offset in the file.
+ * @brief File mapping parameter key -- offset in the file.
  */
-#define ARCHI_FILE_MAP_CONFIG_KEY_OFFSET "offset"
+#define ARCHI_FILE_MAP_PARAM_KEY_OFFSET "offset"
 
 /**
- * @brief File mapping configuration key -- whether is shared memory readable.
+ * @brief File mapping parameter key -- whether is shared memory readable.
  */
-#define ARCHI_FILE_MAP_CONFIG_KEY_READABLE "readable"
+#define ARCHI_FILE_MAP_PARAM_KEY_READABLE "readable"
 
 /**
- * @brief File mapping configuration key -- whether is shared memory writable.
+ * @brief File mapping parameter key -- whether is shared memory writable.
  */
-#define ARCHI_FILE_MAP_CONFIG_KEY_WRITABLE "writable"
+#define ARCHI_FILE_MAP_PARAM_KEY_WRITABLE "writable"
 
 /**
- * @brief File mapping configuration key -- whether updates to the mapping are visible to other processes.
+ * @brief File mapping parameter key -- whether updates to the mapping are visible to other processes.
  */
-#define ARCHI_FILE_MAP_CONFIG_KEY_SHARED "shared"
+#define ARCHI_FILE_MAP_PARAM_KEY_SHARED "shared"
 
 /**
- * @brief File mapping configuration key -- other mmap() flags.
+ * @brief File mapping parameter key -- other mmap() flags.
  */
-#define ARCHI_FILE_MAP_CONFIG_KEY_FLAGS "flags"
+#define ARCHI_FILE_MAP_PARAM_KEY_FLAGS "flags"
 
 /*****************************************************************************/
 

@@ -37,7 +37,7 @@ extern
 const archi_context_interface_t archi_plugin_shared_library_context_interface; ///< Shared library context interface functions.
 
 /**
- * @brief Alias name of shared library context interface.
+ * @brief Key of shared library context interface.
  */
 #define ARCHI_PLUGIN_SHARED_LIBRARY_INTERFACE "shared_library"
 

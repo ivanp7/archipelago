@@ -80,6 +80,8 @@ ARCHI_LIST_ACT_FUNC(archi_plugin_thread_group_context_init_config)
 
 ARCHI_CONTEXT_INIT_FUNC(archi_plugin_thread_group_context_init)
 {
+    (void) metadata;
+
     if (context == NULL)
         return ARCHI_ERROR_MISUSE;
 
@@ -105,6 +107,8 @@ ARCHI_CONTEXT_INIT_FUNC(archi_plugin_thread_group_context_init)
 
 ARCHI_CONTEXT_FINAL_FUNC(archi_plugin_thread_group_context_final)
 {
+    (void) metadata;
+
     archi_thread_group_stop(context);
 }
 
@@ -165,6 +169,8 @@ ARCHI_LIST_ACT_FUNC(archi_plugin_queue_context_init_config)
 
 ARCHI_CONTEXT_INIT_FUNC(archi_plugin_queue_context_init)
 {
+    (void) metadata;
+
     if (context == NULL)
         return ARCHI_ERROR_MISUSE;
 
@@ -190,6 +196,8 @@ ARCHI_CONTEXT_INIT_FUNC(archi_plugin_queue_context_init)
 
 ARCHI_CONTEXT_FINAL_FUNC(archi_plugin_queue_context_final)
 {
+    (void) metadata;
+
     archi_queue_free(context);
 }
 

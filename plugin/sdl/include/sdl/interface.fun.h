@@ -16,7 +16,7 @@ extern
 const archi_context_interface_t plugin_sdl_library_interface; ///< SDL library interface functions.
 
 /**
- * @brief Alias name of SDL library interface.
+ * @brief Key of SDL library interface.
  */
 #define PLUGIN_SDL_LIBRARY_INTERFACE_KEY "sdl"
 
@@ -29,7 +29,7 @@ extern
 const archi_context_interface_t plugin_sdl_window_context_interface; ///< SDL window context interface functions.
 
 /**
- * @brief Alias name of SDL window context interface.
+ * @brief Key of SDL window context interface.
  */
 #define PLUGIN_SDL_WINDOW_INTERFACE "sdl_window"
 
@@ -42,7 +42,7 @@ extern
 const archi_context_interface_t plugin_font_psf2_context_interface; ///< Font context interface functions.
 
 /**
- * @brief Alias name of font context interface.
+ * @brief Key of font context interface.
  */
 #define PLUGIN_FONT_PSF2_INTERFACE "font_psf2"
 

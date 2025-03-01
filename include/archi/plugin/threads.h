@@ -36,7 +36,7 @@ extern
 const archi_context_interface_t archi_plugin_thread_group_context_interface; ///< Threaded processing context interface functions.
 
 /**
- * @brief Alias name of threaded processing context interface.
+ * @brief Key of threaded processing context interface.
  */
 #define ARCHI_PLUGIN_THREAD_GROUP_INTERFACE "thread_group"
 
@@ -49,7 +49,7 @@ extern
 const archi_context_interface_t archi_plugin_queue_context_interface; ///< Lock-free queue interface functions.
 
 /**
- * @brief Alias name of lock-free queue interface.
+ * @brief Key of lock-free queue interface.
  */
 #define ARCHI_PLUGIN_QUEUE_INTERFACE "lockless_queue"
 
