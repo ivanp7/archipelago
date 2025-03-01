@@ -263,17 +263,21 @@ def fossilize(app: Application, pathname: str):
     if not isinstance(app, Application):
         raise TypeError("expected Application")
 
-    address = None   # address of the mapped memory
-    total_size = 0   # total size of the configuration
+    address = None    # address of the mapped memory
+    total_size = 0    # total size of the configuration
+    total_padding = 0 # total number of padding bytes used
 
     def allocate(ctype): # allocate a new object
         nonlocal total_size
+        nonlocal total_padding
 
         size = c.sizeof(ctype)
         alignment = c.alignment(ctype)
 
         # fulfill the alignment requirement
-        total_size = (total_size + (alignment - 1)) & ~(alignment - 1)
+        new_total_size = (total_size + (alignment - 1)) & ~(alignment - 1)
+        total_padding += new_total_size - total_size
+        total_size = new_total_size
 
         object = ctype.from_address(address + total_size) if address else None
         total_size += size
@@ -385,9 +389,11 @@ def fossilize(app: Application, pathname: str):
 
     def construct_configuration(): # construct the whole configuration
         nonlocal total_size
+        nonlocal total_padding
         nonlocal string_objects
 
         total_size = 0
+        total_padding = 0
         string_objects = {}
 
         # Allocate the main structure
@@ -533,7 +539,8 @@ def fossilize(app: Application, pathname: str):
     # Unmap the memory
     mm.close()
 
-    print(f"Wrote {total_size} bytes to '{pathname}'")
+    print(f"Wrote {total_size} bytes to '{pathname}',")
+    print(f"including {total_padding} padding bytes")
 
 ###############################################################################
 
