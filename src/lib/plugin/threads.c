@@ -40,27 +40,30 @@ ARCHI_LIST_ACT_FUNC(archi_plugin_thread_group_context_init_config)
     archi_list_node_named_value_t *config_node = (archi_list_node_named_value_t*)node;
     archi_thread_group_config_t *config = data;
 
-    if (strcmp(config_node->base.name, ARCHI_THREADS_CONFIG_KEY) == 0)
+    const char *name = config_node->base.name;
+    archi_value_t value = config_node->value;
+
+    if (strcmp(name, ARCHI_THREADS_CONFIG_KEY) == 0)
     {
-        if ((config_node->value.type != ARCHI_VALUE_DATA) || (config_node->value.ptr == NULL) ||
-                (config_node->value.size != sizeof(*config)) || (config_node->value.num_of == 0))
+        if ((value.type != ARCHI_VALUE_DATA) || (value.ptr == NULL) ||
+                (value.size != sizeof(*config)) || (value.num_of == 0))
             return ARCHI_ERROR_CONFIG;
 
-        memcpy(config, config_node->value.ptr, sizeof(*config));
+        memcpy(config, value.ptr, sizeof(*config));
         return 0;
     }
-    else if (strcmp(config_node->base.name, ARCHI_THREADS_CONFIG_KEY_NUM_THREADS) == 0)
+    else if (strcmp(name, ARCHI_THREADS_CONFIG_KEY_NUM_THREADS) == 0)
     {
-        if ((config_node->value.type != ARCHI_VALUE_UINT) || (config_node->value.ptr == NULL) ||
-                (config_node->value.size != sizeof(config->num_threads)) || (config_node->value.num_of == 0))
+        if ((value.type != ARCHI_VALUE_UINT) || (value.ptr == NULL) ||
+                (value.size != sizeof(config->num_threads)) || (value.num_of == 0))
             return ARCHI_ERROR_CONFIG;
 
-        config->num_threads = *(size_t*)config_node->value.ptr;
+        config->num_threads = *(size_t*)value.ptr;
         return 0;
     }
-    else if (strcmp(config_node->base.name, ARCHI_THREADS_CONFIG_KEY_BUSY_WAIT) == 0)
+    else if (strcmp(name, ARCHI_THREADS_CONFIG_KEY_BUSY_WAIT) == 0)
     {
-        switch (config_node->value.type)
+        switch (value.type)
         {
             case ARCHI_VALUE_FALSE:
                 config->busy_wait = false;
@@ -127,40 +130,43 @@ ARCHI_LIST_ACT_FUNC(archi_plugin_queue_context_init_config)
     archi_list_node_named_value_t *config_node = (archi_list_node_named_value_t*)node;
     archi_queue_config_t *config = data;
 
-    if (strcmp(config_node->base.name, ARCHI_QUEUE_CONFIG_KEY) == 0)
+    const char *name = config_node->base.name;
+    archi_value_t value = config_node->value;
+
+    if (strcmp(name, ARCHI_QUEUE_CONFIG_KEY) == 0)
     {
-        if ((config_node->value.type != ARCHI_VALUE_DATA) || (config_node->value.ptr == NULL) ||
-                (config_node->value.size != sizeof(*config)) || (config_node->value.num_of == 0))
+        if ((value.type != ARCHI_VALUE_DATA) || (value.ptr == NULL) ||
+                (value.size != sizeof(*config)) || (value.num_of == 0))
             return ARCHI_ERROR_CONFIG;
 
-        memcpy(config, config_node->value.ptr, sizeof(*config));
+        memcpy(config, value.ptr, sizeof(*config));
         return 0;
     }
-    else if (strcmp(config_node->base.name, ARCHI_QUEUE_CONFIG_KEY_CAPACITY_LOG2) == 0)
+    else if (strcmp(name, ARCHI_QUEUE_CONFIG_KEY_CAPACITY_LOG2) == 0)
     {
-        if ((config_node->value.type != ARCHI_VALUE_UINT) || (config_node->value.ptr == NULL) ||
-                (config_node->value.size != sizeof(config->capacity_log2)) || (config_node->value.num_of == 0))
+        if ((value.type != ARCHI_VALUE_UINT) || (value.ptr == NULL) ||
+                (value.size != sizeof(config->capacity_log2)) || (value.num_of == 0))
             return ARCHI_ERROR_CONFIG;
 
-        config->capacity_log2 = *(size_t*)config_node->value.ptr;
+        config->capacity_log2 = *(size_t*)value.ptr;
         return 0;
     }
-    else if (strcmp(config_node->base.name, ARCHI_QUEUE_CONFIG_KEY_ELEMENT_ALIGNMENT_LOG2) == 0)
+    else if (strcmp(name, ARCHI_QUEUE_CONFIG_KEY_ELEMENT_ALIGNMENT_LOG2) == 0)
     {
-        if ((config_node->value.type != ARCHI_VALUE_UINT) || (config_node->value.ptr == NULL) ||
-                (config_node->value.size != sizeof(config->element_alignment_log2)) || (config_node->value.num_of == 0))
+        if ((value.type != ARCHI_VALUE_UINT) || (value.ptr == NULL) ||
+                (value.size != sizeof(config->element_alignment_log2)) || (value.num_of == 0))
             return ARCHI_ERROR_CONFIG;
 
-        config->element_alignment_log2 = *(size_t*)config_node->value.ptr;
+        config->element_alignment_log2 = *(size_t*)value.ptr;
         return 0;
     }
-    else if (strcmp(config_node->base.name, ARCHI_QUEUE_CONFIG_KEY_ELEMENT_SIZE) == 0)
+    else if (strcmp(name, ARCHI_QUEUE_CONFIG_KEY_ELEMENT_SIZE) == 0)
     {
-        if ((config_node->value.type != ARCHI_VALUE_UINT) || (config_node->value.ptr == NULL) ||
-                (config_node->value.size != sizeof(config->element_size)) || (config_node->value.num_of == 0))
+        if ((value.type != ARCHI_VALUE_UINT) || (value.ptr == NULL) ||
+                (value.size != sizeof(config->element_size)) || (value.num_of == 0))
             return ARCHI_ERROR_CONFIG;
 
-        config->element_size = *(size_t*)config_node->value.ptr;
+        config->element_size = *(size_t*)value.ptr;
         return 0;
     }
     else

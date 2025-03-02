@@ -21,53 +21,88 @@ ARCHI_LIST_ACT_FUNC(plugin_sdl_library_init_config)
     archi_list_node_named_value_t *config_node = (archi_list_node_named_value_t*)node;
     uint32_t *config = data;
 
-    if (strcmp(config_node->base.name, PLUGIN_SDL_LIBRARY_CONFIG_KEY_FLAGS) == 0)
+    const char *name = config_node->base.name;
+    archi_value_t value = config_node->value;
+
+    if (strcmp(name, PLUGIN_SDL_LIBRARY_CONFIG_KEY_FLAGS) == 0)
     {
-        if ((config_node->value.type != ARCHI_VALUE_UINT) || (config_node->value.ptr == NULL) ||
-                (config_node->value.size != sizeof(*config)) || (config_node->value.num_of == 0))
+        if ((value.type != ARCHI_VALUE_UINT) || (value.ptr == NULL) ||
+                (value.size != sizeof(*config)) || (value.num_of == 0))
             return ARCHI_ERROR_CONFIG;
 
-        *config = *(uint32_t*)config_node->value.ptr;
+        *config = *(uint32_t*)value.ptr;
         return 0;
     }
-    else if (strcmp(config_node->base.name, PLUGIN_SDL_LIBRARY_CONFIG_KEY_INIT_TIMER) == 0)
+    else if (strcmp(name, PLUGIN_SDL_LIBRARY_CONFIG_KEY_INIT_TIMER) == 0)
     {
-        *config |= SDL_INIT_TIMER;
+        if ((value.type != ARCHI_VALUE_FALSE) && (value.type != ARCHI_VALUE_TRUE))
+            return ARCHI_ERROR_CONFIG;
+
+        if (value.type == ARCHI_VALUE_TRUE)
+            *config |= SDL_INIT_TIMER;
         return 0;
     }
-    else if (strcmp(config_node->base.name, PLUGIN_SDL_LIBRARY_CONFIG_KEY_INIT_AUDIO) == 0)
+    else if (strcmp(name, PLUGIN_SDL_LIBRARY_CONFIG_KEY_INIT_AUDIO) == 0)
     {
-        *config |= SDL_INIT_AUDIO;
+        if ((value.type != ARCHI_VALUE_FALSE) && (value.type != ARCHI_VALUE_TRUE))
+            return ARCHI_ERROR_CONFIG;
+
+        if (value.type == ARCHI_VALUE_TRUE)
+            *config |= SDL_INIT_AUDIO;
         return 0;
     }
-    else if (strcmp(config_node->base.name, PLUGIN_SDL_LIBRARY_CONFIG_KEY_INIT_VIDEO) == 0)
+    else if (strcmp(name, PLUGIN_SDL_LIBRARY_CONFIG_KEY_INIT_VIDEO) == 0)
     {
-        *config |= SDL_INIT_VIDEO;
+        if ((value.type != ARCHI_VALUE_FALSE) && (value.type != ARCHI_VALUE_TRUE))
+            return ARCHI_ERROR_CONFIG;
+
+        if (value.type == ARCHI_VALUE_TRUE)
+            *config |= SDL_INIT_VIDEO;
         return 0;
     }
-    else if (strcmp(config_node->base.name, PLUGIN_SDL_LIBRARY_CONFIG_KEY_INIT_JOYSTICK) == 0)
+    else if (strcmp(name, PLUGIN_SDL_LIBRARY_CONFIG_KEY_INIT_JOYSTICK) == 0)
     {
-        *config |= SDL_INIT_JOYSTICK;
+        if ((value.type != ARCHI_VALUE_FALSE) && (value.type != ARCHI_VALUE_TRUE))
+            return ARCHI_ERROR_CONFIG;
+
+        if (value.type == ARCHI_VALUE_TRUE)
+            *config |= SDL_INIT_JOYSTICK;
         return 0;
     }
-    else if (strcmp(config_node->base.name, PLUGIN_SDL_LIBRARY_CONFIG_KEY_INIT_HAPTIC) == 0)
+    else if (strcmp(name, PLUGIN_SDL_LIBRARY_CONFIG_KEY_INIT_HAPTIC) == 0)
     {
-        *config |= SDL_INIT_HAPTIC;
+        if ((value.type != ARCHI_VALUE_FALSE) && (value.type != ARCHI_VALUE_TRUE))
+            return ARCHI_ERROR_CONFIG;
+
+        if (value.type == ARCHI_VALUE_TRUE)
+            *config |= SDL_INIT_HAPTIC;
         return 0;
     }
-    else if (strcmp(config_node->base.name, PLUGIN_SDL_LIBRARY_CONFIG_KEY_INIT_GAMECONTROLLER) == 0)
+    else if (strcmp(name, PLUGIN_SDL_LIBRARY_CONFIG_KEY_INIT_GAMECONTROLLER) == 0)
     {
-        *config |= SDL_INIT_GAMECONTROLLER;
+        if ((value.type != ARCHI_VALUE_FALSE) && (value.type != ARCHI_VALUE_TRUE))
+            return ARCHI_ERROR_CONFIG;
+
+        if (value.type == ARCHI_VALUE_TRUE)
+            *config |= SDL_INIT_GAMECONTROLLER;
         return 0;
     }
-    else if (strcmp(config_node->base.name, PLUGIN_SDL_LIBRARY_CONFIG_KEY_INIT_EVENTS) == 0)
+    else if (strcmp(name, PLUGIN_SDL_LIBRARY_CONFIG_KEY_INIT_EVENTS) == 0)
     {
-        *config |= SDL_INIT_EVENTS;
+        if ((value.type != ARCHI_VALUE_FALSE) && (value.type != ARCHI_VALUE_TRUE))
+            return ARCHI_ERROR_CONFIG;
+
+        if (value.type == ARCHI_VALUE_TRUE)
+            *config |= SDL_INIT_EVENTS;
         return 0;
     }
-    else if (strcmp(config_node->base.name, PLUGIN_SDL_LIBRARY_CONFIG_KEY_INIT_EVERYTHING) == 0)
+    else if (strcmp(name, PLUGIN_SDL_LIBRARY_CONFIG_KEY_INIT_EVERYTHING) == 0)
     {
-        *config |= SDL_INIT_EVERYTHING;
+        if ((value.type != ARCHI_VALUE_FALSE) && (value.type != ARCHI_VALUE_TRUE))
+            return ARCHI_ERROR_CONFIG;
+
+        if (value.type == ARCHI_VALUE_TRUE)
+            *config |= SDL_INIT_EVERYTHING;
         return 0;
     }
     else
@@ -123,74 +158,77 @@ ARCHI_LIST_ACT_FUNC(plugin_sdl_window_context_init_config)
     archi_list_node_named_value_t *config_node = (archi_list_node_named_value_t*)node;
     plugin_sdl_window_config_t *config = data;
 
-    if (strcmp(config_node->base.name, PLUGIN_SDL_WINDOW_CONFIG_KEY) == 0)
+    const char *name = config_node->base.name;
+    archi_value_t value = config_node->value;
+
+    if (strcmp(name, PLUGIN_SDL_WINDOW_CONFIG_KEY) == 0)
     {
-        if ((config_node->value.type != ARCHI_VALUE_DATA) || (config_node->value.ptr == NULL) ||
-                (config_node->value.size != sizeof(*config)) || (config_node->value.num_of == 0))
+        if ((value.type != ARCHI_VALUE_DATA) || (value.ptr == NULL) ||
+                (value.size != sizeof(*config)) || (value.num_of == 0))
             return ARCHI_ERROR_CONFIG;
 
-        memcpy(config, config_node->value.ptr, sizeof(*config));
+        memcpy(config, value.ptr, sizeof(*config));
         return 0;
     }
-    else if (strcmp(config_node->base.name, PLUGIN_SDL_WINDOW_CONFIG_KEY_TEXTURE_WIDTH) == 0)
+    else if (strcmp(name, PLUGIN_SDL_WINDOW_CONFIG_KEY_TEXTURE_WIDTH) == 0)
     {
-        if ((config_node->value.type != ARCHI_VALUE_SINT) || (config_node->value.ptr == NULL) ||
-                (config_node->value.size != sizeof(config->texture.width)) || (config_node->value.num_of == 0))
+        if ((value.type != ARCHI_VALUE_SINT) || (value.ptr == NULL) ||
+                (value.size != sizeof(config->texture.width)) || (value.num_of == 0))
             return ARCHI_ERROR_CONFIG;
 
-        config->texture.width = *(int*)config_node->value.ptr;
+        config->texture.width = *(int*)value.ptr;
         return 0;
     }
-    else if (strcmp(config_node->base.name, PLUGIN_SDL_WINDOW_CONFIG_KEY_TEXTURE_HEIGHT) == 0)
+    else if (strcmp(name, PLUGIN_SDL_WINDOW_CONFIG_KEY_TEXTURE_HEIGHT) == 0)
     {
-        if ((config_node->value.type != ARCHI_VALUE_SINT) || (config_node->value.ptr == NULL) ||
-                (config_node->value.size != sizeof(config->texture.height)) || (config_node->value.num_of == 0))
+        if ((value.type != ARCHI_VALUE_SINT) || (value.ptr == NULL) ||
+                (value.size != sizeof(config->texture.height)) || (value.num_of == 0))
             return ARCHI_ERROR_CONFIG;
 
-        config->texture.height = *(int*)config_node->value.ptr;
+        config->texture.height = *(int*)value.ptr;
         return 0;
     }
-    else if (strcmp(config_node->base.name, PLUGIN_SDL_WINDOW_CONFIG_KEY_WINDOW_WIDTH) == 0)
+    else if (strcmp(name, PLUGIN_SDL_WINDOW_CONFIG_KEY_WINDOW_WIDTH) == 0)
     {
-        if (((config_node->value.type != ARCHI_VALUE_SINT) && (config_node->value.type != ARCHI_VALUE_FLOAT)) ||
-                (config_node->value.ptr == NULL) || (config_node->value.size != sizeof(config->window.width)) ||
-                (config_node->value.num_of == 0))
+        if (((value.type != ARCHI_VALUE_SINT) && (value.type != ARCHI_VALUE_FLOAT)) ||
+                (value.ptr == NULL) || (value.size != sizeof(config->window.width)) ||
+                (value.num_of == 0))
             return ARCHI_ERROR_CONFIG;
 
-        if (config_node->value.type == ARCHI_VALUE_SINT)
-            config->window.width = *(int*)config_node->value.ptr;
+        if (value.type == ARCHI_VALUE_SINT)
+            config->window.width = *(int*)value.ptr;
         else
-            config->window.width = *(float*)config_node->value.ptr * config->texture.width;
+            config->window.width = *(float*)value.ptr * config->texture.width;
         return 0;
     }
-    else if (strcmp(config_node->base.name, PLUGIN_SDL_WINDOW_CONFIG_KEY_WINDOW_HEIGHT) == 0)
+    else if (strcmp(name, PLUGIN_SDL_WINDOW_CONFIG_KEY_WINDOW_HEIGHT) == 0)
     {
-        if (((config_node->value.type != ARCHI_VALUE_SINT) && (config_node->value.type != ARCHI_VALUE_FLOAT)) ||
-                (config_node->value.ptr == NULL) || (config_node->value.size != sizeof(config->window.height)) ||
-                (config_node->value.num_of == 0))
+        if (((value.type != ARCHI_VALUE_SINT) && (value.type != ARCHI_VALUE_FLOAT)) ||
+                (value.ptr == NULL) || (value.size != sizeof(config->window.height)) ||
+                (value.num_of == 0))
             return ARCHI_ERROR_CONFIG;
 
-        if (config_node->value.type == ARCHI_VALUE_SINT)
-            config->window.height = *(int*)config_node->value.ptr;
+        if (value.type == ARCHI_VALUE_SINT)
+            config->window.height = *(int*)value.ptr;
         else
-            config->window.height = *(float*)config_node->value.ptr * config->texture.height;
+            config->window.height = *(float*)value.ptr * config->texture.height;
         return 0;
     }
-    else if (strcmp(config_node->base.name, PLUGIN_SDL_WINDOW_CONFIG_KEY_WINDOW_FLAGS) == 0)
+    else if (strcmp(name, PLUGIN_SDL_WINDOW_CONFIG_KEY_WINDOW_FLAGS) == 0)
     {
-        if ((config_node->value.type != ARCHI_VALUE_UINT) || (config_node->value.ptr == NULL) ||
-                (config_node->value.size != sizeof(config->window.flags)) || (config_node->value.num_of == 0))
+        if ((value.type != ARCHI_VALUE_UINT) || (value.ptr == NULL) ||
+                (value.size != sizeof(config->window.flags)) || (value.num_of == 0))
             return ARCHI_ERROR_CONFIG;
 
-        config->window.flags = *(uint32_t*)config_node->value.ptr;
+        config->window.flags = *(uint32_t*)value.ptr;
         return 0;
     }
-    else if (strcmp(config_node->base.name, PLUGIN_SDL_WINDOW_CONFIG_KEY_WINDOW_TITLE) == 0)
+    else if (strcmp(name, PLUGIN_SDL_WINDOW_CONFIG_KEY_WINDOW_TITLE) == 0)
     {
-        if ((config_node->value.type != ARCHI_VALUE_STRING) || (config_node->value.ptr == NULL) || (config_node->value.num_of == 0))
+        if ((value.type != ARCHI_VALUE_STRING) || (value.ptr == NULL) || (value.num_of == 0))
             return ARCHI_ERROR_CONFIG;
 
-        config->window.title = config_node->value.ptr;
+        config->window.title = value.ptr;
         return 0;
     }
     else
@@ -246,13 +284,16 @@ ARCHI_LIST_ACT_FUNC(plugin_font_psf2_context_init_config)
     archi_list_node_named_value_t *config_node = (archi_list_node_named_value_t*)node;
     archi_value_t *config = data;
 
-    if (strcmp(config_node->base.name, PLUGIN_FONT_PSF2_CONFIG_KEY_BYTES) == 0)
+    const char *name = config_node->base.name;
+    archi_value_t value = config_node->value;
+
+    if (strcmp(name, PLUGIN_FONT_PSF2_CONFIG_KEY_BYTES) == 0)
     {
-        if ((config_node->value.type != ARCHI_VALUE_DATA) || (config_node->value.ptr == NULL) ||
-                (config_node->value.size == 0) || (config_node->value.num_of == 0))
+        if ((value.type != ARCHI_VALUE_DATA) || (value.ptr == NULL) ||
+                (value.size == 0) || (value.num_of == 0))
             return ARCHI_ERROR_CONFIG;
 
-        *config = config_node->value;
+        *config = value;
         return 0;
     }
     else
@@ -278,7 +319,8 @@ ARCHI_CONTEXT_INIT_FUNC(plugin_font_psf2_context_init)
             return code;
     }
 
-    plugin_font_psf2_t *font_context = plugin_font_psf2_load_from_bytes(font_bytes.ptr, font_bytes.size, &code);
+    plugin_font_psf2_t *font_context =
+        plugin_font_psf2_load_from_bytes(font_bytes.ptr, font_bytes.size, &code);
     if (code != 0)
         return code;
 

@@ -71,26 +71,29 @@ ARCHI_LIST_ACT_FUNC(archi_plugin_file_context_init_config)
     archi_list_node_named_value_t *config_node = (archi_list_node_named_value_t*)node;
     archi_file_open_config_t *config = data;
 
-    if (strcmp(config_node->base.name, ARCHI_FILE_CONFIG_KEY) == 0)
+    const char *name = config_node->base.name;
+    archi_value_t value = config_node->value;
+
+    if (strcmp(name, ARCHI_FILE_CONFIG_KEY) == 0)
     {
-        if ((config_node->value.type != ARCHI_VALUE_DATA) || (config_node->value.ptr == NULL) ||
-                (config_node->value.size != sizeof(*config)) || (config_node->value.num_of == 0))
+        if ((value.type != ARCHI_VALUE_DATA) || (value.ptr == NULL) ||
+                (value.size != sizeof(*config)) || (value.num_of == 0))
             return ARCHI_ERROR_CONFIG;
 
-        memcpy(config, config_node->value.ptr, sizeof(*config));
+        memcpy(config, value.ptr, sizeof(*config));
         return 0;
     }
-    else if (strcmp(config_node->base.name, ARCHI_FILE_CONFIG_KEY_PATHNAME) == 0)
+    else if (strcmp(name, ARCHI_FILE_CONFIG_KEY_PATHNAME) == 0)
     {
-        if ((config_node->value.type != ARCHI_VALUE_STRING) || (config_node->value.ptr == NULL))
+        if ((value.type != ARCHI_VALUE_STRING) || (value.ptr == NULL))
             return ARCHI_ERROR_CONFIG;
 
-        config->pathname = config_node->value.ptr;
+        config->pathname = value.ptr;
         return 0;
     }
-    else if (strcmp(config_node->base.name, ARCHI_FILE_CONFIG_KEY_READABLE) == 0)
+    else if (strcmp(name, ARCHI_FILE_CONFIG_KEY_READABLE) == 0)
     {
-        switch (config_node->value.type)
+        switch (value.type)
         {
             case ARCHI_VALUE_FALSE:
                 config->readable = false;
@@ -104,9 +107,9 @@ ARCHI_LIST_ACT_FUNC(archi_plugin_file_context_init_config)
                 return ARCHI_ERROR_CONFIG;
         }
     }
-    else if (strcmp(config_node->base.name, ARCHI_FILE_CONFIG_KEY_WRITABLE) == 0)
+    else if (strcmp(name, ARCHI_FILE_CONFIG_KEY_WRITABLE) == 0)
     {
-        switch (config_node->value.type)
+        switch (value.type)
         {
             case ARCHI_VALUE_FALSE:
                 config->writable = false;
@@ -120,9 +123,9 @@ ARCHI_LIST_ACT_FUNC(archi_plugin_file_context_init_config)
                 return ARCHI_ERROR_CONFIG;
         }
     }
-    else if (strcmp(config_node->base.name, ARCHI_FILE_CONFIG_KEY_NONBLOCK) == 0)
+    else if (strcmp(name, ARCHI_FILE_CONFIG_KEY_NONBLOCK) == 0)
     {
-        switch (config_node->value.type)
+        switch (value.type)
         {
             case ARCHI_VALUE_FALSE:
                 config->nonblock = false;
@@ -136,13 +139,13 @@ ARCHI_LIST_ACT_FUNC(archi_plugin_file_context_init_config)
                 return ARCHI_ERROR_CONFIG;
         }
     }
-    else if (strcmp(config_node->base.name, ARCHI_FILE_CONFIG_KEY_FLAGS) == 0)
+    else if (strcmp(name, ARCHI_FILE_CONFIG_KEY_FLAGS) == 0)
     {
-        if ((config_node->value.type != ARCHI_VALUE_SINT) || (config_node->value.ptr == NULL) ||
-                (config_node->value.size != sizeof(int)) || (config_node->value.num_of == 0))
+        if ((value.type != ARCHI_VALUE_SINT) || (value.ptr == NULL) ||
+                (value.size != sizeof(int)) || (value.num_of == 0))
             return ARCHI_ERROR_CONFIG;
 
-        config->flags = *(int*)config_node->value.ptr;
+        config->flags = *(int*)value.ptr;
         return 0;
     }
     else
@@ -241,36 +244,39 @@ ARCHI_LIST_ACT_FUNC(archi_plugin_file_context_act_params)
     archi_list_node_named_value_t *params_node = (archi_list_node_named_value_t*)node;
     struct archi_plugin_file_context_act_params *params = data;
 
-    if (strcmp(params_node->base.name, ARCHI_FILE_MAP_PARAM_KEY) == 0)
+    const char *name = params_node->base.name;
+    archi_value_t value = params_node->value;
+
+    if (strcmp(name, ARCHI_FILE_MAP_PARAM_KEY) == 0)
     {
-        if ((params_node->value.type != ARCHI_VALUE_DATA) || (params_node->value.ptr == NULL) ||
-                (params_node->value.size != sizeof(params->map)) || (params_node->value.num_of == 0))
+        if ((value.type != ARCHI_VALUE_DATA) || (value.ptr == NULL) ||
+                (value.size != sizeof(params->map)) || (value.num_of == 0))
             return ARCHI_ERROR_CONFIG;
 
-        memcpy(&params->map, params_node->value.ptr, sizeof(params->map));
+        memcpy(&params->map, value.ptr, sizeof(params->map));
         return 0;
     }
-    else if (strcmp(params_node->base.name, ARCHI_FILE_MAP_PARAM_KEY_SIZE) == 0)
+    else if (strcmp(name, ARCHI_FILE_MAP_PARAM_KEY_SIZE) == 0)
     {
-        if ((params_node->value.type != ARCHI_VALUE_UINT) || (params_node->value.ptr == NULL) ||
-                (params_node->value.size != sizeof(size_t)) || (params_node->value.num_of == 0))
+        if ((value.type != ARCHI_VALUE_UINT) || (value.ptr == NULL) ||
+                (value.size != sizeof(size_t)) || (value.num_of == 0))
             return ARCHI_ERROR_CONFIG;
 
-        params->map.size = *(size_t*)params_node->value.ptr;
+        params->map.size = *(size_t*)value.ptr;
         return 0;
     }
-    else if (strcmp(params_node->base.name, ARCHI_FILE_MAP_PARAM_KEY_OFFSET) == 0)
+    else if (strcmp(name, ARCHI_FILE_MAP_PARAM_KEY_OFFSET) == 0)
     {
-        if ((params_node->value.type != ARCHI_VALUE_UINT) || (params_node->value.ptr == NULL) ||
-                (params_node->value.size != sizeof(size_t)) || (params_node->value.num_of == 0))
+        if ((value.type != ARCHI_VALUE_UINT) || (value.ptr == NULL) ||
+                (value.size != sizeof(size_t)) || (value.num_of == 0))
             return ARCHI_ERROR_CONFIG;
 
-        params->map.offset = *(size_t*)params_node->value.ptr;
+        params->map.offset = *(size_t*)value.ptr;
         return 0;
     }
-    else if (strcmp(params_node->base.name, ARCHI_FILE_MAP_PARAM_KEY_READABLE) == 0)
+    else if (strcmp(name, ARCHI_FILE_MAP_PARAM_KEY_READABLE) == 0)
     {
-        switch (params_node->value.type)
+        switch (value.type)
         {
             case ARCHI_VALUE_FALSE:
                 params->map.readable = false;
@@ -284,9 +290,9 @@ ARCHI_LIST_ACT_FUNC(archi_plugin_file_context_act_params)
                 return ARCHI_ERROR_CONFIG;
         }
     }
-    else if (strcmp(params_node->base.name, ARCHI_FILE_MAP_PARAM_KEY_WRITABLE) == 0)
+    else if (strcmp(name, ARCHI_FILE_MAP_PARAM_KEY_WRITABLE) == 0)
     {
-        switch (params_node->value.type)
+        switch (value.type)
         {
             case ARCHI_VALUE_FALSE:
                 params->map.writable = false;
@@ -300,9 +306,9 @@ ARCHI_LIST_ACT_FUNC(archi_plugin_file_context_act_params)
                 return ARCHI_ERROR_CONFIG;
         }
     }
-    else if (strcmp(params_node->base.name, ARCHI_FILE_MAP_PARAM_KEY_SHARED) == 0)
+    else if (strcmp(name, ARCHI_FILE_MAP_PARAM_KEY_SHARED) == 0)
     {
-        switch (params_node->value.type)
+        switch (value.type)
         {
             case ARCHI_VALUE_FALSE:
                 params->map.shared = false;
@@ -316,18 +322,18 @@ ARCHI_LIST_ACT_FUNC(archi_plugin_file_context_act_params)
                 return ARCHI_ERROR_CONFIG;
         }
     }
-    else if (strcmp(params_node->base.name, ARCHI_FILE_MAP_PARAM_KEY_FLAGS) == 0)
+    else if (strcmp(name, ARCHI_FILE_MAP_PARAM_KEY_FLAGS) == 0)
     {
-        if ((params_node->value.type != ARCHI_VALUE_SINT) || (params_node->value.ptr == NULL) ||
-                (params_node->value.size != sizeof(int)) || (params_node->value.num_of == 0))
+        if ((value.type != ARCHI_VALUE_SINT) || (value.ptr == NULL) ||
+                (value.size != sizeof(int)) || (value.num_of == 0))
             return ARCHI_ERROR_CONFIG;
 
-        params->map.flags = *(int*)params_node->value.ptr;
+        params->map.flags = *(int*)value.ptr;
         return 0;
     }
-    else if (strcmp(params_node->base.name, ARCHI_PLUGIN_FILE_ACTION_MAP_PARAM_CLOSE) == 0)
+    else if (strcmp(name, ARCHI_PLUGIN_FILE_ACTION_MAP_PARAM_CLOSE) == 0)
     {
-        switch (params_node->value.type)
+        switch (value.type)
         {
             case ARCHI_VALUE_FALSE:
                 params->close_fd = false;

@@ -38,26 +38,29 @@ ARCHI_LIST_ACT_FUNC(archi_plugin_shared_library_context_init_config)
     archi_list_node_named_value_t *config_node = (archi_list_node_named_value_t*)node;
     archi_library_load_config_t *config = data;
 
-    if (strcmp(config_node->base.name, ARCHI_LIBRARY_LOAD_CONFIG_KEY) == 0)
+    const char *name = config_node->base.name;
+    archi_value_t value = config_node->value;
+
+    if (strcmp(name, ARCHI_LIBRARY_LOAD_CONFIG_KEY) == 0)
     {
-        if ((config_node->value.type != ARCHI_VALUE_DATA) || (config_node->value.ptr == NULL) ||
-                (config_node->value.size != sizeof(*config)) || (config_node->value.num_of == 0))
+        if ((value.type != ARCHI_VALUE_DATA) || (value.ptr == NULL) ||
+                (value.size != sizeof(*config)) || (value.num_of == 0))
             return ARCHI_ERROR_CONFIG;
 
-        memcpy(config, config_node->value.ptr, sizeof(*config));
+        memcpy(config, value.ptr, sizeof(*config));
         return 0;
     }
-    else if (strcmp(config_node->base.name, ARCHI_LIBRARY_LOAD_CONFIG_KEY_PATHNAME) == 0)
+    else if (strcmp(name, ARCHI_LIBRARY_LOAD_CONFIG_KEY_PATHNAME) == 0)
     {
-        if ((config_node->value.type != ARCHI_VALUE_STRING) || (config_node->value.ptr == NULL))
+        if ((value.type != ARCHI_VALUE_STRING) || (value.ptr == NULL))
             return ARCHI_ERROR_CONFIG;
 
-        config->pathname = config_node->value.ptr;
+        config->pathname = value.ptr;
         return 0;
     }
-    else if (strcmp(config_node->base.name, ARCHI_LIBRARY_LOAD_CONFIG_KEY_LAZY) == 0)
+    else if (strcmp(name, ARCHI_LIBRARY_LOAD_CONFIG_KEY_LAZY) == 0)
     {
-        switch (config_node->value.type)
+        switch (value.type)
         {
             case ARCHI_VALUE_FALSE:
                 config->lazy = false;
@@ -71,9 +74,9 @@ ARCHI_LIST_ACT_FUNC(archi_plugin_shared_library_context_init_config)
                 return ARCHI_ERROR_CONFIG;
         }
     }
-    else if (strcmp(config_node->base.name, ARCHI_LIBRARY_LOAD_CONFIG_KEY_GLOBAL) == 0)
+    else if (strcmp(name, ARCHI_LIBRARY_LOAD_CONFIG_KEY_GLOBAL) == 0)
     {
-        switch (config_node->value.type)
+        switch (value.type)
         {
             case ARCHI_VALUE_FALSE:
                 config->global = false;
@@ -87,13 +90,13 @@ ARCHI_LIST_ACT_FUNC(archi_plugin_shared_library_context_init_config)
                 return ARCHI_ERROR_CONFIG;
         }
     }
-    else if (strcmp(config_node->base.name, ARCHI_LIBRARY_LOAD_CONFIG_KEY_FLAGS) == 0)
+    else if (strcmp(name, ARCHI_LIBRARY_LOAD_CONFIG_KEY_FLAGS) == 0)
     {
-        if ((config_node->value.type != ARCHI_VALUE_SINT) || (config_node->value.ptr == NULL) ||
-                (config_node->value.size != sizeof(int)) || (config_node->value.num_of == 0))
+        if ((value.type != ARCHI_VALUE_SINT) || (value.ptr == NULL) ||
+                (value.size != sizeof(int)) || (value.num_of == 0))
             return ARCHI_ERROR_CONFIG;
 
-        config->flags = *(int*)config_node->value.ptr;
+        config->flags = *(int*)value.ptr;
         return 0;
     }
     else
