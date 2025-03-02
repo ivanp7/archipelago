@@ -55,16 +55,16 @@ class Value:
         if (size is not None and size < 0) or num_of < 0:
             ValueError(f'incorrect size ({size}) or number ({num_of})')
 
-        self._object_ = object
+        self.object = object
 
         if object:
-            self._size_ = size if size else c.sizeof(object)
-            self._num_of_ = num_of
-            self._type_ = type
+            self.size = size if size else c.sizeof(object)
+            self.num_of = num_of
+            self.type = type
         else:
-            self._size_ = size if size else 0
-            self._num_of_ = 0
-            self._type_ = type
+            self.size = size if size else 0
+            self.num_of = 0
+            self.type = type
 
 ###############################################################################
 
@@ -93,7 +93,7 @@ class ApplicationContextField:
 class ApplicationContext:
     """Representation of a context in the application configuration.
     """
-    def __init__(self, app, key: str, interface_key: str=None, **config):
+    def __init__(self, app, key: str, interface_key: str=None):
         """Create a context.
         """
         if not isinstance(app, Application):
@@ -102,19 +102,12 @@ class ApplicationContext:
         self._app_ = app
         self._key_ = key
         self._interface_key_ = interface_key
-        self._existing_ = interface_key is None
-
-        if not self._existing_:
-            app._steps_.append({'type': 'init',
-                                'key': self._key_,
-                                'interface_key': interface_key,
-                                'config': config})
 
 
     def __del__(self):
         """Destroy a context.
         """
-        if not self._existing_:
+        if self._interface_key_ is not None:
             self._app_._steps_.append({'type': 'final',
                                        'key': self._key_})
 
@@ -153,6 +146,33 @@ class ApplicationContext:
                                        'value': value})
         else:
             raise TypeError(f'expected ApplicationContext, ApplicationContextField, or Value')
+
+
+class ApplicationContextInterface:
+    """Representation of a context interface in the application configuration.
+    """
+    def __init__(self, app, key: str):
+        """Create a context interface.
+        """
+        if not isinstance(app, Application):
+            raise TypeError("expected Application")
+
+        self._app_ = app
+        self._key_ = key
+
+
+    def __call__(self, key: str, **config):
+        """Return a new context.
+
+        @param[in] key           : alias of the created context
+        @param[in] **config      : configuration of the created context
+        """
+        self._app_._steps_.append({'type': 'init',
+                                   'key': key,
+                                   'interface_key': self._key_,
+                                   'config': config})
+
+        return ApplicationContext(self._app_, key, self._key_)
 
 
 NUM_RT_SIGNALS = signal.SIGRTMAX - signal.SIGRTMIN + 1
@@ -230,26 +250,28 @@ class Application:
                                   'library_key': library_key}
 
 
-    def new_context(self, key: str, interface_key: str, **config) -> ApplicationContext:
-        """Return a new context.
+    def interface(self, key: str) -> ApplicationContextInterface:
+        """Return an existing context interface.
 
-        @param[in] key           : alias of the created context
-        @param[in] interface_key : alias of the context interface to use for the created context
-        @param[in] **config      : configuration of the created context
+        @param[in] key : alias of an existing context interface
         """
-        return ApplicationContext(self, key, interface_key, **config)
+        return ApplicationContextInterface(self, key)
 
 
     def context(self, key: str) -> ApplicationContext:
         """Return an existing context.
 
-        @param[in] key : alias of the existing context
+        @param[in] key : alias of an existing context
         """
         return ApplicationContext(self, key)
 
 
-APP_SIGNAL_CONTEXT_KEY = "archi_app_signal"
-APP_FSM_CONTEXT_KEY = "archi_app_fsm"
+FILE_INTERFACE_KEY = 'file'
+SHARED_LIBRARY_INTERFACE_KEY = 'shared_library'
+THREAD_GROUP_INTERFACE_KEY = 'thread_group'
+
+APP_SIGNAL_CONTEXT_KEY = 'archi_app_signal'
+APP_FSM_CONTEXT_KEY = 'archi_app_fsm'
 
 ###############################################################################
 ###############################################################################
@@ -345,14 +367,14 @@ def fossilize(app: Application, pathname: str):
             raise TypeError("expected Value")
 
         value = allocate(value_t)
-        object = allocate_object(v._object_) if v._object_ else None
+        object = allocate_object(v.object) if v.object else None
 
         if address:
             if object:
                 value.ptr = c.addressof(object)
-                value.size = v._size_
-                value.num_of = v._num_of_
-            value.type = v._type_
+                value.size = v.size
+                value.num_of = v.num_of
+            value.type = v.type
 
         return value
 
@@ -368,7 +390,7 @@ def fossilize(app: Application, pathname: str):
                 raise TypeError("expected Value")
 
             name = allocate_string(key)
-            object = allocate_object(value._object_) if value._object_ else None
+            object = allocate_object(value.object) if value.object else None
 
             if address:
                 if i > 0:
@@ -380,9 +402,9 @@ def fossilize(app: Application, pathname: str):
 
                 if object:
                     nodes[i].value.ptr = c.addressof(object)
-                    nodes[i].value.size = value._size_
-                    nodes[i].value.num_of = value._num_of_
-                nodes[i].value.type = value._type_
+                    nodes[i].value.size = value.size
+                    nodes[i].value.num_of = value.num_of
+                nodes[i].value.type = value.type
 
         return nodes
 
