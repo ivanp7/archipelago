@@ -31,6 +31,38 @@
 #include <stdlib.h> // for malloc(), free()
 #include <string.h> // for strcmp(), memcpy()
 
+struct archi_plugin_file_context {
+    int fd;   ///< File descriptor.
+
+    void *mm; ///< Mapped memory.
+    size_t mm_size; ///< Mapped memory size.
+};
+
+int
+archi_plugin_file_context_descriptor(
+        struct archi_plugin_file_context *context)
+{
+    if (context == NULL)
+        return -1;
+
+    return context->fd;
+}
+
+void*
+archi_plugin_file_context_mapped_memory(
+        struct archi_plugin_file_context *context,
+
+        size_t *memory_size)
+{
+    if (context == NULL)
+        return NULL;
+
+    if (memory_size != NULL)
+        *memory_size = context->mm_size;
+
+    return context->mm;
+}
+
 static
 ARCHI_LIST_ACT_FUNC(archi_plugin_file_context_init_config)
 {
@@ -134,11 +166,11 @@ ARCHI_CONTEXT_INIT_FUNC(archi_plugin_file_context_init)
     if (file_open_config.pathname == NULL)
         return ARCHI_ERROR_CONFIG;
 
-    archi_plugin_file_context_t *file_context = malloc(sizeof(*file_context));
+    struct archi_plugin_file_context *file_context = malloc(sizeof(*file_context));
     if (file_context == NULL)
         return ARCHI_ERROR_ALLOC;
 
-    *file_context = (archi_plugin_file_context_t){.fd = archi_file_open(file_open_config)};
+    *file_context = (struct archi_plugin_file_context){.fd = archi_file_open(file_open_config)};
 
     if (file_context->fd == -1)
     {
@@ -155,7 +187,7 @@ ARCHI_CONTEXT_FINAL_FUNC(archi_plugin_file_context_final)
 {
     (void) metadata;
 
-    archi_plugin_file_context_t *file_context = context;
+    struct archi_plugin_file_context *file_context = context;
 
     if (file_context->mm != NULL)
         archi_file_unmap(file_context->mm);
@@ -170,7 +202,7 @@ ARCHI_CONTEXT_GET_FUNC(archi_plugin_file_context_get)
 {
     (void) metadata;
 
-    archi_plugin_file_context_t *file_context = *context;
+    struct archi_plugin_file_context *file_context = *context;
 
     if (strcmp(slot, ARCHI_PLUGIN_FILE_SLOT_FILE_DESCRIPTOR) == 0)
     {
@@ -317,7 +349,7 @@ ARCHI_CONTEXT_ACT_FUNC(archi_plugin_file_context_act)
 {
     (void) metadata;
 
-    archi_plugin_file_context_t *file_context = *context;
+    struct archi_plugin_file_context *file_context = *context;
 
     if (strcmp(action, ARCHI_PLUGIN_FILE_ACTION_MAP) == 0)
     {
