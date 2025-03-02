@@ -62,9 +62,9 @@ class Value:
             self._num_of_ = num_of
             self._type_ = type
         else:
-            self._size_ = 0
+            self._size_ = size if size else 0
             self._num_of_ = 0
-            self._type_ = VALUE_NULL
+            self._type_ = type
 
 ###############################################################################
 
