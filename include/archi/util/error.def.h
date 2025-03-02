@@ -41,8 +41,10 @@
 #define ARCHI_ERROR_OPEN        -8  ///< Error: couldn't open file.
 #define ARCHI_ERROR_MAP         -9  ///< Error: couldn't map memory.
 #define ARCHI_ERROR_LOAD        -10 ///< Error: couldn't load shared library.
-#define ARCHI_ERROR_SYMBOL      -11 ///< Error: couldn't find a symbol in shared library.
-#define ARCHI_ERROR_RESOURCE    -12 ///< Error: resource in not available.
+
+// resource unavailable
+#define ARCHI_ERROR_RESOURCE    -11 ///< Error: resource in not available.
+#define ARCHI_ERROR_SYMBOL      -12 ///< Error: couldn't find a symbol in shared library.
 
 // user error code base
 #define ARCHI_ERROR_USER        -16 ///< First error code reserved for user.
