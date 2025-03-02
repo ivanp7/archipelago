@@ -285,6 +285,9 @@ archi_list_remove_nodes(
 
                 if (code > 0)
                     code = ARCHI_ERROR_UNKNOWN;
+
+                if (code != 0)
+                    break;
             }
 
             // Update list end pointers
@@ -409,6 +412,9 @@ archi_list_traverse(
 
                 if (code > 0)
                     code = ARCHI_ERROR_UNKNOWN;
+
+                if (code != 0)
+                    break;
             }
 
             // Update the counter
