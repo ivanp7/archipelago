@@ -71,7 +71,7 @@ typedef ARCHI_CONTEXT_FINAL_FUNC((*archi_context_final_func_t));
  * @return Status code.
  */
 #define ARCHI_CONTEXT_SET_FUNC(func_name) archi_status_t func_name( \
-        void **const restrict context, /* Context. */ \
+        void *const restrict context, /* Context. */ \
         void *const restrict metadata, /* Context metadata. */ \
         const char *const restrict slot, /* Slot. */ \
         const archi_value_t *const restrict value) /* Value to set. */
@@ -89,7 +89,7 @@ typedef ARCHI_CONTEXT_SET_FUNC((*archi_context_set_func_t));
  * @return Status code.
  */
 #define ARCHI_CONTEXT_GET_FUNC(func_name) archi_status_t func_name( \
-        void **const restrict context, /* Context. */ \
+        void *const restrict context, /* Context. */ \
         void *const restrict metadata, /* Context metadata. */ \
         const char *const restrict slot, /* Slot. */ \
         archi_value_t *const restrict value) /* Gotten value. */
@@ -107,7 +107,7 @@ typedef ARCHI_CONTEXT_GET_FUNC((*archi_context_get_func_t));
  * @return Status code.
  */
 #define ARCHI_CONTEXT_ACT_FUNC(func_name) archi_status_t func_name( \
-        void **const restrict context, /* Context. */ \
+        void *const restrict context, /* Context. */ \
         void *const restrict metadata, /* Context metadata. */ \
         const char *const restrict action, /* Action type. */ \
         const struct archi_list_node_named_value *params) /* Action parameters. */

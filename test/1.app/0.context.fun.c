@@ -9,6 +9,8 @@
 static
 ARCHI_CONTEXT_INIT_FUNC(init_func)
 {
+    (void) metadata;
+
     if ((context == NULL) || (*context != NULL))
         return 1;
     else if (config == NULL)
@@ -47,6 +49,8 @@ TEST(archi_context_initialize)
 static
 ARCHI_CONTEXT_FINAL_FUNC(final_func)
 {
+    (void) metadata;
+
     int *counter = context;
     if (counter != NULL)
         (*counter)++;
@@ -79,7 +83,9 @@ TEST(archi_context_finalize)
 static
 ARCHI_CONTEXT_SET_FUNC(set_func)
 {
-    int *counter = *context;
+    (void) metadata;
+
+    int *counter = context;
 
     if (strcmp(slot, "inc") == 0)
         (*counter) += value->num_of;
@@ -140,7 +146,9 @@ TEST(archi_context_set)
 static
 ARCHI_CONTEXT_GET_FUNC(get_func)
 {
-    int *counter = *context;
+    (void) metadata;
+
+    int *counter = context;
 
     if (strcmp(slot, "inc") == 0)
         value->num_of += *counter;
@@ -245,10 +253,12 @@ TEST(archi_context_assign)
 static
 ARCHI_CONTEXT_ACT_FUNC(act_func)
 {
+    (void) metadata;
+
     if (params == NULL)
         return 2;
 
-    int *counter = *context;
+    int *counter = context;
 
     if (strcmp(action, "inc") == 0)
         (*counter)++;

@@ -48,7 +48,9 @@ struct context global_context_data;
 static
 ARCHI_CONTEXT_INIT_FUNC(init_func)
 {
+    (void) metadata;
     (void) config;
+
     *context = &global_context_data;
     global_context_data.init_counter++;
     return 0;
@@ -57,6 +59,8 @@ ARCHI_CONTEXT_INIT_FUNC(init_func)
 static
 ARCHI_CONTEXT_FINAL_FUNC(final_func)
 {
+    (void) metadata;
+
     struct context *context_ptr = context;
     context_ptr->final_counter++;
 }
@@ -64,7 +68,9 @@ ARCHI_CONTEXT_FINAL_FUNC(final_func)
 static
 ARCHI_CONTEXT_SET_FUNC(set_func)
 {
-    struct context *context_ptr = *context;
+    (void) metadata;
+
+    struct context *context_ptr = context;
 
     if (strcmp(slot, "plus") == 0)
     {
@@ -85,7 +91,9 @@ ARCHI_CONTEXT_SET_FUNC(set_func)
 static
 ARCHI_CONTEXT_GET_FUNC(get_func)
 {
-    struct context *context_ptr = *context;
+    (void) metadata;
+
+    struct context *context_ptr = context;
 
     if (strcmp(slot, "value") == 0)
     {
@@ -100,9 +108,10 @@ ARCHI_CONTEXT_GET_FUNC(get_func)
 static
 ARCHI_CONTEXT_ACT_FUNC(act_func)
 {
+    (void) metadata;
     (void) params;
 
-    struct context *context_ptr = *context;
+    struct context *context_ptr = context;
 
     if (strcmp(action, "leet") == 0)
     {

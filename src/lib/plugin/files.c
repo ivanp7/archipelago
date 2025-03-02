@@ -202,7 +202,7 @@ ARCHI_CONTEXT_GET_FUNC(archi_plugin_file_context_get)
 {
     (void) metadata;
 
-    struct archi_plugin_file_context *file_context = *context;
+    struct archi_plugin_file_context *file_context = context;
 
     if (strcmp(slot, ARCHI_PLUGIN_FILE_SLOT_FILE_DESCRIPTOR) == 0)
     {
@@ -349,7 +349,7 @@ ARCHI_CONTEXT_ACT_FUNC(archi_plugin_file_context_act)
 {
     (void) metadata;
 
-    struct archi_plugin_file_context *file_context = *context;
+    struct archi_plugin_file_context *file_context = context;
 
     if (strcmp(action, ARCHI_PLUGIN_FILE_ACTION_MAP) == 0)
     {
