@@ -152,20 +152,28 @@ ARCHI_LIST_ACT_FUNC(plugin_sdl_window_context_init_config)
     }
     else if (strcmp(config_node->base.name, PLUGIN_SDL_WINDOW_CONFIG_KEY_WINDOW_WIDTH) == 0)
     {
-        if ((config_node->value.type != ARCHI_VALUE_SINT) || (config_node->value.ptr == NULL) ||
-                (config_node->value.size != sizeof(config->window.width)) || (config_node->value.num_of == 0))
+        if (((config_node->value.type != ARCHI_VALUE_SINT) && (config_node->value.type != ARCHI_VALUE_FLOAT)) ||
+                (config_node->value.ptr == NULL) || (config_node->value.size != sizeof(config->window.width)) ||
+                (config_node->value.num_of == 0))
             return ARCHI_ERROR_CONFIG;
 
-        config->window.width = *(int*)config_node->value.ptr;
+        if (config_node->value.type == ARCHI_VALUE_SINT)
+            config->window.width = *(int*)config_node->value.ptr;
+        else
+            config->window.width = *(float*)config_node->value.ptr * config->texture.width;
         return 0;
     }
     else if (strcmp(config_node->base.name, PLUGIN_SDL_WINDOW_CONFIG_KEY_WINDOW_HEIGHT) == 0)
     {
-        if ((config_node->value.type != ARCHI_VALUE_SINT) || (config_node->value.ptr == NULL) ||
-                (config_node->value.size != sizeof(config->window.height)) || (config_node->value.num_of == 0))
+        if (((config_node->value.type != ARCHI_VALUE_SINT) && (config_node->value.type != ARCHI_VALUE_FLOAT)) ||
+                (config_node->value.ptr == NULL) || (config_node->value.size != sizeof(config->window.height)) ||
+                (config_node->value.num_of == 0))
             return ARCHI_ERROR_CONFIG;
 
-        config->window.height = *(int*)config_node->value.ptr;
+        if (config_node->value.type == ARCHI_VALUE_SINT)
+            config->window.height = *(int*)config_node->value.ptr;
+        else
+            config->window.height = *(float*)config_node->value.ptr * config->texture.height;
         return 0;
     }
     else if (strcmp(config_node->base.name, PLUGIN_SDL_WINDOW_CONFIG_KEY_WINDOW_FLAGS) == 0)
