@@ -20,35 +20,27 @@
 
 /**
  * @file
- * @brief Built-in context interfaces.
+ * @brief Context interface for named value lists used in context interfaces.
  */
 
-#include "archi/exe/builtin.var.h"
+#pragma once
+#ifndef _ARCHI_APP_LIST_FUN_H_
+#define _ARCHI_APP_LIST_FUN_H_
 
-#include "archi/app/list.fun.h"
+#include "archi/app/context.typ.h"
 
-#include "archi/plugin/files.h"
-#include "archi/plugin/shared_libraries.h"
-#include "archi/plugin/threads.h"
+ARCHI_CONTEXT_INIT_FUNC(archi_app_value_list_init);   ///< Value list initialization function.
+ARCHI_CONTEXT_FINAL_FUNC(archi_app_value_list_final); ///< Value list finalization function.
+ARCHI_CONTEXT_SET_FUNC(archi_app_value_list_set);     ///< Value list setter function.
+ARCHI_CONTEXT_GET_FUNC(archi_app_value_list_get);     ///< Value list getter function.
 
-const archi_context_interface_t *const archi_builtin_interfaces[] = {
-    &archi_app_value_list_interface,
+extern
+const archi_context_interface_t archi_app_value_list_interface; ///< Value list interface functions.
 
-    &archi_plugin_file_context_interface,
-    &archi_plugin_shared_library_context_interface,
-    &archi_plugin_thread_group_context_interface,
-    &archi_plugin_queue_context_interface,
-};
+/**
+ * @brief Key of value list interface.
+ */
+#define ARCHI_APP_VALUE_LIST_INTERFACE "values"
 
-const char *const archi_builtin_interfaces_keys[] = {
-    ARCHI_APP_VALUE_LIST_INTERFACE,
-
-    ARCHI_PLUGIN_FILE_INTERFACE,
-    ARCHI_PLUGIN_SHARED_LIBRARY_INTERFACE,
-    ARCHI_PLUGIN_THREAD_GROUP_INTERFACE,
-    ARCHI_PLUGIN_QUEUE_INTERFACE,
-};
-
-const size_t archi_builtin_interfaces_num_of = sizeof(archi_builtin_interfaces) /
-    sizeof(archi_builtin_interfaces[0]);
+#endif // _ARCHI_APP_LIST_FUN_H_
 

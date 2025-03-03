@@ -27,6 +27,8 @@
 #ifndef _ARCHI_APP_CONFIG_TYP_H_
 #define _ARCHI_APP_CONFIG_TYP_H_
 
+#include <stdbool.h>
+
 struct archi_list_node_named_value;
 struct archi_value;
 
@@ -37,7 +39,12 @@ struct archi_value;
  */
 typedef struct archi_app_config_step_init {
     const char *interface_key; ///< Context interface key.
-    const struct archi_list_node_named_value *config; ///< Context configuration.
+
+    bool dynamic_config; ///< Whether is context configuration is provided as a key of object.
+    union {
+        const struct archi_list_node_named_value *node; ///< Head node of context configuration.
+        const char *key; ///< Key of context configuration object.
+    } config;
 } archi_app_config_step_init_t;
 
 /**
@@ -66,7 +73,12 @@ typedef struct archi_app_config_step_assign {
  */
 typedef struct archi_app_config_step_act {
     const char *action; ///< Action type.
-    const struct archi_list_node_named_value *params; ///< Action parameters.
+
+    bool dynamic_params; ///< Whether are action parameters are provided as a key of object.
+    union {
+        const struct archi_list_node_named_value *node; ///< Head node of action parameters.
+        const char *key; ///< Key of action parameters object.
+    } params;
 } archi_app_config_step_act_t;
 
 /*****************************************************************************/

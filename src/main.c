@@ -602,14 +602,14 @@ init_builtin_contexts(void)
         .handle = archi_process.signal_management,
         .interface = &archi_app_signal_interface,
     };
-    archi_process.builtin.contexts_keys[0] = ARCHI_APP_SIGNAL_CONTEXT_KEY;
+    archi_process.builtin.contexts_keys[0] = ARCHI_APP_SIGNAL_CONTEXT;
 
     // Finite state machine
     archi_process.builtin.contexts[1] = (archi_context_t){
         .handle = &archi_process.fsm,
         .interface = &archi_app_fsm_interface,
     };
-    archi_process.builtin.contexts_keys[1] = ARCHI_APP_FSM_CONTEXT_KEY;
+    archi_process.builtin.contexts_keys[1] = ARCHI_APP_FSM_CONTEXT;
 }
 
 #undef M
@@ -1000,16 +1000,36 @@ configure_app(
         {
             case ARCHI_APP_CONFIG_STEP_INIT:
                 {
-                    archi_log_debug(M, "> [%llu] %s = %s()", i,
-                            SAFE(step.key), SAFE(step.as_init.interface_key));
+                    archi_log_debug(M, "> [%llu] %s = %s(%s)", i,
+                            SAFE(step.key), SAFE(step.as_init.interface_key),
+                            step.as_init.dynamic_config ? step.as_init.config.key : "");
 
-                    archi_list_t list = {.head = (archi_list_node_t*)step.as_init.config};
+                    archi_list_t list = {0};
+
+                    if (!step.as_init.dynamic_config)
+                        list.head = (archi_list_node_t*)step.as_init.config.node;
+                    else
+                    {
+                        const archi_context_t *config_list = NULL;
+
+                        archi_status_t code = archi_container_extract(archi_process.app.contexts,
+                                step.as_init.config.key, (void**)&config_list);
+                        if (code != 0)
+                        {
+                            archi_log_error(M, "Couldn't extract configuration list '%s'",
+                                    SAFE(step.as_init.config.key));
+                            exit(ARCHI_EXIT_CODE(code));
+                        }
+
+                        list.head = ((archi_list_t*)config_list->handle)->head;
+                    }
+
                     archi_list_traverse(&list, NULL, NULL, configure_app_log_node, NULL, true, 0, NULL);
                 }
                 break;
 
             case ARCHI_APP_CONFIG_STEP_FINAL:
-                archi_log_debug(M, "> [%llu] free(%s)", i, SAFE(step.key));
+                archi_log_debug(M, "> [%llu] free %s", i, SAFE(step.key));
                 break;
 
             case ARCHI_APP_CONFIG_STEP_SET:
@@ -1062,10 +1082,30 @@ configure_app(
 
             case ARCHI_APP_CONFIG_STEP_ACT:
                 {
-                    archi_log_debug(M, "> [%llu] %s.%s()", i,
-                            SAFE(step.key), SAFE(step.as_act.action));
+                    archi_log_debug(M, "> [%llu] %s.%s(%s)", i,
+                            SAFE(step.key), SAFE(step.as_act.action),
+                            step.as_act.dynamic_params ? step.as_act.params.key : "");
 
-                    archi_list_t list = {.head = (archi_list_node_t*)step.as_act.params};
+                    archi_list_t list = {0};
+
+                    if (!step.as_act.dynamic_params)
+                        list.head = (archi_list_node_t*)step.as_act.params.node;
+                    else
+                    {
+                        const archi_context_t *params_list = NULL;
+
+                        archi_status_t code = archi_container_extract(archi_process.app.contexts,
+                                step.as_act.params.key, (void**)&params_list);
+                        if (code != 0)
+                        {
+                            archi_log_error(M, "Couldn't extract parameters list '%s'",
+                                    SAFE(step.as_act.params.key));
+                            exit(ARCHI_EXIT_CODE(code));
+                        }
+
+                        list.head = ((archi_list_t*)params_list->handle)->head;
+                    }
+
                     archi_list_traverse(&list, NULL, NULL, configure_app_log_node, NULL, true, 0, NULL);
                 }
                 break;

@@ -27,6 +27,7 @@
 #include "archi/app/context.fun.h"
 #include "archi/app/instance.typ.h"
 #include "archi/util/container.fun.h"
+#include "archi/util/list.typ.h"
 #include "archi/util/error.def.h"
 
 #include <stdlib.h>
@@ -118,7 +119,24 @@ archi_app_do_config_step_init(
     if (code != 0)
         return code;
 
-    return archi_app_add_context(app, context_key, interface, step_init.config);
+    const struct archi_list_node_named_value *node;
+
+    if (!step_init.dynamic_config)
+        node = step_init.config.node;
+    else
+    {
+        const archi_context_t *config_list = NULL;
+
+        code = archi_container_extract(app->contexts,
+                step_init.config.key, (void**)&config_list);
+        if (code != 0)
+            return code;
+
+        node = (struct archi_list_node_named_value*)
+            ((archi_list_t*)config_list->handle)->head;
+    }
+
+    return archi_app_add_context(app, context_key, interface, node);
 }
 
 static
@@ -218,10 +236,24 @@ archi_app_do_config_step_act(
     if (code != 0)
         return code;
 
-    if (context == NULL)
-        return ARCHI_ERROR_CONFIG;
+    const struct archi_list_node_named_value *node;
 
-    code = archi_context_act(context, step_act.action, step_act.params);
+    if (!step_act.dynamic_params)
+        node = step_act.params.node;
+    else
+    {
+        const archi_context_t *params_list = NULL;
+
+        code = archi_container_extract(app->contexts,
+                step_act.params.key, (void**)&params_list);
+        if (code != 0)
+            return code;
+
+        node = (struct archi_list_node_named_value*)
+            ((archi_list_t*)params_list->handle)->head;
+    }
+
+    code = archi_context_act(context, step_act.action, node);
     if (code != 0)
         return code;
 
@@ -269,7 +301,12 @@ archi_app_undo_config_step(
     switch (step.type)
     {
         case ARCHI_APP_CONFIG_STEP_INIT:
-            return archi_app_do_config_step_final(app, step.key);
+            {
+                archi_status_t code = archi_app_do_config_step_final(app, step.key);
+                if (code == 1)
+                    code = 0;
+                return code;
+            }
 
         default:
             return 0;

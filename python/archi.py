@@ -81,13 +81,30 @@ class ApplicationContextField:
         self._name_ = name
 
 
-    def __call__(self, **params):
+    def __call__(self, params_list: str=None, **params):
         """Invoke a context action.
+
+        @param[in] params_list : alias of the parameters of the action
+        @param[in] **params    : parameters of the action
         """
-        self._context_._app_._steps_.append({'type': 'act',
-                                             'key': self._context_._key_,
-                                             'action': self._name_,
-                                             'params': params})
+        if params_list is not None and len(params) > 0:
+            raise ValueError('cannot accept params_list and named parameters at the same time')
+
+        if params_list is None:
+            self._context_._app_._steps_.append({'type': 'act',
+                                                 'key': self._context_._key_,
+                                                 'action': self._name_,
+                                                 'dynamic_params': False,
+                                                 'params': params})
+        else:
+            if params_list._interface_key_ != APP_VALUE_LIST_INTERFACE:
+                raise ValueError('expected a value list')
+
+            self._context_._app_._steps_.append({'type': 'act',
+                                                 'key': self._context_._key_,
+                                                 'action': self._name_,
+                                                 'dynamic_params': True,
+                                                 'params_key': params_list._key_})
 
 
 class ApplicationContext:
@@ -161,16 +178,31 @@ class ApplicationContextInterface:
         self._key_ = key
 
 
-    def __call__(self, key: str, **config):
+    def __call__(self, key: str, config_list: str=None, **config):
         """Return a new context.
 
-        @param[in] key           : alias of the created context
-        @param[in] **config      : configuration of the created context
+        @param[in] key         : alias of the created context
+        @param[in] config_list : alias of the configuration of the created context
+        @param[in] **config    : configuration of the created context
         """
-        self._app_._steps_.append({'type': 'init',
-                                   'key': key,
-                                   'interface_key': self._key_,
-                                   'config': config})
+        if config_list is not None and len(config) > 0:
+            raise ValueError('cannot accept config_list and named parameters at the same time')
+
+        if config_list is None:
+            self._app_._steps_.append({'type': 'init',
+                                       'key': key,
+                                       'interface_key': self._key_,
+                                       'dynamic_config': False,
+                                       'config': config})
+        else:
+            if config_list._interface_key_ != APP_VALUE_LIST_INTERFACE:
+                raise ValueError('expected a value list')
+
+            self._app_._steps_.append({'type': 'init',
+                                       'key': key,
+                                       'interface_key': self._key_,
+                                       'dynamic_config': True,
+                                       'config_key': config_list._key_})
 
         return ApplicationContext(self._app_, key, self._key_)
 
@@ -266,12 +298,14 @@ class Application:
         return ApplicationContext(self, key)
 
 
-FILE_INTERFACE_KEY = 'file'
-SHARED_LIBRARY_INTERFACE_KEY = 'shared_library'
-THREAD_GROUP_INTERFACE_KEY = 'thread_group'
+APP_VALUE_LIST_INTERFACE = 'values'
 
-APP_SIGNAL_CONTEXT_KEY = 'archi_app_signal'
-APP_FSM_CONTEXT_KEY = 'archi_app_fsm'
+FILE_INTERFACE = 'file'
+SHARED_LIBRARY_INTERFACE = 'shared_library'
+THREAD_GROUP_INTERFACE = 'thread_group'
+
+APP_SIGNAL_CONTEXT = 'archi_app_signal'
+APP_FSM_CONTEXT = 'archi_app_fsm'
 
 ###############################################################################
 ###############################################################################
@@ -337,7 +371,10 @@ def fossilize(app: Application, pathname: str):
         for step in app._steps_:
             if step['type'] == 'init':
                 all_strings.add(step['interface_key'])
-                all_strings.update(step['config'].keys())
+                if 'config' in step:
+                    all_strings.update(step['config'].keys())
+                else:
+                    all_strings.add(step['config_key'])
             elif step['type'] == 'set':
                 all_strings.add(step['slot'])
             elif step['type'] == 'assign':
@@ -347,7 +384,10 @@ def fossilize(app: Application, pathname: str):
                     all_strings.add(step['source_slot'])
             elif step['type'] == 'act':
                 all_strings.add(step['action'])
-                all_strings.update(step['params'].keys())
+                if 'params' in step:
+                    all_strings.update(step['params'].keys())
+                else:
+                    all_strings.add(step['params_key'])
 
 
     string_objects = {} # dictionary of string objects
@@ -490,14 +530,22 @@ def fossilize(app: Application, pathname: str):
 
             if step['type'] == 'init':
                 interface_key = allocate_string(step['interface_key'])
-                config = allocate_named_value_list(step['config'])
+                if 'config' in step:
+                    config = allocate_named_value_list(step['config'])
+                else:
+                    config_key = allocate_string(step['config_key'])
 
                 if address:
                     steps[i].type = APP_CONFIG_STEP_INIT
                     steps[i].key = c.addressof(context_key)
                     steps[i].as_init.interface_key = c.addressof(interface_key)
-                    if config:
-                        steps[i].as_init.config = c.pointer(config[0])
+                    steps[i].as_init.dynamic_config = step['dynamic_config']
+                    if 'config' in step:
+                        if config:
+                            steps[i].as_init.config.node = c.pointer(config[0])
+                    else:
+                        steps[i].as_init.config.key = c.addressof(config_key)
+
 
             elif step['type'] == 'final':
                 if address:
@@ -529,14 +577,21 @@ def fossilize(app: Application, pathname: str):
 
             elif step['type'] == 'act':
                 action = allocate_string(step['action'])
-                params = allocate_named_value_list(step['params'])
+                if 'params' in step:
+                    params = allocate_named_value_list(step['params'])
+                else:
+                    params_key = allocate_string(step['params_key'])
 
                 if address:
                     steps[i].type = APP_CONFIG_STEP_ACT
                     steps[i].key = c.addressof(context_key)
                     steps[i].as_act.action = c.addressof(action)
-                    if params:
-                        steps[i].as_act.params = c.pointer(params[0])
+                    steps[i].as_act.dynamic_params = step['dynamic_params']
+                    if 'params' in step:
+                        if params:
+                            steps[i].as_act.params.node = c.pointer(params[0])
+                    else:
+                        steps[i].as_act.params.key = c.addressof(params_key)
 
     ### Do the job ###
 
@@ -649,11 +704,19 @@ class list_node_named_value_t(c.Structure):
 
 ###############################################################################
 
+class app_config_step_value_list_union_t(c.Union):
+    """Union of specific pointers to context configuration.
+    """
+    _fields_ = [('node', c.POINTER(list_node_named_value_t)),
+                ('key', c.c_char_p)]
+
+
 class app_config_step_init_t(c.Structure):
     """Specific configuration step data for context initialization.
     """
     _fields_ = [('interface_key', c.c_char_p),
-                ('config', c.POINTER(list_node_named_value_t))]
+                ('dynamic_config', c.c_bool),
+                ('config', app_config_step_value_list_union_t)]
 
 
 class app_config_step_set_t(c.Structure):
@@ -675,7 +738,8 @@ class app_config_step_act_t(c.Structure):
     """Specific configuration step data for context action.
     """
     _fields_ = [('action', c.c_char_p),
-                ('params', c.POINTER(list_node_named_value_t))]
+                ('dynamic_params', c.c_bool),
+                ('params', app_config_step_value_list_union_t)]
 
 
 class app_config_step_union_t(c.Union):
