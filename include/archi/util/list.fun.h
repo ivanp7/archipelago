@@ -149,6 +149,18 @@ archi_list_traverse(
 /*****************************************************************************/
 
 /**
+ * @brief Copy a string for a node name.
+ *
+ * @return Node name.
+ */
+char*
+archi_list_node_copy_name(
+        const char *name ///< [in] Copied string.
+);
+
+/*****************************************************************************/
+
+/**
  * @brief Linked list link function -- select every nth link.
  *
  * @return 0 if the current link matches, otherwise 1.

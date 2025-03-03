@@ -53,9 +53,6 @@ ARCHI_CONTEXT_SET_FUNC(archi_app_signal_set)
 {
     (void) metadata;
 
-    if ((context == NULL) || (slot == NULL) || (value == NULL))
-        return ARCHI_ERROR_MISUSE;
-
     struct archi_signal_management_context *signal_management = context;
 
     if (strcmp(slot, ARCHI_APP_SIGNAL_SLOT_SIGNAL_HANDLER) == 0)
@@ -86,9 +83,6 @@ ARCHI_CONTEXT_SET_FUNC(archi_app_signal_set)
 ARCHI_CONTEXT_GET_FUNC(archi_app_signal_get)
 {
     (void) metadata;
-
-    if ((context == NULL) || (slot == NULL) || (value == NULL))
-        return ARCHI_ERROR_MISUSE;
 
     struct archi_signal_management_context *signal_management = context;
 
@@ -133,9 +127,6 @@ const archi_context_interface_t archi_app_signal_interface = {
 ARCHI_CONTEXT_SET_FUNC(archi_app_fsm_set)
 {
     (void) metadata;
-
-    if ((context == NULL) || (slot == NULL) || (value == NULL))
-        return ARCHI_ERROR_MISUSE;
 
     archi_fsm_t *fsm = context;
 
@@ -183,9 +174,6 @@ ARCHI_CONTEXT_SET_FUNC(archi_app_fsm_set)
 ARCHI_CONTEXT_GET_FUNC(archi_app_fsm_get)
 {
     (void) metadata;
-
-    if ((context == NULL) || (slot == NULL) || (value == NULL))
-        return ARCHI_ERROR_MISUSE;
 
     archi_fsm_t *fsm = context;
 

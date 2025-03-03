@@ -182,7 +182,6 @@ ARCHI_CONTEXT_INIT_FUNC(archi_plugin_file_context_init)
     }
 
     *context = file_context;
-
     return 0;
 }
 

@@ -107,9 +107,6 @@ ARCHI_CONTEXT_INIT_FUNC(archi_plugin_shared_library_context_init)
 {
     (void) metadata;
 
-    if (context == NULL)
-        return ARCHI_ERROR_MISUSE;
-
     archi_status_t code;
 
     archi_library_load_config_t shared_library_config = {0};
@@ -143,9 +140,6 @@ ARCHI_CONTEXT_FINAL_FUNC(archi_plugin_shared_library_context_final)
 ARCHI_CONTEXT_GET_FUNC(archi_plugin_shared_library_context_get)
 {
     (void) metadata;
-
-    if ((context == NULL) || (slot == NULL) || (value == NULL))
-        return ARCHI_ERROR_MISUSE;
 
     void *symbol = archi_library_get_symbol(context, slot);
     if (symbol == NULL)

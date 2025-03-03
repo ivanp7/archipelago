@@ -111,10 +111,8 @@ ARCHI_LIST_ACT_FUNC(plugin_sdl_library_init_config)
 
 ARCHI_CONTEXT_INIT_FUNC(plugin_sdl_library_init)
 {
+    (void) context;
     (void) metadata;
-
-    if (context == NULL)
-        return ARCHI_ERROR_MISUSE;
 
     archi_status_t code;
 
@@ -239,9 +237,6 @@ ARCHI_CONTEXT_INIT_FUNC(plugin_sdl_window_context_init)
 {
     (void) metadata;
 
-    if (context == NULL)
-        return ARCHI_ERROR_MISUSE;
-
     archi_status_t code;
 
     plugin_sdl_window_config_t window_config = {0};
@@ -303,9 +298,6 @@ ARCHI_LIST_ACT_FUNC(plugin_font_psf2_context_init_config)
 ARCHI_CONTEXT_INIT_FUNC(plugin_font_psf2_context_init)
 {
     (void) metadata;
-
-    if (context == NULL)
-        return ARCHI_ERROR_MISUSE;
 
     archi_status_t code;
 

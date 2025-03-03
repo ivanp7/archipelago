@@ -458,6 +458,22 @@ archi_list_traverse(
 
 /*****************************************************************************/
 
+char*
+archi_list_node_copy_name(
+        const char *name)
+{
+    size_t name_size = strlen(name) + 1;
+
+    char *copy = malloc(name_size);
+    if (copy == NULL)
+        return NULL;
+
+    memcpy(copy, name, name_size);
+    return copy;
+}
+
+/*****************************************************************************/
+
 ARCHI_LIST_LINK_FUNC(archi_list_link_func_select_every_nth)
 {
     (void) prev;
@@ -536,21 +552,6 @@ ARCHI_LIST_ACT_FUNC(archi_list_act_func_free_named)
 }
 
 /*****************************************************************************/
-
-static
-const char*
-archi_list_node_copy_name(
-        const char *name)
-{
-    size_t name_size = strlen(name) + 1;
-
-    char *copy = malloc(name_size);
-    if (copy == NULL)
-        return NULL;
-
-    memcpy(copy, name, name_size);
-    return copy;
-}
 
 ARCHI_CONTAINER_INSERT_FUNC(archi_list_container_insert)
 {
@@ -645,7 +646,7 @@ ARCHI_CONTAINER_EXTRACT_FUNC(archi_list_container_extract)
     if (code != 1)
     {
         if (code == 0)
-            return 1;
+            return 1; // not found
 
         return code;
     }

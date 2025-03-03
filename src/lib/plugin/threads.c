@@ -85,9 +85,6 @@ ARCHI_CONTEXT_INIT_FUNC(archi_plugin_thread_group_context_init)
 {
     (void) metadata;
 
-    if (context == NULL)
-        return ARCHI_ERROR_MISUSE;
-
     archi_status_t code;
 
     archi_thread_group_config_t thread_group_config = {0};
@@ -176,9 +173,6 @@ ARCHI_LIST_ACT_FUNC(archi_plugin_queue_context_init_config)
 ARCHI_CONTEXT_INIT_FUNC(archi_plugin_queue_context_init)
 {
     (void) metadata;
-
-    if (context == NULL)
-        return ARCHI_ERROR_MISUSE;
 
     archi_status_t code;
 
