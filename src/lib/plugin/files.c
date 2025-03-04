@@ -192,7 +192,7 @@ ARCHI_CONTEXT_FINAL_FUNC(archi_plugin_file_context_final)
     struct archi_plugin_file_context *file_context = context;
 
     if (file_context->mm != NULL)
-        archi_file_unmap(file_context->mm);
+        archi_file_unmap(file_context->mm, file_context->mm_size);
 
     if (file_context->fd != -1)
         archi_file_close(file_context->fd);
@@ -272,6 +272,22 @@ ARCHI_LIST_ACT_FUNC(archi_plugin_file_context_act_params)
 
         params->map.offset = *(size_t*)value.ptr;
         return 0;
+    }
+    else if (strcmp(name, ARCHI_FILE_MAP_PARAM_KEY_HAS_HEADER) == 0)
+    {
+        switch (value.type)
+        {
+            case ARCHI_VALUE_FALSE:
+                params->map.has_header = false;
+                return 0;
+
+            case ARCHI_VALUE_TRUE:
+                params->map.has_header = true;
+                return 0;
+
+            default:
+                return ARCHI_ERROR_CONFIG;
+        }
     }
     else if (strcmp(name, ARCHI_FILE_MAP_PARAM_KEY_READABLE) == 0)
     {
@@ -371,12 +387,11 @@ ARCHI_CONTEXT_ACT_FUNC(archi_plugin_file_context_act)
                 return code;
         }
 
-        file_context->mm = archi_file_map(file_context->fd, file_map_params.map);
+        file_context->mm = archi_file_map(file_context->fd, file_map_params.map,
+                &file_context->mm_size);
 
         if (file_context->mm == NULL)
             return ARCHI_ERROR_MAP;
-
-        file_context->mm_size = file_map_params.map.size;
 
         if (file_map_params.close_fd)
         {

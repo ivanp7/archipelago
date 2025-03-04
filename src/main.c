@@ -56,7 +56,7 @@ static
 struct {
     archi_args_t args; ///< Command line arguments.
 
-    const archi_process_config_mem_t **config; ///< Configurations of the process in shared memory.
+    const archi_process_config_mem_t **config; ///< Configurations of the process in mapped memory.
 
     archi_signal_watch_set_t *signal_watch_set; ///< Signal watch set.
     struct archi_signal_management_context *signal_management; ///< Signal management context.
@@ -98,11 +98,11 @@ free_config_array(void);
 
 static
 void
-map_shared_memory(void);
+map_memory(void);
 
 static
 void
-unmap_shared_memory(void);
+unmap_memory(void);
 
 static
 void
@@ -231,8 +231,8 @@ main(
     // Allocate array of configurations
     alloc_config_array();
 
-    // Map shared memory
-    map_shared_memory();
+    // Map memory
+    map_memory();
 
     // Start signal management
     start_signal_management();
@@ -311,8 +311,8 @@ exit_cleanup(void) // is called on exit() or if main() returns
     // Stop signal management
     stop_signal_management();
 
-    // Unmap shared memory
-    unmap_shared_memory();
+    // Unmap memory
+    unmap_memory();
 
     // Free array of configurations
     free_config_array();
@@ -410,10 +410,10 @@ free_config_array(void)
 
 ///////////////////////////////////////////////////////////////////////////////
 
-#define M "map_shared_memory()"
+#define M "map_memory()"
 
 void
-map_shared_memory(void)
+map_memory(void)
 {
     archi_log_debug(M, "Mapping %llu configuration files...", archi_process.args.num_inputs);
 
@@ -440,8 +440,9 @@ map_shared_memory(void)
         errno = 0;
         archi_process.config[i] = (const archi_process_config_mem_t*)
             archi_file_map(fd, (archi_file_map_config_t){
+                    .has_header = true,
                     .readable = true,
-                    });
+                    }, NULL);
 
         if (archi_process.config[i] == NULL)
         {
@@ -464,10 +465,10 @@ map_shared_memory(void)
 }
 
 #undef M
-#define M "unmap_shared_memory()"
+#define M "unmap_memory()"
 
 void
-unmap_shared_memory(void)
+unmap_memory(void)
 {
     archi_log_debug(M, "Unmapping memory-mapped configuration files...");
 
@@ -480,8 +481,11 @@ unmap_shared_memory(void)
 
         archi_log_debug(M, "> munmap('%s')", archi_process.args.inputs[index]);
 
+        archi_mmap_header_t *mm = (archi_mmap_header_t*)archi_process.config[index];
+        size_t size = (char*)mm->end - (char*)mm->addr;
+
         errno = 0;
-        if (!archi_file_unmap((archi_mmap_header_t*)archi_process.config[index]))
+        if (!archi_file_unmap(mm, size))
             archi_log_error(M, "Couldn't unmap memory-mapped configuration file '%s': %s.",
                     archi_process.args.inputs[index], strerror(errno));
     }

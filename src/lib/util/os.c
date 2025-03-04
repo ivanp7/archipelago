@@ -41,6 +41,7 @@
 #include <fcntl.h> // for open()
 #include <unistd.h> // for close()
 #include <sys/mman.h> // for mmap(), munmap()
+#include <sys/stat.h> // for fstat()
 
 #include <dlfcn.h> // for dlopen(), dlclose(), dlsym()
 
@@ -81,26 +82,48 @@ archi_file_close(
     return close(fd) == 0;
 }
 
-archi_mmap_header_t*
+void*
 archi_file_map(
         int fd,
-
-        archi_file_map_config_t config)
+        archi_file_map_config_t config,
+        size_t *size)
 {
     int prot = (config.readable ? PROT_READ : 0) | (config.writable ? PROT_WRITE : 0);
     int all_flags = (config.shared ? MAP_SHARED_VALIDATE : MAP_PRIVATE) | config.flags;
 
-    archi_mmap_header_t *mm;
-    archi_mmap_header_t header;
-
-    if (config.size > 0)
+    if (!config.has_header)
     {
-        mm = mmap(NULL, config.size, prot, all_flags, fd, config.offset);
+        void *mm;
+
+        if (config.size > 0)
+        {
+            if (size != NULL)
+                *size = config.size;
+
+            mm = mmap(NULL, config.size, prot, all_flags, fd, config.offset);
+        }
+        else
+        {
+            struct stat statbuf;
+            if (fstat(fd, &statbuf) != 0)
+                return NULL;
+
+            if (size != NULL)
+                *size = statbuf.st_size - config.offset;
+
+            mm = mmap(NULL, statbuf.st_size - config.offset, prot, all_flags, fd, config.offset);
+        }
+
         if (mm == MAP_FAILED)
             return NULL;
+
+        return mm;
     }
     else
     {
+        archi_mmap_header_t *mm;
+        archi_mmap_header_t header;
+
         // Map the memory the initial time to extract its header
         mm = mmap(NULL, sizeof(*mm), prot, all_flags, fd, config.offset);
         if (mm == MAP_FAILED)
@@ -132,21 +155,21 @@ archi_file_map(
             munmap(mm, config.size);
             return NULL;
         }
-    }
 
-    return mm;
+        if (size != NULL)
+            *size = config.size;
+
+        return mm;
+    }
 }
 
 bool
 archi_file_unmap(
-        archi_mmap_header_t *mm)
+        void *mm,
+        size_t size)
 {
     if (mm == NULL)
         return false;
-    else if (mm->addr > mm->end)
-        return false;
-
-    size_t size = (char*)mm->end - (char*)mm->addr;
 
     return munmap(mm, size) == 0;
 }

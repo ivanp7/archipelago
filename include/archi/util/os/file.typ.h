@@ -76,13 +76,17 @@ typedef struct archi_file_open_config {
 
 /**
  * @brief Parameters for archi_file_map().
+ *
+ * If has_header is true, size is ignored (it is computed from the header).
+ * Otherwise, size = 0 means "until the end of the file".
  */
 typedef struct archi_file_map_config {
-    size_t size;   ///< Size of the mapped memory.
-    size_t offset; ///< Offset in the file. Must be a multiple of the page size.
+    size_t size;     ///< Size of the mapped memory.
+    size_t offset;   ///< Offset in the file. Must be a multiple of the page size.
+    bool has_header; ///< Whether the mapped memory has the header.
 
-    bool readable; ///< Whether is shared memory readable.
-    bool writable; ///< Whether is shared memory writable.
+    bool readable; ///< Whether is mapped memory readable.
+    bool writable; ///< Whether is mapped memory writable.
     bool shared;   ///< Whether updates to the mapping are visible to other processes.
     int flags;     ///< Other mmap() flags.
 } archi_file_map_config_t;
@@ -103,12 +107,17 @@ typedef struct archi_file_map_config {
 #define ARCHI_FILE_MAP_PARAM_KEY_OFFSET "offset"
 
 /**
- * @brief File mapping parameter key -- whether is shared memory readable.
+ * @brief File mapping parameter key -- whether the mapped memory has the header.
+ */
+#define ARCHI_FILE_MAP_PARAM_KEY_HAS_HEADER "has_header"
+
+/**
+ * @brief File mapping parameter key -- whether is mapped memory readable.
  */
 #define ARCHI_FILE_MAP_PARAM_KEY_READABLE "readable"
 
 /**
- * @brief File mapping parameter key -- whether is shared memory writable.
+ * @brief File mapping parameter key -- whether is mapped memory writable.
  */
 #define ARCHI_FILE_MAP_PARAM_KEY_WRITABLE "writable"
 
@@ -127,14 +136,14 @@ typedef struct archi_file_map_config {
 /**
  * @brief Mapped memory header.
  *
- * If header is an object in shared memory,
+ * If header is an object in mapped memory,
  * header.addr must be equal to &header.
  *
- * (header.end - header.addr) is the full size of shared memory.
+ * (header.end - header.addr) is the full size of mapped memory.
  */
 typedef struct archi_mmap_header {
-    void *addr; ///< Address of the shared memory starting location.
-    void *end;  ///< Address of the first location beyond shared memory end.
+    void *addr; ///< Address of the mapped memory starting location.
+    void *end;  ///< Address of the first location beyond mapped memory end.
 } archi_mmap_header_t;
 
 #endif // _ARCHI_UTIL_OS_FILE_TYP_H_

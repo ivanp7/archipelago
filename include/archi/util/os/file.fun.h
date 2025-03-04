@@ -61,21 +61,22 @@ archi_file_close(
  *
  * @return Mapped memory address or NULL in case of failure.
  */
-archi_mmap_header_t*
+void*
 archi_file_map(
         int fd, ///< [in] File descriptor.
-
-        archi_file_map_config_t config ///< File mapping configuration.
+        archi_file_map_config_t config, ///< [in] File mapping configuration.
+        size_t *size /// [out] Mapped memory size.
 );
 
 /**
- * @brief Unmap a pointer-aware memory-mapped file.
+ * @brief Unmap a memory-mapped file.
  *
  * @return True on success, otherwise false.
  */
 bool
 archi_file_unmap(
-        archi_mmap_header_t *mm ///< [in] Mapped memory header.
+        void *mm,   ///< [in] Mapped memory.
+        size_t size ///< [in] Size of mapped memory.
 );
 
 #endif // _ARCHI_UTIL_OS_FILE_FUN_H_
