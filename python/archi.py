@@ -282,6 +282,12 @@ class Application:
                                   'library_key': library_key}
 
 
+    def value_list_interface(self) -> ApplicationContextInterface:
+        """Return the named value list interface.
+        """
+        return ApplicationContextInterface(self, APP_VALUE_LIST_INTERFACE)
+
+
     def interface(self, key: str) -> ApplicationContextInterface:
         """Return an existing context interface.
 
@@ -298,7 +304,7 @@ class Application:
         return ApplicationContext(self, key)
 
 
-APP_VALUE_LIST_INTERFACE = 'values'
+APP_VALUE_LIST_INTERFACE = 'value_list'
 
 FILE_INTERFACE = 'file'
 SHARED_LIBRARY_INTERFACE = 'shared_library'

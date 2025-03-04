@@ -40,7 +40,7 @@ const archi_context_interface_t archi_app_value_list_interface; ///< Value list 
 /**
  * @brief Key of value list interface.
  */
-#define ARCHI_APP_VALUE_LIST_INTERFACE "values"
+#define ARCHI_APP_VALUE_LIST_INTERFACE "value_list"
 
 #endif // _ARCHI_APP_LIST_FUN_H_
 
