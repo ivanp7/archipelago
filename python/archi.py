@@ -44,7 +44,7 @@ VALUE_FUNCTION  = 10 # Pointer to a function.
 class Value:
     """High-level representation of a value_t object.
     """
-    def __init__(self, object, size=None, num_of=1, type=VALUE_DATA):
+    def __init__(self, object=None, size=None, num_of=1, type=VALUE_DATA):
         """Create a value wrapper.
 
         @param[in] object : a ctypes object
