@@ -546,7 +546,6 @@ def fossilize(app: Application, pathname: str):
                     else:
                         steps[i].as_init.config.key = c.addressof(config_key)
 
-
             elif step['type'] == 'final':
                 if address:
                     steps[i].type = APP_CONFIG_STEP_FINAL
