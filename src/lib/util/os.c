@@ -39,7 +39,7 @@
 #include <threads.h> // for thrd* functions and types
 
 #include <fcntl.h> // for open()
-#include <unistd.h> // for close()
+#include <unistd.h> // for close(), sysconf()
 #include <sys/mman.h> // for mmap(), munmap()
 #include <sys/stat.h> // for fstat()
 
@@ -55,6 +55,12 @@
 #include <assert.h>
 
 /*****************************************************************************/
+
+size_t
+archi_page_size(void)
+{
+    return sysconf(_SC_PAGE_SIZE);
+}
 
 int
 archi_file_open(

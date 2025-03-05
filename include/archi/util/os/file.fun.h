@@ -33,6 +33,14 @@
 #include <stddef.h>
 
 /**
+ * @brief Get page size.
+ *
+ * @return Page size.
+ */
+size_t
+archi_page_size(void);
+
+/**
  * @brief Open a file.
  *
  * @return File descriptor.
