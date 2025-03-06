@@ -99,29 +99,24 @@ archi_file_map(
 
     if (!config.has_header)
     {
-        void *mm;
-
-        if (config.size > 0)
-        {
-            if (size != NULL)
-                *size = config.size;
-
-            mm = mmap(NULL, config.size, prot, all_flags, fd, config.offset);
-        }
-        else
+        if (config.size == 0)
         {
             struct stat statbuf;
             if (fstat(fd, &statbuf) != 0)
                 return NULL;
 
-            if (size != NULL)
-                *size = statbuf.st_size - config.offset;
+            if (config.offset >= (size_t)statbuf.st_size)
+                return NULL;
 
-            mm = mmap(NULL, statbuf.st_size - config.offset, prot, all_flags, fd, config.offset);
+            config.size = statbuf.st_size - config.offset;
         }
 
+        void *mm = mmap(NULL, config.size, prot, all_flags, fd, config.offset);
         if (mm == MAP_FAILED)
             return NULL;
+
+        if (size != NULL)
+            *size = config.size;
 
         return mm;
     }
@@ -131,26 +126,34 @@ archi_file_map(
         archi_mmap_header_t header;
 
         // Map the memory the initial time to extract its header
-        mm = mmap(NULL, sizeof(*mm), prot, all_flags, fd, config.offset);
+        mm = mmap(NULL, sizeof(header), prot, all_flags, fd, config.offset);
         if (mm == MAP_FAILED)
             return NULL;
 
         header = *mm;
-        if (header.addr > header.end)
+
+        if (config.size == 0)
         {
-            munmap(mm, sizeof(*mm));
-            return NULL;
+            uintptr_t addr = (uintptr_t)header.addr;
+            uintptr_t end  = (uintptr_t)header.end;
+
+            if (addr > end)
+            {
+                munmap(mm, sizeof(header));
+                return NULL;
+            }
+
+            config.size = end - addr;
         }
 
-        config.size = (char*)header.end - (char*)header.addr;
-        if (config.size < sizeof(*mm))
+        if (config.size < sizeof(header))
         {
-            munmap(mm, sizeof(*mm));
+            munmap(mm, sizeof(header));
             return NULL;
         }
 
         // Remap the memory of the correct size at the correct address
-        munmap(mm, sizeof(*mm));
+        munmap(mm, sizeof(header));
 
         mm = mmap(header.addr, config.size, prot, all_flags | MAP_FIXED_NOREPLACE, fd, config.offset);
         if (mm == MAP_FAILED)

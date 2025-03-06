@@ -63,9 +63,7 @@ archi_file_close(
 /**
  * @brief Map a file into memory.
  *
- * If config.size is 0, it is determined automatically,
- * and the memory is considered to have the header.
- * The header determines the mapping address and size.
+ * If config.size is 0, it means "until the end of the file".
  *
  * @return Mapped memory address or NULL in case of failure.
  */
