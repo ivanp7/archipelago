@@ -178,7 +178,7 @@ class ApplicationContextInterface:
         self._key_ = key
 
 
-    def __call__(self, key: str, config_list: str=None, **config):
+    def new_context(self, key: str, config_list: str=None, **config):
         """Return a new context.
 
         @param[in] key         : alias of the created context
