@@ -58,8 +58,8 @@ archi_plugin_file_context_mapped_memory(
 
 ARCHI_CONTEXT_INIT_FUNC(archi_plugin_file_context_init);   ///< File context initialization function.
 ARCHI_CONTEXT_FINAL_FUNC(archi_plugin_file_context_final); ///< File context finalization function.
-ARCHI_CONTEXT_GET_FUNC(archi_plugin_file_context_get);     ///< File context getter function.
-ARCHI_CONTEXT_ACT_FUNC(archi_plugin_file_context_act);     ///< File context finalization function.
+ARCHI_CONTEXT_GET_FUNC(archi_plugin_file_context_get);     ///< File context slot getter function.
+ARCHI_CONTEXT_ACT_FUNC(archi_plugin_file_context_act);     ///< File context action function.
 
 extern
 const archi_context_interface_t archi_plugin_file_context_interface; ///< File context interface functions.
