@@ -53,8 +53,8 @@ archi_plugin_file_context_mapped_memory(
         size_t *memory_size ///< [out] Mapped memory size.
 );
 
-#define ARCHI_PLUGIN_FILE_SLOT_FILE_DESCRIPTOR "fd" ///< Output slot: file descriptor.
-#define ARCHI_PLUGIN_FILE_SLOT_MAPPED_MEMORY "mm" ///< Output slot: mapped memory.
+#define ARCHI_PLUGIN_FILE_SLOT_FILE_DESCRIPTOR "descriptor" ///< Output slot: file descriptor.
+#define ARCHI_PLUGIN_FILE_SLOT_MAPPED_MEMORY "mapped"       ///< Output slot: mapped memory.
 
 ARCHI_CONTEXT_INIT_FUNC(archi_plugin_file_context_init);   ///< File context initialization function.
 ARCHI_CONTEXT_FINAL_FUNC(archi_plugin_file_context_final); ///< File context finalization function.
