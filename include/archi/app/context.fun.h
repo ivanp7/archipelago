@@ -32,9 +32,6 @@
 /**
  * @brief Initialize a context.
  *
- * When there is no initialization function in the context interface,
- * the dummy context pointer is returned.
- *
  * @return Status code.
  */
 archi_status_t
