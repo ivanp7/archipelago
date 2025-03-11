@@ -26,7 +26,8 @@ EXEC_SOURCE = "main.c"
 CFLAGS = ['-march=native', '-pipe', '-std=c17',
           '-Wall', '-Wextra', '-Wpedantic',
           '-Wmissing-prototypes', '-Wstrict-prototypes', '-Wold-style-definition',
-          '-pthread', '-fPIC']
+          '-pthread', '-fPIC',
+          '-U_FORTIFY_SOURCE', '-D_FORTIFY_SOURCE=2', '-fstack-protector-strong']
 LFLAGS = ['-ldl', '-pthread', '-fPIC']
 
 if 'DEBUG' in os.environ:                       ### <<<<<<<<<<<<<<<<<<<< INPUT ENVIRONMENT VARIABLE <<<<<<<<<<<<<<<<<<<<

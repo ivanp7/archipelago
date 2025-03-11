@@ -298,7 +298,7 @@ TEST(archi_app_undo_config_step)
     step.type = ARCHI_APP_CONFIG_STEP_INIT;
 
     step.key = "2";
-    ASSERT_EQ(archi_app_undo_config_step(&app, step), 1, archi_status_t, "%i");
+    ASSERT_EQ(archi_app_undo_config_step(&app, step), 0, archi_status_t, "%i");
     ASSERT_EQ(global_context_data.init_counter, 1, int, "%i");
     ASSERT_EQ(global_context_data.final_counter, 0, int, "%i");
     ASSERT_EQ(contexts_data.list.head, contexts_data.list.tail, void*, "%p");
@@ -311,7 +311,7 @@ TEST(archi_app_undo_config_step)
     ASSERT_EQ(contexts_data.list.tail, NULL, void*, "%p");
 
     step.key = "2";
-    ASSERT_EQ(archi_app_undo_config_step(&app, step), 1, archi_status_t, "%i");
+    ASSERT_EQ(archi_app_undo_config_step(&app, step), 0, archi_status_t, "%i");
     ASSERT_EQ(global_context_data.init_counter, 1, int, "%i");
     ASSERT_EQ(global_context_data.final_counter, 1, int, "%i");
     ASSERT_EQ(contexts_data.list.head, NULL, void*, "%p");
