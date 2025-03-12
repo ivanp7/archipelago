@@ -472,22 +472,20 @@ unmap_memory(void)
 {
     archi_log_debug(M, "Unmapping memory-mapped configuration files...");
 
-    for (size_t i = 0; i < archi_process.args.num_inputs; i++)
+    for (size_t i = archi_process.args.num_inputs; i-- > 0;)
     {
-        size_t index = (archi_process.args.num_inputs - 1) - i; // reverse order
-
-        if (archi_process.config[index] == NULL)
+        if (archi_process.config[i] == NULL)
             continue;
 
-        archi_log_debug(M, "> munmap('%s')", archi_process.args.inputs[index]);
+        archi_log_debug(M, "> munmap('%s')", archi_process.args.inputs[i]);
 
-        archi_mmap_header_t *mm = (archi_mmap_header_t*)archi_process.config[index];
+        archi_mmap_header_t *mm = (archi_mmap_header_t*)archi_process.config[i];
         size_t size = (char*)mm->end - (char*)mm->addr;
 
         errno = 0;
         if (!archi_file_unmap(mm, size))
             archi_log_error(M, "Couldn't unmap memory-mapped configuration file '%s': %s.",
-                    archi_process.args.inputs[index], strerror(errno));
+                    archi_process.args.inputs[i], strerror(errno));
     }
 }
 
@@ -652,19 +650,16 @@ remove_builtin_context_interfaces(void)
 {
     archi_log_debug(M, "Unregistering built-in context interfaces...");
 
-    for (size_t i = 0; i < archi_builtin_interfaces_num_of; i++)
+    for (size_t i = archi_builtin_interfaces_num_of; i-- > 0;)
     {
-        size_t index = (archi_builtin_interfaces_num_of - 1) - i; // reverse order
-
-        archi_log_debug(M, "> unregister_builtin_interface('%s')",
-                archi_builtin_interfaces_keys[index]);
+        archi_log_debug(M, "> unregister_builtin_interface('%s')", archi_builtin_interfaces_keys[i]);
 
         archi_status_t code = archi_container_remove(archi_process.app.interfaces,
-                archi_builtin_interfaces_keys[index], NULL);
+                archi_builtin_interfaces_keys[i], NULL);
 
         if (code < 0) // ignore 'not found' error
             archi_log_error(M, "Couldn't unregister built-in context interface '%s' (error %i).",
-                    archi_builtin_interfaces_keys[index], code);
+                    archi_builtin_interfaces_keys[i], code);
     }
 }
 
@@ -681,8 +676,7 @@ add_builtin_contexts(void)
 
     for (size_t i = 0; i < NUM_BUILTIN_CONTEXTS; i++)
     {
-        archi_log_debug(M, "> register_builtin_context('%s')",
-                archi_process.builtin.contexts_keys[i]);
+        archi_log_debug(M, "> register_builtin_context('%s')", archi_process.builtin.contexts_keys[i]);
 
         archi_status_t code = archi_container_insert(archi_process.app.contexts,
                 archi_process.builtin.contexts_keys[i], &archi_process.builtin.contexts[i]);
@@ -704,19 +698,16 @@ remove_builtin_contexts(void)
 {
     archi_log_debug(M, "Unregistering built-in contexts...");
 
-    for (size_t i = 0; i < NUM_BUILTIN_CONTEXTS; i++)
+    for (size_t i = NUM_BUILTIN_CONTEXTS; i-- > 0;)
     {
-        size_t index = (NUM_BUILTIN_CONTEXTS - 1) - i; // reverse order
-
-        archi_log_debug(M, "> unregister_builtin_context('%s')",
-                archi_process.builtin.contexts_keys[index]);
+        archi_log_debug(M, "> unregister_builtin_context('%s')", archi_process.builtin.contexts_keys[i]);
 
         archi_status_t code = archi_container_remove(archi_process.app.contexts,
-                archi_process.builtin.contexts_keys[index], NULL);
+                archi_process.builtin.contexts_keys[i], NULL);
 
         if (code < 0) // ignore 'not found' error
             archi_log_error(M, "Couldn't unregister built-in context '%s' (error %i).",
-                    archi_process.builtin.contexts_keys[index], code);
+                    archi_process.builtin.contexts_keys[i], code);
     }
 }
 
@@ -762,18 +753,15 @@ unload_shared_libraries(void)
 {
     archi_log_debug(M, "Unloading shared libraries...");
 
-    for (size_t i = 0; i < archi_process.args.num_inputs; i++)
+    for (size_t i = archi_process.args.num_inputs; i-- > 0;)
     {
-        size_t input_index = (archi_process.args.num_inputs - 1) - i; // reverse order
-
-        if (archi_process.config[input_index] == NULL)
+        if (archi_process.config[i] == NULL)
             continue;
 
-        for (size_t j = 0; j < archi_process.config[input_index]->app_config.num_libraries; j++)
+        for (size_t j = archi_process.config[i]->app_config.num_libraries; j-- > 0;)
         {
-            size_t index = (archi_process.config[input_index]->app_config.num_libraries - 1) - j; // reverse order
+            const char *key = archi_process.config[i]->app_config.libraries[j].key;
 
-            const char *key = archi_process.config[input_index]->app_config.libraries[index].key;
             if (archi_container_extract(archi_process.app.libraries, key, NULL) == 0)
             {
                 archi_log_debug(M, "> unload_library('%s')", SAFE(key));
@@ -830,18 +818,15 @@ remove_context_interfaces(void)
 {
     archi_log_debug(M, "Unregistering context interfaces...");
 
-    for (size_t i = 0; i < archi_process.args.num_inputs; i++)
+    for (size_t i = archi_process.args.num_inputs; i-- > 0;)
     {
-        size_t input_index = (archi_process.args.num_inputs - 1) - i; // reverse order
-
-        if (archi_process.config[input_index] == NULL)
+        if (archi_process.config[i] == NULL)
             continue;
 
-        for (size_t j = 0; j < archi_process.config[input_index]->app_config.num_interfaces; j++)
+        for (size_t j = archi_process.config[i]->app_config.num_interfaces; j-- > 0;)
         {
-            size_t index = (archi_process.config[input_index]->app_config.num_interfaces - 1) - j; // reverse order
+            const char *key = archi_process.config[i]->app_config.interfaces[j].key;
 
-            const char *key = archi_process.config[input_index]->app_config.interfaces[index].key;
             if (archi_container_extract(archi_process.app.interfaces, key, NULL) == 0)
             {
                 archi_log_debug(M, "> unregister_interface('%s')", SAFE(key));
@@ -1141,30 +1126,26 @@ reset_app(void)
 {
     archi_log_debug(M, "Undoing the configuration...");
 
-    for (size_t i = 0; i < archi_process.args.num_inputs; i++)
+    for (size_t i = archi_process.args.num_inputs; i-- > 0;)
     {
-        size_t input_index = (archi_process.args.num_inputs - 1) - i; // reverse order
-
-        if (input_index > archi_process.count.inputs)
+        if (i > archi_process.count.inputs)
             continue; // this configuration file was never used
 
-        for (size_t j = 0; j < archi_process.config[input_index]->app_config.num_steps; j++)
+        for (size_t j = archi_process.config[i]->app_config.num_steps; j-- > 0;)
         {
-            size_t index = (archi_process.config[input_index]->app_config.num_steps - 1) - j; // reverse order
-
-            if ((input_index == archi_process.count.inputs) && (index >= archi_process.count.steps))
+            if ((i == archi_process.count.inputs) && (j >= archi_process.count.steps))
                 continue; // this configuration step was never done
 
-            archi_app_config_step_t step = archi_process.config[input_index]->app_config.steps[index];
+            archi_app_config_step_t step = archi_process.config[i]->app_config.steps[j];
+
             if (archi_app_config_step_undoable(step.type))
             {
-                archi_log_debug(M, "> undo_configuration_step(%llu, %llu, '%s')",
-                        input_index, index, step.key);
+                archi_log_debug(M, "> undo_configuration_step(%llu, %llu, '%s')", i, j, step.key);
 
                 archi_status_t code = archi_app_undo_config_step(&archi_process.app, step);
 
                 if (code != 0)
-                    archi_log_error(M, "Couldn't undo configuration step #%llu (error %i).", index, code);
+                    archi_log_error(M, "Couldn't undo configuration step #%llu (error %i).", j, code);
             }
         }
     }

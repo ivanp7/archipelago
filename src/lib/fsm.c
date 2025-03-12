@@ -275,10 +275,10 @@ archi_fsm_proceed(
     // Pop states from the stack
     context->stack_size -= num_popped;
 
-    // Push states to the stack
-    for (size_t i = 0; i < num_pushed; i++)
+    // Push states to the stack in reverse order
+    for (size_t i = num_pushed; i-- > 0;)
     {
-        archi_fsm_state_t state = pushed[(num_pushed-1) - i]; // reverse order
+        archi_fsm_state_t state = pushed[i];
 
         if (state.function == NULL)
             continue; // don't push null states to the stack
