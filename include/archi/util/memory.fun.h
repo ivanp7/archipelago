@@ -44,10 +44,10 @@ archi_memory_allocate(
 /**
  * @brief Deallocate memory.
  */
-void
+bool
 archi_memory_free(
         void *restrict memory, ///< [in] Memory to deallocate.
-        void *restrict param,  ///< [in] Memory deallocation parameters.
+        archi_memory_alloc_config_t *restrict config, ///< [in] Memory allocation parameters.
 
         const archi_memory_interface_t *interface ///< [in] Memory interface.
 );

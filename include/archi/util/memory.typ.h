@@ -20,7 +20,7 @@
 
 /**
  * @file
- * @brief Memory operation types.
+ * @brief Types for memory operations.
  */
 
 #pragma once
@@ -54,9 +54,9 @@ typedef ARCHI_MEMORY_ALLOC_FUNC((*archi_memory_alloc_func_t));
 /**
  * @brief Declare/define memory deallocator function.
  */
-#define ARCHI_MEMORY_FREE_FUNC(func_name) void func_name( \
+#define ARCHI_MEMORY_FREE_FUNC(func_name) bool func_name( \
         void *restrict memory, /* [in] Memory to deallocate. */ \
-        void *restrict param) /* [in] Memory deallocation parameters. */
+        archi_memory_alloc_config_t *restrict config) /* [in] Memory deallocation parameters. */
 
 /**
  * @brief Memory deallocator function.

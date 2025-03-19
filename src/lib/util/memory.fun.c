@@ -42,20 +42,22 @@ archi_memory_allocate(
     return interface->alloc_fn(config);
 }
 
-void
+bool
 archi_memory_free(
         void *restrict memory,
-        void *restrict param,
+        archi_memory_alloc_config_t *restrict config,
 
         const archi_memory_interface_t *interface)
 {
-    if (memory == NULL)
-        return;
+    if ((memory == NULL) || (config == NULL))
+        return false;
     else if (interface == NULL)
-        return;
+        return false;
 
     if (interface->free_fn != NULL)
-        interface->free_fn(memory, param);
+        return interface->free_fn(memory, config);
+    else
+        return true;
 }
 
 bool
@@ -66,9 +68,9 @@ archi_memory_map(
         const archi_memory_interface_t *interface)
 {
     if ((memory == NULL) || (config == NULL))
-        return NULL;
+        return false;
     else if (interface == NULL)
-        return NULL;
+        return false;
 
     if (interface->map_fn != NULL)
         return interface->map_fn(memory, config);
@@ -84,9 +86,9 @@ archi_memory_unmap(
         const archi_memory_interface_t *interface)
 {
     if ((memory == NULL) || (config == NULL))
-        return NULL;
+        return false;
     else if (interface == NULL)
-        return NULL;
+        return false;
 
     if (interface->unmap_fn != NULL)
         return interface->unmap_fn(memory, config);
@@ -110,9 +112,10 @@ ARCHI_MEMORY_ALLOC_FUNC(archi_memory_heap_alloc_func)
 
 ARCHI_MEMORY_FREE_FUNC(archi_memory_heap_free_func)
 {
-    (void) param;
+    (void) config;
 
     free(memory);
+    return true;
 }
 
 ARCHI_MEMORY_MAP_FUNC(archi_memory_heap_map_func)
