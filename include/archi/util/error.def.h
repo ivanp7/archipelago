@@ -33,18 +33,18 @@
 #define ARCHI_ERROR_MISUSE      -2  ///< Error: incorrect use of an interface (forbidden value passed).
 #define ARCHI_ERROR_CONFIG      -3  ///< Error: incorrect configuration provided.
 #define ARCHI_ERROR_FORMAT      -4  ///< Error: data format is incorrect.
-#define ARCHI_ERROR_INTERFACE   -5  ///< Error: required function is not available in interface.
+
+// resource unavailability
+#define ARCHI_ERROR_INTERFACE   -5  ///< Error: required function (method) is not available in interface.
+#define ARCHI_ERROR_UNAVAIL     -6  ///< Error: resource in not available.
+#define ARCHI_ERROR_SYMBOL      -7  ///< Error: couldn't find a symbol in shared library.
 
 // operation failure
-#define ARCHI_ERROR_OPERATION   -6  ///< Error: couldn't perform an operation.
-#define ARCHI_ERROR_ALLOC       -7  ///< Error: couldn't allocate memory.
-#define ARCHI_ERROR_OPEN        -8  ///< Error: couldn't open file.
-#define ARCHI_ERROR_MAP         -9  ///< Error: couldn't map memory.
-#define ARCHI_ERROR_LOAD        -10 ///< Error: couldn't load shared library.
-
-// resource unavailable
-#define ARCHI_ERROR_RESOURCE    -11 ///< Error: resource in not available.
-#define ARCHI_ERROR_SYMBOL      -12 ///< Error: couldn't find a symbol in shared library.
+#define ARCHI_ERROR_OPERATION   -8  ///< Error: couldn't perform an operation.
+#define ARCHI_ERROR_ALLOC       -9  ///< Error: couldn't allocate memory.
+#define ARCHI_ERROR_OPEN        -10 ///< Error: couldn't open file.
+#define ARCHI_ERROR_MAP         -11 ///< Error: couldn't map memory.
+#define ARCHI_ERROR_LOAD        -12 ///< Error: couldn't load shared library.
 
 // user error code base
 #define ARCHI_ERROR_USER        -16 ///< First error code reserved for user.
