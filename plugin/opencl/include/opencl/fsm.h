@@ -1,11 +1,13 @@
 /**
  * @file
- * @brief Data of OpenCL processing states for finite state machines.
+ * @brief FSM states for OpenCL processing.
  */
 
 #pragma once
-#ifndef _PLUGIN_OPENCL_STATE_TYP_H_
-#define _PLUGIN_OPENCL_STATE_TYP_H_
+#ifndef _PLUGIN_OPENCL_FSM_H_
+#define _PLUGIN_OPENCL_FSM_H_
+
+#include "archi/fsm/state.typ.h"
 
 #include <CL/cl.h>
 #include <stddef.h>
@@ -32,5 +34,10 @@ typedef struct plugin_opencl_fsm_state_data_enqueue_kernel {
     bool logging; ///< Whether error logging is enabled.
 } plugin_opencl_fsm_state_data_enqueue_kernel_t;
 
-#endif // _PLUGIN_OPENCL_STATE_TYP_H_
+/**
+ * @brief Enqueue an OpenCL kernel for execution.
+ */
+ARCHI_FSM_STATE_FUNCTION(plugin_opencl_fsm_state_enqueue_kernel);
+
+#endif // _PLUGIN_OPENCL_FSM_H_
 

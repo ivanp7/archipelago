@@ -3,8 +3,7 @@
  * @brief OpenCL processing states for finite state machines.
  */
 
-#include "opencl/state.fun.h"
-#include "opencl/state.typ.h"
+#include "opencl/fsm.h"
 #include "archi/fsm/state.fun.h"
 #include "archi/util/error.def.h"
 #include "archi/util/print.fun.h"
