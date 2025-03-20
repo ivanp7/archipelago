@@ -28,7 +28,12 @@
 #include "archi/util/list.fun.h"
 #include "archi/util/error.def.h"
 
+#include <stdlib.h> // for malloc(), free()
 #include <string.h> // for strcmp(), memcpy()
+
+struct archi_plugin_shared_library_context_metadata {
+    bool symbol_type_function;
+};
 
 static
 ARCHI_LIST_ACT_FUNC(archi_plugin_shared_library_context_init_config)
@@ -105,15 +110,11 @@ ARCHI_LIST_ACT_FUNC(archi_plugin_shared_library_context_init_config)
 
 ARCHI_CONTEXT_INIT_FUNC(archi_plugin_shared_library_context_init)
 {
-    (void) metadata;
-
-    archi_status_t code;
-
     archi_library_load_config_t shared_library_config = {0};
     if (config != NULL)
     {
         archi_list_t config_list = {.head = (archi_list_node_t*)config};
-        code = archi_list_traverse(&config_list, NULL, NULL,
+        archi_status_t code = archi_list_traverse(&config_list, NULL, NULL,
                 archi_plugin_shared_library_context_init_config, &shared_library_config, true, 0, NULL);
         if (code != 0)
             return code;
@@ -122,24 +123,33 @@ ARCHI_CONTEXT_INIT_FUNC(archi_plugin_shared_library_context_init)
     if (shared_library_config.pathname == NULL)
         return ARCHI_ERROR_CONFIG;
 
+    struct archi_plugin_shared_library_context_metadata *meta = malloc(sizeof(*meta));
+    if (meta == NULL)
+        return ARCHI_ERROR_ALLOC;
+
+    *meta = (struct archi_plugin_shared_library_context_metadata){0};
+
     void *handle = archi_library_load(shared_library_config);
     if (handle == NULL)
+    {
+        free(meta);
         return ARCHI_ERROR_LOAD;
+    }
 
     *context = handle;
+    *metadata = meta;
     return 0;
 }
 
 ARCHI_CONTEXT_FINAL_FUNC(archi_plugin_shared_library_context_final)
 {
-    (void) metadata;
-
     archi_library_unload(context);
+    free(metadata);
 }
 
 ARCHI_CONTEXT_GET_FUNC(archi_plugin_shared_library_context_get)
 {
-    (void) metadata;
+    const struct archi_plugin_shared_library_context_metadata *meta = metadata;
 
     void *symbol = archi_library_get_symbol(context, slot);
     if (symbol == NULL)
@@ -147,10 +157,26 @@ ARCHI_CONTEXT_GET_FUNC(archi_plugin_shared_library_context_get)
 
     *value = (archi_value_t){
         .ptr = symbol,
-        .size = 0,
         .num_of = 1,
-        .type = ARCHI_VALUE_DATA,
+        .type = meta->symbol_type_function ? ARCHI_VALUE_FUNCTION : ARCHI_VALUE_DATA,
     };
+
+    return 0;
+}
+
+ARCHI_CONTEXT_ACT_FUNC(archi_plugin_shared_library_context_act)
+{
+    (void) context;
+    (void) params;
+
+    struct archi_plugin_shared_library_context_metadata *meta = metadata;
+
+    if (strcmp(action, ARCHI_PLUGIN_SHARED_LIBRARY_ACTION_SYMTYPE_FUNC) == 0)
+        meta->symbol_type_function = true;
+    else if (strcmp(action, ARCHI_PLUGIN_SHARED_LIBRARY_ACTION_SYMTYPE_DATA) == 0)
+        meta->symbol_type_function = false;
+    else
+        return ARCHI_ERROR_CONFIG;
 
     return 0;
 }
@@ -159,5 +185,6 @@ const archi_context_interface_t archi_plugin_shared_library_context_interface = 
     .init_fn = archi_plugin_shared_library_context_init,
     .final_fn = archi_plugin_shared_library_context_final,
     .get_fn = archi_plugin_shared_library_context_get,
+    .act_fn = archi_plugin_shared_library_context_act,
 };
 
