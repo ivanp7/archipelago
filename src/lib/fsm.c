@@ -115,9 +115,9 @@ archi_fsm_execute(
     context.stack[0] = fsm.entry_state;
 
     // Run the finite state machine loop
-    /****************************************/
+    /***********************/
     archi_fsm_loop(&context);
-    /****************************************/
+    /***********************/
 
     // Free the stack memory and return
     free(context.stack);

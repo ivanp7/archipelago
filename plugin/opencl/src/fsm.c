@@ -34,7 +34,7 @@ ARCHI_FSM_STATE_FUNCTION(plugin_opencl_fsm_state_enqueue_kernel)
         return;
     }
 
-    if ((data->event != NULL) && (data->wait_for_event))
+    if ((data->event != NULL) && (data->wait_for_completion))
     {
         err = clWaitForEvents(1, data->event);
 
