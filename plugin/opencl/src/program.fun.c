@@ -483,7 +483,7 @@ plugin_opencl_program_create(
     }
 
     cl_program program = clCreateProgramWithBinary(context, binaries.num_devices, binaries.device_ids,
-            binaries.sizes, binaries.contents, binary_status, &err);
+            binaries.sizes, (const unsigned char**)binaries.contents, binary_status, &err);
 
     if (logging)
     {
@@ -560,12 +560,14 @@ plugin_opencl_program_binaries_extract(
             goto failure;
         }
 
+        bool platform_id_specified = false;
         cl_context_properties *property = properties;
-        while ((char*)property[0] != NULL)
+        while (property[0] != 0)
         {
             if (property[0] == CL_CONTEXT_PLATFORM)
             {
                 binaries->platform_id = (cl_platform_id)property[1];
+                platform_id_specified = true;
                 break;
             }
 
@@ -574,7 +576,7 @@ plugin_opencl_program_binaries_extract(
 
         free(properties);
 
-        if (*property == NULL) // platform ID is not specified
+        if (!platform_id_specified)
         {
             code = ARCHI_ERROR_UNAVAIL;
             goto failure;

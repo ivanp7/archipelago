@@ -11,7 +11,7 @@
 ARCHI_FSM_STATE_FUNCTION(plugin_opencl_fsm_state_enqueue_kernel)
 {
     plugin_opencl_fsm_state_data_enqueue_kernel_t *data =
-        ARCHI_FSM_CURRENT_DATA(plugin_opencl_fsm_state_data_enqueue_kernel_t);
+        ARCHI_FSM_CURRENT_DATA(plugin_opencl_fsm_state_data_enqueue_kernel_t*);
 
     if (data == NULL)
         return;
