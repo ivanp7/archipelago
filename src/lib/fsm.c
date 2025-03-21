@@ -133,7 +133,7 @@ archi_fsm_loop(
     // The only local variable left is `context` pointer.
     // As it does not change its address, it is not required to be volatile (setjmp() restriction).
 
-    while (archi_fsm_transition(context)) // there is a next state
+    while ((context->code == 0) && archi_fsm_transition(context)) // no errors and there is a next state
     {
         // Set the jump point, call the current state function and process its response after return/jump
         switch (setjmp(context->env))
@@ -169,27 +169,27 @@ archi_fsm_transition(
     }
     else
     {
-        archi_fsm_state_t stack_top, trans_state = {0};
+        archi_fsm_state_t next_state, trans_state = {0};
 
         if (context->stack_size > 0) // the next state is at the stack top
-            stack_top = context->stack[context->stack_size - 1];
+            next_state = context->stack[context->stack_size - 1];
         else
-            stack_top = ARCHI_NULL_FSM_STATE;
+            next_state = ARCHI_NULL_FSM_STATE;
 
         // Call the state transition function
         {
-            /**************************************************************/
-            context->transition.function(context->current_state, stack_top,
-                    &trans_state, &context->code, context->transition.data);
-            /**************************************************************/
+            /**********************************************************/
+            context->transition.function(context->current_state,
+                    next_state, &trans_state, context->transition.data);
+            /**********************************************************/
         }
 
         // Update the current state
         if (trans_state.function != NULL)
             context->current_state = trans_state;
-        else if (stack_top.function != NULL)
+        else if (next_state.function != NULL)
         {
-            context->current_state = stack_top;
+            context->current_state = next_state;
             context->stack_size--; // pop the top from the stack
         }
         else // the stack is empty, exit now
@@ -215,25 +215,6 @@ archi_fsm_stack_size(
     return (context != NULL) ? context->stack_size : 0;
 }
 
-archi_status_t
-archi_fsm_code(
-        const struct archi_fsm_context *context)
-{
-    return (context != NULL) ? context->code : 0;
-}
-
-void
-archi_fsm_set_code(
-        struct archi_fsm_context *context,
-
-        archi_status_t code)
-{
-    if ((context == NULL) || (context->mode != J_STATE))
-        return;
-
-    context->code = code;
-}
-
 /*****************************************************************************/
 
 static
@@ -250,9 +231,7 @@ archi_fsm_error(
         struct archi_fsm_context *context,
         archi_status_t code)
 {
-    archi_fsm_set_code(context, code);
-    context->stack_size = 0;
-
+    context->code = code;
     archi_fsm_return(context);
 }
 

@@ -37,7 +37,6 @@
         const archi_fsm_state_t prev_state, /* Previous state. */ \
         const archi_fsm_state_t next_state, /* Next state. */ \
         archi_fsm_state_t *const restrict trans_state, /* Transitional state. */ \
-        archi_status_t *const code, /* Status code. */ \
         void *const restrict data) /* State transition data. */
 
 /**

@@ -8,10 +8,8 @@
 static
 ARCHI_FSM_STATE_FUNCTION(state_dec)
 {
-    ARCHI_FSM_SET_CODE(ARCHI_FSM_CODE() - 1);
-
-    if (ARCHI_FSM_CODE() > 0)
-        ARCHI_FSM_PROCEED(0, ARCHI_FSM_CURRENT());
+    int *state_counter = ARCHI_FSM_CURRENT_DATA(int);
+    (*state_counter)--;
 }
 
 static
@@ -19,8 +17,6 @@ ARCHI_FSM_STATE_FUNCTION(state_inc)
 {
     int *state_counter = ARCHI_FSM_CURRENT_DATA(int);
     (*state_counter)++;
-
-    ARCHI_FSM_SET_CODE(ARCHI_FSM_CODE() + 1);
 
     if (*state_counter < NUM)
         ARCHI_FSM_PROCEED(0, ARCHI_FSM_CURRENT(), ARCHI_FSM_CURRENT());
@@ -31,8 +27,6 @@ ARCHI_FSM_STATE_FUNCTION(state_inc)
 static
 ARCHI_FSM_TRANSITION_FUNCTION(transition0)
 {
-    (void) code;
-
     int *trans_counter = data;
     (*trans_counter)++;
 
@@ -51,8 +45,8 @@ TEST(archi_fsm_execute)
             .transition = ARCHI_FSM_TRANSITION(transition0, &trans_counter)});
 
     ASSERT_EQ(code, 0, archi_status_t, "%i");
-    ASSERT_EQ(state_counter, NUM, int, "%i");
-    ASSERT_EQ(trans_counter, 2*NUM + 1, int, "%i");
+    ASSERT_EQ(state_counter, NUM - 1, int, "%i");
+    ASSERT_EQ(trans_counter, 1 + NUM + 1, int, "%i");
 }
 
 static

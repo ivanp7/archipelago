@@ -56,32 +56,6 @@ archi_fsm_stack_size(
         const struct archi_fsm_context *fsm ///< [in] Finite state machine context.
 );
 
-/**
- * @brief Get current status code.
- *
- * If fsm is NULL, the function returns 0.
- *
- * @return Current status code.
- */
-archi_status_t
-archi_fsm_code(
-        const struct archi_fsm_context *fsm ///< [in] Finite state machine context.
-);
-
-/**
- * @brief Set status code.
- *
- * If fsm is NULL, the function does nothing.
- * If called not from a state function during finite state machine execution,
- * the function does nothing.
- */
-void
-archi_fsm_set_code(
-        struct archi_fsm_context *fsm, ///< [in] Finite state machine context.
-
-        archi_status_t code ///< [in] Status code.
-);
-
 /*****************************************************************************/
 
 /**
@@ -102,15 +76,6 @@ archi_fsm_set_code(
  */
 #define ARCHI_FSM_STACK_SIZE() archi_fsm_stack_size(fsm)
 
-/**
- * @brief Access current status code.
- */
-#define ARCHI_FSM_CODE() archi_fsm_code(fsm)
-/**
- * @brief Update status code.
- */
-#define ARCHI_FSM_SET_CODE(code) archi_fsm_set_code(fsm, (code))
-
 /*****************************************************************************/
 
 /**
@@ -122,7 +87,7 @@ archi_fsm_set_code(
  * Null states are ignored.
  *
  * If the stack is empty after pop operation and no states are pushed,
- * the finite state machine exits with the specified status code.
+ * the finite state machine exits.
  *
  * Returning from a state function normally is equivalent to:
  * archi_proceed(fsm, 0, 0, NULL);
