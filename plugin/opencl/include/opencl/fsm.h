@@ -31,7 +31,7 @@ typedef struct plugin_opencl_fsm_state_data_enqueue_kernel {
     cl_event *event; ///< Event of the command.
     bool wait_for_completion; ///< Whether to wait for the command to complete.
 
-    bool logging; ///< Whether error logging is enabled.
+    cl_int ret; ///< Return code of the operation.
 } plugin_opencl_fsm_state_data_enqueue_kernel_t;
 
 /**

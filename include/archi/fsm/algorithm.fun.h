@@ -35,12 +35,11 @@
  *
  * The algorithm is as following:
  * 0. Push the entry state to the stack.
- * 1. Call the transition function if it's set.
- * 2. If the transition function is set and provided a transitional state,
- *      use it as the next state and go to step 5.
+ * 1. Call the transition function if it's provided, otherwise skip step 2.
+ * 2. If the transition function returned a transitional state, use it as the next state and go to step 5.
  * 3. If the stack is empty, exit.
  * 4. Pop the next state from the stack.
- * 5. Call the state function [it can pop or push multiple states from or to the stack].
+ * 5. Call the state function [it can modify the stack].
  * 6. Go to step 1.
  *
  * @return Status code.

@@ -45,14 +45,14 @@ archi_fsm_current(
 );
 
 /**
- * @brief Get current stack size.
+ * @brief Get number of frames on the FSM stack.
  *
  * If fsm is NULL, the function returns 0.
  *
- * @return Current stack size.
+ * @return Number of frames on the FSM stack.
  */
 size_t
-archi_fsm_stack_size(
+archi_fsm_stack_frames(
         const struct archi_fsm_context *fsm ///< [in] Finite state machine context.
 );
 
@@ -65,61 +65,61 @@ archi_fsm_stack_size(
 /**
  * @brief Access current state data through a pointer to the specified type.
  */
-#define ARCHI_FSM_CURRENT_DATA(type) ((type*)ARCHI_FSM_CURRENT().data)
+#define ARCHI_FSM_CURRENT_DATA(type) ((type)ARCHI_FSM_CURRENT().data)
 /**
  * @brief Access current state metadata through a pointer to the specified type.
  */
-#define ARCHI_FSM_CURRENT_METADATA(type) ((type*)ARCHI_FSM_CURRENT().metadata)
+#define ARCHI_FSM_CURRENT_METADATA(type) ((type)ARCHI_FSM_CURRENT().metadata)
 
 /**
- * @brief Access current stack size.
+ * @brief Access current number of frames on the stack.
  */
-#define ARCHI_FSM_STACK_SIZE() archi_fsm_stack_size(fsm)
+#define ARCHI_FSM_STACK_FRAMES() archi_fsm_stack_frames(fsm)
 
 /*****************************************************************************/
 
 /**
- * @brief Proceed finite state machine execution -- pop and/or push states to the stack.
+ * @brief Proceed finite state machine execution.
  *
- * This function pops the specified number of states and
- * pushes non-null states from the `pushed` array
- * to the stack in reverse order (high index to low index).
- * Null states are ignored.
+ * This function pops the specified number of frames (sequences of states that are pushed at once),
+ * then pushes a frame to the stack.
+ * Null states in the frame are left out and not pushed.
  *
- * If the stack is empty after pop operation and no states are pushed,
+ * If the stack is empty after the pop operation and there are no states pushed,
  * the finite state machine exits.
  *
- * Returning from a state function normally is equivalent to:
+ * Returning from a state function normally is equivalent to calling
  * archi_proceed(fsm, 0, 0, NULL);
  *
  * If fsm is NULL, the function does nothing.
- * If called not from a state function during finite state machine execution,
- * the function does nothing.
+ * If the function is not called from a state function during finite state machine execution, it does nothing.
+ * Otherwise, it does not return and triggers the state transition.
  */
 void
 archi_fsm_proceed(
         struct archi_fsm_context *fsm, ///< [in] Finite state machine context.
 
-        size_t num_popped, ///< [in] Number of states popped from the stack (excluding the auto-pop to get the next state).
-        size_t num_pushed, ///< [in] Number of states in the pushed states array.
-        const archi_fsm_state_t pushed[] ///< [in] Array of states to be pushed to the stack.
+        size_t pop_frames, ///< [in] Number of frames to pop from the stack before pushing.
+
+        const archi_fsm_state_t frame[], ///< [in] Frame to push to the stack.
+        size_t frame_length              ///< [in] Number of states in the pushed frame.
 );
 
 /*****************************************************************************/
 
 /**
- * @brief Proceed finite state machine execution -- pop and/or push states from/to the stack.
+ * @brief Proceed finite state machine execution.
  */
-#define ARCHI_FSM_PROCEED(num_popped, ...) do { \
-    archi_fsm_state_t pushed[] = {__VA_ARGS__}; \
-    archi_fsm_proceed(fsm, (num_popped), sizeof(pushed) / sizeof(pushed[0]), pushed); \
+#define ARCHI_FSM_PROCEED(pop_frames, ...) do { \
+    const archi_fsm_state_t _archi_frame[] = {__VA_ARGS__}; \
+    archi_fsm_proceed(fsm, (pop_frames), _archi_frame, sizeof(_archi_frame) / sizeof(_archi_frame[0])); \
 } while (0)
 
 /**
- * @brief Proceed finite state machine execution -- pop states from the stack.
+ * @brief Proceed finite state machine execution without pushing a new frame.
  */
-#define ARCHI_FSM_DONE(num_popped) do { \
-    archi_fsm_proceed(fsm, (num_popped), 0, NULL); \
+#define ARCHI_FSM_FINISH(pop_frames) do { \
+    archi_fsm_proceed(fsm, (pop_frames), NULL, 0); \
 } while (0)
 
 /*****************************************************************************/

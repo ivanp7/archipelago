@@ -38,7 +38,8 @@ Configuration files contain information about libraries to load, contexts to cre
 The Archipelago executable loads and processes configuration files sequentially.
 Each configuration modifies the state left after the previous configuration.
 
-There is a Python module in the `python/` subdirectory that [helps](https://github.com/ivanp7/still-alive/still-alive.py)
+There is a Python module named `archi` in the `python/` subdirectory that
+[helps](https://github.com/ivanp7/still-alive/still-alive.py)
 in generation of configuration files.
 
 ## Important concepts
@@ -50,8 +51,8 @@ in generation of configuration files.
 A context can really be anything. Internally, a context pointer has type `void*` and is never dereferenced.
 
 The Archipelago executable provides several built-in contexts:
-* `exe.fsm`: the finite state machine for the execution phase;
-* `exe.signal`: signal management related utilities (signal handler and flags).
+* `archi_app_fsm`: the finite state machine for the execution phase;
+* `archi_app_signal`: signal management related utilities (signal handler and flags).
 
 #### Context interface
 
@@ -65,8 +66,7 @@ A context interface is a structure of pointers to the following functions:
 * `act(context, action, params) -> status`: invokes an internal `action` for `context` with the specified `params`.
 
 The Archipelago executable provides several built-in context interfaces:
-* `files`: opening files;
-* `shared_memory`: mapping files into memory;
+* `files`: opening files and mapping them into memory;
 * `shared_libraries`: loading shared libraries;
 * `threads`: creating groups of threads for concurrent processing.
 
@@ -74,7 +74,7 @@ A plugin library can provide multiple context interfaces.
 
 #### Application
 
-An application is a structure of:
+An application is a structure with:
 * a container of loaded libraries;
 * a container of pointers to context interfaces;
 * a container of pointers to contexts.
@@ -95,13 +95,12 @@ There are several types of configuration steps:
 
 The algorithm is as following:
 
-0. Push the entry state to the stack.
-1. Call the transition function if it's set.
-2. If the transition function is set and have provided a transitional state,
-     use it as the next state and proceed to step 5.
-3. If the stack is empty, exit with the specified code.
+0. Push the entry state to the FSM stack.
+1. Call the transition function if it's provided, otherwise skip step 2.
+2. If the transition function returned a transitional state, use it as the next state and go to step 5.
+3. If the stack is empty, exit.
 4. Pop the next state from the stack.
-5. Call the state function [it can pop or push multiple states from or to the stack].
+5. Call the state function [it can modify the stack].
 6. Go to step 1.
 
 #### State
@@ -112,22 +111,22 @@ A state of a finite state machine is a triple of:
 3. a `void*` pointer to state metadata (optional).
 
 State functions return nothing and accept a pointer to a finite state machine context (`fsm`).
-State functions can access state data and metadata via the FSM context pointer,
-and also use it to manipulate the FSM state stack -- push and pop elements while initiating a state transition.
+State functions can access state data and metadata via the FSM context pointer.
 
-During execution, a finite state machine maintains a stack of states.
-This stack is used to determine the next state during a transition -- the top element is popped and becomes the next state.
-
-State functions initiate state transition simply by returning (no changes of stack) or by calling `fsm_proceed()` (states are popped and pushed to stack).
+State function perform steps of application logic and can influence the successive states
+by manipulating the stack. State functions can use `fsm_proceed()` to push and pop frames
+(sequences of states) to or from the stack.
 
 `fsm_proceed()` accepts the following parameters:
 1. finite state machine context;
-2. number of states to pop from the stack;
-3. number of states to push to the stack;
-4. array of states to push.
+2. number of frames to pop from the stack;
+3. frame to push to the stack;
+4. length of the pushed frame.
 
-`fsm_proceed()` works not only from the state function itself, but from any nested function calls, given a valid FSM context.
-If called from nested function calls, `fsm_proceed()` unwinds the call stack up to the state function via a `longjmp()`.
+`fsm_proceed()` works during FSM execution of a state only.
+Using it from transition function or outside of an FSM won't work.
+If called from nested function calls, `fsm_proceed()` unwinds the call stack
+up to the state function using `longjmp()`.
 
 #### Transition
 
@@ -140,7 +139,6 @@ Transition functions return nothing and accept the following parameters:
 * previous state (`prev_state`, input passed by value);
 * next state (`next_state`, input passed by value);
 * transitional state (`trans_state`, output passed by pointer);
-* status code (`code`, input/output passed by pointer);
 * pointer to transition function data (`data`).
 
 Transition function is called:
@@ -148,11 +146,8 @@ Transition function is called:
 * before an entry state (`prev_state` is null),
 * after an exit state (`next_state` is null).
 
-Transition function can provide a so-called transitional state
-which is immediately pushed to the stack, thus preceding the previous stack top.
-
-Transition is hidden from state functions, which don't have any access to it.
-The same transition is used between any states and cannot be changed during finite state machine execution.
+Transition function can provide a transitional state, which would precede the state from the stack top.
+Transition cannot be changed during FSM execution and is completely opaque and hidden from state functions.
 
 # Public API
 

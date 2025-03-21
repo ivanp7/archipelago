@@ -43,39 +43,17 @@ struct archi_fsm_context {
     archi_fsm_transition_t transition;
 
     archi_fsm_state_t *stack;
-    size_t stack_size;
+    size_t *stack_frames;
+
     size_t stack_capacity;
+    size_t stack_size;
+    size_t num_stack_frames;
 
     archi_status_t code;
 
     enum archi_fsm_mode mode;
     jmp_buf env; // non-local jumps
 };
-
-static
-bool
-archi_fsm_state_context_stack_reserve(
-        struct archi_fsm_context *context,
-        size_t size)
-{
-    if (context->stack_capacity >= context->stack_size + size)
-        return true; // the current capacity is enough
-
-    size_t new_stack_capacity = context->stack_capacity;
-    do
-        new_stack_capacity *= 2; // double the stack capacity
-    while (new_stack_capacity < context->stack_size + size);
-
-    archi_fsm_state_t *new_stack = realloc(context->stack,
-            sizeof(*context->stack) * new_stack_capacity);
-    if (new_stack == NULL)
-        return false;
-
-    context->stack = new_stack;
-    context->stack_capacity = new_stack_capacity;
-
-    return true;
-}
 
 /*****************************************************************************/
 
@@ -101,8 +79,9 @@ archi_fsm_execute(
     struct archi_fsm_context context = {
         .transition = fsm.transition,
 
-        .stack_size = 1,
         .stack_capacity = ARCHI_FSM_INITIAL_STACK_CAPACITY,
+        .stack_size = 1,
+        .num_stack_frames = 1,
 
         .mode = J_TRANSITION,
     };
@@ -112,15 +91,22 @@ archi_fsm_execute(
     if (context.stack == NULL)
         return ARCHI_ERROR_ALLOC;
 
+    context.stack_frames = malloc(sizeof(*context.stack_frames) * context.stack_capacity);
+    if (context.stack_frames == NULL)
+    {
+        free(context.stack);
+        return ARCHI_ERROR_ALLOC;
+    }
+
     context.stack[0] = fsm.entry_state;
+    context.stack_frames[0] = 0;
 
     // Run the finite state machine loop
-    /***********************/
     archi_fsm_loop(&context);
-    /***********************/
 
     // Free the stack memory and return
     free(context.stack);
+    free(context.stack_frames);
 
     return context.code;
 }
@@ -129,9 +115,10 @@ void
 archi_fsm_loop(
         struct archi_fsm_context *const context)
 {
-    // This function is needed to get rid of as many local variables as possible.
-    // The only local variable left is `context` pointer.
-    // As it does not change its address, it is not required to be volatile (setjmp() restriction).
+    // This function is needed to get rid of local variables in the stack frame,
+    // as setjmp() requires modifiable local variables to be volatile.
+    // The only local variable left is `context` pointer,
+    // but its address is constant and thus not required to be volatile.
 
     while ((context->code == 0) && archi_fsm_transition(context)) // no errors and there is a next state
     {
@@ -160,41 +147,37 @@ bool
 archi_fsm_transition(
         struct archi_fsm_context *const context)
 {
-    if (context->transition.function == NULL)
-    {
-        if (context->stack_size > 0) // pop the next state from the stack
-            context->current_state = context->stack[--context->stack_size];
-        else // the stack is empty, exit now
-            return false;
-    }
+    archi_fsm_state_t next_state, trans_state = {0};
+
+    if (context->stack_size > 0)
+        next_state = context->stack[context->stack_size - 1]; // stack top
     else
+        next_state = ARCHI_NULL_FSM_STATE;
+
+    // Call the state transition function
+    if (context->transition.function != NULL)
     {
-        archi_fsm_state_t next_state, trans_state = {0};
-
-        if (context->stack_size > 0) // the next state is at the stack top
-            next_state = context->stack[context->stack_size - 1];
-        else
-            next_state = ARCHI_NULL_FSM_STATE;
-
-        // Call the state transition function
-        {
-            /**********************************************************/
-            context->transition.function(context->current_state,
-                    next_state, &trans_state, context->transition.data);
-            /**********************************************************/
-        }
-
-        // Update the current state
-        if (trans_state.function != NULL)
-            context->current_state = trans_state;
-        else if (next_state.function != NULL)
-        {
-            context->current_state = next_state;
-            context->stack_size--; // pop the top from the stack
-        }
-        else // the stack is empty, exit now
-            return false;
+        /**********************************************************/
+        context->transition.function(context->current_state,
+                next_state, &trans_state, context->transition.data);
+        /**********************************************************/
     }
+
+    // Update the current state
+    if (trans_state.function != NULL)
+        context->current_state = trans_state;
+    else if (next_state.function != NULL)
+    {
+        context->current_state = next_state;
+        context->stack_size--;
+
+        // Delete the finished frame
+        if ((context->num_stack_frames > 0) &&
+                (context->stack_size < context->stack_frames[context->num_stack_frames - 1]))
+            context->num_stack_frames--;
+    }
+    else // the stack is empty, exit now
+        return false;
 
     return true;
 }
@@ -209,17 +192,17 @@ archi_fsm_current(
 }
 
 size_t
-archi_fsm_stack_size(
+archi_fsm_stack_frames(
         const struct archi_fsm_context *context)
 {
-    return (context != NULL) ? context->stack_size : 0;
+    return (context != NULL) ? context->num_stack_frames : 0;
 }
 
 /*****************************************************************************/
 
 static
 void
-archi_fsm_return(
+archi_fsm_longjump(
         struct archi_fsm_context *context)
 {
     longjmp(context->env, J_TRANSITION);
@@ -232,55 +215,100 @@ archi_fsm_error(
         archi_status_t code)
 {
     context->code = code;
-    archi_fsm_return(context);
+    archi_fsm_longjump(context);
+}
+
+static
+void
+archi_fsm_state_context_stack_reserve(
+        struct archi_fsm_context *context,
+        size_t size)
+{
+    if (context->stack_capacity >= context->stack_size + size)
+        return; // the current capacity is enough
+
+    size_t new_stack_capacity = context->stack_capacity;
+    do
+        new_stack_capacity *= 2; // double the stack capacity
+    while (new_stack_capacity < context->stack_size + size);
+
+    archi_fsm_state_t *new_stack = realloc(context->stack,
+            sizeof(*context->stack) * new_stack_capacity);
+    if (new_stack == NULL)
+        archi_fsm_error(context, ARCHI_ERROR_ALLOC);
+
+    size_t *new_stack_frames = realloc(context->stack_frames,
+            sizeof(*context->stack_frames) * new_stack_capacity);
+    if (new_stack_frames == NULL)
+        archi_fsm_error(context, ARCHI_ERROR_ALLOC);
+
+    context->stack_capacity = new_stack_capacity;
+    context->stack = new_stack;
+    context->stack_frames = new_stack_frames;
 }
 
 void
 archi_fsm_proceed(
         struct archi_fsm_context *context,
 
-        size_t num_popped,
-        size_t num_pushed,
-        const archi_fsm_state_t pushed[])
+        size_t pop_frames,
+
+        const archi_fsm_state_t frame[],
+        size_t frame_length)
 {
     if ((context == NULL) || (context->mode != J_STATE))
         return;
 
-    if (num_popped > context->stack_size)
+    if (pop_frames > context->num_stack_frames)
         archi_fsm_error(context, ARCHI_ERROR_MISUSE);
-    else if ((num_pushed > 0) && (pushed == NULL))
+    else if ((frame_length > 0) && (frame == NULL))
         archi_fsm_error(context, ARCHI_ERROR_MISUSE);
+
+    bool new_frame_needed = true;
 
     // Pop states from the stack
-    context->stack_size -= num_popped;
+    if (pop_frames > 0)
+        context->stack_size = context->stack_frames[context->num_stack_frames -= pop_frames];
+    else
+    {
+        if ((context->num_stack_frames > 0) &&
+                (context->stack_size == context->stack_frames[context->num_stack_frames - 1]))
+            new_frame_needed = false; // the current frame is empty and can be reused
+    }
 
     // Push states to the stack in reverse order
-    for (size_t i = num_pushed; i-- > 0;)
+    size_t current_frame = context->stack_size;
+
+    for (size_t i = frame_length; i-- > 0;)
     {
-        archi_fsm_state_t state = pushed[i];
+        archi_fsm_state_t state = frame[i];
 
         if (state.function == NULL)
             continue; // don't push null states to the stack
 
-        // Reserve a seat in the stack
-        if (!archi_fsm_state_context_stack_reserve(context, 1))
-            archi_fsm_error(context, ARCHI_ERROR_ALLOC);
+        // Ensure there is a seat in the stack
+        archi_fsm_state_context_stack_reserve(context, 1);
 
         // Push
         context->stack[context->stack_size++] = state;
     }
 
-    // Proceed
-    archi_fsm_return(context);
+    // Add the new frame if needed
+    if ((context->stack_size > current_frame) && new_frame_needed)
+        context->stack_frames[context->num_stack_frames++] = current_frame;
+
+    // Proceed and don't return
+    archi_fsm_longjump(context);
 }
 
 /*****************************************************************************/
 
 ARCHI_FSM_STATE_FUNCTION(archi_fsm_state_chain_execute)
 {
-    archi_fsm_state_chain_t *chain = ARCHI_FSM_CURRENT_DATA(archi_fsm_state_chain_t);
+    archi_fsm_state_chain_t *chain = ARCHI_FSM_CURRENT_DATA(archi_fsm_state_chain_t*);
+
     if (chain == NULL)
-        ARCHI_FSM_DONE(0);
+        return;
 
     archi_fsm_state_t next_link = {.data = chain->data};
     if (next_link.data != NULL)

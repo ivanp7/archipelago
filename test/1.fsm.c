@@ -8,20 +8,20 @@
 static
 ARCHI_FSM_STATE_FUNCTION(state_dec)
 {
-    int *state_counter = ARCHI_FSM_CURRENT_DATA(int);
+    int *state_counter = ARCHI_FSM_CURRENT_DATA(int*);
     (*state_counter)--;
 }
 
 static
 ARCHI_FSM_STATE_FUNCTION(state_inc)
 {
-    int *state_counter = ARCHI_FSM_CURRENT_DATA(int);
+    int *state_counter = ARCHI_FSM_CURRENT_DATA(int*);
     (*state_counter)++;
 
     if (*state_counter < NUM)
         ARCHI_FSM_PROCEED(0, ARCHI_FSM_CURRENT(), ARCHI_FSM_CURRENT());
     else
-        ARCHI_FSM_DONE(ARCHI_FSM_STACK_SIZE());
+        ARCHI_FSM_FINISH(NUM - 1);
 }
 
 static
@@ -52,18 +52,18 @@ TEST(archi_fsm_execute)
 static
 ARCHI_FSM_STATE_FUNCTION(state1)
 {
-    int *counter1 = ARCHI_FSM_CURRENT_DATA(int);
+    int *counter1 = ARCHI_FSM_CURRENT_DATA(int*);
 
     (*counter1)++;
 
     if (*counter1 == NUM)
-        ARCHI_FSM_DONE(ARCHI_FSM_STACK_SIZE());
+        ARCHI_FSM_FINISH(ARCHI_FSM_STACK_FRAMES());
 }
 
 static
 ARCHI_FSM_STATE_FUNCTION(state2)
 {
-    int *counter2 = ARCHI_FSM_CURRENT_METADATA(int);
+    int *counter2 = ARCHI_FSM_CURRENT_METADATA(int*);
 
     (*counter2)++;
 }
