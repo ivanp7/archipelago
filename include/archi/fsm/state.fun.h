@@ -105,6 +105,18 @@ archi_fsm_proceed(
         size_t frame_length              ///< [in] Number of states in the pushed frame.
 );
 
+/**
+ * @brief Abort finite state machine execution with the provided status code.
+ *
+ * If the code is 0, this function does nothing.
+ * To interrupt FSM execution normally, pop all remaining frames using ARCHI_FSM_FINISH(ARCHI_FSM_STACK_FRAMES()).
+ */
+void
+archi_fsm_abort(
+        struct archi_fsm_context *fsm, ///< [in] Finite state machine context.
+        archi_status_t code ///< [in] Non-zero status code.
+);
+
 /*****************************************************************************/
 
 /**
@@ -120,6 +132,13 @@ archi_fsm_proceed(
  */
 #define ARCHI_FSM_FINISH(pop_frames) do { \
     archi_fsm_proceed(fsm, (pop_frames), NULL, 0); \
+} while (0)
+
+/**
+ * @brief Abort finite state machine execution with the provided status code.
+ */
+#define ARCHI_FSM_ABORT(code) do { \
+    archi_fsm_abort(fsm, (code)); \
 } while (0)
 
 /*****************************************************************************/

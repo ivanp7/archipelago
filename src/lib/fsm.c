@@ -210,16 +210,6 @@ archi_fsm_longjump(
 
 static
 void
-archi_fsm_error(
-        struct archi_fsm_context *context,
-        archi_status_t code)
-{
-    context->code = code;
-    archi_fsm_longjump(context);
-}
-
-static
-void
 archi_fsm_state_context_stack_reserve(
         struct archi_fsm_context *context,
         size_t size)
@@ -235,12 +225,12 @@ archi_fsm_state_context_stack_reserve(
     archi_fsm_state_t *new_stack = realloc(context->stack,
             sizeof(*context->stack) * new_stack_capacity);
     if (new_stack == NULL)
-        archi_fsm_error(context, ARCHI_ERROR_ALLOC);
+        archi_fsm_abort(context, ARCHI_ERROR_ALLOC);
 
     size_t *new_stack_frames = realloc(context->stack_frames,
             sizeof(*context->stack_frames) * new_stack_capacity);
     if (new_stack_frames == NULL)
-        archi_fsm_error(context, ARCHI_ERROR_ALLOC);
+        archi_fsm_abort(context, ARCHI_ERROR_ALLOC);
 
     context->stack_capacity = new_stack_capacity;
     context->stack = new_stack;
@@ -260,9 +250,9 @@ archi_fsm_proceed(
         return;
 
     if (pop_frames > context->num_stack_frames)
-        archi_fsm_error(context, ARCHI_ERROR_MISUSE);
+        archi_fsm_abort(context, ARCHI_ERROR_MISUSE);
     else if ((frame_length > 0) && (frame == NULL))
-        archi_fsm_error(context, ARCHI_ERROR_MISUSE);
+        archi_fsm_abort(context, ARCHI_ERROR_MISUSE);
 
     bool new_frame_needed = true;
 
@@ -298,6 +288,18 @@ archi_fsm_proceed(
         context->stack_frames[context->num_stack_frames++] = current_frame;
 
     // Proceed and don't return
+    archi_fsm_longjump(context);
+}
+
+void
+archi_fsm_abort(
+        struct archi_fsm_context *context,
+        archi_status_t code)
+{
+    if ((context == NULL) || (context->mode != J_STATE) || (code == 0))
+        return;
+
+    context->code = code;
     archi_fsm_longjump(context);
 }
 
