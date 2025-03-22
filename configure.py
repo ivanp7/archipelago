@@ -27,13 +27,13 @@ CFLAGS = ['-march=native', '-pipe', '-std=c17',
           '-Wall', '-Wextra', '-Wpedantic',
           '-Wmissing-prototypes', '-Wstrict-prototypes', '-Wold-style-definition',
           '-pthread', '-fPIC',
-          '-U_FORTIFY_SOURCE', '-D_FORTIFY_SOURCE=2', '-fstack-protector-strong']
+          '-fstack-protector-strong']
 LFLAGS = ['-ldl', '-pthread', '-fPIC']
 
 if 'DEBUG' in os.environ:                       ### <<<<<<<<<<<<<<<<<<<< INPUT ENVIRONMENT VARIABLE <<<<<<<<<<<<<<<<<<<<
     CFLAGS += ['-O0', '-g3', '-ggdb']
 else:
-    CFLAGS += ['-O2', '-g0', '-flto', '-ffat-lto-objects']
+    CFLAGS += ['-O2', '-g0', '-flto', '-ffat-lto-objects', '-U_FORTIFY_SOURCE', '-D_FORTIFY_SOURCE=2']
     LFLAGS += ['-flto']
 
 if 'PROFILE' in os.environ:                     ### <<<<<<<<<<<<<<<<<<<< INPUT ENVIRONMENT VARIABLE <<<<<<<<<<<<<<<<<<<<

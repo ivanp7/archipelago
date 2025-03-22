@@ -27,6 +27,8 @@
 #ifndef _ARCHI_FSM_STATE_TYP_H_
 #define _ARCHI_FSM_STATE_TYP_H_
 
+#include <stddef.h>
+
 struct archi_fsm_context;
 
 /**
@@ -46,13 +48,13 @@ typedef ARCHI_FSM_STATE_FUNCTION((*archi_fsm_state_function_t));
 /*****************************************************************************/
 
 /**
- * @brief State.
+ * @brief State of a finite state machine.
  */
 typedef struct archi_fsm_state {
     archi_fsm_state_function_t function; ///< State function.
     void *data; ///< State data.
 
-    void *metadata; ///< State metadata (for debugging purposes).
+    void *metadata; ///< State metadata (for transition functions).
 } archi_fsm_state_t;
 
 /**
@@ -83,12 +85,37 @@ typedef struct archi_fsm_state {
 /*****************************************************************************/
 
 /**
- * @brief Chain (linked list) of states.
+ * @brief Declarator of a selector function.
+ *
+ * @return Index of the selected entity.
  */
-typedef struct archi_fsm_state_chain {
-    void *data; ///< Current state data (or pointer to the next node).
-    archi_fsm_state_t next_state; ///< Next state.
-} archi_fsm_state_chain_t;
+#define ARCHI_FSM_SELECTOR_FUNC(name) size_t name( \
+        void *const data) /* Data for the function to operate on. */
+
+/**
+ * @brief Selector function.
+ */
+typedef ARCHI_FSM_SELECTOR_FUNC((*archi_fsm_selector_func_t));
+
+/*****************************************************************************/
+
+/**
+ * @brief Stack frame of a finite state machine.
+ */
+typedef struct archi_fsm_stack_frame {
+    archi_fsm_state_t *states; ///< Sequence of states.
+    size_t length;             ///< Number of states in the sequence.
+} archi_fsm_stack_frame_t;
+
+/**
+ * @brief Data for a branch state.
+ */
+typedef struct archi_fsm_state_branch_data {
+    archi_fsm_selector_func_t selector_fn; ///< Branch selector function.
+    void *selector_data;                   ///< Branch selector data.
+
+    archi_fsm_stack_frame_t *frames; ///< Array of branches.
+} archi_fsm_state_branch_data_t;
 
 #endif // _ARCHI_FSM_STATE_TYP_H_
 

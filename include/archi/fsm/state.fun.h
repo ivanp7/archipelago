@@ -62,14 +62,6 @@ archi_fsm_stack_frames(
  * @brief Access current state.
  */
 #define ARCHI_FSM_CURRENT() archi_fsm_current(fsm)
-/**
- * @brief Access current state data through a pointer to the specified type.
- */
-#define ARCHI_FSM_CURRENT_DATA(type) ((type)ARCHI_FSM_CURRENT().data)
-/**
- * @brief Access current state metadata through a pointer to the specified type.
- */
-#define ARCHI_FSM_CURRENT_METADATA(type) ((type)ARCHI_FSM_CURRENT().metadata)
 
 /**
  * @brief Access current number of frames on the stack.
@@ -85,11 +77,15 @@ archi_fsm_stack_frames(
  * then pushes a frame to the stack.
  * Null states in the frame are left out and not pushed.
  *
+ * pop_frames == 0: nothing is popped from the stack;
+ * pop_frames == 1: the rest of the current frame is popped from the stack;
+ * pop_frames >= 2: the rest of the current frame and (pop_frames - 1) frames are popped from the stack.
+ *
  * If the stack is empty after the pop operation and there are no states pushed,
  * the finite state machine exits.
  *
  * Returning from a state function normally is equivalent to calling
- * archi_proceed(fsm, 0, 0, NULL);
+ * archi_proceed(fsm, 0, NULL, 0);
  *
  * If fsm is NULL, the function does nothing.
  * If the function is not called from a state function during finite state machine execution, it does nothing.
@@ -108,8 +104,10 @@ archi_fsm_proceed(
 /**
  * @brief Abort finite state machine execution with the provided status code.
  *
- * If the code is 0, this function does nothing.
- * To interrupt FSM execution normally, pop all remaining frames using ARCHI_FSM_FINISH(ARCHI_FSM_STACK_FRAMES()).
+ * This function is to be used to abort FSM execution in case of an error.
+ *
+ * If the code is 0, this function does nothing. To interrupt FSM execution normally,
+ * pop all remaining frames with ARCHI_FSM_FINISH(ARCHI_FSM_STACK_FRAMES()).
  */
 void
 archi_fsm_abort(
@@ -144,9 +142,27 @@ archi_fsm_abort(
 /*****************************************************************************/
 
 /**
- * @brief State function that executes a chain of states.
+ * @brief Select specified option unconditionally.
+ *
+ * If data is NULL, then 0 is returned.
  */
-ARCHI_FSM_STATE_FUNCTION(archi_fsm_state_chain_execute);
+ARCHI_FSM_SELECTOR_FUNC(archi_fsm_select_unconditionally);
+
+/*****************************************************************************/
+
+/**
+ * @brief State function for calling archi_fsm_proceed().
+ *
+ * This state function expects archi_fsm_frame_t object as function data.
+ */
+ARCHI_FSM_STATE_FUNCTION(archi_fsm_state_proceed);
+
+/**
+ * @brief Branch state function using a selector function.
+ *
+ * This state function expects archi_fsm_state_branch_data_t object as function data.
+ */
+ARCHI_FSM_STATE_FUNCTION(archi_fsm_state_branch);
 
 #endif // _ARCHI_FSM_STATE_FUN_H_
 

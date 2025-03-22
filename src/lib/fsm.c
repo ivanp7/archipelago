@@ -305,17 +305,33 @@ archi_fsm_abort(
 
 /*****************************************************************************/
 
-ARCHI_FSM_STATE_FUNCTION(archi_fsm_state_chain_execute)
+ARCHI_FSM_SELECTOR_FUNC(archi_fsm_select_unconditionally)
 {
-    archi_fsm_state_chain_t *chain = ARCHI_FSM_CURRENT_DATA(archi_fsm_state_chain_t*);
+    return (data != NULL) ? *(size_t*)data : 0;
+}
 
-    if (chain == NULL)
+/*****************************************************************************/
+
+ARCHI_FSM_STATE_FUNCTION(archi_fsm_state_proceed)
+{
+    const archi_fsm_stack_frame_t *frame = ARCHI_FSM_CURRENT().data;
+
+    if (frame == NULL)
         return;
 
-    archi_fsm_state_t next_link = {.data = chain->data};
-    if (next_link.data != NULL)
-        next_link.function = archi_fsm_state_chain_execute;
+    archi_fsm_proceed(fsm, 0, frame->states, frame->length);
+}
 
-    ARCHI_FSM_PROCEED(0, chain->next_state, next_link);
+ARCHI_FSM_STATE_FUNCTION(archi_fsm_state_branch)
+{
+    const archi_fsm_state_branch_data_t *branch = ARCHI_FSM_CURRENT().data;
+
+    if ((branch == NULL) || (branch->frames == NULL))
+        return;
+
+    size_t index = (branch->selector_fn != NULL) ? branch->selector_fn(branch->selector_data) : 0;
+    archi_fsm_stack_frame_t frame = branch->frames[index];
+
+    archi_fsm_proceed(fsm, 0, frame.states, frame.length);
 }
 

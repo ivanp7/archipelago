@@ -28,7 +28,6 @@
 #define _ARCHI_FSM_TRANSITION_TYP_H_
 
 #include "archi/fsm/state.typ.h"
-#include "archi/util/status.typ.h"
 
 /**
  * @brief Declarator of a state transition function.
@@ -47,7 +46,7 @@ typedef ARCHI_FSM_TRANSITION_FUNCTION((*archi_fsm_transition_function_t));
 /*****************************************************************************/
 
 /**
- * @brief State transition.
+ * @brief State transition of a finite state machine.
  */
 typedef struct archi_fsm_transition {
     archi_fsm_transition_function_t function; ///< State transition function.
