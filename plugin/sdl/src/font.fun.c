@@ -3,7 +3,7 @@
  * @brief Operations with fonts.
  */
 
-#include "sdl/font.fun.h"
+#include "archi/plugin/sdl/font.fun.h"
 #include "archi/util/list.fun.h"
 #include "archi/util/error.def.h"
 
@@ -13,7 +13,7 @@
 
 static
 size_t
-plugin_decode_utf8_code_point(
+archip_decode_utf8_code_point(
         const unsigned char *seq,
         size_t remaining_bytes,
         uint32_t *code_point)
@@ -99,8 +99,8 @@ plugin_decode_utf8_code_point(
     }
 }
 
-plugin_font_psf2_t*
-plugin_font_psf2_load_from_bytes(
+archip_font_psf2_t*
+archip_font_psf2_load_from_bytes(
         const void *bytes,
         size_t num_bytes,
 
@@ -113,22 +113,22 @@ plugin_font_psf2_load_from_bytes(
         return NULL;
     }
 
-    if (num_bytes < sizeof(plugin_font_psf2_header_t))
+    if (num_bytes < sizeof(archip_font_psf2_header_t))
     {
         if (code != NULL)
             *code = ARCHI_ERROR_FORMAT;
         return NULL;
     }
 
-    const plugin_font_psf2_header_t *header = bytes;
-    if ((header->magic != PLUGIN_FONT_PSF2_MAGIC) || (header->version != 0))
+    const archip_font_psf2_header_t *header = bytes;
+    if ((header->magic != ARCHIP_FONT_PSF2_MAGIC) || (header->version != 0))
     {
         if (code != NULL)
             *code = ARCHI_ERROR_FORMAT;
         return NULL;
     }
 
-    if ((header->header_size < sizeof(plugin_font_psf2_header_t)) ||
+    if ((header->header_size < sizeof(archip_font_psf2_header_t)) ||
             (header->bytes_per_glyph == 0) || (header->num_glyphs == 0))
     {
         if (code != NULL)
@@ -144,7 +144,7 @@ plugin_font_psf2_load_from_bytes(
         return NULL;
     }
 
-    plugin_font_psf2_t *font = malloc(sizeof(*font));
+    archip_font_psf2_t *font = malloc(sizeof(*font));
     if (font == NULL)
     {
         if (code != NULL)
@@ -152,7 +152,7 @@ plugin_font_psf2_load_from_bytes(
         return NULL;
     }
 
-    font->header = (plugin_font_psf2_header_t*)header;
+    font->header = (archip_font_psf2_header_t*)header;
     font->glyphs = (unsigned char*)bytes + header->header_size;
 
     if (!header->flags)
@@ -183,7 +183,7 @@ plugin_font_psf2_load_from_bytes(
         while (remaining_bytes > 0)
         {
             uint32_t code_point;
-            size_t seq_len = plugin_decode_utf8_code_point(table, remaining_bytes, &code_point);
+            size_t seq_len = archip_decode_utf8_code_point(table, remaining_bytes, &code_point);
 
             if (code_point < NUM_UNICODE_CODE_POINTS) // valid code point
                 font->mapping_table[code_point] = glyph_idx;
@@ -202,8 +202,8 @@ plugin_font_psf2_load_from_bytes(
 }
 
 void
-plugin_font_psf2_unload(
-        plugin_font_psf2_t *font)
+archip_font_psf2_unload(
+        archip_font_psf2_t *font)
 {
     if (font == NULL)
         return;
@@ -213,8 +213,8 @@ plugin_font_psf2_unload(
 }
 
 const unsigned char*
-plugin_font_psf2_glyph(
-        const plugin_font_psf2_t *font,
+archip_font_psf2_glyph(
+        const archip_font_psf2_t *font,
 
         const char *utf8_str,
         size_t utf8_str_len,
@@ -225,7 +225,7 @@ plugin_font_psf2_glyph(
         return NULL;
 
     uint32_t code_point;
-    size_t seq_len = plugin_decode_utf8_code_point(
+    size_t seq_len = archip_decode_utf8_code_point(
             (const unsigned char*)utf8_str, utf8_str_len, &code_point);
 
     if (code_point >= NUM_UNICODE_CODE_POINTS) // invalid code point
@@ -244,8 +244,8 @@ plugin_font_psf2_glyph(
 }
 
 size_t
-plugin_font_psf2_glyph_data_size(
-        plugin_font_psf2_header_t *header)
+archip_font_psf2_glyph_data_size(
+        archip_font_psf2_header_t *header)
 {
     if (header == NULL)
         return 0;

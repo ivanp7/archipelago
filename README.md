@@ -1,4 +1,10 @@
-# Archipelago, a dynamic application framework
+# Archipelago
+
+A versatile, modular application configured by memory-mapped files and plugins that define its specific behavior.
+
+
+
+
 
 Split an application into separate reusable modules, each doing its singular purpose,
 and connected at runtime using configuration in shared memory.

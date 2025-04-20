@@ -29,7 +29,7 @@
 
 #include "archi/util/status.typ.h"
 
-struct archi_args;
+struct archi_exe_args;
 
 /**
  * @brief Parse command line arguments.
@@ -37,8 +37,8 @@ struct archi_args;
  * @return Zero on success, non-zero error code otherwise.
  */
 archi_status_t
-archi_args_parse(
-        struct archi_args *args, ///< [out] Parsed values of command line arguments.
+archi_exe_args_parse(
+        struct archi_exe_args *args, ///< [out] Parsed values of command line arguments.
 
         int argc,    ///< [in] Number of command line arguments.
         char *argv[] ///< [in] Command line arguments.

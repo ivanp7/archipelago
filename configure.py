@@ -1,55 +1,106 @@
 #!/usr/bin/env python
 
+# python initialization {{{
+
 import os
 
-#------------------------------------------------------------------------------
+os.chdir(os.path.dirname(__file__))
+
+# }}}
+# project name {{{
 
 PROJECT_NAME = "archipelago"
-PROJECT_NAME_SHORT = "archi"
+PROJECT_PREFIX = "archi"
 
-LIB_NAME = f"lib{PROJECT_NAME}.a"
-EXEC_NAME = f"{PROJECT_NAME_SHORT}"
-TESTS_NAME = f"{EXEC_NAME}-tests"
+# }}}
+# names of files/directories {{{
 
-#------------------------------------------------------------------------------
+SLIB_NAME = lambda module : f"lib{PROJECT_PREFIX}-{module}.a"
+LIB_NAME = f"lib{PROJECT_PREFIX}.so"
+EXEC_NAME = f"{PROJECT_PREFIX}"
+TESTS_NAME = f"{PROJECT_PREFIX}-tests"
+
 
 INCLUDE_DIR = "include"
-SOURCE_DIR  = "src"
-TEST_DIR    = "test"
-BUILD_DIR   = "build"
 
-LIB_SOURCE_DIR = "lib"
-EXEC_SOURCE = "main.c"
+SOURCE_DIR = "src"
+EXEC_SOURCE_FILE  = "main.c"
 
-#------------------------------------------------------------------------------
+TEST_DIR = "test"
+
+BUILD_DIR = "build"
+TEST_HEADER_FILE = "test.h"
+TEST_SOURCE_FILE = "test.c"
+
+# }}}
+# modules to build {{{
+
+MODULES = [
+        "util", # common utilities
+        "log",  # logging
+
+        "app", # application context system
+        "hsp", # hierarchical state processor
+
+        "mem", # abstract memory interface
+
+        "ipc/env",    # inter-process communication: environmental variables
+        "ipc/signal", # inter-process communication: signals
+
+        "ds/hashmap", # data structure: hashmap
+        "ds/lfqueue", # data structure: lock-free queue
+
+        "res/file",         # system resource: file
+        "res/library",      # system resource: shared library
+        "res/thread_group", # system resource: thread group
+
+        "builtin/hsp", # application context: hierarchical state processor entities
+        "builtin/mem", # application context: memory objects
+        "builtin/ipc_env", # application context: inter-process communication: environmental variables
+        "builtin/ds_hashmap",  # application context: data structure: hashmap
+        "builtin/ds_lfqueue",  # application context: data structure: lock-free queue
+        "builtin/res_file",    # application context: system resource: file
+        "builtin/res_library", # application context: system resource: shared library
+        "builtin/res_thread_group",     # application context: system resource: thread group
+        "builtin/res_thread_group_hsp", # application context: HSP state: thread group dispatch
+        ]
+
+MODULE_EXE = "exe" # utilities for the implementation of the executable
+
+# }}}
+# build flags {{{
+## common {{{
 
 CFLAGS = ['-march=native', '-pipe', '-std=c17',
           '-Wall', '-Wextra', '-Wpedantic',
           '-Wmissing-prototypes', '-Wstrict-prototypes', '-Wold-style-definition',
           '-pthread', '-fPIC',
+          '-fvisibility=default',
           '-fstack-protector-strong']
-LFLAGS = ['-ldl', '-pthread', '-fPIC']
+LFLAGS = ['-ldl', '-pthread', '-fPIC', '-Wl,--no-gc-sections']
+
+CFLAGS += [f'-I{INCLUDE_DIR}']
+
+## }}}
+## feature macros {{{
+
+FEATURES = {key: value for key, value in os.environ.items() if key.startswith('FEATURE_')}
+CFLAGS += [f'-D{PROJECT_PREFIX.upper()}_{key}{'=' if value else ''}{value}' for key, value in FEATURES.items()]
+
+## }}}
+## optimization/profiling {{{
 
 if 'DEBUG' in os.environ:                       ### <<<<<<<<<<<<<<<<<<<< INPUT ENVIRONMENT VARIABLE <<<<<<<<<<<<<<<<<<<<
     CFLAGS += ['-O0', '-g3', '-ggdb']
 else:
-    CFLAGS += ['-O2', '-g0', '-flto', '-ffat-lto-objects', '-U_FORTIFY_SOURCE', '-D_FORTIFY_SOURCE=2']
-    LFLAGS += ['-flto']
+    CFLAGS += ['-O2', '-g0', '-U_FORTIFY_SOURCE', '-D_FORTIFY_SOURCE=2']
 
 if 'PROFILE' in os.environ:                     ### <<<<<<<<<<<<<<<<<<<< INPUT ENVIRONMENT VARIABLE <<<<<<<<<<<<<<<<<<<<
     CFLAGS += ['-pg']
 
-#------------------------------------------------------------------------------
-
-CFLAGS += [f'-I{INCLUDE_DIR}']
-
-if 'COLORLESS' in os.environ:                   ### <<<<<<<<<<<<<<<<<<<< INPUT ENVIRONMENT VARIABLE <<<<<<<<<<<<<<<<<<<<
-    CFLAGS += ['-DARCHI_FEATURE_COLORLESS']
-
-if 'QUEUE32' in os.environ:                     ### <<<<<<<<<<<<<<<<<<<< INPUT ENVIRONMENT VARIABLE <<<<<<<<<<<<<<<<<<<<
-    CFLAGS += ['-DARCHI_FEATURE_QUEUE32']
-
-#------------------------------------------------------------------------------
+## }}}
+# }}}
+# toolchain {{{
 
 if 'LLVM' in os.environ:                        ### <<<<<<<<<<<<<<<<<<<< INPUT ENVIRONMENT VARIABLE <<<<<<<<<<<<<<<<<<<<
     CC = 'clang'
@@ -70,44 +121,40 @@ else:
     LINKER_EXE = 'gcc'
     LINKER_EXE_FLAGS = []
 
-#------------------------------------------------------------------------------
+# }}}
+# build file generation options {{{
 
+BUILD_LIB = 'NO_LIB' not in os.environ          ### <<<<<<<<<<<<<<<<<<<< INPUT ENVIRONMENT VARIABLE <<<<<<<<<<<<<<<<<<<<
+BUILD_EXEC = 'NO_EXEC' not in os.environ        ### <<<<<<<<<<<<<<<<<<<< INPUT ENVIRONMENT VARIABLE <<<<<<<<<<<<<<<<<<<<
 BUILD_TESTS = 'NO_TESTS' not in os.environ      ### <<<<<<<<<<<<<<<<<<<< INPUT ENVIRONMENT VARIABLE <<<<<<<<<<<<<<<<<<<<
 
-#------------------------------------------------------------------------------
+# }}}
+# utility functions {{{
 
-CFLAGS = list(filter(None, CFLAGS))
-LFLAGS = list(filter(None, LFLAGS))
+def source2object(pathname):
+    return f"{pathname[:-1]}o"
 
-os.chdir(os.path.dirname(__file__))
+def collect_sources(path):
+    sources = []
+    objects = []
 
-EXEC_OBJECT = f"{BUILD_DIR}/{SOURCE_DIR}/{EXEC_SOURCE[:-1]}o"
+    for entry in os.walk(path):
+        src = [f'{entry[0]}/{s}' for s in entry[2] if s[-2:] == '.c'] # accept only .c files
 
-SOURCES_LIBRARY = []
-OBJECTS_LIBRARY = []
-for entry in os.walk(f'{SOURCE_DIR}/{LIB_SOURCE_DIR}'):
-    src = [f'{entry[0]}/{s}' for s in entry[2] if s[-2:] == '.c']
-    SOURCES_LIBRARY += src
-    OBJECTS_LIBRARY += [f'{BUILD_DIR}/{s[:-1]}o' for s in src] # replace .c extension with .o
+        sources += src
+        objects += [source2object(f"{BUILD_DIR}/{s}") for s in src] # replace .c extension with .o
 
-if BUILD_TESTS:
-    TEST_HEADER = f'{BUILD_DIR}/{TEST_DIR}/test.h'
-    TEST_SOURCE = f'{TEST_HEADER[:-1]}c'
-    TEST_OBJECT = f'{TEST_HEADER[:-1]}o'
+    return sources, objects
 
-    SOURCES_TESTS = []
-    OBJECTS_TESTS = []
-    for entry in os.walk(TEST_DIR):
-        src = [f'{entry[0]}/{s}' for s in entry[2] if s[-2:] == '.c']
-        SOURCES_TESTS += src
-        OBJECTS_TESTS += [f'{BUILD_DIR}/{s[:-1]}o' for s in src] # replace .c extension with .o
-
-#------------------------------------------------------------------------------
+# }}}
+# build.ninja generation {{{
 
 build_ninja_separator = '\n###############################################################################\n'
 
 build_ninja_segments = []
-TARGETS = []
+build_ninja_targets = []
+
+## build rules {{{
 
 build_ninja_segments.append(f'''\
 CC = {CC}
@@ -131,8 +178,12 @@ rule link_static
 LINKER_EXE = {LINKER_EXE}
 LINKER_EXE_FLAGS = {' '.join(LINKER_EXE_FLAGS + LFLAGS)}
 
+rule link_shared
+    command = $LINKER_EXE $LINKER_EXE_FLAGS $opts -o $out -Wl,--whole-archive $in -Wl,--no-whole-archive -shared -rdynamic
+    description = link(shared): $out
+
 rule link_exe
-    command = $LINKER_EXE $LINKER_EXE_FLAGS -o $out $in $opts
+    command = $LINKER_EXE $LINKER_EXE_FLAGS $opts -o $out -Wl,--whole-archive $in -Wl,--no-whole-archive
     description = link(executable): $out
 
 
@@ -141,46 +192,113 @@ rule download
     description = download: $out
 ''')
 
-build_ninja_segments.append(f'''\
-{'\n'.join([f'build {obj}: compile {src}' for obj, src in zip(OBJECTS_LIBRARY, SOURCES_LIBRARY)])}
+## }}}
+## static libraries for modules {{{
 
-build {BUILD_DIR}/{LIB_NAME}: link_static {' '.join(OBJECTS_LIBRARY)}
+module_targets = []
+module_libraries = []
+
+for module in MODULES:
+    module_name = module.replace('/', '-')
+
+    target_name = f"lib-{module_name}"
+    module_targets.append(target_name)
+
+    lib_name = SLIB_NAME(module_name)
+    module_libraries.append(f"{BUILD_DIR}/{lib_name}")
+
+    sources, objects = collect_sources(f"{SOURCE_DIR}/{module}")
+
+    build_ninja_segments.append(f'''\
+{'\n'.join([f'build {obj}: compile {src}' for obj, src in zip(objects, sources)])}
+
+build {BUILD_DIR}/{lib_name}: link_static {' '.join(objects)}
+build {target_name}: phony {BUILD_DIR}/{lib_name}
+''')
+    build_ninja_targets.append(f"{target_name}")
+
+## }}}
+## shared library {{{
+
+if BUILD_LIB:
+    build_ninja_segments.append(f'''\
+build {BUILD_DIR}/{LIB_NAME}: link_shared {' '.join(module_libraries)}
 build lib: phony {BUILD_DIR}/{LIB_NAME}
 ''')
-TARGETS.append('lib')
+    build_ninja_targets.append('lib')
 
-build_ninja_segments.append(f'''\
-build {EXEC_OBJECT}: compile {SOURCE_DIR}/{EXEC_SOURCE}
+## }}}
+## main executable {{{
 
-build {BUILD_DIR}/{EXEC_NAME}: link_exe {EXEC_OBJECT} {BUILD_DIR}/{LIB_NAME}
-build app: phony {BUILD_DIR}/{EXEC_NAME}
+if BUILD_EXEC:
+    target_name = f"lib-{MODULE_EXE}"
+    lib_name = SLIB_NAME(MODULE_EXE)
+
+    sources, objects = collect_sources(f"{SOURCE_DIR}/{MODULE_EXE}")
+
+    build_ninja_segments.append(f'''\
+{'\n'.join([f'build {obj}: compile {src}' for obj, src in zip(objects, sources)])}
+    opts = -fvisibility=hidden
+
+build {BUILD_DIR}/{lib_name}: link_static {' '.join(objects)}
+build {target_name}: phony {BUILD_DIR}/{lib_name}
 ''')
-TARGETS.append('app')
+    build_ninja_targets.append(f"{target_name}")
+
+    object = f"{BUILD_DIR}/" + source2object(f"{SOURCE_DIR}/{EXEC_SOURCE_FILE}")
+
+    build_ninja_segments.append(f'''\
+build {object}: compile {SOURCE_DIR}/{EXEC_SOURCE_FILE}
+    opts = -fvisibility=hidden
+
+build {BUILD_DIR}/{EXEC_NAME}: link_exe {object} {BUILD_DIR}/{lib_name} {' '.join(module_libraries)}
+build exe: phony {BUILD_DIR}/{EXEC_NAME}
+''')
+    build_ninja_targets.append('exe')
+
+## }}}
+## tests executable {{{
 
 if BUILD_TESTS:
+    header = f"{BUILD_DIR}/{TEST_DIR}/{TEST_HEADER_FILE}"
+    source = f"{BUILD_DIR}/{TEST_DIR}/{TEST_SOURCE_FILE}"
+    object = source2object(source)
+
+    sources, objects = collect_sources(TEST_DIR)
+
     build_ninja_segments.append(f'''\
 TEST_CODE_URL = "https://gist.githubusercontent.com/ivanp7/506fe8dc053952fd4a960666814cfd9a/raw"
 
-build {TEST_HEADER}: download
+build {header}: download
     url = $TEST_CODE_URL/test.h
-build {TEST_SOURCE}: download
+build {source}: download
     url = $TEST_CODE_URL/test.c
-build {TEST_OBJECT}: compile {TEST_SOURCE} || {TEST_HEADER}
+build {object}: compile {source} || {header}
     opts = -I{BUILD_DIR}/{TEST_DIR}
 
-{'\n'.join([f'build {obj}: compile {src} || {TEST_HEADER}\n\
-    opts = -I{BUILD_DIR}/{TEST_DIR}' for obj, src in zip(OBJECTS_TESTS, SOURCES_TESTS)])}
+{'\n'.join([f'build {obj}: compile {src} || {header}\n\
+    opts = -I{BUILD_DIR}/{TEST_DIR}' for obj, src in zip(objects, sources)])}
 
-build {BUILD_DIR}/{TESTS_NAME}: link_exe {TEST_OBJECT} {' '.join(OBJECTS_TESTS)} {BUILD_DIR}/{LIB_NAME}
+build {BUILD_DIR}/{TESTS_NAME}: link_exe {object} {' '.join(objects)} {' '.join(module_libraries)}
 build tests: phony {BUILD_DIR}/{TESTS_NAME}
 ''')
-    TARGETS.append('tests')
+    build_ninja_targets.append('tests')
+
+## }}}
+## targets {{{
 
 build_ninja_segments.append(f'''\
-build all: phony {' '.join(TARGETS)}
+build all: phony {' '.join(build_ninja_targets)}
 default all
 ''')
+
+## }}}
+## write segments to the file {{{
 
 with open('build.ninja', 'w') as file:
     file.write(f'{build_ninja_separator}\n'.join(build_ninja_segments) + '\n')
 
+## }}}
+# }}}
+
+# vim: foldmethod=marker:

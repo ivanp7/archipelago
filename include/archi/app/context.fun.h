@@ -20,7 +20,7 @@
 
 /**
  * @file
- * @brief Operations on contexts.
+ * @brief Context operations.
  */
 
 #pragma once
@@ -29,70 +29,93 @@
 
 #include "archi/app/context.typ.h"
 
-/**
- * @brief Initialize a context.
- *
- * @return Status code.
- */
-archi_status_t
-archi_context_initialize(
-        archi_context_t *context, ///< [in,out] Initialized context.
+struct archi_context;
 
-        const struct archi_list_node_named_value *config ///< [in] Context configuration.
+/**
+ * @brief Extract context interface.
+ *
+ * @return Pointer the interface of the context.
+ */
+archi_pointer_t
+archi_context_interface(
+        struct archi_context *context ///< [in] Context.
 );
 
 /**
- * @brief Finalize a context.
+ * @brief Extract context data.
+ *
+ * @return Pointer wrapper to the context data.
+ */
+archi_pointer_t
+archi_context_data(
+        struct archi_context *context ///< [in] Context.
+);
+
+/*****************************************************************************/
+
+/**
+ * @brief Allocate and initialize a context.
+ *
+ * @return A new initialized context.
+ */
+struct archi_context*
+archi_context_initialize(
+        archi_pointer_t interface, ///< [in] Context interface.
+        const archi_context_parameter_list_t *params, ///< [in] Initialization parameters.
+        archi_status_t *code ///< [out] Status code.
+);
+
+/**
+ * @brief Finalize and destroy a context.
+ *
+ * This is done forcibly, without considering the reference count state.
  */
 void
 archi_context_finalize(
-        archi_context_t *context ///< [in,out] Context.
+        struct archi_context *context ///< [in] Context.
+);
+
+/*****************************************************************************/
+
+/**
+ * @brief Get value from context slot.
+ *
+ * @return Context slot value.
+ */
+archi_pointer_t
+archi_context_get_slot(
+        struct archi_context *context, ///< [in] Context.
+        archi_context_op_designator_t slot, ///< [in] Slot designator.
+        archi_status_t *code ///< [out] Status code.
 );
 
 /**
- * @brief Set a context slot.
+ * @brief Set context slot to an arbitrary value.
  *
  * @return Status code.
  */
 archi_status_t
-archi_context_set(
-        archi_context_t *context, ///< [in,out] Context.
-
-        const char *slot, ///< [in] Context slot.
-        const archi_value_t *value ///< [in] Value to set.
+archi_context_set_slot(
+        struct archi_context *context, ///< [in] Context.
+        archi_context_op_designator_t slot, ///< [in] Slot designator.
+        archi_pointer_t value ///< [in] Value to set.
 );
 
 /**
- * @brief Get a context slot.
+ * @brief Copy value between context slots.
  *
  * @return Status code.
  */
 archi_status_t
-archi_context_get(
-        archi_context_t *context, ///< [in,out] Context.
+archi_context_copy_slot(
+        struct archi_context *context, ///< [in] Destination context.
+        archi_context_op_designator_t slot, ///< [in] Destination slot designator.
 
-        const char *slot, ///< [in] Context slot.
-        archi_value_t *value ///< [out] Gotten value.
+        struct archi_context *src_context, ///< [in] Source context.
+        archi_context_op_designator_t src_slot ///< [in] Source slot designator.
 );
 
-/**
- * @brief Perform a context assignment.
- *
- * Destination context slot must not be null.
- * Source context slot may be null.
- * In that case, the source context itself
- * is passed to the destination slot setter function.
- *
- * @return Status code.
- */
-archi_status_t
-archi_context_assign(
-        archi_context_t *dest, ///< [in,out] Destination context.
-        const char *dest_slot, ///< [in] Destination context slot.
-
-        archi_context_t *src, ///< [in,out] Source context.
-        const char *src_slot  ///< [in] Source context slot.
-);
+/*****************************************************************************/
 
 /**
  * @brief Invoke a context action.
@@ -101,10 +124,9 @@ archi_context_assign(
  */
 archi_status_t
 archi_context_act(
-        archi_context_t *context, ///< [in,out] Initialized context.
-
-        const char *action, ///< [in] Action type.
-        const struct archi_list_node_named_value *params ///< [in] Action parameters.
+        struct archi_context *context, ///< [in] Initialized context.
+        archi_context_op_designator_t action, ///< [in] Action designator.
+        const archi_context_parameter_list_t *params ///< [in] Action parameters.
 );
 
 #endif // _ARCHI_APP_CONTEXT_FUN_H_

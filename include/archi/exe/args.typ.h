@@ -20,7 +20,7 @@
 
 /**
  * @file
- * @brief Type of parsed command line arguments.
+ * @brief Command line arguments.
  */
 
 #pragma once
@@ -31,17 +31,21 @@
 #include <stddef.h>
 
 /**
- * @brief Values of command line arguments.
+ * @brief Parsed values of command line arguments.
  */
-typedef struct archi_args {
-    char **inputs;     ///< Array of pathnames of input memory-mapped configuration files.
-    size_t num_inputs; ///< Number of input configuration files.
+typedef struct archi_exe_args {
+    // Functionality
+    char **inputs;     ///< Array of pathnames of input memory-mapped initialization files.
+    size_t num_inputs; ///< Number of input initialization files.
 
-    bool no_fsm; ///< Whether to skip FSM execution.
+    bool dry_run; ///< Whether dry run is done.
+    bool no_hsp;  ///< Whether HSP execution is skipped.
 
-    bool no_logo; ///< Whether to suppress display of the application logo.
+    // Logging
+    bool no_logo;  ///< Whether display of the application logo is suppressed.
+    bool no_color; ///< Whether use of colors for log messages is disabled.
     int verbosity_level; ///< Application verbosity level.
-} archi_args_t;
+} archi_exe_args_t;
 
 #endif // _ARCHI_EXE_ARGS_TYP_H_
 
