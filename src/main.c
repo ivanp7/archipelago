@@ -45,12 +45,6 @@
 
 #include <stdlib.h> // for atexit(), at_quick_exit()
 
-
-#define ARCHIPELAGO "\
-  ⡏ ⢀⣀ ⡀⣀ ⢀⣀ ⣇⡀ ⠄ ⣀⡀ ⢀⡀ ⡇ ⢀⣀ ⢀⡀ ⢀⡀ ⢹  \n\
-  ⣇ ⠣⠼ ⠏  ⠣⠤ ⠇⠸ ⠇ ⡧⠜ ⠣⠭ ⠣ ⠣⠼ ⣑⡺ ⠣⠜ ⣸  \n\
-"
-
 ///////////////////////////////////////////////////////////////////////////////
 
 static
@@ -74,6 +68,10 @@ exit_cleanup(void);
 static
 void
 exit_quick(void);
+
+static
+void
+print_logo(void);
 
 ///////////////////////////////////////////////////////////////////////////////
 
@@ -118,10 +116,9 @@ main(
 
     archi_log_initialize(archi_exe_log_context());
 
-    // Display application logo
+    // Display the logo
     if (!archi_process.args.no_logo)
-        archi_print(ARCHI_COLOR_RESET "\n" ARCHI_COLOR_FG_BRI_WHITE "%s"
-                ARCHI_COLOR_RESET "\n\n", ARCHIPELAGO);
+        print_logo();
 
     // Exit if there is nothing to do
     if (archi_process.args.num_inputs == 0)
@@ -156,5 +153,63 @@ void
 exit_quick(void) // is called on quick_exit()
 {
     // TODO
+}
+
+void
+print_logo(void)
+{
+#define LINES    2
+#define LETTERS  13
+
+    static const char *logo[LINES][LETTERS] = {
+        {"⡏", "⢀⣀", "⡀⣀", "⢀⣀", "⣇⡀", "⠄", "⣀⡀", "⢀⡀", "⡇", "⢀⣀", "⢀⡀", "⢀⡀", "⢹"},
+        {"⣇", "⠣⠼", "⠏ ", "⠣⠤", "⠇⠸", "⠇", "⡧⠜", "⠣⠭", "⠣", "⠣⠼", "⣑⡺", "⠣⠜", "⣸"},
+    };
+
+    static const char *colors[LETTERS] = {
+        ARCHI_COLOR_FG_BRI_WHITE,   // [
+        ARCHI_COLOR_FG_BRI_RED,     // a
+        ARCHI_COLOR_FG_BRI_YELLOW,  // r
+        ARCHI_COLOR_FG_BRI_GREEN,   // c
+        ARCHI_COLOR_FG_BRI_BLUE,    // h
+        ARCHI_COLOR_FG_BRI_MAGENTA, // i
+        ARCHI_COLOR_FG_BRI_BLACK,   // p
+        ARCHI_COLOR_FG_BRI_BLACK,   // e
+        ARCHI_COLOR_FG_BRI_BLACK,   // l
+        ARCHI_COLOR_FG_BRI_BLACK,   // a
+        ARCHI_COLOR_FG_BRI_BLACK,   // g
+        ARCHI_COLOR_FG_BRI_BLACK,   // o
+        ARCHI_COLOR_FG_BRI_WHITE,   // ]
+    };
+
+    static const char *space = " ";
+
+    if (!archi_process.args.no_color)
+        archi_print(ARCHI_COLOR_RESET);
+
+    archi_print("\n");
+
+    for (int i = 0; i < LINES; i++)
+    {
+        archi_print("%s", space);
+
+        for (int j = 0; j < LETTERS; j++)
+        {
+            if (!archi_process.args.no_color)
+                archi_print("%s", colors[j]);
+
+            archi_print("%s%s", space, logo[i][j]);
+        }
+
+        archi_print("\n");
+    }
+
+    if (!archi_process.args.no_color)
+        archi_print(ARCHI_COLOR_RESET);
+
+    archi_print("\n\n");
+
+#undef LINES
+#undef LETTERS
 }
 
