@@ -24,7 +24,7 @@
  */
 
 #include "archi/builtin/res_file/context.var.h"
-#include "archi/res/file/interface.fun.h"
+#include "archi/res/file/api.fun.h"
 
 #include <stdlib.h> // for malloc(), free()
 #include <string.h> // for strcmp()

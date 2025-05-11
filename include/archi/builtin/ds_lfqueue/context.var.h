@@ -27,7 +27,7 @@
 #ifndef _ARCHI_BUILTIN_DS_LFQUEUE_CONTEXT_VAR_H_
 #define _ARCHI_BUILTIN_DS_LFQUEUE_CONTEXT_VAR_H_
 
-#include "archi/app/context.typ.h"
+#include "archi/ctx/interface.typ.h"
 
 ARCHI_CONTEXT_INIT_FUNC(archi_context_ds_lfqueue_init);   ///< Lock-free queue initialization function.
 ARCHI_CONTEXT_FINAL_FUNC(archi_context_ds_lfqueue_final); ///< Lock-free queue finalization function.

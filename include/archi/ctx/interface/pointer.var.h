@@ -20,65 +20,50 @@
 
 /**
  * @file
- * @brief Application context interface for environmental variables.
+ * @brief Context interface for pointer wrappers.
  */
 
-#include "archi/builtin/ipc_env/context.var.h"
-#include "archi/ipc/env/api.fun.h"
+#pragma once
+#ifndef _ARCHI_CTX_INTERFACE_POINTER_VAR_H_
+#define _ARCHI_CTX_INTERFACE_POINTER_VAR_H_
 
-#include <stdlib.h> // for free()
-#include <string.h> // for strcmp(), strlen()
-#include <stdbool.h>
+#include "archi/ctx/interface.typ.h"
 
-ARCHI_CONTEXT_INIT_FUNC(archi_context_ipc_env_init)
-{
-    const char *name = NULL;
+/**
+ * @brief Pointer initialization function.
+ *
+ * Accepts the following parameters:
+ * - "value" : pointer to store
+ */
+ARCHI_CONTEXT_INIT_FUNC(archi_context_pointer_init);
 
-    bool param_name_set = false;
+/**
+ * @brief Pointer finalization function.
+ */
+ARCHI_CONTEXT_FINAL_FUNC(archi_context_pointer_final);
 
-    for (; params != NULL; params = params->next)
-    {
-        if (strcmp("name", params->name) == 0)
-        {
-            if (param_name_set)
-                continue;
-            param_name_set = true;
+/**
+ * @brief Pointer getter function.
+ *
+ * Provides the following slots:
+ * - "value" : stored pointer
+ * - "value" [offset] : stored pointer + (offset) * (data element size)
+ */
+ARCHI_CONTEXT_GET_FUNC(archi_context_pointer_get);
 
-            if ((params->value.flags & ARCHI_POINTER_FLAG_FUNCTION) ||
-                    (params->value.ptr == NULL))
-                return ARCHI_STATUS_EVALUE;
+/**
+ * @brief Pointer setter function.
+ *
+ * Accepts the following slots:
+ * - "value" : pointer to store
+ */
+ARCHI_CONTEXT_SET_FUNC(archi_context_pointer_set);
 
-            name = params->value.ptr;
-        }
-        else
-            return ARCHI_STATUS_EKEY;
-    }
+/**
+ * @brief Pointer interface.
+ */
+extern
+const archi_context_interface_t archi_context_pointer_interface;
 
-    archi_status_t code;
-    char *var = archi_env_get(name, &code);
-
-    if (var == NULL)
-        return code;
-
-    context->public_value = (archi_pointer_t){
-        .ptr = var,
-        .element = {
-            .num_of = strlen(var) + 1,
-            .size = 1,
-            .alignment = 1,
-        },
-    };
-
-    return 0;
-}
-
-ARCHI_CONTEXT_FINAL_FUNC(archi_context_ipc_env_final)
-{
-    free(context.public_value.ptr);
-}
-
-const archi_context_interface_t archi_context_ipc_env_interface = {
-    .init_fn = archi_context_ipc_env_init,
-    .final_fn = archi_context_ipc_env_final,
-};
+#endif // _ARCHI_CTX_INTERFACE_POINTER_VAR_H_
 

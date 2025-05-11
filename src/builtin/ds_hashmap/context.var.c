@@ -24,7 +24,7 @@
  */
 
 #include "archi/builtin/ds_hashmap/context.var.h"
-#include "archi/ds/hashmap/interface.fun.h"
+#include "archi/ds/hashmap/api.fun.h"
 
 #include <string.h> // for strcmp()
 

@@ -20,65 +20,70 @@
 
 /**
  * @file
- * @brief Application context interface for environmental variables.
+ * @brief Environmental variable operations.
  */
 
-#include "archi/builtin/ipc_env/context.var.h"
 #include "archi/ipc/env/api.fun.h"
 
-#include <stdlib.h> // for free()
-#include <string.h> // for strcmp(), strlen()
-#include <stdbool.h>
+#include <stdlib.h> // for getenv(), malloc()
+#include <string.h> // for strlen(), memcpy()
+#ifndef __STDC_NO_ATOMICS__
+#  include <stdatomic.h>
+#endif
 
-ARCHI_CONTEXT_INIT_FUNC(archi_context_ipc_env_init)
+char*
+archi_env_get(
+        const char *name,
+        archi_status_t *code)
 {
-    const char *name = NULL;
+#ifndef __STDC_NO_ATOMICS__
+    static atomic_flag spinlock = ATOMIC_FLAG_INIT;
+#endif
 
-    bool param_name_set = false;
-
-    for (; params != NULL; params = params->next)
+    if (name == NULL)
     {
-        if (strcmp("name", params->name) == 0)
-        {
-            if (param_name_set)
-                continue;
-            param_name_set = true;
+        if (code != NULL)
+            *code = ARCHI_STATUS_EMISUSE;
 
-            if ((params->value.flags & ARCHI_POINTER_FLAG_FUNCTION) ||
-                    (params->value.ptr == NULL))
-                return ARCHI_STATUS_EVALUE;
-
-            name = params->value.ptr;
-        }
-        else
-            return ARCHI_STATUS_EKEY;
+        return NULL;
     }
 
-    archi_status_t code;
-    char *var = archi_env_get(name, &code);
+    char *value = NULL;
 
-    if (var == NULL)
-        return code;
+#ifndef __STDC_NO_ATOMICS__
+    while (atomic_flag_test_and_set_explicit(&spinlock, memory_order_acquire)); // lock
+#endif
 
-    context->public_value = (archi_pointer_t){
-        .ptr = var,
-        .element = {
-            .num_of = strlen(var) + 1,
-            .size = 1,
-            .alignment = 1,
-        },
-    };
+    const char *value_orig = getenv(name);
+    if (value_orig == NULL)
+    {
+        if (code != NULL)
+            *code = 1; // env. variable not found
 
-    return 0;
+        goto finish;
+    }
+
+    size_t valuesz = strlen(value_orig) + 1;
+
+    value = malloc(valuesz);
+    if (value == NULL)
+    {
+        if (code != NULL)
+            *code = ARCHI_STATUS_ENOMEMORY;
+
+        goto finish;
+    }
+
+    memcpy(value, value_orig, valuesz);
+
+    if (code != NULL)
+        *code = 0;
+
+finish:
+#ifndef __STDC_NO_ATOMICS__
+    atomic_flag_clear_explicit(&spinlock, memory_order_release); // unlock
+#endif
+
+    return value;
 }
-
-ARCHI_CONTEXT_FINAL_FUNC(archi_context_ipc_env_final)
-{
-    free(context.public_value.ptr);
-}
-
-const archi_context_interface_t archi_context_ipc_env_interface = {
-    .init_fn = archi_context_ipc_env_init,
-    .final_fn = archi_context_ipc_env_final,
-};
 

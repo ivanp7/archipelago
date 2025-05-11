@@ -25,7 +25,7 @@
 
 #include "archi/log/init/library.fun.h"
 #include "archi/log/context.fun.h"
-#include "archi/res/library/interface.fun.h" // for archi_library_get_symbol()
+#include "archi/res/library/api.fun.h" // for archi_library_get_symbol()
 
 #include <stddef.h> // for NULL
 

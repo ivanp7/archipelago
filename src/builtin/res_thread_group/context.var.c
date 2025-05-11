@@ -25,7 +25,7 @@
 
 #include "archi/builtin/res_thread_group/context.var.h"
 #include "archi/builtin/res_thread_group/dispatch.typ.h"
-#include "archi/res/thread_group/interface.fun.h"
+#include "archi/res/thread_group/api.fun.h"
 #include "archi/util/ref_count.fun.h"
 
 #include <stdlib.h> // for malloc(), free()

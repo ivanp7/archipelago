@@ -39,27 +39,27 @@ MODULES = [
         "util", # common utilities
         "log",  # logging
 
-        "app", # application context system
-        "hsp", # hierarchical state processor
-
+        "ctx", # abstract context interface
         "mem", # abstract memory interface
 
-        "ipc/env",    # inter-process communication: environmental variables
-        "ipc/signal", # inter-process communication: signal management
+        "hsp", # hierarchical state processor
 
         "ds/hashmap", # data structure: hashmap
         "ds/lfqueue", # data structure: lock-free queue
+
+        "ipc/env",    # inter-process communication: environmental variables
+        "ipc/signal", # inter-process communication: signal management
 
         "res/file",         # system resource: file
         "res/library",      # system resource: shared library
         "res/thread_group", # system resource: thread group
 
-        "builtin/hsp", # application context: hierarchical state processor entities
         "builtin/mem", # application context: memory objects
-        "builtin/ipc_env", # application context: inter-process communication: environmental variables
-        "builtin/ipc_signal", # application context: inter-process communication: signal management
+        "builtin/hsp", # application context: hierarchical state processor entities
         "builtin/ds_hashmap",  # application context: data structure: hashmap
         "builtin/ds_lfqueue",  # application context: data structure: lock-free queue
+        "builtin/ipc_env", # application context: inter-process communication: environmental variables
+        "builtin/ipc_signal", # application context: inter-process communication: signal management
         "builtin/res_file",    # application context: system resource: file
         "builtin/res_library", # application context: system resource: shared library
         "builtin/res_thread_group",     # application context: system resource: thread group

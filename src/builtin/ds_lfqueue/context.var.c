@@ -24,7 +24,7 @@
  */
 
 #include "archi/builtin/ds_lfqueue/context.var.h"
-#include "archi/ds/lfqueue/interface.fun.h"
+#include "archi/ds/lfqueue/api.fun.h"
 
 #include <string.h> // for strcmp()
 

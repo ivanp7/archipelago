@@ -27,7 +27,7 @@
 #ifndef _ARCHI_BUILTIN_RES_THREAD_GROUP_CONTEXT_VAR_H_
 #define _ARCHI_BUILTIN_RES_THREAD_GROUP_CONTEXT_VAR_H_
 
-#include "archi/app/context.typ.h"
+#include "archi/ctx/interface.typ.h"
 
 ARCHI_CONTEXT_INIT_FUNC(archi_context_res_thread_group_init);   ///< Thread group context initialization function.
 ARCHI_CONTEXT_FINAL_FUNC(archi_context_res_thread_group_final); ///< Thread group context finalization function.

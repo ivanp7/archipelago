@@ -27,7 +27,7 @@
 #ifndef _ARCHI_BUILTIN_RES_LIBRARY_CONTEXT_VAR_H_
 #define _ARCHI_BUILTIN_RES_LIBRARY_CONTEXT_VAR_H_
 
-#include "archi/app/context.typ.h"
+#include "archi/ctx/interface.typ.h"
 
 ARCHI_CONTEXT_INIT_FUNC(archi_context_res_library_init);   ///< Shared library context initialization function.
 ARCHI_CONTEXT_FINAL_FUNC(archi_context_res_library_final); ///< Shared library context finalization function.

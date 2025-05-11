@@ -24,7 +24,7 @@
  */
 
 #include "archi/builtin/res_library/context.var.h"
-#include "archi/res/library/interface.fun.h"
+#include "archi/res/library/api.fun.h"
 
 #include <string.h> // for strcmp()
 

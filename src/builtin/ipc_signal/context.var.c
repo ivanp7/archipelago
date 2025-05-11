@@ -24,8 +24,8 @@
  */
 
 #include "archi/builtin/ipc_signal/context.var.h"
-#include "archi/ipc/signal/interface.fun.h"
-#include "archi/ds/hashmap/interface.fun.h"
+#include "archi/ipc/signal/api.fun.h"
+#include "archi/ds/hashmap/api.fun.h"
 #include "archi/util/ref_count.fun.h"
 
 #include <stdlib.h> // for malloc(), free()

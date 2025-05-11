@@ -75,7 +75,7 @@ class Application:
                                 if isinstance(entity, ContextSpec) else None,
                         dparams_key=entity.dparams().alias())
             else: # temporary (dynamic + static) parameter list
-                temp_params_alias = f'.~~{alias}~{entity.dparams().alias()}~~'
+                temp_params_alias = f'.~{alias}:{entity.dparams().alias()}'
 
                 self._app._add_instruction_init_dynamic(
                         key=temp_params_alias, interface_key=None,
@@ -308,7 +308,7 @@ class Context:
                         action_name=self.name(), action_indices=self.indices(),
                         dparams_key=_.alias())
             else: # temporary (dynamic + static) parameter list
-                temp_params_alias = f'.~~{self.context().alias()}~{_.alias()}~~'
+                temp_params_alias = f'.~{self.context().alias()}:{_.alias()}'
 
                 self._app._add_instruction_init_dynamic(
                         key=temp_params_alias, interface_key=None,

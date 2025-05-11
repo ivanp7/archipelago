@@ -20,65 +20,42 @@
 
 /**
  * @file
- * @brief Application context interface for environmental variables.
+ * @brief Memory interface for heap memory.
  */
 
-#include "archi/builtin/ipc_env/context.var.h"
-#include "archi/ipc/env/api.fun.h"
+#include "archi/mem/interface/heap.var.h"
 
-#include <stdlib.h> // for free()
-#include <string.h> // for strcmp(), strlen()
-#include <stdbool.h>
+#include <stdlib.h> // for malloc(), aligned_alloc(), free()
 
-ARCHI_CONTEXT_INIT_FUNC(archi_context_ipc_env_init)
+ARCHI_MEMORY_ALLOC_FUNC(archi_memory_heap_alloc)
 {
-    const char *name = NULL;
+    (void) alloc_data;
+    (void) code;
 
-    bool param_name_set = false;
-
-    for (; params != NULL; params = params->next)
-    {
-        if (strcmp("name", params->name) == 0)
-        {
-            if (param_name_set)
-                continue;
-            param_name_set = true;
-
-            if ((params->value.flags & ARCHI_POINTER_FLAG_FUNCTION) ||
-                    (params->value.ptr == NULL))
-                return ARCHI_STATUS_EVALUE;
-
-            name = params->value.ptr;
-        }
-        else
-            return ARCHI_STATUS_EKEY;
-    }
-
-    archi_status_t code;
-    char *var = archi_env_get(name, &code);
-
-    if (var == NULL)
-        return code;
-
-    context->public_value = (archi_pointer_t){
-        .ptr = var,
-        .element = {
-            .num_of = strlen(var) + 1,
-            .size = 1,
-            .alignment = 1,
-        },
-    };
-
-    return 0;
+    if (alignment != 0)
+        return aligned_alloc(alignment, num_bytes);
+    else
+        return malloc(num_bytes);
 }
 
-ARCHI_CONTEXT_FINAL_FUNC(archi_context_ipc_env_final)
+ARCHI_MEMORY_FREE_FUNC(archi_memory_heap_free)
 {
-    free(context.public_value.ptr);
+    free(allocation);
 }
 
-const archi_context_interface_t archi_context_ipc_env_interface = {
-    .init_fn = archi_context_ipc_env_init,
-    .final_fn = archi_context_ipc_env_final,
+ARCHI_MEMORY_MAP_FUNC(archi_memory_heap_map)
+{
+    (void) num_bytes;
+    (void) for_writing;
+    (void) map_data;
+    (void) code;
+
+    return (char*)allocation + offset;
+}
+
+const archi_memory_interface_t archi_memory_heap_interface = {
+    .alloc_fn = archi_memory_heap_alloc,
+    .free_fn = archi_memory_heap_free,
+    .map_fn = archi_memory_heap_map,
 };
 

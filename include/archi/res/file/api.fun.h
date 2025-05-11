@@ -20,65 +20,67 @@
 
 /**
  * @file
- * @brief Application context interface for environmental variables.
+ * @brief File operations.
  */
 
-#include "archi/builtin/ipc_env/context.var.h"
-#include "archi/ipc/env/api.fun.h"
+#pragma once
+#ifndef _ARCHI_RES_FILE_API_FUN_H_
+#define _ARCHI_RES_FILE_API_FUN_H_
 
-#include <stdlib.h> // for free()
-#include <string.h> // for strcmp(), strlen()
-#include <stdbool.h>
+#include "archi/res/file/api.typ.h"
 
-ARCHI_CONTEXT_INIT_FUNC(archi_context_ipc_env_init)
-{
-    const char *name = NULL;
+/**
+ * @brief Get page size.
+ *
+ * @return Page size.
+ */
+size_t
+archi_file_page_size(void);
 
-    bool param_name_set = false;
+/**
+ * @brief Open a file.
+ *
+ * @return File descriptor.
+ */
+int
+archi_file_open(
+        archi_file_open_params_t params ///< [in] File opening parameters.
+);
 
-    for (; params != NULL; params = params->next)
-    {
-        if (strcmp("name", params->name) == 0)
-        {
-            if (param_name_set)
-                continue;
-            param_name_set = true;
+/**
+ * @brief Close a file.
+ *
+ * @return True if there were no errors, otherwise false.
+ */
+bool
+archi_file_close(
+        int fd ///< [in] File descriptor.
+);
 
-            if ((params->value.flags & ARCHI_POINTER_FLAG_FUNCTION) ||
-                    (params->value.ptr == NULL))
-                return ARCHI_STATUS_EVALUE;
+/**
+ * @brief Map a file into memory.
+ *
+ * If config.size is 0, it means "until the end of the file".
+ *
+ * @return Mapped memory address or NULL in case of failure.
+ */
+void*
+archi_file_map(
+        int fd, ///< [in] File descriptor.
+        archi_file_map_params_t params, ///< [in] File mapping parameters.
+        size_t *size /// [out] Mapped memory size.
+);
 
-            name = params->value.ptr;
-        }
-        else
-            return ARCHI_STATUS_EKEY;
-    }
+/**
+ * @brief Unmap a memory-mapped file.
+ *
+ * @return True on success, otherwise false.
+ */
+bool
+archi_file_unmap(
+        void *mm,   ///< [in] Mapped memory.
+        size_t size ///< [in] Size of mapped memory.
+);
 
-    archi_status_t code;
-    char *var = archi_env_get(name, &code);
-
-    if (var == NULL)
-        return code;
-
-    context->public_value = (archi_pointer_t){
-        .ptr = var,
-        .element = {
-            .num_of = strlen(var) + 1,
-            .size = 1,
-            .alignment = 1,
-        },
-    };
-
-    return 0;
-}
-
-ARCHI_CONTEXT_FINAL_FUNC(archi_context_ipc_env_final)
-{
-    free(context.public_value.ptr);
-}
-
-const archi_context_interface_t archi_context_ipc_env_interface = {
-    .init_fn = archi_context_ipc_env_init,
-    .final_fn = archi_context_ipc_env_final,
-};
+#endif // _ARCHI_RES_FILE_API_FUN_H_
 

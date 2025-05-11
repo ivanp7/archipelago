@@ -20,65 +20,26 @@
 
 /**
  * @file
- * @brief Application context interface for environmental variables.
+ * @brief Types for file and memory operations.
  */
 
-#include "archi/builtin/ipc_env/context.var.h"
-#include "archi/ipc/env/api.fun.h"
+#pragma once
+#ifndef _ARCHI_RES_LIBRARY_API_TYP_H_
+#define _ARCHI_RES_LIBRARY_API_TYP_H_
 
-#include <stdlib.h> // for free()
-#include <string.h> // for strcmp(), strlen()
 #include <stdbool.h>
 
-ARCHI_CONTEXT_INIT_FUNC(archi_context_ipc_env_init)
-{
-    const char *name = NULL;
+/**
+ * @brief Parameters for archi_library_load().
+ */
+typedef struct archi_library_load_params {
+    const char *pathname; ///< Pathname of library file, or NULL for the main program.
 
-    bool param_name_set = false;
+    bool lazy;   ///< Whether to perform lazy binding.
+    bool global; ///< Whether defined symbols are available in subsequently loaded libraries.
 
-    for (; params != NULL; params = params->next)
-    {
-        if (strcmp("name", params->name) == 0)
-        {
-            if (param_name_set)
-                continue;
-            param_name_set = true;
+    int flags;   ///< Other flags for dlopen().
+} archi_library_load_params_t;
 
-            if ((params->value.flags & ARCHI_POINTER_FLAG_FUNCTION) ||
-                    (params->value.ptr == NULL))
-                return ARCHI_STATUS_EVALUE;
-
-            name = params->value.ptr;
-        }
-        else
-            return ARCHI_STATUS_EKEY;
-    }
-
-    archi_status_t code;
-    char *var = archi_env_get(name, &code);
-
-    if (var == NULL)
-        return code;
-
-    context->public_value = (archi_pointer_t){
-        .ptr = var,
-        .element = {
-            .num_of = strlen(var) + 1,
-            .size = 1,
-            .alignment = 1,
-        },
-    };
-
-    return 0;
-}
-
-ARCHI_CONTEXT_FINAL_FUNC(archi_context_ipc_env_final)
-{
-    free(context.public_value.ptr);
-}
-
-const archi_context_interface_t archi_context_ipc_env_interface = {
-    .init_fn = archi_context_ipc_env_init,
-    .final_fn = archi_context_ipc_env_final,
-};
+#endif // _ARCHI_RES_LIBRARY_API_TYP_H_
 

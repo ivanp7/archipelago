@@ -20,65 +20,44 @@
 
 /**
  * @file
- * @brief Application context interface for environmental variables.
+ * @brief Context registry instructions.
  */
 
-#include "archi/builtin/ipc_env/context.var.h"
-#include "archi/ipc/env/api.fun.h"
+#pragma once
+#ifndef _ARCHI_EXE_INSTRUCTION_FUN_H_
+#define _ARCHI_EXE_INSTRUCTION_FUN_H_
 
-#include <stdlib.h> // for free()
-#include <string.h> // for strcmp(), strlen()
-#include <stdbool.h>
+#include "archi/util/status.typ.h"
 
-ARCHI_CONTEXT_INIT_FUNC(archi_context_ipc_env_init)
-{
-    const char *name = NULL;
+#include <stddef.h> // for size_t
 
-    bool param_name_set = false;
+struct archi_exe_registry_instr_base;
+struct archi_context;
 
-    for (; params != NULL; params = params->next)
-    {
-        if (strcmp("name", params->name) == 0)
-        {
-            if (param_name_set)
-                continue;
-            param_name_set = true;
+/**
+ * @brief Get instruction size in bytes.
+ *
+ * @return Instruction size in bytes.
+ */
+size_t
+archi_exe_registry_instr_sizeof(
+        const struct archi_exe_registry_instr_base *instruction ///< [in] Instruction.
+);
 
-            if ((params->value.flags & ARCHI_POINTER_FLAG_FUNCTION) ||
-                    (params->value.ptr == NULL))
-                return ARCHI_STATUS_EVALUE;
+/**
+ * @brief Execute an application context registry instruction.
+ *
+ * @return Status code:
+ * <0 - error;
+ *  0 - success;
+ *  1 - failure: the key does not exist in the registry;
+ *  2 - failure: the key already exists in the registry.
+ */
+archi_status_t
+archi_exe_registry_instr_execute(
+        struct archi_context *registry, ///< [in,out] Application registry.
+        const struct archi_exe_registry_instr_base *instruction ///< [in] Instruction to execute.
+);
 
-            name = params->value.ptr;
-        }
-        else
-            return ARCHI_STATUS_EKEY;
-    }
-
-    archi_status_t code;
-    char *var = archi_env_get(name, &code);
-
-    if (var == NULL)
-        return code;
-
-    context->public_value = (archi_pointer_t){
-        .ptr = var,
-        .element = {
-            .num_of = strlen(var) + 1,
-            .size = 1,
-            .alignment = 1,
-        },
-    };
-
-    return 0;
-}
-
-ARCHI_CONTEXT_FINAL_FUNC(archi_context_ipc_env_final)
-{
-    free(context.public_value.ptr);
-}
-
-const archi_context_interface_t archi_context_ipc_env_interface = {
-    .init_fn = archi_context_ipc_env_init,
-    .final_fn = archi_context_ipc_env_final,
-};
+#endif // _ARCHI_EXE_INSTRUCTION_FUN_H_
 

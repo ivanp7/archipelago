@@ -27,7 +27,7 @@
 #ifndef _ARCHI_BUILTIN_HSP_CONTEXT_VAR_H_
 #define _ARCHI_BUILTIN_HSP_CONTEXT_VAR_H_
 
-#include "archi/app/context.typ.h"
+#include "archi/ctx/interface.typ.h"
 
 ARCHI_CONTEXT_INIT_FUNC(archi_context_hsp_state_init);   ///< HSP state initialization function.
 ARCHI_CONTEXT_FINAL_FUNC(archi_context_hsp_state_final); ///< HSP state finalization function.

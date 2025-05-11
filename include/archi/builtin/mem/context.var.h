@@ -27,7 +27,7 @@
 #ifndef _ARCHI_BUILTIN_MEM_CONTEXT_VAR_H_
 #define _ARCHI_BUILTIN_MEM_CONTEXT_VAR_H_
 
-#include "archi/app/context.typ.h"
+#include "archi/ctx/interface.typ.h"
 
 ARCHI_CONTEXT_INIT_FUNC(archi_context_memory_init);   ///< Memory context initialization function.
 ARCHI_CONTEXT_FINAL_FUNC(archi_context_memory_final); ///< Memory context finalization function.

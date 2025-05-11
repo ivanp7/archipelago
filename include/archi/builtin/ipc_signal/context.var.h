@@ -27,7 +27,7 @@
 #ifndef _ARCHI_BUILTIN_IPC_SIGNAL_CONTEXT_FUN_H_
 #define _ARCHI_BUILTIN_IPC_SIGNAL_CONTEXT_FUN_H_
 
-#include "archi/app/context.typ.h"
+#include "archi/ctx/interface.typ.h"
 
 ARCHI_CONTEXT_INIT_FUNC(archi_context_ipc_signal_handler_init);   ///< Signal handler initialization function.
 ARCHI_CONTEXT_FINAL_FUNC(archi_context_ipc_signal_handler_final); ///< Signal handler finalization function.

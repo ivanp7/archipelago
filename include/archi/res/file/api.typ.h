@@ -20,65 +20,47 @@
 
 /**
  * @file
- * @brief Application context interface for environmental variables.
+ * @brief Types for file and memory operations.
  */
 
-#include "archi/builtin/ipc_env/context.var.h"
-#include "archi/ipc/env/api.fun.h"
+#pragma once
+#ifndef _ARCHI_RES_FILE_API_TYP_H_
+#define _ARCHI_RES_FILE_API_TYP_H_
 
-#include <stdlib.h> // for free()
-#include <string.h> // for strcmp(), strlen()
 #include <stdbool.h>
+#include <stddef.h> // for size_t
 
-ARCHI_CONTEXT_INIT_FUNC(archi_context_ipc_env_init)
-{
-    const char *name = NULL;
+/**
+ * @brief Parameters for archi_file_open().
+ */
+typedef struct archi_file_open_params {
+    const char *pathname; ///< Path to a file.
 
-    bool param_name_set = false;
+    bool readable; ///< Whether is file open to read.
+    bool writable; ///< Whether is file open to write.
+    bool nonblock; ///< Whether is file open in non-blocking mode.
 
-    for (; params != NULL; params = params->next)
-    {
-        if (strcmp("name", params->name) == 0)
-        {
-            if (param_name_set)
-                continue;
-            param_name_set = true;
+    int flags;     ///< Other flags for open().
+} archi_file_open_params_t;
 
-            if ((params->value.flags & ARCHI_POINTER_FLAG_FUNCTION) ||
-                    (params->value.ptr == NULL))
-                return ARCHI_STATUS_EVALUE;
+/**
+ * @brief Parameters for archi_file_map().
+ *
+ * If has_header is true, size is ignored (it is computed from the header).
+ * Otherwise, size = 0 means "until the end of the file".
+ */
+typedef struct archi_file_map_params {
+    size_t size;     ///< Size of the mapped memory.
+    size_t offset;   ///< Offset in the file. Must be a multiple of the page size.
 
-            name = params->value.ptr;
-        }
-        else
-            return ARCHI_STATUS_EKEY;
-    }
+    bool has_header; ///< Whether the mapped memory has the header.
 
-    archi_status_t code;
-    char *var = archi_env_get(name, &code);
+    bool readable; ///< Whether is mapped memory readable.
+    bool writable; ///< Whether is mapped memory writable.
+    bool shared;   ///< Whether updates to the mapping are visible to other processes.
 
-    if (var == NULL)
-        return code;
+    int flags;     ///< Other mmap() flags.
+} archi_file_map_params_t;
 
-    context->public_value = (archi_pointer_t){
-        .ptr = var,
-        .element = {
-            .num_of = strlen(var) + 1,
-            .size = 1,
-            .alignment = 1,
-        },
-    };
-
-    return 0;
-}
-
-ARCHI_CONTEXT_FINAL_FUNC(archi_context_ipc_env_final)
-{
-    free(context.public_value.ptr);
-}
-
-const archi_context_interface_t archi_context_ipc_env_interface = {
-    .init_fn = archi_context_ipc_env_init,
-    .final_fn = archi_context_ipc_env_final,
-};
+#endif // _ARCHI_RES_FILE_API_TYP_H_
 

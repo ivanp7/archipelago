@@ -25,7 +25,7 @@
 
 #include "archi/builtin/res_thread_group_hsp/state.fun.h"
 #include "archi/builtin/res_thread_group/dispatch.typ.h"
-#include "archi/res/thread_group/interface.fun.h"
+#include "archi/res/thread_group/api.fun.h"
 #include "archi/hsp/state.fun.h"
 
 ARCHI_HSP_STATE_FUNCTION(archi_hsp_state_res_thread_group_dispatch)

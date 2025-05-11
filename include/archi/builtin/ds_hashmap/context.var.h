@@ -27,7 +27,7 @@
 #ifndef _ARCHI_BUILTIN_DS_HASHMAP_CONTEXT_VAR_H_
 #define _ARCHI_BUILTIN_DS_HASHMAP_CONTEXT_VAR_H_
 
-#include "archi/app/context.typ.h"
+#include "archi/ctx/interface.typ.h"
 
 ARCHI_CONTEXT_INIT_FUNC(archi_context_ds_hashmap_init);   ///< Hashmap initialization function.
 ARCHI_CONTEXT_FINAL_FUNC(archi_context_ds_hashmap_final); ///< Hashmap finalization function.

@@ -27,7 +27,7 @@
 #ifndef _ARCHI_BUILTIN_RES_THREAD_GROUP_DISPATCH_TYP_H_
 #define _ARCHI_BUILTIN_RES_THREAD_GROUP_DISPATCH_TYP_H_
 
-#include "archi/res/thread_group/interface.typ.h"
+#include "archi/res/thread_group/api.typ.h"
 
 /**
  * @brief Parameters for archi_thread_group_dispatch().

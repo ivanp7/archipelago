@@ -30,8 +30,8 @@
 #include "archi/log/print.fun.h"
 #include "archi/log/color.def.h"
 
-#include "archi/app/context.fun.h"
-#include "archi/ipc/signal/interface.typ.h"
+#include "archi/ctx/interface.fun.h"
+#include "archi/ipc/signal/api.typ.h"
 
 #include "archi/builtin/ds_hashmap/context.var.h"
 #include "archi/builtin/ds_lfqueue/context.var.h"
