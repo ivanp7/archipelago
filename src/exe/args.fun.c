@@ -37,7 +37,6 @@
 
 enum {
     ARGKEY_DRY_RUN = 'n',
-    ARGKEY_NO_SIGNALS  = 's',
 
     ARGKEY_NO_LOGO = 'q',
     ARGKEY_VERBOSITY = 'v',
@@ -53,17 +52,16 @@ static
 const struct argp_option args_options[] = {
     {.doc = "Execution options:"},
 
-    {.key = ARGKEY_DRY_RUN,     .name = "dry-run",  .doc = "Do a dry run: initialization instructions are logged only, not executed"},
-    {.key = ARGKEY_NO_SIGNALS,  .name = "no-signals", .doc = "Disable signal management"},
+    {.key = ARGKEY_DRY_RUN,     .name = "dry-run",  .doc = "Simulate initialization: instructions are logged, not executed"},
 
     {.doc = "Verbosity options:"},
 
     {.key = ARGKEY_NO_LOGO,     .name = "no-logo",  .doc = "Don't display the logo"},
-    {.key = ARGKEY_NO_COLOR,    .name = "no-color", .doc = "Disable use of colors for log messages"},
+    {.key = ARGKEY_NO_COLOR,    .name = "no-color", .doc = "Disable use of color for log messages"},
     {.key = ARGKEY_VERBOSITY,   .name = "verbose",  .arg = "[LEVEL]", .flags = OPTION_ARG_OPTIONAL,
-                                    .doc = "Set logging verbosity level: 0-" STRINGIFY(ARCHI_LOG_VERBOSITY_MAX)
-                                           ", or one of: quiet/error/warning/notice/info/debug/max, "
-                                           "or no arg (same as 'notice'); default level is 'info'"},
+                                    .doc = "Set logging verbosity level (0-" STRINGIFY(ARCHI_LOG_VERBOSITY_MAX)
+                                           " or quiet/error/warning/notice/info/debug/max).\n"
+                                           "No argument = notice. Default = info"},
 
     {0}
 };
@@ -78,10 +76,6 @@ args_parse(int key, char *arg, struct argp_state *state)
     {
         case ARGKEY_DRY_RUN:
             args->dry_run = true;
-            break;
-
-        case ARGKEY_NO_SIGNALS:
-            args->no_signals = true;
             break;
 
         case ARGKEY_NO_LOGO:

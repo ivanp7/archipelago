@@ -39,7 +39,6 @@ typedef struct archi_exe_args {
     size_t num_inputs; ///< Number of input initialization files.
 
     bool dry_run; ///< Whether dry run is done: initialization instructions are logged only, not executed.
-    bool no_signals; ///< Whether signal management is disabled.
 
     // Logging
     bool no_logo;  ///< Whether display of the application logo is suppressed.
