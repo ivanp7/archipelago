@@ -178,9 +178,7 @@ struct archi_signal_management_context
     archi_signal_flags_t *flags;
 
     archi_signal_handler_t signal_handler;
-#ifndef __STDC_NO_ATOMICS__
     atomic_flag spinlock;
-#endif
 
     pthread_t thread;
     sigset_t set;
@@ -207,48 +205,48 @@ archi_signal_management_thread(
 
         archi_signal_handler_t signal_handler = archi_signal_management_handler(context);
 
-        if ((signal_handler.function != NULL) &&
-                !signal_handler.function(signal, &siginfo, context->flags, signal_handler.data))
-            continue;
-
-        switch (signal)
+        if ((signal_handler.function == NULL) ||
+                signal_handler.function(signal, &siginfo, context->flags, signal_handler.data))
         {
+            switch (signal)
+            {
 #define CASE_SIGNAL(signal)                                         \
-            case signal:                                            \
-                ARCHI_SIGNAL_SET_FLAG(context->flags->f_##signal);  \
-                break
+                case signal:                                            \
+                    ARCHI_SIGNAL_SET_FLAG(context->flags->f_##signal);  \
+                    break
 
-            CASE_SIGNAL(SIGINT);
-            CASE_SIGNAL(SIGQUIT);
-            CASE_SIGNAL(SIGTERM);
+                CASE_SIGNAL(SIGINT);
+                CASE_SIGNAL(SIGQUIT);
+                CASE_SIGNAL(SIGTERM);
 
-            CASE_SIGNAL(SIGCHLD);
-            CASE_SIGNAL(SIGCONT);
-            CASE_SIGNAL(SIGTSTP);
-            CASE_SIGNAL(SIGXCPU);
-            CASE_SIGNAL(SIGXFSZ);
+                CASE_SIGNAL(SIGCHLD);
+                CASE_SIGNAL(SIGCONT);
+                CASE_SIGNAL(SIGTSTP);
+                CASE_SIGNAL(SIGXCPU);
+                CASE_SIGNAL(SIGXFSZ);
 
-            CASE_SIGNAL(SIGPIPE);
-            CASE_SIGNAL(SIGPOLL);
-            CASE_SIGNAL(SIGURG);
+                CASE_SIGNAL(SIGPIPE);
+                CASE_SIGNAL(SIGPOLL);
+                CASE_SIGNAL(SIGURG);
 
-            CASE_SIGNAL(SIGALRM);
-            CASE_SIGNAL(SIGVTALRM);
-            CASE_SIGNAL(SIGPROF);
+                CASE_SIGNAL(SIGALRM);
+                CASE_SIGNAL(SIGVTALRM);
+                CASE_SIGNAL(SIGPROF);
 
-            CASE_SIGNAL(SIGHUP);
-            CASE_SIGNAL(SIGTTIN);
-            CASE_SIGNAL(SIGTTOU);
-            CASE_SIGNAL(SIGWINCH);
+                CASE_SIGNAL(SIGHUP);
+                CASE_SIGNAL(SIGTTIN);
+                CASE_SIGNAL(SIGTTOU);
+                CASE_SIGNAL(SIGWINCH);
 
-            CASE_SIGNAL(SIGUSR1);
-            CASE_SIGNAL(SIGUSR2);
+                CASE_SIGNAL(SIGUSR1);
+                CASE_SIGNAL(SIGUSR2);
 
 #undef CASE_SIGNAL
 
-            default:
-                if ((signal >= SIGRTMIN) && (signal <= SIGRTMAX))
-                    ARCHI_SIGNAL_SET_FLAG(context->flags->f_SIGRTMIN[signal - SIGRTMIN]);
+                default:
+                    if ((signal >= SIGRTMIN) && (signal <= SIGRTMAX))
+                        ARCHI_SIGNAL_SET_FLAG(context->flags->f_SIGRTMIN[signal - SIGRTMIN]);
+            }
         }
     }
 
@@ -279,9 +277,7 @@ archi_signal_management_start(
 
     *context = (struct archi_signal_management_context){
         .signal_handler = params.signal_handler,
-#ifndef __STDC_NO_ATOMICS__
         .spinlock = ATOMIC_FLAG_INIT,
-#endif
     };
 
     context->flags = archi_signal_flags_alloc();
@@ -403,15 +399,11 @@ archi_signal_management_handler(
 
     archi_signal_handler_t signal_handler;
     {
-#ifndef __STDC_NO_ATOMICS__
         while (atomic_flag_test_and_set_explicit(&context->spinlock, memory_order_acquire)); // lock
-#endif
 
         signal_handler = context->signal_handler;
 
-#ifndef __STDC_NO_ATOMICS__
         atomic_flag_clear_explicit(&context->spinlock, memory_order_release); // unlock
-#endif
     }
 
     return signal_handler;
@@ -425,14 +417,12 @@ archi_signal_management_set_handler(
     if (context == NULL)
         return;
 
-#ifndef __STDC_NO_ATOMICS__
-    while (atomic_flag_test_and_set_explicit(&context->spinlock, memory_order_acquire)); // lock
-#endif
+    {
+        while (atomic_flag_test_and_set_explicit(&context->spinlock, memory_order_acquire)); // lock
 
-    context->signal_handler = signal_handler;
+        context->signal_handler = signal_handler;
 
-#ifndef __STDC_NO_ATOMICS__
-    atomic_flag_clear_explicit(&context->spinlock, memory_order_release); // unlock
-#endif
+        atomic_flag_clear_explicit(&context->spinlock, memory_order_release); // unlock
+    }
 }
 

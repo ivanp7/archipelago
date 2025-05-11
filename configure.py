@@ -45,7 +45,7 @@ MODULES = [
         "mem", # abstract memory interface
 
         "ipc/env",    # inter-process communication: environmental variables
-        "ipc/signal", # inter-process communication: signals
+        "ipc/signal", # inter-process communication: signal management
 
         "ds/hashmap", # data structure: hashmap
         "ds/lfqueue", # data structure: lock-free queue
@@ -57,6 +57,7 @@ MODULES = [
         "builtin/hsp", # application context: hierarchical state processor entities
         "builtin/mem", # application context: memory objects
         "builtin/ipc_env", # application context: inter-process communication: environmental variables
+        "builtin/ipc_signal", # application context: inter-process communication: signal management
         "builtin/ds_hashmap",  # application context: data structure: hashmap
         "builtin/ds_lfqueue",  # application context: data structure: lock-free queue
         "builtin/res_file",    # application context: system resource: file

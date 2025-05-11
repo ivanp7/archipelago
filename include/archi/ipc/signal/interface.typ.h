@@ -27,6 +27,10 @@
 #ifndef _ARCHI_IPC_SIGNAL_INTERFACE_TYP_H_
 #define _ARCHI_IPC_SIGNAL_INTERFACE_TYP_H_
 
+#ifdef __STDC_NO_ATOMICS__
+#  error Atomics are required, but not supported by the compiler.
+#endif
+
 #include <stdatomic.h>
 #include <stdbool.h>
 
