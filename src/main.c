@@ -30,7 +30,21 @@
 #include "archi/log/print.fun.h"
 #include "archi/log/color.def.h"
 
-// TODO #include
+#include "archi/app/context.fun.h"
+#include "archi/ipc/signal/interface.typ.h"
+
+#include "archi/builtin/ds_hashmap/context.var.h"
+#include "archi/builtin/ds_lfqueue/context.var.h"
+#include "archi/builtin/hsp/context.var.h"
+#include "archi/builtin/ipc_env/context.var.h"
+#include "archi/builtin/ipc_signal/context.var.h"
+#include "archi/builtin/mem/context.var.h"
+#include "archi/builtin/res_file/context.var.h"
+#include "archi/builtin/res_library/context.var.h"
+#include "archi/builtin/res_thread_group/context.var.h"
+
+#include <stdlib.h> // for atexit(), at_quick_exit()
+
 
 #define ARCHIPELAGO "\
   ⡏ ⢀⣀ ⡀⣀ ⢀⣀ ⣇⡀ ⠄ ⣀⡀ ⢀⡀ ⡇ ⢀⣀ ⢀⡀ ⢀⡀ ⢹  \n\
@@ -42,7 +56,24 @@
 static
 struct {
     archi_exe_args_t args; ///< Command line arguments.
+
+    struct archi_context *registry; ///< Application context registry.
+    struct archi_context *interfaces; ///< Dictionary of built-in context interfaces.
+
+    struct archi_context *signal_management; ///< Signal management context.
+    archi_context_interface_t signal_management_interface; ///< Signal management context interface.
+    archi_signal_watch_set_t *signal_watch_set; ///< Signal watch set.
 } archi_process;
+
+///////////////////////////////////////////////////////////////////////////////
+
+static
+void
+exit_cleanup(void);
+
+static
+void
+exit_quick(void);
 
 ///////////////////////////////////////////////////////////////////////////////
 
@@ -93,8 +124,34 @@ main(
     if (archi_process.args.num_inputs == 0)
         return 0;
 
+    // Set exit functions
+    atexit(exit_cleanup);
+    at_quick_exit(exit_quick);
+
+    //////////////////////////
+    // Initialization phase //
+    //////////////////////////
+
     // TODO
 
     return 0;
+}
+
+///////////////////////////////////////////////////////////////////////////////
+
+void
+exit_cleanup(void) // is called on exit() or if main() returns
+{
+    ////////////////////////
+    // Finalization phase //
+    ////////////////////////
+
+    // TODO
+}
+
+void
+exit_quick(void) // is called on quick_exit()
+{
+    // TODO
 }
 

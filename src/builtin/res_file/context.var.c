@@ -160,12 +160,13 @@ ARCHI_CONTEXT_FINAL_FUNC(archi_context_res_file_final)
 
 ARCHI_CONTEXT_GET_FUNC(archi_context_res_file_get)
 {
-    if (slot.num_indices != 0)
-        return ARCHI_STATUS_EMISUSE;
-
     struct archi_context_res_file *file = context.public_value.ptr;
 
     if (strcmp("fd", slot.name) == 0)
+    {
+        if (slot.num_indices != 0)
+            return ARCHI_STATUS_EMISUSE;
+
         *value = (archi_pointer_t){
             .ptr = &file->fd,
             .ref_count = context.public_value.ref_count,
@@ -175,7 +176,12 @@ ARCHI_CONTEXT_GET_FUNC(archi_context_res_file_get)
                 .alignment = alignof(int),
             },
         };
+    }
     else if (strcmp("map", slot.name) == 0)
+    {
+        if (slot.num_indices != 0)
+            return ARCHI_STATUS_EMISUSE;
+
         *value = (archi_pointer_t){
             .ptr = file->mm,
             .ref_count = context.public_value.ref_count,
@@ -184,6 +190,7 @@ ARCHI_CONTEXT_GET_FUNC(archi_context_res_file_get)
                 .size = 1,
             },
         };
+    }
     else
         return ARCHI_STATUS_EKEY;
 
@@ -192,13 +199,13 @@ ARCHI_CONTEXT_GET_FUNC(archi_context_res_file_get)
 
 ARCHI_CONTEXT_ACT_FUNC(archi_context_res_file_act)
 {
-    if (action.num_indices != 0)
-        return ARCHI_STATUS_EMISUSE;
-
     struct archi_context_res_file *file = context.public_value.ptr;
 
     if (strcmp("map", action.name) == 0)
     {
+        if (action.num_indices != 0)
+            return ARCHI_STATUS_EMISUSE;
+
         if ((file->fd < 0) || (file->mm != NULL))
             return ARCHI_STATUS_EMISUSE;
 

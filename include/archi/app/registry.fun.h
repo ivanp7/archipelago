@@ -20,18 +20,18 @@
 
 /**
  * @file
- * @brief Application configuration instructions.
+ * @brief Application context registry instructions.
  */
 
 #pragma once
-#ifndef _ARCHI_APP_INSTRUCTION_FUN_H_
-#define _ARCHI_APP_INSTRUCTION_FUN_H_
+#ifndef _ARCHI_APP_REGISTRY_FUN_H_
+#define _ARCHI_APP_REGISTRY_FUN_H_
 
 #include "archi/util/status.typ.h"
 
 #include <stddef.h> // for size_t
 
-struct archi_app_instruction_base;
+struct archi_context_registry_instr_base;
 struct archi_context;
 
 /**
@@ -40,12 +40,12 @@ struct archi_context;
  * @return Instruction size in bytes.
  */
 size_t
-archi_app_instruction_sizeof(
-        const struct archi_app_instruction_base *instruction ///< [in] Instruction.
+archi_context_registry_instr_sizeof(
+        const struct archi_context_registry_instr_base *instruction ///< [in] Instruction.
 );
 
 /**
- * @brief Execute an application initialization instruction for the specified registry.
+ * @brief Execute an application context registry instruction.
  *
  * @return Status code:
  * <0 - error;
@@ -54,10 +54,10 @@ archi_app_instruction_sizeof(
  *  2 - failure: the key already exists in the registry.
  */
 archi_status_t
-archi_app_instruction_execute(
+archi_context_registry_instr_execute(
         struct archi_context *registry, ///< [in,out] Application registry.
-        const struct archi_app_instruction_base *instruction ///< [in] Instruction to execute.
+        const struct archi_context_registry_instr_base *instruction ///< [in] Instruction to execute.
 );
 
-#endif // _ARCHI_APP_INSTRUCTION_FUN_H_
+#endif // _ARCHI_APP_REGISTRY_FUN_H_
 

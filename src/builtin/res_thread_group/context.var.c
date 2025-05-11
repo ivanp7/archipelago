@@ -91,6 +91,7 @@ ARCHI_CONTEXT_INIT_FUNC(archi_context_res_thread_group_init)
             .num_of = 1,
         },
     };
+
     context->private_value = (archi_pointer_t){
         .ptr = num_threads,
         .element = {
@@ -99,6 +100,7 @@ ARCHI_CONTEXT_INIT_FUNC(archi_context_res_thread_group_init)
             .alignment = alignof(size_t),
         },
     };
+
     return code;
 }
 
@@ -110,15 +112,17 @@ ARCHI_CONTEXT_FINAL_FUNC(archi_context_res_thread_group_final)
 
 ARCHI_CONTEXT_GET_FUNC(archi_context_res_thread_group_get)
 {
-    if (slot.num_indices != 0)
-        return ARCHI_STATUS_EMISUSE;
-
     if (strcmp("num_threads", slot.name) == 0)
+    {
+        if (slot.num_indices != 0)
+            return ARCHI_STATUS_EMISUSE;
+
         *value = (archi_pointer_t){
             .ptr = context.private_value.ptr,
             .ref_count = context.public_value.ref_count,
             .element = context.private_value.element,
         };
+    }
     else
         return ARCHI_STATUS_EKEY;
 
@@ -132,6 +136,10 @@ const archi_context_interface_t archi_context_res_thread_group_interface = {
 };
 
 /*****************************************************************************/
+
+#define REF_FUNCTION 0
+#define REF_DATA 1
+#define NUM_REFERENCES 2
 
 ARCHI_CONTEXT_INIT_FUNC(archi_context_res_thread_group_work_init)
 {
@@ -192,19 +200,19 @@ ARCHI_CONTEXT_INIT_FUNC(archi_context_res_thread_group_work_init)
         .size = work_size,
     };
 
-    context->num_references = 2;
-    context->reference = malloc(sizeof(*context->reference) * 2);
+    context->num_references = NUM_REFERENCES;
+    context->reference = malloc(sizeof(*context->reference) * context->num_references);
     if (context->reference == NULL)
     {
         free(work);
         return ARCHI_STATUS_ENOMEMORY;
     }
 
-    context->reference[0] = work_function;
-    context->reference[1] = work_data;
+    context->reference[REF_FUNCTION] = work_function;
+    context->reference[REF_DATA] = work_data;
 
-    archi_reference_count_increment(work_function.ref_count);
-    archi_reference_count_increment(work_data.ref_count);
+    for (size_t i = 0; i < NUM_REFERENCES; i++)
+        archi_reference_count_increment(context->reference[i].ref_count);
 
     context->public_value = (archi_pointer_t){
         .ptr = work,
@@ -220,8 +228,8 @@ ARCHI_CONTEXT_INIT_FUNC(archi_context_res_thread_group_work_init)
 
 ARCHI_CONTEXT_FINAL_FUNC(archi_context_res_thread_group_work_final)
 {
-    archi_reference_count_decrement(context.reference[0].ref_count);
-    archi_reference_count_decrement(context.reference[1].ref_count);
+    for (size_t i = context.num_references; i-- > 0;)
+        archi_reference_count_decrement(context.reference[i].ref_count);
 
     free(context.reference);
     free(context.public_value.ptr);
@@ -229,16 +237,27 @@ ARCHI_CONTEXT_FINAL_FUNC(archi_context_res_thread_group_work_final)
 
 ARCHI_CONTEXT_GET_FUNC(archi_context_res_thread_group_work_get)
 {
-    if (slot.num_indices != 0)
-        return ARCHI_STATUS_EMISUSE;
-
     archi_thread_group_work_t *work = context.public_value.ptr;
 
     if (strcmp("function", slot.name) == 0)
-        *value = context.reference[0];
+    {
+        if (slot.num_indices != 0)
+            return ARCHI_STATUS_EMISUSE;
+
+        *value = context.reference[REF_FUNCTION];
+    }
     else if (strcmp("data", slot.name) == 0)
-        *value = context.reference[1];
+    {
+        if (slot.num_indices != 0)
+            return ARCHI_STATUS_EMISUSE;
+
+        *value = context.reference[REF_DATA];
+    }
     else if (strcmp("size", slot.name) == 0)
+    {
+        if (slot.num_indices != 0)
+            return ARCHI_STATUS_EMISUSE;
+
         *value = (archi_pointer_t){
             .ptr = &work->size,
             .ref_count = context.public_value.ref_count,
@@ -248,6 +267,7 @@ ARCHI_CONTEXT_GET_FUNC(archi_context_res_thread_group_work_get)
                 .alignment = alignof(size_t),
             },
         };
+    }
     else
         return ARCHI_STATUS_EKEY;
 
@@ -256,36 +276,39 @@ ARCHI_CONTEXT_GET_FUNC(archi_context_res_thread_group_work_get)
 
 ARCHI_CONTEXT_SET_FUNC(archi_context_res_thread_group_work_set)
 {
-    if (slot.num_indices != 0)
-        return ARCHI_STATUS_EMISUSE;
-
     archi_thread_group_work_t *work = context.public_value.ptr;
 
     if (strcmp("function", slot.name) == 0)
     {
-        if ((value.flags & ARCHI_POINTER_FLAG_FUNCTION) == 0)
+        if (slot.num_indices != 0)
+            return ARCHI_STATUS_EMISUSE;
+        else if ((value.flags & ARCHI_POINTER_FLAG_FUNCTION) == 0)
             return ARCHI_STATUS_EVALUE;
 
         archi_reference_count_increment(value.ref_count);
-        archi_reference_count_decrement(context.reference[0].ref_count);
+        archi_reference_count_decrement(context.reference[REF_FUNCTION].ref_count);
 
         work->function = (archi_thread_group_work_func_t)value.fptr;
-        context.reference[0] = value;
+        context.reference[REF_FUNCTION] = value;
     }
     else if (strcmp("data", slot.name) == 0)
     {
-        if (value.flags & ARCHI_POINTER_FLAG_FUNCTION)
+        if (slot.num_indices != 0)
+            return ARCHI_STATUS_EMISUSE;
+        else if (value.flags & ARCHI_POINTER_FLAG_FUNCTION)
             return ARCHI_STATUS_EVALUE;
 
         archi_reference_count_increment(value.ref_count);
-        archi_reference_count_decrement(context.reference[1].ref_count);
+        archi_reference_count_decrement(context.reference[REF_DATA].ref_count);
 
         work->data = value.ptr;
-        context.reference[1] = value;
+        context.reference[REF_DATA] = value;
     }
     else if (strcmp("size", slot.name) == 0)
     {
-        if ((value.flags & ARCHI_POINTER_FLAG_FUNCTION) || (value.ptr == NULL))
+        if (slot.num_indices != 0)
+            return ARCHI_STATUS_EMISUSE;
+        else if ((value.flags & ARCHI_POINTER_FLAG_FUNCTION) || (value.ptr == NULL))
             return ARCHI_STATUS_EVALUE;
 
         work->size = *(size_t*)value.ptr;
@@ -303,7 +326,15 @@ const archi_context_interface_t archi_context_res_thread_group_work_interface = 
     .set_fn = archi_context_res_thread_group_work_set,
 };
 
+#undef REF_FUNCTION
+#undef REF_DATA
+#undef NUM_REFERENCES
+
 /*****************************************************************************/
+
+#define REF_FUNCTION 0
+#define REF_DATA 1
+#define NUM_REFERENCES 2
 
 ARCHI_CONTEXT_INIT_FUNC(archi_context_res_thread_group_callback_init)
 {
@@ -350,19 +381,19 @@ ARCHI_CONTEXT_INIT_FUNC(archi_context_res_thread_group_callback_init)
         .data = callback_data.ptr,
     };
 
-    context->num_references = 2;
-    context->reference = malloc(sizeof(*context->reference) * 2);
+    context->num_references = NUM_REFERENCES;
+    context->reference = malloc(sizeof(*context->reference) * context->num_references);
     if (context->reference == NULL)
     {
         free(callback);
         return ARCHI_STATUS_ENOMEMORY;
     }
 
-    context->reference[0] = callback_function;
-    context->reference[1] = callback_data;
+    context->reference[REF_FUNCTION] = callback_function;
+    context->reference[REF_DATA] = callback_data;
 
-    archi_reference_count_increment(callback_function.ref_count);
-    archi_reference_count_increment(callback_data.ref_count);
+    for (size_t i = 0; i < NUM_REFERENCES; i++)
+        archi_reference_count_increment(context->reference[i].ref_count);
 
     context->public_value = (archi_pointer_t){
         .ptr = callback,
@@ -378,8 +409,8 @@ ARCHI_CONTEXT_INIT_FUNC(archi_context_res_thread_group_callback_init)
 
 ARCHI_CONTEXT_FINAL_FUNC(archi_context_res_thread_group_callback_final)
 {
-    archi_reference_count_decrement(context.reference[0].ref_count);
-    archi_reference_count_decrement(context.reference[1].ref_count);
+    for (size_t i = context.num_references; i-- > 0;)
+        archi_reference_count_decrement(context.reference[i].ref_count);
 
     free(context.reference);
     free(context.public_value.ptr);
@@ -387,13 +418,20 @@ ARCHI_CONTEXT_FINAL_FUNC(archi_context_res_thread_group_callback_final)
 
 ARCHI_CONTEXT_GET_FUNC(archi_context_res_thread_group_callback_get)
 {
-    if (slot.num_indices != 0)
-        return ARCHI_STATUS_EMISUSE;
-
     if (strcmp("function", slot.name) == 0)
-        *value = context.reference[0];
+    {
+        if (slot.num_indices != 0)
+            return ARCHI_STATUS_EMISUSE;
+
+        *value = context.reference[REF_FUNCTION];
+    }
     else if (strcmp("data", slot.name) == 0)
-        *value = context.reference[1];
+    {
+        if (slot.num_indices != 0)
+            return ARCHI_STATUS_EMISUSE;
+
+        *value = context.reference[REF_DATA];
+    }
     else
         return ARCHI_STATUS_EKEY;
 
@@ -402,32 +440,33 @@ ARCHI_CONTEXT_GET_FUNC(archi_context_res_thread_group_callback_get)
 
 ARCHI_CONTEXT_SET_FUNC(archi_context_res_thread_group_callback_set)
 {
-    if (slot.num_indices != 0)
-        return ARCHI_STATUS_EMISUSE;
-
     archi_thread_group_callback_t *callback = context.public_value.ptr;
 
     if (strcmp("function", slot.name) == 0)
     {
-        if ((value.flags & ARCHI_POINTER_FLAG_FUNCTION) == 0)
+        if (slot.num_indices != 0)
+            return ARCHI_STATUS_EMISUSE;
+        else if ((value.flags & ARCHI_POINTER_FLAG_FUNCTION) == 0)
             return ARCHI_STATUS_EVALUE;
 
         archi_reference_count_increment(value.ref_count);
-        archi_reference_count_decrement(context.reference[0].ref_count);
+        archi_reference_count_decrement(context.reference[REF_FUNCTION].ref_count);
 
         callback->function = (archi_thread_group_callback_func_t)value.fptr;
-        context.reference[0] = value;
+        context.reference[REF_FUNCTION] = value;
     }
     else if (strcmp("data", slot.name) == 0)
     {
-        if (value.flags & ARCHI_POINTER_FLAG_FUNCTION)
+        if (slot.num_indices != 0)
+            return ARCHI_STATUS_EMISUSE;
+        else if (value.flags & ARCHI_POINTER_FLAG_FUNCTION)
             return ARCHI_STATUS_EVALUE;
 
         archi_reference_count_increment(value.ref_count);
-        archi_reference_count_decrement(context.reference[1].ref_count);
+        archi_reference_count_decrement(context.reference[REF_DATA].ref_count);
 
         callback->data = value.ptr;
-        context.reference[1] = value;
+        context.reference[REF_DATA] = value;
     }
     else
         return ARCHI_STATUS_EKEY;
@@ -442,7 +481,16 @@ const archi_context_interface_t archi_context_res_thread_group_callback_interfac
     .set_fn = archi_context_res_thread_group_callback_set,
 };
 
+#undef REF_FUNCTION
+#undef REF_DATA
+#undef NUM_REFERENCES
+
 /*****************************************************************************/
+
+#define REF_CONTEXT 0
+#define REF_WORK 1
+#define REF_CALLBACK 2
+#define NUM_REFERENCES 3
 
 ARCHI_CONTEXT_INIT_FUNC(archi_context_res_thread_group_dispatch_data_init)
 {
@@ -535,21 +583,20 @@ ARCHI_CONTEXT_INIT_FUNC(archi_context_res_thread_group_dispatch_data_init)
     if (thread_group_callback.ptr != NULL)
         dispatch_data->callback = *(archi_thread_group_callback_t*)thread_group_callback.ptr;
 
-    context->num_references = 3;
-    context->reference = malloc(sizeof(*context->reference) * 3);
+    context->num_references = NUM_REFERENCES;
+    context->reference = malloc(sizeof(*context->reference) * context->num_references);
     if (context->reference == NULL)
     {
         free(dispatch_data);
         return ARCHI_STATUS_ENOMEMORY;
     }
 
-    context->reference[0] = thread_group_context;
-    context->reference[1] = thread_group_work;
-    context->reference[2] = thread_group_callback;
+    context->reference[REF_CONTEXT] = thread_group_context;
+    context->reference[REF_WORK] = thread_group_work;
+    context->reference[REF_CALLBACK] = thread_group_callback;
 
-    archi_reference_count_increment(thread_group_context.ref_count);
-    archi_reference_count_increment(thread_group_work.ref_count);
-    archi_reference_count_increment(thread_group_callback.ref_count);
+    for (size_t i = 0; i < NUM_REFERENCES; i++)
+        archi_reference_count_increment(context->reference[i].ref_count);
 
     context->public_value = (archi_pointer_t){
         .ptr = dispatch_data,
@@ -565,9 +612,8 @@ ARCHI_CONTEXT_INIT_FUNC(archi_context_res_thread_group_dispatch_data_init)
 
 ARCHI_CONTEXT_FINAL_FUNC(archi_context_res_thread_group_dispatch_data_final)
 {
-    archi_reference_count_decrement(context.reference[0].ref_count);
-    archi_reference_count_decrement(context.reference[1].ref_count);
-    archi_reference_count_decrement(context.reference[2].ref_count);
+    for (size_t i = context.num_references; i-- > 0;)
+        archi_reference_count_decrement(context.reference[i].ref_count);
 
     free(context.reference);
     free(context.public_value.ptr);
@@ -575,18 +621,34 @@ ARCHI_CONTEXT_FINAL_FUNC(archi_context_res_thread_group_dispatch_data_final)
 
 ARCHI_CONTEXT_GET_FUNC(archi_context_res_thread_group_dispatch_data_get)
 {
-    if (slot.num_indices != 0)
-        return ARCHI_STATUS_EMISUSE;
-
     archi_context_res_thread_group_dispatch_data_t *dispatch_data = context.public_value.ptr;
 
     if (strcmp("context", slot.name) == 0)
-        *value = context.reference[0];
+    {
+        if (slot.num_indices != 0)
+            return ARCHI_STATUS_EMISUSE;
+
+        *value = context.reference[REF_CONTEXT];
+    }
     else if (strcmp("work", slot.name) == 0)
-        *value = context.reference[1];
+    {
+        if (slot.num_indices != 0)
+            return ARCHI_STATUS_EMISUSE;
+
+        *value = context.reference[REF_WORK];
+    }
     else if (strcmp("callback", slot.name) == 0)
-        *value = context.reference[2];
+    {
+        if (slot.num_indices != 0)
+            return ARCHI_STATUS_EMISUSE;
+
+        *value = context.reference[REF_CALLBACK];
+    }
     else if (strcmp("batch_size", slot.name) == 0)
+    {
+        if (slot.num_indices != 0)
+            return ARCHI_STATUS_EMISUSE;
+
         *value = (archi_pointer_t){
             .ptr = &dispatch_data->params.batch_size,
             .ref_count = context.public_value.ref_count,
@@ -596,6 +658,7 @@ ARCHI_CONTEXT_GET_FUNC(archi_context_res_thread_group_dispatch_data_get)
                 .alignment = alignof(size_t),
             },
         };
+    }
     else
         return ARCHI_STATUS_EKEY;
 
@@ -604,55 +667,60 @@ ARCHI_CONTEXT_GET_FUNC(archi_context_res_thread_group_dispatch_data_get)
 
 ARCHI_CONTEXT_SET_FUNC(archi_context_res_thread_group_dispatch_data_set)
 {
-    if (slot.num_indices != 0)
-        return ARCHI_STATUS_EMISUSE;
-
     archi_context_res_thread_group_dispatch_data_t *dispatch_data = context.public_value.ptr;
 
     if (strcmp("context", slot.name) == 0)
     {
-        if (value.flags & ARCHI_POINTER_FLAG_FUNCTION)
+        if (slot.num_indices != 0)
+            return ARCHI_STATUS_EMISUSE;
+        else if (value.flags & ARCHI_POINTER_FLAG_FUNCTION)
             return ARCHI_STATUS_EVALUE;
 
         archi_reference_count_increment(value.ref_count);
-        archi_reference_count_decrement(context.reference[0].ref_count);
+        archi_reference_count_decrement(context.reference[REF_CONTEXT].ref_count);
 
         dispatch_data->context = value.ptr;
-        context.reference[0] = value;
+        context.reference[REF_CONTEXT] = value;
     }
     else if (strcmp("work", slot.name) == 0)
     {
-        if (value.flags & ARCHI_POINTER_FLAG_FUNCTION)
+        if (slot.num_indices != 0)
+            return ARCHI_STATUS_EMISUSE;
+        else if (value.flags & ARCHI_POINTER_FLAG_FUNCTION)
             return ARCHI_STATUS_EVALUE;
 
         archi_reference_count_increment(value.ref_count);
-        archi_reference_count_decrement(context.reference[1].ref_count);
+        archi_reference_count_decrement(context.reference[REF_WORK].ref_count);
 
         if (value.ptr != NULL)
             dispatch_data->work = *(archi_thread_group_work_t*)value.ptr;
         else
             dispatch_data->work = (archi_thread_group_work_t){0};
 
-        context.reference[1] = value;
+        context.reference[REF_WORK] = value;
     }
     else if (strcmp("callback", slot.name) == 0)
     {
-        if (value.flags & ARCHI_POINTER_FLAG_FUNCTION)
+        if (slot.num_indices != 0)
+            return ARCHI_STATUS_EMISUSE;
+        else if (value.flags & ARCHI_POINTER_FLAG_FUNCTION)
             return ARCHI_STATUS_EVALUE;
 
         archi_reference_count_increment(value.ref_count);
-        archi_reference_count_decrement(context.reference[2].ref_count);
+        archi_reference_count_decrement(context.reference[REF_CALLBACK].ref_count);
 
         if (value.ptr != NULL)
             dispatch_data->callback = *(archi_thread_group_callback_t*)value.ptr;
         else
             dispatch_data->callback = (archi_thread_group_callback_t){0};
 
-        context.reference[2] = value;
+        context.reference[REF_CALLBACK] = value;
     }
     else if (strcmp("batch_size", slot.name) == 0)
     {
-        if ((value.flags & ARCHI_POINTER_FLAG_FUNCTION) || (value.ptr == NULL))
+        if (slot.num_indices != 0)
+            return ARCHI_STATUS_EMISUSE;
+        else if ((value.flags & ARCHI_POINTER_FLAG_FUNCTION) || (value.ptr == NULL))
             return ARCHI_STATUS_EVALUE;
 
         dispatch_data->params.batch_size = *(size_t*)value.ptr;
@@ -669,4 +737,9 @@ const archi_context_interface_t archi_context_res_thread_group_dispatch_data_int
     .get_fn = archi_context_res_thread_group_dispatch_data_get,
     .set_fn = archi_context_res_thread_group_dispatch_data_set,
 };
+
+#undef REF_CONTEXT
+#undef REF_WORK
+#undef REF_CALLBACK
+#undef NUM_REFERENCES
 

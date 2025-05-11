@@ -37,7 +37,7 @@
 
 enum {
     ARGKEY_DRY_RUN = 'n',
-    ARGKEY_NO_HSP  = 'p',
+    ARGKEY_NO_SIGNALS  = 's',
 
     ARGKEY_NO_LOGO = 'q',
     ARGKEY_VERBOSITY = 'v',
@@ -53,8 +53,8 @@ static
 const struct argp_option args_options[] = {
     {.doc = "Execution options:"},
 
-    {.key = ARGKEY_DRY_RUN,     .name = "dry-run",  .doc = "Do a dry run - only print what is to be done"},
-    {.key = ARGKEY_NO_HSP,      .name = "no-hsp",   .doc = "Don't execute the HSP, do initialization only"},
+    {.key = ARGKEY_DRY_RUN,     .name = "dry-run",  .doc = "Do a dry run: initialization instructions are logged only, not executed"},
+    {.key = ARGKEY_NO_SIGNALS,  .name = "no-signals", .doc = "Disable signal management"},
 
     {.doc = "Verbosity options:"},
 
@@ -80,8 +80,8 @@ args_parse(int key, char *arg, struct argp_state *state)
             args->dry_run = true;
             break;
 
-        case ARGKEY_NO_HSP:
-            args->no_hsp = true;
+        case ARGKEY_NO_SIGNALS:
+            args->no_signals = true;
             break;
 
         case ARGKEY_NO_LOGO:

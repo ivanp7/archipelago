@@ -115,11 +115,11 @@ ARCHI_CONTEXT_SET_FUNC(archi_context_parameters_set)
 
 ARCHI_CONTEXT_ACT_FUNC(archi_context_parameters_act)
 {
-    if (action.num_indices != 0)
-        return ARCHI_STATUS_EMISUSE;
-
-    if (strcmp("add", action.name) == 0)
+    if (strcmp("_", action.name) == 0)
     {
+        if (action.num_indices != 0)
+            return ARCHI_STATUS_EMISUSE;
+
         for (; params != NULL; params = params->next)
         {
             archi_context_parameter_list_t *node = malloc(sizeof(*node));

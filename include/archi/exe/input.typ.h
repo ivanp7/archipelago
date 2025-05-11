@@ -30,7 +30,7 @@
 #include "archi/res/file/header.typ.h"
 
 struct archi_context_parameter_list;
-struct archi_app_instruction_list;
+struct archi_context_registry_instr_list;
 
 /**
  * @brief Description of an input file for the executable.
@@ -39,7 +39,7 @@ typedef struct archi_exe_input {
     archi_file_header_t header; ///< Memory-mapped file header.
 
     struct archi_context_parameter_list *params; ///< File parameter list.
-    struct archi_app_instruction_list *instruction; ///< List of instructions.
+    struct archi_context_registry_instr_list *instruction; ///< List of instructions.
 } archi_exe_input_t;
 
 #endif // _ARCHI_EXE_INPUT_TYP_H_

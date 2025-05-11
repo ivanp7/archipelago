@@ -144,16 +144,20 @@ ARCHI_CONTEXT_FINAL_FUNC(archi_context_memory_final)
 
 ARCHI_CONTEXT_GET_FUNC(archi_context_memory_get)
 {
-    if (slot.num_indices != 0)
-        return ARCHI_STATUS_EMISUSE;
-
     if (strcmp("interface", slot.name) == 0)
     {
+        if (slot.num_indices != 0)
+            return ARCHI_STATUS_EMISUSE;
+
         archi_pointer_t interface = archi_memory_interface(context.public_value.ptr);
         interface.ref_count = context.public_value.ref_count;
         *value = interface;
     }
     else if (strcmp("num_elements", slot.name) == 0)
+    {
+        if (slot.num_indices != 0)
+            return ARCHI_STATUS_EMISUSE;
+
         *value = (archi_pointer_t){
             .ptr = &context.public_value.element.num_of,
             .ref_count = context.public_value.ref_count,
@@ -163,7 +167,12 @@ ARCHI_CONTEXT_GET_FUNC(archi_context_memory_get)
                 .alignment = alignof(size_t),
             },
         };
+    }
     else if (strcmp("element_size", slot.name) == 0)
+    {
+        if (slot.num_indices != 0)
+            return ARCHI_STATUS_EMISUSE;
+
         *value = (archi_pointer_t){
             .ptr = &context.public_value.element.size,
             .ref_count = context.public_value.ref_count,
@@ -173,7 +182,12 @@ ARCHI_CONTEXT_GET_FUNC(archi_context_memory_get)
                 .alignment = alignof(size_t),
             },
         };
+    }
     else if (strcmp("element_alignment", slot.name) == 0)
+    {
+        if (slot.num_indices != 0)
+            return ARCHI_STATUS_EMISUSE;
+
         *value = (archi_pointer_t){
             .ptr = &context.public_value.element.alignment,
             .ref_count = context.public_value.ref_count,
@@ -183,6 +197,7 @@ ARCHI_CONTEXT_GET_FUNC(archi_context_memory_get)
                 .alignment = alignof(size_t),
             },
         };
+    }
     else
         return ARCHI_STATUS_EKEY;
 
@@ -298,16 +313,20 @@ ARCHI_CONTEXT_FINAL_FUNC(archi_context_memory_mapping_final)
 
 ARCHI_CONTEXT_GET_FUNC(archi_context_memory_mapping_get)
 {
-    if (slot.num_indices != 0)
-        return ARCHI_STATUS_EMISUSE;
-
     if (strcmp("memory", slot.name) == 0)
     {
+        if (slot.num_indices != 0)
+            return ARCHI_STATUS_EMISUSE;
+
         archi_pointer_t memory = context.private_value;
         memory.ref_count = context.public_value.ref_count;
         *value = memory;
     }
     else if (strcmp("num_elements", slot.name) == 0)
+    {
+        if (slot.num_indices != 0)
+            return ARCHI_STATUS_EMISUSE;
+
         *value = (archi_pointer_t){
             .ptr = &context.public_value.element.num_of,
             .ref_count = context.public_value.ref_count,
@@ -317,7 +336,12 @@ ARCHI_CONTEXT_GET_FUNC(archi_context_memory_mapping_get)
                 .alignment = alignof(size_t),
             },
         };
+    }
     else if (strcmp("element_size", slot.name) == 0)
+    {
+        if (slot.num_indices != 0)
+            return ARCHI_STATUS_EMISUSE;
+
         *value = (archi_pointer_t){
             .ptr = &context.public_value.element.size,
             .ref_count = context.public_value.ref_count,
@@ -327,7 +351,12 @@ ARCHI_CONTEXT_GET_FUNC(archi_context_memory_mapping_get)
                 .alignment = alignof(size_t),
             },
         };
+    }
     else if (strcmp("element_alignment", slot.name) == 0)
+    {
+        if (slot.num_indices != 0)
+            return ARCHI_STATUS_EMISUSE;
+
         *value = (archi_pointer_t){
             .ptr = &context.public_value.element.alignment,
             .ref_count = context.public_value.ref_count,
@@ -337,6 +366,7 @@ ARCHI_CONTEXT_GET_FUNC(archi_context_memory_mapping_get)
                 .alignment = alignof(size_t),
             },
         };
+    }
     else
         return ARCHI_STATUS_EKEY;
 

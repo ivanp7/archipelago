@@ -136,15 +136,27 @@ ARCHI_CONTEXT_FINAL_FUNC(archi_context_hsp_state_final)
 
 ARCHI_CONTEXT_GET_FUNC(archi_context_hsp_state_get)
 {
-    if (slot.num_indices != 0)
-        return ARCHI_STATUS_EMISUSE;
-
     if (strcmp("function", slot.name) == 0)
+    {
+        if (slot.num_indices != 0)
+            return ARCHI_STATUS_EMISUSE;
+
         *value = context.reference[REF_FUNCTION];
+    }
     else if (strcmp("data", slot.name) == 0)
+    {
+        if (slot.num_indices != 0)
+            return ARCHI_STATUS_EMISUSE;
+
         *value = context.reference[REF_DATA];
+    }
     else if (strcmp("metadata", slot.name) == 0)
+    {
+        if (slot.num_indices != 0)
+            return ARCHI_STATUS_EMISUSE;
+
         *value = context.reference[REF_METADATA];
+    }
     else
         return ARCHI_STATUS_EKEY;
 
@@ -153,14 +165,13 @@ ARCHI_CONTEXT_GET_FUNC(archi_context_hsp_state_get)
 
 ARCHI_CONTEXT_SET_FUNC(archi_context_hsp_state_set)
 {
-    if (slot.num_indices != 0)
-        return ARCHI_STATUS_EMISUSE;
-
     archi_hsp_state_t *hsp_state = context.public_value.ptr;
 
     if (strcmp("function", slot.name) == 0)
     {
-        if ((value.flags & ARCHI_POINTER_FLAG_FUNCTION) == 0)
+        if (slot.num_indices != 0)
+            return ARCHI_STATUS_EMISUSE;
+        else if ((value.flags & ARCHI_POINTER_FLAG_FUNCTION) == 0)
             return ARCHI_STATUS_EVALUE;
 
         archi_reference_count_increment(value.ref_count);
@@ -171,7 +182,9 @@ ARCHI_CONTEXT_SET_FUNC(archi_context_hsp_state_set)
     }
     else if (strcmp("data", slot.name) == 0)
     {
-        if (value.flags & ARCHI_POINTER_FLAG_FUNCTION)
+        if (slot.num_indices != 0)
+            return ARCHI_STATUS_EMISUSE;
+        else if (value.flags & ARCHI_POINTER_FLAG_FUNCTION)
             return ARCHI_STATUS_EVALUE;
 
         archi_reference_count_increment(value.ref_count);
@@ -182,7 +195,9 @@ ARCHI_CONTEXT_SET_FUNC(archi_context_hsp_state_set)
     }
     else if (strcmp("metadata", slot.name) == 0)
     {
-        if (value.flags & ARCHI_POINTER_FLAG_FUNCTION)
+        if (slot.num_indices != 0)
+            return ARCHI_STATUS_EMISUSE;
+        else if (value.flags & ARCHI_POINTER_FLAG_FUNCTION)
             return ARCHI_STATUS_EVALUE;
 
         archi_reference_count_increment(value.ref_count);
@@ -297,13 +312,20 @@ ARCHI_CONTEXT_FINAL_FUNC(archi_context_hsp_transition_final)
 
 ARCHI_CONTEXT_GET_FUNC(archi_context_hsp_transition_get)
 {
-    if (slot.num_indices != 0)
-        return ARCHI_STATUS_EMISUSE;
-
     if (strcmp("function", slot.name) == 0)
+    {
+        if (slot.num_indices != 0)
+            return ARCHI_STATUS_EMISUSE;
+
         *value = context.reference[REF_FUNCTION];
+    }
     else if (strcmp("data", slot.name) == 0)
+    {
+        if (slot.num_indices != 0)
+            return ARCHI_STATUS_EMISUSE;
+
         *value = context.reference[REF_DATA];
+    }
     else
         return ARCHI_STATUS_EKEY;
 
@@ -312,14 +334,13 @@ ARCHI_CONTEXT_GET_FUNC(archi_context_hsp_transition_get)
 
 ARCHI_CONTEXT_SET_FUNC(archi_context_hsp_transition_set)
 {
-    if (slot.num_indices != 0)
-        return ARCHI_STATUS_EMISUSE;
-
     archi_hsp_transition_t *hsp_transition = context.public_value.ptr;
 
     if (strcmp("function", slot.name) == 0)
     {
-        if ((value.flags & ARCHI_POINTER_FLAG_FUNCTION) == 0)
+        if (slot.num_indices != 0)
+            return ARCHI_STATUS_EMISUSE;
+        else if ((value.flags & ARCHI_POINTER_FLAG_FUNCTION) == 0)
             return ARCHI_STATUS_EVALUE;
 
         archi_reference_count_increment(value.ref_count);
@@ -330,7 +351,9 @@ ARCHI_CONTEXT_SET_FUNC(archi_context_hsp_transition_set)
     }
     else if (strcmp("data", slot.name) == 0)
     {
-        if (value.flags & ARCHI_POINTER_FLAG_FUNCTION)
+        if (slot.num_indices != 0)
+            return ARCHI_STATUS_EMISUSE;
+        else if (value.flags & ARCHI_POINTER_FLAG_FUNCTION)
             return ARCHI_STATUS_EVALUE;
 
         archi_reference_count_increment(value.ref_count);
@@ -447,13 +470,20 @@ ARCHI_CONTEXT_FINAL_FUNC(archi_context_hsp_final)
 
 ARCHI_CONTEXT_GET_FUNC(archi_context_hsp_get)
 {
-    if (slot.num_indices != 0)
-        return ARCHI_STATUS_EMISUSE;
-
     if (strcmp("entry_state", slot.name) == 0)
+    {
+        if (slot.num_indices != 0)
+            return ARCHI_STATUS_EMISUSE;
+
         *value = context.reference[REF_ENTRY_STATE];
+    }
     else if (strcmp("transition", slot.name) == 0)
+    {
+        if (slot.num_indices != 0)
+            return ARCHI_STATUS_EMISUSE;
+
         *value = context.reference[REF_TRANSITION];
+    }
     else
         return ARCHI_STATUS_EKEY;
 
@@ -462,14 +492,13 @@ ARCHI_CONTEXT_GET_FUNC(archi_context_hsp_get)
 
 ARCHI_CONTEXT_SET_FUNC(archi_context_hsp_set)
 {
-    if (slot.num_indices != 0)
-        return ARCHI_STATUS_EMISUSE;
-
     archi_hsp_t *hsp = context.public_value.ptr;
 
     if (strcmp("entry_state", slot.name) == 0)
     {
-        if (value.flags & ARCHI_POINTER_FLAG_FUNCTION)
+        if (slot.num_indices != 0)
+            return ARCHI_STATUS_EMISUSE;
+        else if (value.flags & ARCHI_POINTER_FLAG_FUNCTION)
             return ARCHI_STATUS_EVALUE;
 
         archi_reference_count_increment(value.ref_count);
@@ -484,7 +513,9 @@ ARCHI_CONTEXT_SET_FUNC(archi_context_hsp_set)
     }
     else if (strcmp("transition", slot.name) == 0)
     {
-        if (value.flags & ARCHI_POINTER_FLAG_FUNCTION)
+        if (slot.num_indices != 0)
+            return ARCHI_STATUS_EMISUSE;
+        else if (value.flags & ARCHI_POINTER_FLAG_FUNCTION)
             return ARCHI_STATUS_EVALUE;
 
         archi_reference_count_increment(value.ref_count);
@@ -505,14 +536,13 @@ ARCHI_CONTEXT_SET_FUNC(archi_context_hsp_set)
 
 ARCHI_CONTEXT_ACT_FUNC(archi_context_hsp_act)
 {
-    if (action.num_indices != 0)
-        return ARCHI_STATUS_EMISUSE;
-
     archi_hsp_t *hsp = context.public_value.ptr;
 
     if (strcmp("execute", action.name) == 0)
     {
-        if (params != NULL)
+        if (action.num_indices != 0)
+            return ARCHI_STATUS_EMISUSE;
+        else if (params != NULL)
             return ARCHI_STATUS_EKEY;
 
         return archi_hsp_execute(*hsp);
@@ -548,15 +578,15 @@ ARCHI_CONTEXT_INIT_FUNC(archi_context_hsp_frame_init)
 
     for (; params != NULL; params = params->next)
     {
-        if ((params->value.flags & ARCHI_POINTER_FLAG_FUNCTION) ||
-                (params->value.ptr == NULL))
-            return ARCHI_STATUS_EVALUE;
-
         if (strcmp("num_states", params->name) == 0)
         {
             if (param_num_states_set)
                 continue;
             param_num_states_set = true;
+
+            if ((params->value.flags & ARCHI_POINTER_FLAG_FUNCTION) ||
+                    (params->value.ptr == NULL))
+                return ARCHI_STATUS_EVALUE;
 
             num_states = *(size_t*)params->value.ptr;
         }
@@ -929,9 +959,19 @@ ARCHI_CONTEXT_GET_FUNC(archi_context_hsp_branch_state_data_get)
         *value = context.reference[NUM_REFERENCES + slot.index[0]];
     }
     else if (strcmp("selector_fn", slot.name) == 0)
+    {
+        if (slot.num_indices != 0)
+            return ARCHI_STATUS_EMISUSE;
+
         *value = context.reference[REF_SELECTOR_FN];
+    }
     else if (strcmp("selector_data", slot.name) == 0)
+    {
+        if (slot.num_indices != 0)
+            return ARCHI_STATUS_EMISUSE;
+
         *value = context.reference[REF_SELECTOR_DATA];
+    }
     else
         return ARCHI_STATUS_EKEY;
 
@@ -1011,7 +1051,9 @@ ARCHI_CONTEXT_SET_FUNC(archi_context_hsp_branch_state_data_set)
     }
     else if (strcmp("selector_fn", slot.name) == 0)
     {
-        if ((value.flags & ARCHI_POINTER_FLAG_FUNCTION) == 0)
+        if (slot.num_indices != 0)
+            return ARCHI_STATUS_EMISUSE;
+        else if ((value.flags & ARCHI_POINTER_FLAG_FUNCTION) == 0)
             return ARCHI_STATUS_EVALUE;
 
         archi_reference_count_increment(value.ref_count);
@@ -1022,7 +1064,9 @@ ARCHI_CONTEXT_SET_FUNC(archi_context_hsp_branch_state_data_set)
     }
     else if (strcmp("selector_data", slot.name) == 0)
     {
-        if (value.flags & ARCHI_POINTER_FLAG_FUNCTION)
+        if (slot.num_indices != 0)
+            return ARCHI_STATUS_EMISUSE;
+        else if (value.flags & ARCHI_POINTER_FLAG_FUNCTION)
             return ARCHI_STATUS_EVALUE;
 
         archi_reference_count_increment(value.ref_count);

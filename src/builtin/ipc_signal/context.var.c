@@ -119,13 +119,20 @@ ARCHI_CONTEXT_FINAL_FUNC(archi_context_ipc_signal_handler_final)
 
 ARCHI_CONTEXT_GET_FUNC(archi_context_ipc_signal_handler_get)
 {
-    if (slot.num_indices != 0)
-        return ARCHI_STATUS_EMISUSE;
-
     if (strcmp("function", slot.name) == 0)
+    {
+        if (slot.num_indices != 0)
+            return ARCHI_STATUS_EMISUSE;
+
         *value = context.reference[REF_FUNCTION];
+    }
     else if (strcmp("data", slot.name) == 0)
+    {
+        if (slot.num_indices != 0)
+            return ARCHI_STATUS_EMISUSE;
+
         *value = context.reference[REF_DATA];
+    }
     else
         return ARCHI_STATUS_EKEY;
 
@@ -134,14 +141,13 @@ ARCHI_CONTEXT_GET_FUNC(archi_context_ipc_signal_handler_get)
 
 ARCHI_CONTEXT_SET_FUNC(archi_context_ipc_signal_handler_set)
 {
-    if (slot.num_indices != 0)
-        return ARCHI_STATUS_EMISUSE;
-
     archi_signal_handler_t *signal_handler = context.public_value.ptr;
 
     if (strcmp("function", slot.name) == 0)
     {
-        if ((value.flags & ARCHI_POINTER_FLAG_FUNCTION) == 0)
+        if (slot.num_indices != 0)
+            return ARCHI_STATUS_EMISUSE;
+        else if ((value.flags & ARCHI_POINTER_FLAG_FUNCTION) == 0)
             return ARCHI_STATUS_EVALUE;
 
         archi_reference_count_increment(value.ref_count);
@@ -152,7 +158,9 @@ ARCHI_CONTEXT_SET_FUNC(archi_context_ipc_signal_handler_set)
     }
     else if (strcmp("data", slot.name) == 0)
     {
-        if (value.flags & ARCHI_POINTER_FLAG_FUNCTION)
+        if (slot.num_indices != 0)
+            return ARCHI_STATUS_EMISUSE;
+        else if (value.flags & ARCHI_POINTER_FLAG_FUNCTION)
             return ARCHI_STATUS_EVALUE;
 
         archi_reference_count_increment(value.ref_count);

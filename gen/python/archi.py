@@ -82,7 +82,7 @@ class Application:
                         dparams_key=entity.dparams().alias())
                 self._app._add_instruction_act_static(
                         key=temp_params_alias,
-                        action_name='add', action_indices=[],
+                        action_name='_', action_indices=[],
                         sparams=entity.sparams())
 
                 self._add_instruction_init_dynamic(
@@ -315,7 +315,7 @@ class Context:
                         dparams_key=_.alias())
                 self._app._add_instruction_act_static(
                         key=temp_params_alias,
-                        action_name='add', action_indices=[],
+                        action_name='_', action_indices=[],
                         sparams=params)
 
                 self._app._add_instruction_act_dynamic(

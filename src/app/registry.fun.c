@@ -23,8 +23,8 @@
  * @brief Application configuration instructions.
  */
 
-#include "archi/app/instruction.fun.h"
-#include "archi/app/instruction.typ.h"
+#include "archi/app/registry.fun.h"
+#include "archi/app/registry.typ.h"
 #include "archi/app/context.fun.h"
 #include "archi/app/context/parameters.var.h"
 #include "archi/app/context/pointer.var.h"
@@ -37,41 +37,41 @@
 #define INSTRUCTION_POINTER(name, type) const type *name = (const type*)instruction
 
 size_t
-archi_app_instruction_sizeof(
-        const archi_app_instruction_base_t *instruction)
+archi_context_registry_instr_sizeof(
+        const archi_context_registry_instr_base_t *instruction)
 {
     if (instruction == NULL)
         return 0;
 
     switch (instruction->type)
     {
-        case ARCHI_APP_INSTRUCTION_INIT_STATIC:
-        case ARCHI_APP_INSTRUCTION_INIT_DYNAMIC:
-            return sizeof(archi_app_instruction_init_t);
+        case ARCHI_CONTEXT_REGISTRY_INSTR_INIT_STATIC:
+        case ARCHI_CONTEXT_REGISTRY_INSTR_INIT_DYNAMIC:
+            return sizeof(archi_context_registry_instr_init_t);
 
-        case ARCHI_APP_INSTRUCTION_SET_VALUE:
-            return sizeof(archi_app_instruction_set_value_t);
+        case ARCHI_CONTEXT_REGISTRY_INSTR_SET_VALUE:
+            return sizeof(archi_context_registry_instr_set_value_t);
 
-        case ARCHI_APP_INSTRUCTION_SET_CONTEXT:
-            return sizeof(archi_app_instruction_set_context_t);
+        case ARCHI_CONTEXT_REGISTRY_INSTR_SET_CONTEXT:
+            return sizeof(archi_context_registry_instr_set_context_t);
 
-        case ARCHI_APP_INSTRUCTION_SET_SLOT:
-            return sizeof(archi_app_instruction_set_slot_t);
+        case ARCHI_CONTEXT_REGISTRY_INSTR_SET_SLOT:
+            return sizeof(archi_context_registry_instr_set_slot_t);
 
-        case ARCHI_APP_INSTRUCTION_ACT_STATIC:
-        case ARCHI_APP_INSTRUCTION_ACT_DYNAMIC:
-            return sizeof(archi_app_instruction_act_t);
+        case ARCHI_CONTEXT_REGISTRY_INSTR_ACT_STATIC:
+        case ARCHI_CONTEXT_REGISTRY_INSTR_ACT_DYNAMIC:
+            return sizeof(archi_context_registry_instr_act_t);
 
         default:
-            return sizeof(archi_app_instruction_base_t);
+            return sizeof(archi_context_registry_instr_base_t);
     }
 }
 
 static
 archi_status_t
-archi_app_instruction_execute_init(
+archi_context_registry_instr_execute_init(
         struct archi_context *registry,
-        const archi_app_instruction_init_t *instr_init,
+        const archi_context_registry_instr_init_t *instr_init,
         bool dynamic_params)
 {
     if (dynamic_params && ((instr_init->dparams_key == NULL) ||
@@ -192,9 +192,9 @@ archi_app_instruction_execute_init(
 
 static
 archi_status_t
-archi_app_instruction_execute_final(
+archi_context_registry_instr_execute_final(
         struct archi_context *registry,
-        const archi_app_instruction_base_t *instruction)
+        const archi_context_registry_instr_base_t *instruction)
 {
     // Remove the context from the registry, which also decrements the reference count
     archi_status_t code = archi_context_set_slot(registry,
@@ -215,9 +215,9 @@ archi_app_instruction_execute_final(
 
 static
 archi_status_t
-archi_app_instruction_execute_set_value(
+archi_context_registry_instr_execute_set_value(
         struct archi_context *registry,
-        const archi_app_instruction_set_value_t *instr_set_value)
+        const archi_context_registry_instr_set_value_t *instr_set_value)
 {
     archi_status_t code;
 
@@ -249,9 +249,9 @@ archi_app_instruction_execute_set_value(
 
 static
 archi_status_t
-archi_app_instruction_execute_set_context(
+archi_context_registry_instr_execute_set_context(
         struct archi_context *registry,
-        const archi_app_instruction_set_context_t *instr_set_context)
+        const archi_context_registry_instr_set_context_t *instr_set_context)
 {
     if ((instr_set_context->source_key == NULL) || (instr_set_context->source_key[0] == '\0'))
         return ARCHI_STATUS_EMISUSE;
@@ -304,9 +304,9 @@ archi_app_instruction_execute_set_context(
 
 static
 archi_status_t
-archi_app_instruction_execute_set_slot(
+archi_context_registry_instr_execute_set_slot(
         struct archi_context *registry,
-        const archi_app_instruction_set_slot_t *instr_set_slot)
+        const archi_context_registry_instr_set_slot_t *instr_set_slot)
 {
     if ((instr_set_slot->source_key == NULL) || (instr_set_slot->source_key[0] == '\0'))
         return ARCHI_STATUS_EMISUSE;
@@ -359,9 +359,9 @@ archi_app_instruction_execute_set_slot(
 
 static
 archi_status_t
-archi_app_instruction_execute_act(
+archi_context_registry_instr_execute_act(
         struct archi_context *registry,
-        const archi_app_instruction_act_t *instr_act,
+        const archi_context_registry_instr_act_t *instr_act,
         bool dynamic_params)
 {
     if (dynamic_params && ((instr_act->dparams_key == NULL) ||
@@ -423,50 +423,50 @@ archi_app_instruction_execute_act(
 }
 
 archi_status_t
-archi_app_instruction_execute(
+archi_context_registry_instr_execute(
         struct archi_context *registry,
-        const archi_app_instruction_base_t *instruction)
+        const archi_context_registry_instr_base_t *instruction)
 {
     if ((registry == NULL) || (instruction == NULL))
         return ARCHI_STATUS_EMISUSE;
 
-    if (instruction->type == ARCHI_APP_INSTRUCTION_NOOP)
+    if (instruction->type == ARCHI_CONTEXT_REGISTRY_INSTR_NOOP)
         return 0;
 
-    if (instruction->type == ARCHI_APP_INSTRUCTION_HALT)
+    if (instruction->type == ARCHI_CONTEXT_REGISTRY_INSTR_HALT)
         return ARCHI_STATUS_EMISUSE;
     else if ((instruction->key == NULL) || (instruction->key[0] == '\0'))
         return ARCHI_STATUS_EMISUSE;
 
     switch (instruction->type)
     {
-        case ARCHI_APP_INSTRUCTION_INIT_STATIC:
-        case ARCHI_APP_INSTRUCTION_INIT_DYNAMIC:
-            return archi_app_instruction_execute_init(registry,
-                    (const archi_app_instruction_init_t*)instruction,
-                    instruction->type == ARCHI_APP_INSTRUCTION_INIT_DYNAMIC);
+        case ARCHI_CONTEXT_REGISTRY_INSTR_INIT_STATIC:
+        case ARCHI_CONTEXT_REGISTRY_INSTR_INIT_DYNAMIC:
+            return archi_context_registry_instr_execute_init(registry,
+                    (const archi_context_registry_instr_init_t*)instruction,
+                    instruction->type == ARCHI_CONTEXT_REGISTRY_INSTR_INIT_DYNAMIC);
 
-        case ARCHI_APP_INSTRUCTION_FINAL:
-            return archi_app_instruction_execute_final(registry,
+        case ARCHI_CONTEXT_REGISTRY_INSTR_FINAL:
+            return archi_context_registry_instr_execute_final(registry,
                     instruction);
 
-        case ARCHI_APP_INSTRUCTION_SET_VALUE:
-            return archi_app_instruction_execute_set_value(registry,
-                    (const archi_app_instruction_set_value_t*)instruction);
+        case ARCHI_CONTEXT_REGISTRY_INSTR_SET_VALUE:
+            return archi_context_registry_instr_execute_set_value(registry,
+                    (const archi_context_registry_instr_set_value_t*)instruction);
 
-        case ARCHI_APP_INSTRUCTION_SET_CONTEXT:
-            return archi_app_instruction_execute_set_context(registry,
-                    (const archi_app_instruction_set_context_t*)instruction);
+        case ARCHI_CONTEXT_REGISTRY_INSTR_SET_CONTEXT:
+            return archi_context_registry_instr_execute_set_context(registry,
+                    (const archi_context_registry_instr_set_context_t*)instruction);
 
-        case ARCHI_APP_INSTRUCTION_SET_SLOT:
-            return archi_app_instruction_execute_set_slot(registry,
-                    (const archi_app_instruction_set_slot_t*)instruction);
+        case ARCHI_CONTEXT_REGISTRY_INSTR_SET_SLOT:
+            return archi_context_registry_instr_execute_set_slot(registry,
+                    (const archi_context_registry_instr_set_slot_t*)instruction);
 
-        case ARCHI_APP_INSTRUCTION_ACT_STATIC:
-        case ARCHI_APP_INSTRUCTION_ACT_DYNAMIC:
-            return archi_app_instruction_execute_act(registry,
-                    (const archi_app_instruction_act_t*)instruction,
-                    instruction->type == ARCHI_APP_INSTRUCTION_ACT_DYNAMIC);
+        case ARCHI_CONTEXT_REGISTRY_INSTR_ACT_STATIC:
+        case ARCHI_CONTEXT_REGISTRY_INSTR_ACT_DYNAMIC:
+            return archi_context_registry_instr_execute_act(registry,
+                    (const archi_context_registry_instr_act_t*)instruction,
+                    instruction->type == ARCHI_CONTEXT_REGISTRY_INSTR_ACT_DYNAMIC);
 
         default:
             return ARCHI_STATUS_EMISUSE;
