@@ -30,7 +30,7 @@
 /**
  * @brief Thread-safe, printf-style output to the standard error stream.
  *
- * Prints formatted text to stderr using a printf-style format string.
+ * Prints formatted text to the log stream using a printf-style format string.
  * If @p format is NULL, the function returns immediately without printing.
  *
  * Internally, this routine uses an atomic spinlock (when C11 atomics
@@ -55,7 +55,7 @@ archi_print(
 /*****************************************************************************/
 
 /**
- * @brief Log an error-level message to stderr.
+ * @brief Log an error-level message.
  *
  * Each message is colorized, prefixed with an elapsed-time timestamp,
  * a single-character level indicator, and optionally the module name.
@@ -81,7 +81,7 @@ archi_log_error(
 );
 
 /**
- * @brief Log a warning-level message to stderr.
+ * @brief Log a warning-level message.
  *
  * Same behavior as archi_log_error(), but gated at
  * higher verbosity level and using the warning color/indicator.
@@ -103,7 +103,7 @@ archi_log_warning(
 );
 
 /**
- * @brief Log a notice-level message to stderr.
+ * @brief Log a notice-level message.
  *
  * Same behavior as archi_log_error(), but gated at
  * higher verbosity level and using the notice color/indicator.
@@ -125,7 +125,7 @@ archi_log_notice(
 );
 
 /**
- * @brief Log a info-level message to stderr.
+ * @brief Log a info-level message.
  *
  * Same behavior as archi_log_error(), but gated at
  * higher verbosity level and using the info color/indicator.
@@ -147,7 +147,7 @@ archi_log_info(
 );
 
 /**
- * @brief Log a debug-level message to stderr.
+ * @brief Log a debug-level message.
  *
  * Same behavior as archi_log_error(), but gated at
  * higher verbosity level and using the debug color/indicator.

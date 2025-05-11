@@ -27,6 +27,7 @@
 #ifndef _ARCHI_IMPL_LOG_CONTEXT_TYP_H_
 #define _ARCHI_IMPL_LOG_CONTEXT_TYP_H_
 
+#include <stdio.h> // for FILE
 #include <time.h> // for struct timespec
 #include <stdbool.h>
 #ifndef __STDC_NO_ATOMICS__
@@ -34,6 +35,8 @@
 #endif
 
 struct archi_log_context {
+    FILE *stream; ///< Stream to print messages to.
+
     struct timespec start_time; ///< Application start time.
     int verbosity_level;        ///< Log verbosity level.
     bool colorful_output;       ///< Whether colors are used.

@@ -27,6 +27,7 @@
 #ifndef _ARCHI_EXE_LOGGING_FUN_H_
 #define _ARCHI_EXE_LOGGING_FUN_H_
 
+#include <stdio.h> // for FILE
 #include <stdbool.h>
 
 struct archi_log_context;
@@ -40,6 +41,20 @@ struct archi_log_context*
 archi_exe_log_context(void);
 
 /*****************************************************************************/
+
+/**
+ * @brief Initialize the log stream.
+ *
+ * This function sets the log stream the very first time it's called.
+ * Subsequent invocations have no effect.
+ *
+ * @param[in] stream
+ *     Valid stream used to print messages to. If NULL, stderr is used instead.
+ */
+void
+archi_exe_log_init_stream(
+        FILE *stream
+);
 
 /**
  * @brief Initialize the log start time.

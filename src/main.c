@@ -57,12 +57,12 @@ static
 struct {
     archi_exe_args_t args; ///< Command line arguments.
 
-    struct archi_context *registry; ///< Application context registry.
-    struct archi_context *interfaces; ///< Dictionary of built-in context interfaces.
+    struct archi_context *registry;   ///< The context registry.
+    struct archi_context *interfaces; ///< The dictionary of built-in context interfaces.
 
-    struct archi_context *signal_management; ///< Signal management context.
-    archi_context_interface_t signal_management_interface; ///< Signal management context interface.
-    archi_signal_watch_set_t *signal_watch_set; ///< Signal watch set.
+    struct archi_context *signal_management; ///< The signal management context.
+    archi_context_interface_t signal_management_interface; ///< The signal management context interface.
+    archi_signal_watch_set_t *signal_watch_set; ///< The signal watch set.
 } archi_process;
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -88,6 +88,9 @@ main(
 
     // Record the application start time
     archi_exe_log_init_start_time();
+
+    // Set logging stream
+    archi_exe_log_init_stream(stderr);
 
     // Parse command line arguments
     switch ((int)archi_exe_args_parse(&archi_process.args, argc, argv))

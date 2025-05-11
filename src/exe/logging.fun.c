@@ -43,6 +43,21 @@ archi_exe_log_context(void)
 }
 
 void
+archi_exe_log_init_stream(
+        FILE *stream)
+{
+    static bool stream_set = false;
+    if (stream_set)
+        return;
+    stream_set = true;
+
+    if (stream == NULL)
+        stream = stderr;
+
+    archi_logger.stream = stream;
+}
+
+void
 archi_exe_log_init_start_time(void)
 {
     static bool start_time_set = false;

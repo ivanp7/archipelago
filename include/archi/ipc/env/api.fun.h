@@ -54,18 +54,6 @@
  *   - 1 : Variable with such name is not present in the environment.
  *   - ARCHI_STATUS_EMISUSE   : @p name was NULL.
  *   - ARCHI_STATUS_ENOMEMORY : Memory allocation failed.
- *
- * @par Example
- * @code
- *   archi_status_t st;
- *   char *path = archi_env_get("PATH", &st);
- *   if (path) {
- *       printf("PATH = %s\n", path);
- *       free(path);
- *   } else {
- *       fprintf(stderr, "archi_env_get() failed: %d\n", st);
- *   }
- * @endcode
  */
 char*
 archi_env_get(

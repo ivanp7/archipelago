@@ -30,7 +30,7 @@
 #include "context.typ.h" // for struct archi_log_context
 
 #include <time.h> // for struct timespec, timespec_get()
-#include <stdio.h> // for fprintf(), vfprintf(), stderr
+#include <stdio.h> // for fprintf(), vfprintf()
 #include <stdarg.h>
 
 static
@@ -108,7 +108,7 @@ archi_print(
         ; // spin until the lock is acquired
 #endif
 
-    vfprintf(stderr, format, args);
+    vfprintf(archi_logger->stream, format, args);
 
 #ifndef __STDC_NO_ATOMICS__
     atomic_flag_clear_explicit(&archi_logger->spinlock, memory_order_release); // release the lock
@@ -138,15 +138,15 @@ archi_log(
 #endif
 
     if (archi_logger->colorful_output)
-        fprintf(stderr, ARCHI_COLOR_RESET);
+        fprintf(archi_logger->stream, ARCHI_COLOR_RESET);
 
-    fprintf(stderr, "\r");
+    fprintf(archi_logger->stream, "\r");
 
     if (archi_logger->colorful_output)
-        fprintf(stderr, message_color);
+        fprintf(archi_logger->stream, message_color);
 
     // Set the color, print date/time and message type character
-    fprintf(stderr, " %li:%02li:%02li.%03li,%03li [%s] ",
+    fprintf(archi_logger->stream, " %li:%02li:%02li.%03li,%03li [%s] ",
             (long)ts.tv_sec / 60 / 60,      // hours
             (long)ts.tv_sec / 60 % 60,      // minutes
             (long)ts.tv_sec % 60,           // seconds
@@ -156,17 +156,17 @@ archi_log(
 
     // Print module name
     if (module != NULL)
-        fprintf(stderr, "%s: ", module);
+        fprintf(archi_logger->stream, "%s: ", module);
 
     // Print the message
     if (format != NULL)
-        vfprintf(stderr, format, args);
+        vfprintf(archi_logger->stream, format, args);
 
     // Finally, reset the color
     if (archi_logger->colorful_output)
-        fprintf(stderr, ARCHI_COLOR_RESET);
+        fprintf(archi_logger->stream, ARCHI_COLOR_RESET);
 
-    fprintf(stderr, "\n");
+    fprintf(archi_logger->stream, "\n");
 
 #ifndef __STDC_NO_ATOMICS__
     atomic_flag_clear_explicit(&archi_logger->spinlock, memory_order_release); // release the lock
