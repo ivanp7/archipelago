@@ -118,7 +118,7 @@ args_parse(int key, char *arg, struct argp_state *state)
             return ARGP_ERR_UNKNOWN;
 
         case ARGP_KEY_ARGS:
-            args->inputs = state->argv + state->next;
+            args->input      = state->argv + state->next;
             args->num_inputs = state->argc - state->next;
             break;
 

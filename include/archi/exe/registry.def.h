@@ -20,31 +20,20 @@
 
 /**
  * @file
- * @brief Command line arguments.
+ * @brief Keys of the built-in contexts in the context registry.
  */
 
 #pragma once
-#ifndef _ARCHI_EXE_ARGS_TYP_H_
-#define _ARCHI_EXE_ARGS_TYP_H_
+#ifndef _ARCHI_EXE_REGISTRY_DEF_H_
+#define _ARCHI_EXE_REGISTRY_DEF_H_
 
-#include <stdbool.h>
-#include <stddef.h>
+#define ARCHI_EXE_REGISTRY_KEY_REGISTRY     "archi.registry"    ///< Registry key: the context registry itself.
+#define ARCHI_EXE_REGISTRY_KEY_INTERFACES   "archi.interface"   ///< Registry key: the hashmap of built-in context interfaces.
+#define ARCHI_EXE_REGISTRY_KEY_EXE_HANDLE   "archi.exe"         ///< Registry key: the library handle of the executable itself.
 
-/**
- * @brief Parsed values of command line arguments.
- */
-typedef struct archi_exe_args {
-    // Functionality
-    char **input;      ///< Array of pathnames of input memory-mapped initialization files.
-    size_t num_inputs; ///< Number of input initialization files.
+#define ARCHI_EXE_REGISTRY_KEY_SIGNAL       "archi.signal"      ///< Registry key: signal management.
 
-    bool dry_run; ///< Whether dry run is done: initialization instructions are logged only, not executed.
+#define ARCHI_EXE_REGISTRY_KEY_INPUT_FILE   "archi.input#"      ///< Registry key prefix: input file.
 
-    // Logging
-    bool no_logo;  ///< Whether display of the application logo is suppressed.
-    bool no_color; ///< Whether use of colors for log messages is disabled.
-    int verbosity_level; ///< Application verbosity level.
-} archi_exe_args_t;
-
-#endif // _ARCHI_EXE_ARGS_TYP_H_
+#endif // _ARCHI_EXE_REGISTRY_DEF_H_
 
