@@ -28,16 +28,7 @@
 
 #include <stdlib.h> // for malloc(), free()
 #include <string.h> // for strcmp()
-#include <stdalign.h>
-
-struct archi_context_res_file {
-    int fd;   ///< File descriptor.
-
-    void *mm; ///< Mapped memory.
-    size_t mm_size; ///< Mapped memory size.
-};
-
-/*****************************************************************************/
+#include <stdalign.h> // for alignof()
 
 ARCHI_CONTEXT_INIT_FUNC(archi_context_res_file_init)
 {
@@ -128,21 +119,24 @@ ARCHI_CONTEXT_INIT_FUNC(archi_context_res_file_init)
             return ARCHI_STATUS_EKEY;
     }
 
-    struct archi_context_res_file *file = malloc(sizeof(*file));
-    if (file == NULL)
+    int *fd = malloc(sizeof(*fd));
+    if (fd == NULL)
         return ARCHI_STATUS_ENOMEMORY;
 
-    *file = (struct archi_context_res_file){.fd = archi_file_open(file_open_params)};
-    if (file->fd < 0)
+    *fd = archi_file_open(file_open_params);
+
+    if (*fd < 0)
     {
-        free(file);
+        free(fd);
         return ARCHI_STATUS_ERESOURCE;
     }
 
-    context->public_value = (archi_pointer_t){
-        .ptr = file,
+    context->private_value = (archi_pointer_t){
+        .ptr = fd,
         .element = {
             .num_of = 1,
+            .size = sizeof(*fd),
+            .alignment = alignof(int),
         },
     };
 
@@ -151,44 +145,27 @@ ARCHI_CONTEXT_INIT_FUNC(archi_context_res_file_init)
 
 ARCHI_CONTEXT_FINAL_FUNC(archi_context_res_file_final)
 {
-    struct archi_context_res_file *file = context.public_value.ptr;
+    archi_file_unmap(context.public_value.ptr, context.public_value.element.num_of);
 
-    archi_file_unmap(file->mm, file->mm_size);
-    archi_file_close(file->fd);
-    free(file);
+    int *fd = context.private_value.ptr;
+    if (fd != NULL)
+    {
+        archi_file_close(*fd);
+        free(fd);
+    }
 }
 
 ARCHI_CONTEXT_GET_FUNC(archi_context_res_file_get)
 {
-    struct archi_context_res_file *file = context.public_value.ptr;
-
     if (strcmp("fd", slot.name) == 0)
     {
         if (slot.num_indices != 0)
             return ARCHI_STATUS_EMISUSE;
 
         *value = (archi_pointer_t){
-            .ptr = &file->fd,
+            .ptr = context.private_value.ptr,
             .ref_count = context.public_value.ref_count,
-            .element = {
-                .num_of = 1,
-                .size = sizeof(file->fd),
-                .alignment = alignof(int),
-            },
-        };
-    }
-    else if (strcmp("map", slot.name) == 0)
-    {
-        if (slot.num_indices != 0)
-            return ARCHI_STATUS_EMISUSE;
-
-        *value = (archi_pointer_t){
-            .ptr = file->mm,
-            .ref_count = context.public_value.ref_count,
-            .element = {
-                .num_of = file->mm_size,
-                .size = 1,
-            },
+            .element = context.private_value.element,
         };
     }
     else
@@ -199,14 +176,11 @@ ARCHI_CONTEXT_GET_FUNC(archi_context_res_file_get)
 
 ARCHI_CONTEXT_ACT_FUNC(archi_context_res_file_act)
 {
-    struct archi_context_res_file *file = context.public_value.ptr;
-
     if (strcmp("map", action.name) == 0)
     {
         if (action.num_indices != 0)
             return ARCHI_STATUS_EMISUSE;
-
-        if ((file->fd < 0) || (file->mm != NULL))
+        else if (context.public_value.ptr != NULL)
             return ARCHI_STATUS_EMISUSE;
 
         archi_file_map_params_t file_map_params = {0};
@@ -224,15 +198,15 @@ ARCHI_CONTEXT_ACT_FUNC(archi_context_res_file_act)
 
         for (; params != NULL; params = params->next)
         {
-            if ((params->value.flags & ARCHI_POINTER_FLAG_FUNCTION) ||
-                    (params->value.ptr == NULL))
-                return ARCHI_STATUS_EVALUE;
-
             if (strcmp("params", params->name) == 0)
             {
                 if (param_struct_set)
                     continue;
                 param_struct_set = true;
+
+                if ((params->value.flags & ARCHI_POINTER_FLAG_FUNCTION) ||
+                        (params->value.ptr == NULL))
+                    return ARCHI_STATUS_EVALUE;
 
                 file_map_params = *(archi_file_map_params_t*)params->value.ptr;
             }
@@ -242,6 +216,10 @@ ARCHI_CONTEXT_ACT_FUNC(archi_context_res_file_act)
                     continue;
                 param_size_set = true;
 
+                if ((params->value.flags & ARCHI_POINTER_FLAG_FUNCTION) ||
+                        (params->value.ptr == NULL))
+                    return ARCHI_STATUS_EVALUE;
+
                 file_map_params.size = *(size_t*)params->value.ptr;
             }
             else if (strcmp("offset", params->name) == 0)
@@ -249,6 +227,10 @@ ARCHI_CONTEXT_ACT_FUNC(archi_context_res_file_act)
                 if (param_offset_set)
                     continue;
                 param_offset_set = true;
+
+                if ((params->value.flags & ARCHI_POINTER_FLAG_FUNCTION) ||
+                        (params->value.ptr == NULL))
+                    return ARCHI_STATUS_EVALUE;
 
                 file_map_params.offset = *(size_t*)params->value.ptr;
             }
@@ -258,6 +240,10 @@ ARCHI_CONTEXT_ACT_FUNC(archi_context_res_file_act)
                     continue;
                 param_has_header_set = true;
 
+                if ((params->value.flags & ARCHI_POINTER_FLAG_FUNCTION) ||
+                        (params->value.ptr == NULL))
+                    return ARCHI_STATUS_EVALUE;
+
                 file_map_params.has_header = *(bool*)params->value.ptr;
             }
             else if (strcmp("readable", params->name) == 0)
@@ -265,6 +251,10 @@ ARCHI_CONTEXT_ACT_FUNC(archi_context_res_file_act)
                 if (param_readable_set)
                     continue;
                 param_readable_set = true;
+
+                if ((params->value.flags & ARCHI_POINTER_FLAG_FUNCTION) ||
+                        (params->value.ptr == NULL))
+                    return ARCHI_STATUS_EVALUE;
 
                 file_map_params.readable = *(bool*)params->value.ptr;
             }
@@ -274,6 +264,10 @@ ARCHI_CONTEXT_ACT_FUNC(archi_context_res_file_act)
                     continue;
                 param_writable_set = true;
 
+                if ((params->value.flags & ARCHI_POINTER_FLAG_FUNCTION) ||
+                        (params->value.ptr == NULL))
+                    return ARCHI_STATUS_EVALUE;
+
                 file_map_params.writable = *(bool*)params->value.ptr;
             }
             else if (strcmp("shared", params->name) == 0)
@@ -281,6 +275,10 @@ ARCHI_CONTEXT_ACT_FUNC(archi_context_res_file_act)
                 if (param_shared_set)
                     continue;
                 param_shared_set = true;
+
+                if ((params->value.flags & ARCHI_POINTER_FLAG_FUNCTION) ||
+                        (params->value.ptr == NULL))
+                    return ARCHI_STATUS_EVALUE;
 
                 file_map_params.shared = *(bool*)params->value.ptr;
             }
@@ -290,6 +288,10 @@ ARCHI_CONTEXT_ACT_FUNC(archi_context_res_file_act)
                     continue;
                 param_flags_set = true;
 
+                if ((params->value.flags & ARCHI_POINTER_FLAG_FUNCTION) ||
+                        (params->value.ptr == NULL))
+                    return ARCHI_STATUS_EVALUE;
+
                 file_map_params.flags = *(int*)params->value.ptr;
             }
             else if (strcmp("close_fd", params->name) == 0)
@@ -298,20 +300,41 @@ ARCHI_CONTEXT_ACT_FUNC(archi_context_res_file_act)
                     continue;
                 param_close_fd_set = true;
 
+                if ((params->value.flags & ARCHI_POINTER_FLAG_FUNCTION) ||
+                        (params->value.ptr == NULL))
+                    return ARCHI_STATUS_EVALUE;
+
                 close_fd = *(bool*)params->value.ptr;
             }
             else
                 return ARCHI_STATUS_EKEY;
         }
 
-        file->mm = archi_file_map(file->fd, file_map_params, &file->mm_size);
-        if (file->mm == NULL)
+        int *fd = context.private_value.ptr;
+
+        size_t mm_size = 0;
+        void *mm = archi_file_map(*fd, file_map_params, &mm_size);
+
+        if (mm == NULL)
             return ARCHI_STATUS_ERESOURCE;
+
+        archi_reference_count_t ref_count = context.public_value.ref_count;
+
+        context.public_value = (archi_pointer_t){
+            .ptr = mm,
+            .ref_count = ref_count,
+            .flags = file_map_params.writable ? ARCHI_POINTER_FLAG_WRITABLE : 0,
+            .element = {
+                .num_of = mm_size,
+                .size = 1,
+            },
+        };
 
         if (close_fd)
         {
-            archi_file_close(file->fd);
-            file->fd = -1;
+            archi_file_close(*fd);
+            free(fd);
+            context.private_value = (archi_pointer_t){0};
         }
     }
     else
