@@ -36,6 +36,11 @@
 struct archi_signal_management_context;
 
 /**
+ * @brief Pointer to signal management context.
+ */
+typedef struct archi_signal_management_context *archi_signal_management_context_t;
+
+/**
  * @brief Retrieve the count of POSIX real‑time signals supported by the system.
  *
  * POSIX real‑time signals occupy the continuous range
@@ -210,7 +215,7 @@ archi_signal_flags_alloc(void);
  *   - The signal management context and associated thread must be properly
  *     destroyed using archi_signal_management_stop().
  */
-struct archi_signal_management_context*
+archi_signal_management_context_t
 archi_signal_management_start(
         archi_signal_management_start_params_t params,
         archi_status_t *code
@@ -246,7 +251,7 @@ archi_signal_management_start(
  */
 void
 archi_signal_management_stop(
-        struct archi_signal_management_context *context
+        archi_signal_management_context_t context
 );
 
 /**
@@ -271,7 +276,7 @@ archi_signal_management_stop(
  */
 archi_signal_flags_t*
 archi_signal_management_flags(
-        struct archi_signal_management_context *context
+        archi_signal_management_context_t context
 );
 
 /**
@@ -295,7 +300,7 @@ archi_signal_management_flags(
  */
 archi_signal_handler_t
 archi_signal_management_handler(
-        struct archi_signal_management_context *context
+        archi_signal_management_context_t context
 );
 
 /**
@@ -320,7 +325,7 @@ archi_signal_management_handler(
  */
 void
 archi_signal_management_set_handler(
-        struct archi_signal_management_context *context,
+        archi_signal_management_context_t context,
         archi_signal_handler_t signal_handler
 );
 

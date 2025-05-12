@@ -32,13 +32,18 @@
 struct archi_context;
 
 /**
+ * @brief Pointer to context.
+ */
+typedef struct archi_context *archi_context_t;
+
+/**
  * @brief Extract context interface.
  *
  * @return Pointer the interface of the context.
  */
 archi_pointer_t
 archi_context_interface(
-        struct archi_context *context ///< [in] Context.
+        archi_context_t context ///< [in] Context.
 );
 
 /**
@@ -48,7 +53,7 @@ archi_context_interface(
  */
 archi_pointer_t
 archi_context_data(
-        struct archi_context *context ///< [in] Context.
+        archi_context_t context ///< [in] Context.
 );
 
 /*****************************************************************************/
@@ -58,7 +63,7 @@ archi_context_data(
  *
  * @return A new initialized context.
  */
-struct archi_context*
+archi_context_t
 archi_context_initialize(
         archi_pointer_t interface, ///< [in] Context interface.
         const archi_context_parameter_list_t *params, ///< [in] Initialization parameters.
@@ -72,7 +77,7 @@ archi_context_initialize(
  */
 void
 archi_context_finalize(
-        struct archi_context *context ///< [in] Context.
+        archi_context_t context ///< [in] Context.
 );
 
 /*****************************************************************************/
@@ -84,7 +89,7 @@ archi_context_finalize(
  */
 archi_pointer_t
 archi_context_get_slot(
-        struct archi_context *context, ///< [in] Context.
+        archi_context_t context, ///< [in] Context.
         archi_context_op_designator_t slot, ///< [in] Slot designator.
         archi_status_t *code ///< [out] Status code.
 );
@@ -96,7 +101,7 @@ archi_context_get_slot(
  */
 archi_status_t
 archi_context_set_slot(
-        struct archi_context *context, ///< [in] Context.
+        archi_context_t context, ///< [in] Context.
         archi_context_op_designator_t slot, ///< [in] Slot designator.
         archi_pointer_t value ///< [in] Value to set.
 );
@@ -108,10 +113,10 @@ archi_context_set_slot(
  */
 archi_status_t
 archi_context_copy_slot(
-        struct archi_context *context, ///< [in] Destination context.
+        archi_context_t context, ///< [in] Destination context.
         archi_context_op_designator_t slot, ///< [in] Destination slot designator.
 
-        struct archi_context *src_context, ///< [in] Source context.
+        archi_context_t src_context, ///< [in] Source context.
         archi_context_op_designator_t src_slot ///< [in] Source slot designator.
 );
 
@@ -124,7 +129,7 @@ archi_context_copy_slot(
  */
 archi_status_t
 archi_context_act(
-        struct archi_context *context, ///< [in] Initialized context.
+        archi_context_t context, ///< [in] Initialized context.
         archi_context_op_designator_t action, ///< [in] Action designator.
         const archi_context_parameter_list_t *params ///< [in] Action parameters.
 );

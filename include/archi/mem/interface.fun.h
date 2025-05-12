@@ -34,13 +34,18 @@
 struct archi_memory;
 
 /**
+ * @brief Pointer to memory object.
+ */
+typedef struct archi_memory *archi_memory_t;
+
+/**
  * @brief Extract memory interface.
  *
  * @return Pointer the interface of the memory.
  */
 archi_pointer_t
 archi_memory_interface(
-        struct archi_memory *memory ///< [in] Memory.
+        archi_memory_t memory ///< [in] Memory.
 );
 
 /**
@@ -50,7 +55,7 @@ archi_memory_interface(
  */
 archi_array_layout_t
 archi_memory_layout(
-        struct archi_memory *memory ///< [in] Context.
+        archi_memory_t memory ///< [in] Context.
 );
 
 /**
@@ -60,7 +65,7 @@ archi_memory_layout(
  */
 archi_pointer_t
 archi_memory_data(
-        struct archi_memory *memory ///< [in] Context.
+        archi_memory_t memory ///< [in] Context.
 );
 
 /*****************************************************************************/
@@ -70,7 +75,7 @@ archi_memory_data(
  *
  * @return New allocated memory.
  */
-struct archi_memory*
+archi_memory_t
 archi_memory_allocate(
         archi_pointer_t interface, ///< [in] Memory interface.
         void *alloc_data, ///< [in] Interface-specific data for allocation.
@@ -88,7 +93,7 @@ archi_memory_allocate(
  */
 void
 archi_memory_free(
-        struct archi_memory *memory ///< [in] Memory.
+        archi_memory_t memory ///< [in] Memory.
 );
 
 /**
@@ -98,7 +103,7 @@ archi_memory_free(
  */
 archi_pointer_t
 archi_memory_map(
-        struct archi_memory *memory, ///< [in] Memory.
+        archi_memory_t memory, ///< [in] Memory.
         void *map_data, ///< [in] Interface-specific data for mapping.
 
         size_t offset, ///< [in] Offset to the mapped area in data elements.
@@ -113,7 +118,7 @@ archi_memory_map(
  */
 void
 archi_memory_unmap(
-        struct archi_memory *memory ///< [in] Memory.
+        archi_memory_t memory ///< [in] Memory.
 );
 
 /*****************************************************************************/
@@ -152,11 +157,11 @@ archi_memory_unmap(
  */
 archi_status_t
 archi_memory_map_copy_unmap(
-        struct archi_memory *memory_dest, ///< [in] Destination memory.
+        archi_memory_t memory_dest, ///< [in] Destination memory.
         size_t offset_dest, ///< [in] Offset into destination memory in data elements.
         void *map_data_dest, ///< [in] Interface-specific data for mapping destination memory.
 
-        struct archi_memory *memory_src, ///< [in] Source memory.
+        archi_memory_t memory_src, ///< [in] Source memory.
         size_t offset_src, ///< [in] Offset into source memory in data elements.
         void *map_data_src, ///< [in] Interface-specific data for mapping source memory.
 

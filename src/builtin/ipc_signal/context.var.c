@@ -26,7 +26,6 @@
 #include "archi/builtin/ipc_signal/context.var.h"
 #include "archi/ipc/signal/api.fun.h"
 #include "archi/ds/hashmap/api.fun.h"
-#include "archi/util/ref_count.fun.h"
 
 #include <stdlib.h> // for malloc(), free()
 #include <string.h> // for strcmp(), strncmp()
@@ -191,9 +190,9 @@ const archi_context_interface_t archi_context_ipc_signal_handler_interface = {
 #define ARCHI_CONTEXT_IPC_SIGNAL_HANDLERS_CAPACITY  16 // larger capacity isn't needed, probably
 
 struct archi_context_ipc_signal {
-    struct archi_signal_management_context *thread; ///< Signal management thread context.
+    archi_signal_management_context_t context; ///< Signal management context.
 
-    struct archi_hashmap *signal_handlers; ///< Hashmap of signal handlers.
+    archi_hashmap_t signal_handlers; ///< Hashmap of signal handlers.
     mtx_t mutex_signal_handlers; ///< Mutex for the hashmap.
 };
 
@@ -296,7 +295,7 @@ ARCHI_CONTEXT_INIT_FUNC(archi_context_ipc_signal_management_init)
         return code;
     }
 
-    signal_management->thread = archi_signal_management_start(
+    signal_management->context = archi_signal_management_start(
             (archi_signal_management_start_params_t){
                 .signals = signals,
                 .signal_handler = {
@@ -306,7 +305,7 @@ ARCHI_CONTEXT_INIT_FUNC(archi_context_ipc_signal_management_init)
             },
             &code);
 
-    if (signal_management->thread == NULL)
+    if (signal_management->context == NULL)
     {
         mtx_destroy(&signal_management->mutex_signal_handlers);
         archi_hashmap_free(signal_management->signal_handlers);
@@ -328,7 +327,7 @@ ARCHI_CONTEXT_FINAL_FUNC(archi_context_ipc_signal_management_final)
 {
     struct archi_context_ipc_signal *signal_management = context.public_value.ptr;
 
-    archi_signal_management_stop(signal_management->thread);
+    archi_signal_management_stop(signal_management->context);
     archi_hashmap_free(signal_management->signal_handlers);
     mtx_destroy(&signal_management->mutex_signal_handlers);
     free(signal_management);
@@ -344,7 +343,7 @@ ARCHI_CONTEXT_GET_FUNC(archi_context_ipc_signal_management_get)
             return ARCHI_STATUS_EMISUSE;
 
         *value = (archi_pointer_t){
-            .ptr = archi_signal_management_flags(signal_management->thread),
+            .ptr = archi_signal_management_flags(signal_management->context),
             .ref_count = context.public_value.ref_count,
             .element = {
                 .num_of = 1,

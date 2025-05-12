@@ -26,7 +26,6 @@
 #include "archi/mem/interface.fun.h"
 #include "archi/util/size.fun.h"
 #include "archi/util/size.def.h"
-#include "archi/util/ref_count.fun.h"
 
 #include <stdlib.h> // for malloc(), free()
 #include <string.h> // for memcpy()
@@ -40,7 +39,7 @@ struct archi_memory {
 
 archi_pointer_t
 archi_memory_interface(
-        struct archi_memory *memory)
+        archi_memory_t memory)
 {
     if (memory == NULL)
         return (archi_pointer_t){0};
@@ -50,7 +49,7 @@ archi_memory_interface(
 
 archi_array_layout_t
 archi_memory_layout(
-        struct archi_memory *memory)
+        archi_memory_t memory)
 {
     if (memory == NULL)
         return (archi_array_layout_t){0};
@@ -60,7 +59,7 @@ archi_memory_layout(
 
 archi_pointer_t
 archi_memory_data(
-        struct archi_memory *memory)
+        archi_memory_t memory)
 {
     if (memory == NULL)
         return (archi_pointer_t){0};
@@ -70,7 +69,7 @@ archi_memory_data(
 
 /*****************************************************************************/
 
-struct archi_memory*
+archi_memory_t
 archi_memory_allocate(
         archi_pointer_t interface,
         void *alloc_data,
@@ -107,7 +106,7 @@ archi_memory_allocate(
     }
 
     // Allocate the memory object
-    struct archi_memory *memory = malloc(sizeof(*memory));
+    archi_memory_t memory = malloc(sizeof(*memory));
     if (memory == NULL)
     {
         if (code != NULL)
@@ -160,7 +159,7 @@ archi_memory_allocate(
 
 void
 archi_memory_free(
-        struct archi_memory *memory)
+        archi_memory_t memory)
 {
     if (memory == NULL)
         return;
@@ -181,7 +180,7 @@ archi_memory_free(
 static
 ARCHI_DESTRUCTOR_FUNC(archi_memory_auto_unmap)
 {
-    struct archi_memory *memory = data;
+    archi_memory_t memory = data;
 
     memory->mapping.ref_count = NULL; // prevent double deallocation
     archi_memory_unmap(memory);
@@ -189,7 +188,7 @@ ARCHI_DESTRUCTOR_FUNC(archi_memory_auto_unmap)
 
 archi_pointer_t
 archi_memory_map(
-        struct archi_memory *memory,
+        archi_memory_t memory,
         void *map_data,
 
         size_t offset,
@@ -228,7 +227,7 @@ archi_memory_map(
     size_t element_size = ARCHI_SIZE_PADDED(layout.size, layout.alignment);
 
     // Allocate the reference counter
-    struct archi_reference_count *ref_count =
+    archi_reference_count_t ref_count =
         archi_reference_count_alloc(archi_memory_auto_unmap, memory);
     if (ref_count == NULL)
     {
@@ -279,7 +278,7 @@ archi_memory_map(
 
 void
 archi_memory_unmap(
-        struct archi_memory *memory)
+        archi_memory_t memory)
 {
     if ((memory == NULL) || (memory->mapping.ptr == NULL))
         return;
@@ -298,11 +297,11 @@ archi_memory_unmap(
 
 archi_status_t
 archi_memory_map_copy_unmap(
-        struct archi_memory *memory_dest,
+        archi_memory_t memory_dest,
         size_t offset_dest,
         void *map_data_dest,
 
-        struct archi_memory *memory_src,
+        archi_memory_t memory_src,
         size_t offset_src,
         void *map_data_src,
 

@@ -92,7 +92,7 @@ ARCHI_CONTEXT_INIT_FUNC(archi_context_ds_lfqueue_init)
     }
 
     archi_status_t code;
-    struct archi_lfqueue *lfqueue = archi_lfqueue_alloc(lfqueue_alloc_params, &code);
+    archi_lfqueue_t lfqueue = archi_lfqueue_alloc(lfqueue_alloc_params, &code);
 
     if (code < 0)
         return code;

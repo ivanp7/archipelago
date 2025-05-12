@@ -26,7 +26,6 @@
 #include "archi/builtin/res_thread_group/context.var.h"
 #include "archi/builtin/res_thread_group/dispatch.typ.h"
 #include "archi/res/thread_group/api.fun.h"
-#include "archi/util/ref_count.fun.h"
 
 #include <stdlib.h> // for malloc(), free()
 #include <string.h> // for strcmp()
@@ -76,7 +75,7 @@ ARCHI_CONTEXT_INIT_FUNC(archi_context_res_thread_group_init)
     *num_threads = thread_group_params.num_threads;
 
     archi_status_t code;
-    struct archi_thread_group_context *thread_group =
+    archi_thread_group_context_t thread_group =
         archi_thread_group_start(thread_group_params, &code);
 
     if (code < 0)

@@ -24,7 +24,6 @@
  */
 
 #include "archi/ctx/interface.fun.h"
-#include "archi/util/ref_count.fun.h"
 #include "archi/exe/registry.def.h"
 #include "archi/exe/args.fun.h"
 #include "archi/exe/args.typ.h"
@@ -62,13 +61,13 @@ static
 struct {
     archi_exe_args_t args; ///< Command line arguments.
 
-    struct archi_context *registry;   ///< The context registry.
-    struct archi_context *interfaces; ///< The hashmap of built-in context interfaces.
-    struct archi_context *exe_handle; ///< The library handle of the executable itself.
+    archi_context_t registry;   ///< The context registry.
+    archi_context_t interfaces; ///< The hashmap of built-in context interfaces.
+    archi_context_t exe_handle; ///< The library handle of the executable itself.
 
-    struct archi_context **input_file; ///< The array of input files.
+    archi_context_t *input_file; ///< The array of input files.
 
-    struct archi_context *signal; ///< The signal management context.
+    archi_context_t signal; ///< The signal management context.
     archi_context_interface_t signal_interface; ///< The signal management context interface.
     archi_signal_watch_set_t *signal_watch_set; ///< The signal watch set.
 } archi_process;

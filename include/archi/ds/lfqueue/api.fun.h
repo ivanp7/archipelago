@@ -35,6 +35,11 @@
 struct archi_lfqueue;
 
 /**
+ * @brief Pointer to lock-free queue.
+ */
+typedef struct archi_lfqueue *archi_lfqueue_t;
+
+/**
  * @brief Create lock-free queue.
  *
  * Maximum queue capacity is (1 << capacity_log2) elements.
@@ -43,7 +48,7 @@ struct archi_lfqueue;
  *
  * @return Lock-free queue.
  */
-struct archi_lfqueue*
+archi_lfqueue_t
 archi_lfqueue_alloc(
         archi_lfqueue_alloc_params_t params, ///< [in] Lock-free queue parameters.
         archi_status_t *code ///< [out] Status code.
@@ -54,7 +59,7 @@ archi_lfqueue_alloc(
  */
 void
 archi_lfqueue_free(
-        struct archi_lfqueue *queue ///< [in] Queue to destroy.
+        archi_lfqueue_t queue ///< [in] Queue to destroy.
 );
 
 /**
@@ -64,7 +69,7 @@ archi_lfqueue_free(
  */
 bool
 archi_lfqueue_push(
-        struct archi_lfqueue *restrict queue, ///< [in] Queue to push value to.
+        archi_lfqueue_t restrict queue, ///< [in] Queue to push value to.
         const void *restrict value ///< [in] Pointer to pushed value.
 );
 
@@ -75,7 +80,7 @@ archi_lfqueue_push(
  */
 bool
 archi_lfqueue_pop(
-        struct archi_lfqueue *restrict queue, ///< [in] Queue to pop value from.
+        archi_lfqueue_t restrict queue, ///< [in] Queue to pop value from.
         void *restrict value ///< [out] Memory to write popped value to.
 );
 
@@ -86,7 +91,7 @@ archi_lfqueue_pop(
  */
 size_t
 archi_lfqueue_capacity(
-        struct archi_lfqueue *queue ///< [in] Queue.
+        archi_lfqueue_t queue ///< [in] Queue.
 );
 
 /**
@@ -96,7 +101,7 @@ archi_lfqueue_capacity(
  */
 size_t
 archi_lfqueue_element_size(
-        struct archi_lfqueue *queue ///< [in] Queue.
+        archi_lfqueue_t queue ///< [in] Queue.
 );
 
 #endif // _ARCHI_DS_LFQUEUE_API_FUN_H_

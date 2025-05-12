@@ -36,7 +36,7 @@ struct archi_log_context archi_logger = {
 #endif
 };
 
-struct archi_log_context*
+archi_log_context_t
 archi_exe_log_context(void)
 {
     return &archi_logger;

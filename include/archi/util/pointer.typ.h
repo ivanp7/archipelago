@@ -27,12 +27,11 @@
 #ifndef _ARCHI_UTIL_POINTER_TYP_H_
 #define _ARCHI_UTIL_POINTER_TYP_H_
 
+#include "archi/util/ref_count.fun.h"
 #include "archi/util/size.typ.h"
 
 #include <stdint.h> // for uintptr_t
 #include <limits.h> // for CHAR_BIT
-
-struct archi_reference_count;
 
 /**
  * @typedef archi_function_t
@@ -83,7 +82,7 @@ typedef struct archi_pointer {
         void *ptr;             ///< Pointer to a resource (a single object or array).
         archi_function_t fptr; ///< Generic function pointer (to single function or array).
     };
-    struct archi_reference_count *ref_count; ///< Reference count for the resource.
+    archi_reference_count_t ref_count; ///< Reference count for the resource.
     uintptr_t flags; ///< Flags describing pointer attributes.
     archi_array_layout_t element; ///< Layout of the array.
 } archi_pointer_t;

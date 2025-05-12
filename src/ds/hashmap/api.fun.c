@@ -25,7 +25,6 @@
 
 #include "archi/ds/hashmap/api.fun.h"
 #include "archi/util/size.def.h"
-#include "archi/util/ref_count.fun.h"
 
 #include <stdlib.h> // for malloc(), free()
 #include <string.h> // for strcmp(), strlen(), memcpy()
@@ -71,7 +70,7 @@ struct archi_hashmap {
     struct archi_hashmap_node *nodes[]; ///< Array of nodes by hash.
 };
 
-struct archi_hashmap*
+archi_hashmap_t
 archi_hashmap_alloc(
         archi_hashmap_alloc_params_t params,
         archi_status_t *code)
@@ -86,7 +85,7 @@ archi_hashmap_alloc(
 
     size_t size = ARCHI_SIZEOF_FLEXIBLE(struct archi_hashmap, nodes, params.capacity);
 
-    struct archi_hashmap *hashmap = malloc(size);
+    archi_hashmap_t hashmap = malloc(size);
     if (hashmap == NULL)
     {
         if (code != NULL)
@@ -118,7 +117,7 @@ ARCHI_HASHMAP_TRAV_KV_FUNC(archi_hashmap_free_unset)
 
 void
 archi_hashmap_free(
-        struct archi_hashmap *hashmap)
+        archi_hashmap_t hashmap)
 {
     if (hashmap == NULL)
         return;
@@ -129,7 +128,7 @@ archi_hashmap_free(
 
 archi_pointer_t
 archi_hashmap_get(
-        struct archi_hashmap *hashmap,
+        archi_hashmap_t hashmap,
 
         const char *key,
         archi_status_t *code)
@@ -195,7 +194,7 @@ archi_hashmap_copy_key(
 
 archi_status_t
 archi_hashmap_set(
-        struct archi_hashmap *hashmap,
+        archi_hashmap_t hashmap,
 
         const char *key,
         archi_pointer_t value,
@@ -280,7 +279,7 @@ archi_hashmap_set(
 static
 void
 archi_hashmap_remove_node(
-        struct archi_hashmap *hashmap,
+        archi_hashmap_t hashmap,
         struct archi_hashmap_node *node)
 {
     // Remove the node from the list of nodes with identical hash keys
@@ -306,7 +305,7 @@ archi_hashmap_remove_node(
 
 archi_status_t
 archi_hashmap_unset(
-        struct archi_hashmap *hashmap,
+        archi_hashmap_t hashmap,
 
         const char *key,
         archi_hashmap_unset_params_t params)
@@ -355,7 +354,7 @@ archi_hashmap_unset(
 
 archi_status_t
 archi_hashmap_traverse(
-        struct archi_hashmap *hashmap,
+        archi_hashmap_t hashmap,
 
         bool first_to_last,
         archi_hashmap_trav_kv_func_t trav_fn,

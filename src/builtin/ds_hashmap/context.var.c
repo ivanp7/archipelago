@@ -66,7 +66,7 @@ ARCHI_CONTEXT_INIT_FUNC(archi_context_ds_hashmap_init)
     }
 
     archi_status_t code;
-    struct archi_hashmap *hashmap = archi_hashmap_alloc(hashmap_alloc_params, &code);
+    archi_hashmap_t hashmap = archi_hashmap_alloc(hashmap_alloc_params, &code);
 
     if (code < 0)
         return code;

@@ -24,7 +24,6 @@
  */
 
 #include "archi/ctx/interface/pointer.var.h"
-#include "archi/util/ref_count.fun.h"
 
 #include <string.h> // for strcmp()
 
@@ -99,7 +98,7 @@ ARCHI_CONTEXT_SET_FUNC(archi_context_pointer_set)
         archi_reference_count_increment(value.ref_count);
         archi_reference_count_decrement(context.private_value.ref_count);
 
-        struct archi_reference_count *ref_count = context.public_value.ref_count;
+        archi_reference_count_t ref_count = context.public_value.ref_count;
 
         context.public_value = context.private_value = value;
         context.public_value.ref_count = ref_count;

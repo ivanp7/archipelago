@@ -33,6 +33,11 @@
 struct archi_thread_group_context;
 
 /**
+ * @brief Pointer to thread group context.
+ */
+typedef struct archi_thread_group_context *archi_thread_group_context_t;
+
+/**
  * @brief Start a group of threads for concurrent processing.
  *
  * This function created the specified number of threads that will be running
@@ -41,7 +46,7 @@ struct archi_thread_group_context;
  *
  * @return Thread group context.
  */
-struct archi_thread_group_context*
+archi_thread_group_context_t
 archi_thread_group_start(
         archi_thread_group_start_params_t params, ///< [in] Thread group creation parameters.
         archi_status_t *code ///< [out] Status code.
@@ -52,7 +57,7 @@ archi_thread_group_start(
  */
 void
 archi_thread_group_stop(
-        struct archi_thread_group_context *context ///< [in] Thread group context.
+        archi_thread_group_context_t context ///< [in] Thread group context.
 );
 
 /**
@@ -72,7 +77,7 @@ archi_thread_group_stop(
  */
 archi_status_t
 archi_thread_group_dispatch(
-        struct archi_thread_group_context *context, ///< [in] Thread group context.
+        archi_thread_group_context_t context, ///< [in] Thread group context.
 
         archi_thread_group_work_t work, ///< [in] Concurrent work task.
         archi_thread_group_callback_t callback, ///< [in] Concurrent work completion callback.
@@ -86,7 +91,7 @@ archi_thread_group_dispatch(
  */
 archi_thread_group_start_params_t
 archi_thread_group_parameters(
-        const struct archi_thread_group_context *context ///< [in] Thread group context.
+        archi_thread_group_context_t context ///< [in] Thread group context.
 );
 
 #endif // _ARCHI_RES_THREAD_GROUP_API_FUN_H_

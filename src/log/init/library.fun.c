@@ -36,7 +36,7 @@ archi_log_initialize_library(
     if (handle == NULL)
         return false;
 
-    struct archi_log_context *context = archi_log_get_context();
+    archi_log_context_t context = archi_log_get_context();
     if (context == NULL)
         return false;
 

@@ -33,6 +33,11 @@
 struct archi_hashmap;
 
 /**
+ * @brief Pointer to hashmap.
+ */
+typedef struct archi_hashmap *archi_hashmap_t;
+
+/**
  * @brief Compute hash of a string.
  *
  * This function implements the djb2 algorithm.
@@ -49,7 +54,7 @@ archi_hash(
  *
  * @return Hashmap.
  */
-struct archi_hashmap*
+archi_hashmap_t
 archi_hashmap_alloc(
         archi_hashmap_alloc_params_t params, ///< [in] Hashmap allocation parameters.
         archi_status_t *code ///< [out] Status code.
@@ -60,7 +65,7 @@ archi_hashmap_alloc(
  */
 void
 archi_hashmap_free(
-        struct archi_hashmap *hashmap ///< [in] Hashmap.
+        archi_hashmap_t hashmap ///< [in] Hashmap.
 );
 
 /**
@@ -75,7 +80,7 @@ archi_hashmap_free(
  */
 archi_pointer_t
 archi_hashmap_get(
-        struct archi_hashmap *hashmap, ///< [in] Hashmap.
+        archi_hashmap_t hashmap, ///< [in] Hashmap.
 
         const char *key, ///< [in] Key.
         archi_status_t *code ///< [out] Status code.
@@ -93,7 +98,7 @@ archi_hashmap_get(
  */
 archi_status_t
 archi_hashmap_set(
-        struct archi_hashmap *hashmap, ///< [in] Hashmap.
+        archi_hashmap_t hashmap, ///< [in] Hashmap.
 
         const char *key, ///< [in] Key.
         archi_pointer_t value, ///< [in] Value.
@@ -112,7 +117,7 @@ archi_hashmap_set(
  */
 archi_status_t
 archi_hashmap_unset(
-        struct archi_hashmap *hashmap, ///< [in] Hashmap.
+        archi_hashmap_t hashmap, ///< [in] Hashmap.
 
         const char *key, ///< [in] Key.
         archi_hashmap_unset_params_t params ///< [in] Additional parameters.
@@ -128,7 +133,7 @@ archi_hashmap_unset(
  */
 archi_status_t
 archi_hashmap_traverse(
-        struct archi_hashmap *hashmap, ///< [in] Hashmap.
+        archi_hashmap_t hashmap, ///< [in] Hashmap.
 
         bool first_to_last, ///< [in] True for insertion order (first-to-last), false for reverse insertion order (last-to-first).
         archi_hashmap_trav_kv_func_t trav_fn, ///< [in] Traversal function.

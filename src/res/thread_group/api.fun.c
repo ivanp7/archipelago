@@ -101,7 +101,7 @@ struct archi_thread_group_context {
 /*****************************************************************************/
 
 struct archi_thread_arg {
-    struct archi_thread_group_context *context;
+    archi_thread_group_context_t context;
     size_t thread_idx;
 };
 
@@ -111,7 +111,7 @@ archi_thread(
         void *arg)
 {
     // Copy context and thread index
-    struct archi_thread_group_context *context;
+    archi_thread_group_context_t context;
     size_t thread_idx;
     {
         struct archi_thread_arg *thread_arg = arg;
@@ -202,7 +202,7 @@ archi_thread(
 
 /*****************************************************************************/
 
-struct archi_thread_group_context*
+archi_thread_group_context_t
 archi_thread_group_start(
         archi_thread_group_start_params_t params,
         archi_status_t *code)
@@ -212,7 +212,7 @@ archi_thread_group_start(
     size_t thread_idx = 0;
 
     // Initialize threads context
-    struct archi_thread_group_context *context = malloc(sizeof(*context));
+    archi_thread_group_context_t context = malloc(sizeof(*context));
     if (context == NULL)
     {
         status = ARCHI_STATUS_ENOMEMORY;
@@ -327,7 +327,7 @@ failure:
 
 void
 archi_thread_group_stop(
-        struct archi_thread_group_context *context)
+        archi_thread_group_context_t context)
 {
     if (context == NULL)
         return;
@@ -365,7 +365,7 @@ archi_thread_group_stop(
 
 archi_status_t
 archi_thread_group_dispatch(
-        struct archi_thread_group_context *context,
+        archi_thread_group_context_t context,
 
         archi_thread_group_work_t work,
         archi_thread_group_callback_t callback,
@@ -431,7 +431,7 @@ archi_thread_group_dispatch(
 
 archi_thread_group_start_params_t
 archi_thread_group_parameters(
-        const struct archi_thread_group_context *context)
+        archi_thread_group_context_t context)
 {
     if (context == NULL)
         return (archi_thread_group_start_params_t){0};

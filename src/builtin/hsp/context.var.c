@@ -27,7 +27,6 @@
 #include "archi/hsp/exec.fun.h"
 #include "archi/hsp/instance.typ.h"
 #include "archi/hsp/state/branch.typ.h"
-#include "archi/util/ref_count.fun.h"
 
 #include <stdlib.h> // for malloc(), realloc(), free()
 #include <string.h> // for strcmp()

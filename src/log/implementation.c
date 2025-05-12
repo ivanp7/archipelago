@@ -34,11 +34,11 @@
 #include <stdarg.h>
 
 static
-struct archi_log_context *archi_logger;
+archi_log_context_t archi_logger;
 
 void
 archi_log_initialize(
-        struct archi_log_context *context)
+        archi_log_context_t context)
 {
     if (archi_logger != NULL)
         return;
@@ -46,7 +46,7 @@ archi_log_initialize(
     archi_logger = context;
 }
 
-struct archi_log_context*
+archi_log_context_t
 archi_log_get_context(void)
 {
     return archi_logger;

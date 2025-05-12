@@ -34,6 +34,11 @@
 struct archi_reference_count;
 
 /**
+ * @brief Pointer to reference count.
+ */
+typedef struct archi_reference_count *archi_reference_count_t;
+
+/**
  * @brief Allocate and initialize a new reference counter object.
  *
  * The reference counter is initialized with the value of 1.
@@ -51,7 +56,7 @@ struct archi_reference_count;
  * When the reference count reaches zero, the destructor will be called and
  * the object will be freed automatically, as well as the counter itself.
  */
-struct archi_reference_count*
+archi_reference_count_t
 archi_reference_count_alloc(
         archi_destructor_func_t destructor_fn,
         void *destructor_data
@@ -69,7 +74,7 @@ archi_reference_count_alloc(
  */
 void
 archi_reference_count_free(
-        struct archi_reference_count *ref_count
+        archi_reference_count_t ref_count
 );
 
 /**
@@ -85,7 +90,7 @@ archi_reference_count_free(
  */
 void
 archi_reference_count_increment(
-        struct archi_reference_count *ref_count
+        archi_reference_count_t ref_count
 );
 
 /**
@@ -109,7 +114,7 @@ archi_reference_count_increment(
  */
 bool
 archi_reference_count_decrement(
-        struct archi_reference_count *ref_count
+        archi_reference_count_t ref_count
 );
 
 #endif // _ARCHI_UTIL_REF_COUNT_FUN_H_

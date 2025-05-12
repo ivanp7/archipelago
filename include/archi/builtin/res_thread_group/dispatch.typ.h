@@ -27,13 +27,13 @@
 #ifndef _ARCHI_BUILTIN_RES_THREAD_GROUP_DISPATCH_TYP_H_
 #define _ARCHI_BUILTIN_RES_THREAD_GROUP_DISPATCH_TYP_H_
 
-#include "archi/res/thread_group/api.typ.h"
+#include "archi/res/thread_group/api.fun.h"
 
 /**
  * @brief Parameters for archi_thread_group_dispatch().
  */
 typedef struct archi_context_res_thread_group_dispatch_data {
-    struct archi_thread_group_context *context; ///< Thread group context.
+    archi_thread_group_context_t context; ///< Thread group context.
 
     archi_thread_group_work_t work; ///< Concurrent work task.
     archi_thread_group_callback_t callback; ///< Concurrent work completion callback.

@@ -66,7 +66,7 @@ struct archi_lfqueue {
     archi_lfqueue_atomic_count2_t total_push_count, total_pop_count;
 };
 
-struct archi_lfqueue*
+archi_lfqueue_t
 archi_lfqueue_alloc(
         archi_lfqueue_alloc_params_t params,
         archi_status_t *code)
@@ -109,7 +109,7 @@ archi_lfqueue_alloc(
     }
 
     // Allocate the queue object
-    struct archi_lfqueue *queue = malloc(sizeof(*queue));
+    archi_lfqueue_t queue = malloc(sizeof(*queue));
     if (queue == NULL)
     {
         if (code != NULL)
@@ -198,7 +198,7 @@ archi_lfqueue_alloc(
 
 void
 archi_lfqueue_free(
-        struct archi_lfqueue *queue)
+        archi_lfqueue_t queue)
 {
     if (queue == NULL)
         return;
@@ -211,7 +211,7 @@ archi_lfqueue_free(
 
 bool
 archi_lfqueue_push(
-        struct archi_lfqueue *queue,
+        archi_lfqueue_t queue,
         const void *value)
 {
     if (queue == NULL)
@@ -259,7 +259,7 @@ archi_lfqueue_push(
 
 bool
 archi_lfqueue_pop(
-        struct archi_lfqueue *queue,
+        archi_lfqueue_t queue,
         void *value)
 {
     if (queue == NULL)
@@ -302,7 +302,7 @@ archi_lfqueue_pop(
 
 size_t
 archi_lfqueue_capacity(
-        struct archi_lfqueue *queue)
+        archi_lfqueue_t queue)
 {
     if (queue == NULL)
         return 0;
@@ -312,7 +312,7 @@ archi_lfqueue_capacity(
 
 size_t
 archi_lfqueue_element_size(
-        struct archi_lfqueue *queue)
+        archi_lfqueue_t queue)
 {
     if (queue == NULL)
         return 0;

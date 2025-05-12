@@ -27,17 +27,17 @@
 #ifndef _ARCHI_EXE_LOGGING_FUN_H_
 #define _ARCHI_EXE_LOGGING_FUN_H_
 
+#include "archi/log/context.fun.h"
+
 #include <stdio.h> // for FILE
 #include <stdbool.h>
-
-struct archi_log_context;
 
 /**
  * @brief Retrieve the global log context.
  *
  * @return Pointer to the global log context.
  */
-struct archi_log_context*
+archi_log_context_t
 archi_exe_log_context(void);
 
 /*****************************************************************************/

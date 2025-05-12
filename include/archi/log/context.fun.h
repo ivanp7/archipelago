@@ -29,8 +29,14 @@
 
 #include <stdbool.h>
 
-struct archi_log_context;
 struct timespec;
+
+struct archi_log_context;
+
+/**
+ * @brief Pointer to logging context.
+ */
+typedef struct archi_log_context *archi_log_context_t;
 
 /**
  * @brief Initialize the logging module.
@@ -48,7 +54,7 @@ struct timespec;
  */
 void
 archi_log_initialize(
-        struct archi_log_context *context
+        archi_log_context_t context
 );
 
 /**
@@ -64,7 +70,7 @@ archi_log_initialize(
  * @param[in] context
  *      Log context.
  */
-typedef void (*archi_log_initialize_func_t)(struct archi_log_context *context);
+typedef void (*archi_log_initialize_func_t)(archi_log_context_t context);
 
 /**
  * @brief Retrieve the log context the logging module has been initialized with.
@@ -73,7 +79,7 @@ typedef void (*archi_log_initialize_func_t)(struct archi_log_context *context);
  *
  * @return Pointer to the log context.
  */
-struct archi_log_context*
+archi_log_context_t
 archi_log_get_context(void);
 
 /*****************************************************************************/

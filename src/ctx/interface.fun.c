@@ -24,18 +24,18 @@
  */
 
 #include "archi/ctx/interface.fun.h"
-#include "archi/util/ref_count.fun.h"
 
 #include <stdlib.h> // for malloc(), free()
 
 struct archi_context {
     archi_pointer_t interface; ///< Context interface.
+
     archi_context_data_t data; ///< Public and private data of the context.
 };
 
 archi_pointer_t
 archi_context_interface(
-        struct archi_context *context)
+        archi_context_t context)
 {
     if (context == NULL)
         return (archi_pointer_t){0};
@@ -45,7 +45,7 @@ archi_context_interface(
 
 archi_pointer_t
 archi_context_data(
-        struct archi_context *context)
+        archi_context_t context)
 {
     if (context == NULL)
         return (archi_pointer_t){0};
@@ -58,13 +58,13 @@ archi_context_data(
 static
 ARCHI_DESTRUCTOR_FUNC(archi_context_destructor)
 {
-    struct archi_context *context = data;
+    archi_context_t context = data;
 
     context->data.public_value.ref_count = NULL; // prevent double deallocation
     archi_context_finalize(context);
 }
 
-struct archi_context*
+archi_context_t
 archi_context_initialize(
         archi_pointer_t interface,
         const archi_context_parameter_list_t *params,
@@ -88,7 +88,7 @@ archi_context_initialize(
     }
 
     // Allocate the context object
-    struct archi_context *context = malloc(sizeof(*context));
+    archi_context_t context = malloc(sizeof(*context));
     if (context == NULL)
     {
         if (code != NULL)
@@ -102,7 +102,7 @@ archi_context_initialize(
     };
 
     // Allocate the reference counter
-    struct archi_reference_count *ref_count =
+    archi_reference_count_t ref_count =
         archi_reference_count_alloc(archi_context_destructor, context);
     if (ref_count == NULL)
     {
@@ -140,7 +140,7 @@ archi_context_initialize(
 
 void
 archi_context_finalize(
-        struct archi_context *context)
+        archi_context_t context)
 {
     if (context == NULL)
         return;
@@ -160,7 +160,7 @@ archi_context_finalize(
 
 archi_pointer_t
 archi_context_get_slot(
-        struct archi_context *context,
+        archi_context_t context,
         archi_context_op_designator_t slot,
         archi_status_t *code)
 {
@@ -196,7 +196,7 @@ finish:
 
 archi_status_t
 archi_context_set_slot(
-        struct archi_context *context,
+        archi_context_t context,
         archi_context_op_designator_t slot,
         archi_pointer_t value)
 {
@@ -214,10 +214,10 @@ archi_context_set_slot(
 
 archi_status_t
 archi_context_copy_slot(
-        struct archi_context *context,
+        archi_context_t context,
         archi_context_op_designator_t slot,
 
-        struct archi_context *src_context,
+        archi_context_t src_context,
         archi_context_op_designator_t src_slot)
 {
     if ((context == NULL) || (src_context == NULL))
@@ -245,7 +245,7 @@ archi_context_copy_slot(
 
 archi_status_t
 archi_context_act(
-        struct archi_context *context,
+        archi_context_t context,
         archi_context_op_designator_t action,
         const archi_context_parameter_list_t *params)
 {

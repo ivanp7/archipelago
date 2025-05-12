@@ -27,12 +27,11 @@
 #ifndef _ARCHI_EXE_INSTRUCTION_FUN_H_
 #define _ARCHI_EXE_INSTRUCTION_FUN_H_
 
-#include "archi/util/status.typ.h"
+#include "archi/ctx/interface.fun.h"
 
 #include <stddef.h> // for size_t
 
 struct archi_exe_registry_instr_base;
-struct archi_context;
 
 /**
  * @brief Get instruction size in bytes.
@@ -55,7 +54,7 @@ archi_exe_registry_instr_sizeof(
  */
 archi_status_t
 archi_exe_registry_instr_execute(
-        struct archi_context *registry, ///< [in,out] Application registry.
+        archi_context_t registry, ///< [in,out] Application registry.
         const struct archi_exe_registry_instr_base *instruction ///< [in] Instruction to execute.
 );
 

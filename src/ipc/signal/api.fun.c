@@ -192,7 +192,7 @@ void*
 archi_signal_management_thread(
         void *arg)
 {
-    struct archi_signal_management_context *context = arg;
+    archi_signal_management_context_t context = arg;
 
     siginfo_t siginfo;
     struct timespec delay = {.tv_sec = 0, .tv_nsec = 1000000}; // 1 ms
@@ -253,7 +253,7 @@ archi_signal_management_thread(
     return NULL;
 }
 
-struct archi_signal_management_context*
+archi_signal_management_context_t
 archi_signal_management_start(
         archi_signal_management_start_params_t params,
         archi_status_t *code)
@@ -266,7 +266,7 @@ archi_signal_management_start(
         return NULL;
     }
 
-    struct archi_signal_management_context *context = malloc(sizeof(*context));
+    archi_signal_management_context_t context = malloc(sizeof(*context));
     if (context == NULL)
     {
         if (code != NULL)
@@ -364,7 +364,7 @@ failure:
 
 void
 archi_signal_management_stop(
-        struct archi_signal_management_context *context)
+        archi_signal_management_context_t context)
 {
     if (context == NULL)
         return;
@@ -382,7 +382,7 @@ archi_signal_management_stop(
 
 archi_signal_flags_t*
 archi_signal_management_flags(
-        struct archi_signal_management_context *context)
+        archi_signal_management_context_t context)
 {
     if (context == NULL)
         return NULL;
@@ -392,7 +392,7 @@ archi_signal_management_flags(
 
 archi_signal_handler_t
 archi_signal_management_handler(
-        struct archi_signal_management_context *context)
+        archi_signal_management_context_t context)
 {
     if (context == NULL)
         return (archi_signal_handler_t){0};
@@ -411,7 +411,7 @@ archi_signal_management_handler(
 
 void
 archi_signal_management_set_handler(
-        struct archi_signal_management_context *context,
+        archi_signal_management_context_t context,
         archi_signal_handler_t signal_handler)
 {
     if (context == NULL)

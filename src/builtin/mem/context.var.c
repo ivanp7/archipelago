@@ -25,7 +25,6 @@
 
 #include "archi/builtin/mem/context.var.h"
 #include "archi/mem/interface.fun.h"
-#include "archi/util/ref_count.fun.h"
 
 #include <string.h> // for strcmp()
 #include <stdbool.h>
@@ -125,7 +124,7 @@ ARCHI_CONTEXT_INIT_FUNC(archi_context_memory_init)
 
     archi_status_t code;
 
-    struct archi_memory *memory = archi_memory_allocate(interface, alloc_data, layout, &code);
+    archi_memory_t memory = archi_memory_allocate(interface, alloc_data, layout, &code);
     if (memory == NULL)
         return code;
 

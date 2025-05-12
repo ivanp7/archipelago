@@ -24,7 +24,6 @@
  */
 
 #include "archi/ctx/interface/parameters.var.h"
-#include "archi/util/ref_count.fun.h"
 
 #include <stdlib.h> // for malloc(), free()
 #include <string.h> // for strcmp()

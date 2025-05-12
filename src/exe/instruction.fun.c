@@ -28,7 +28,6 @@
 #include "archi/ctx/interface.fun.h"
 #include "archi/ctx/interface/parameters.var.h"
 #include "archi/ctx/interface/pointer.var.h"
-#include "archi/util/ref_count.fun.h"
 
 #include <stdlib.h> // for malloc(), free()
 #include <stdbool.h>
@@ -70,7 +69,7 @@ archi_exe_registry_instr_sizeof(
 static
 archi_status_t
 archi_exe_registry_instr_execute_init(
-        struct archi_context *registry,
+        archi_context_t registry,
         const archi_exe_registry_instr_init_t *instr_init,
         bool dynamic_params)
 {
@@ -161,7 +160,7 @@ archi_exe_registry_instr_execute_init(
     }
 
     // Initialize the context
-    struct archi_context *context = archi_context_initialize(interface_value, params, &code);
+    archi_context_t context = archi_context_initialize(interface_value, params, &code);
 
     if (context == NULL)
         return ARCHI_STATUS_TO_ERROR(code);
@@ -193,7 +192,7 @@ archi_exe_registry_instr_execute_init(
 static
 archi_status_t
 archi_exe_registry_instr_execute_final(
-        struct archi_context *registry,
+        archi_context_t registry,
         const archi_exe_registry_instr_base_t *instruction)
 {
     // Remove the context from the registry, which also decrements the reference count
@@ -216,7 +215,7 @@ archi_exe_registry_instr_execute_final(
 static
 archi_status_t
 archi_exe_registry_instr_execute_set_value(
-        struct archi_context *registry,
+        archi_context_t registry,
         const archi_exe_registry_instr_set_value_t *instr_set_value)
 {
     archi_status_t code;
@@ -250,7 +249,7 @@ archi_exe_registry_instr_execute_set_value(
 static
 archi_status_t
 archi_exe_registry_instr_execute_set_context(
-        struct archi_context *registry,
+        archi_context_t registry,
         const archi_exe_registry_instr_set_context_t *instr_set_context)
 {
     if ((instr_set_context->source_key == NULL) || (instr_set_context->source_key[0] == '\0'))
@@ -305,7 +304,7 @@ archi_exe_registry_instr_execute_set_context(
 static
 archi_status_t
 archi_exe_registry_instr_execute_set_slot(
-        struct archi_context *registry,
+        archi_context_t registry,
         const archi_exe_registry_instr_set_slot_t *instr_set_slot)
 {
     if ((instr_set_slot->source_key == NULL) || (instr_set_slot->source_key[0] == '\0'))
@@ -360,7 +359,7 @@ archi_exe_registry_instr_execute_set_slot(
 static
 archi_status_t
 archi_exe_registry_instr_execute_act(
-        struct archi_context *registry,
+        archi_context_t registry,
         const archi_exe_registry_instr_act_t *instr_act,
         bool dynamic_params)
 {
@@ -424,7 +423,7 @@ archi_exe_registry_instr_execute_act(
 
 archi_status_t
 archi_exe_registry_instr_execute(
-        struct archi_context *registry,
+        archi_context_t registry,
         const archi_exe_registry_instr_base_t *instruction)
 {
     if ((registry == NULL) || (instruction == NULL))

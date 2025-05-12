@@ -44,7 +44,7 @@ struct archi_reference_count {
     void *destructor_data;
 };
 
-struct archi_reference_count*
+archi_reference_count_t
 archi_reference_count_alloc(
         archi_destructor_func_t destructor_fn,
         void *destructor_data)
@@ -52,7 +52,7 @@ archi_reference_count_alloc(
     if (destructor_fn == NULL)
         return NULL;
 
-    struct archi_reference_count *ref_count = malloc(sizeof(*ref_count));
+    archi_reference_count_t ref_count = malloc(sizeof(*ref_count));
     if (ref_count == NULL)
         return NULL;
 
@@ -70,14 +70,14 @@ archi_reference_count_alloc(
 
 void
 archi_reference_count_free(
-        struct archi_reference_count *ref_count)
+        archi_reference_count_t ref_count)
 {
     free(ref_count);
 }
 
 void
 archi_reference_count_increment(
-        struct archi_reference_count *ref_count)
+        archi_reference_count_t ref_count)
 {
     if (ref_count == NULL)
         return;
@@ -91,7 +91,7 @@ archi_reference_count_increment(
 
 bool
 archi_reference_count_decrement(
-        struct archi_reference_count *ref_count)
+        archi_reference_count_t ref_count)
 {
     if (ref_count == NULL)
         return false;
