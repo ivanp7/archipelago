@@ -274,24 +274,24 @@ print_logo(void)
 #define LINES    2
 
     static const char *logo[LINES][LETTERS] = {
-        {"⡏", "⢀⣀", "⡀⣀", "⢀⣀", "⣇⡀", "⠄", "⣀⡀", "⢀⡀", "⡇", "⢀⣀", "⢀⡀", "⢀⡀", "⢹"},
-        {"⣇", "⠣⠼", "⠏ ", "⠣⠤", "⠇⠸", "⠇", "⡧⠜", "⠣⠭", "⠣", "⠣⠼", "⣑⡺", "⠣⠜", "⣸"},
+        {"⡰⠁", "⣎⣱", "⣏⡱", "⡎⠑", "⣇⣸", "⡇", "⣏⡱", "⣏⡉", "⡇ ", "⣎⣱", "⡎⠑", "⡎⢱", "⠈⢆"},
+        {"⠘⠄", "⠇⠸", "⠇⠱", "⠣⠔", "⠇⠸", "⠇", "⠇ ", "⠧⠤", "⠧⠤", "⠇⠸", "⠣⠝", "⠣⠜", "⠠⠃"},
     };
 
     static const char *colors[LETTERS] = {
-        ARCHI_COLOR_FG_BRI_WHITE,   // [
-        ARCHI_COLOR_FG_BRI_RED,     // a
-        ARCHI_COLOR_FG_BRI_YELLOW,  // r
-        ARCHI_COLOR_FG_BRI_GREEN,   // c
-        ARCHI_COLOR_FG_BRI_BLUE,    // h
-        ARCHI_COLOR_FG_BRI_MAGENTA, // i
-        ARCHI_COLOR_FG_BRI_BLACK,   // p
-        ARCHI_COLOR_FG_BRI_BLACK,   // e
-        ARCHI_COLOR_FG_BRI_BLACK,   // l
-        ARCHI_COLOR_FG_BRI_BLACK,   // a
-        ARCHI_COLOR_FG_BRI_BLACK,   // g
-        ARCHI_COLOR_FG_BRI_BLACK,   // o
-        ARCHI_COLOR_FG_BRI_WHITE,   // ]
+        ARCHI_COLOR_FG_BRI_WHITE,   // {
+        ARCHI_COLOR_FG_BRI_RED,     // A
+        ARCHI_COLOR_FG_BRI_YELLOW,  // R
+        ARCHI_COLOR_FG_BRI_GREEN,   // C
+        ARCHI_COLOR_FG_BRI_BLUE,    // H
+        ARCHI_COLOR_FG_BRI_MAGENTA, // I
+        ARCHI_COLOR_FG(238),        // P
+        ARCHI_COLOR_FG(239),        // E
+        ARCHI_COLOR_FG(240),        // L
+        ARCHI_COLOR_FG(241),        // A
+        ARCHI_COLOR_FG(242),        // G
+        ARCHI_COLOR_FG(243),        // O
+        ARCHI_COLOR_FG_BRI_WHITE,   // }
     };
 
     static const char *space = " ";
