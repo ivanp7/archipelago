@@ -30,7 +30,7 @@
 #include "context.typ.h" // for struct archi_log_context
 
 #include <time.h> // for struct timespec, timespec_get()
-#include <stdio.h> // for fprintf(), vfprintf()
+#include <stdio.h> // for fprintf(), vfprintf(), stderr
 #include <stdarg.h>
 
 static
@@ -42,6 +42,10 @@ archi_log_initialize(
 {
     if (archi_logger != NULL)
         return;
+
+    // Set the stream to standard error if it's not set
+    if (context->stream == NULL)
+        context->stream = stderr;
 
     archi_logger = context;
 }

@@ -29,6 +29,7 @@
 #include "archi/exe/args.typ.h"
 #include "archi/exe/input.typ.h"
 #include "archi/exe/instruction.fun.h"
+#include "archi/exe/instruction.typ.h"
 
 // Logging
 #include "archi/exe/logging.fun.h"
@@ -53,7 +54,7 @@
 #include "archi/ipc/signal/api.fun.h"
 
 #include <stdlib.h>
-#include <string.h> // for strcmp()
+#include <string.h> // for strcmp(), strncmp()
 #include <stdio.h> // for snprintf()
 #include <stdalign.h> // for alignof()
 
@@ -175,7 +176,7 @@ main(
     archi_exe_log_init_verbosity(archi_process.args.verbosity_level);
 
     // Enable or disable color in log messages
-    archi_exe_log_init_colors(!archi_process.args.no_color);
+    archi_exe_log_init_color(!archi_process.args.no_color);
 
     // Initialize the logging module
     archi_log_initialize(archi_exe_log_context());
@@ -242,14 +243,14 @@ exit_cleanup(void) // is called on exit() or if main() returns
 
     archi_log_info(M, "Finalizing the application...");
 
-    // Destroy the context registry
-    destroy_context_registry();
+    // Decrement reference count of the signal management context
+    decrement_refcount_of_signal_management();
 
     // Decrement reference counts of input file contexts
     decrement_refcount_of_input_files();
 
-    // Decrement reference count of the signal management context
-    decrement_refcount_of_signal_management();
+    // Destroy the context registry
+    destroy_context_registry();
 
     // Finalization is done
     archi_log_info(M, "The application has exited successfully.");
@@ -279,19 +280,19 @@ print_logo(void)
     };
 
     static const char *colors[LETTERS] = {
-        ARCHI_COLOR_FG_BRI_WHITE,   // {
-        ARCHI_COLOR_FG_BRI_RED,     // A
-        ARCHI_COLOR_FG_BRI_YELLOW,  // R
-        ARCHI_COLOR_FG_BRI_GREEN,   // C
-        ARCHI_COLOR_FG_BRI_BLUE,    // H
-        ARCHI_COLOR_FG_BRI_MAGENTA, // I
-        ARCHI_COLOR_FG(238),        // P
-        ARCHI_COLOR_FG(239),        // E
-        ARCHI_COLOR_FG(240),        // L
-        ARCHI_COLOR_FG(241),        // A
-        ARCHI_COLOR_FG(242),        // G
-        ARCHI_COLOR_FG(243),        // O
-        ARCHI_COLOR_FG_BRI_WHITE,   // }
+        ARCHI_COLOR_FG(255), // {
+        ARCHI_COLOR_FG(204), // A
+        ARCHI_COLOR_FG(223), // R
+        ARCHI_COLOR_FG(116), // C
+        ARCHI_COLOR_FG(68),  // H
+        ARCHI_COLOR_FG(140), // I
+        ARCHI_COLOR_FG(240), // P
+        ARCHI_COLOR_FG(241), // E
+        ARCHI_COLOR_FG(242), // L
+        ARCHI_COLOR_FG(243), // A
+        ARCHI_COLOR_FG(244), // G
+        ARCHI_COLOR_FG(245), // O
+        ARCHI_COLOR_FG(255), // }
     };
 
     static const char *space = " ";
@@ -313,11 +314,11 @@ print_logo(void)
             archi_print("%s%s", space, logo[i][j]);
         }
 
+        if (!archi_process.args.no_color)
+            archi_print(ARCHI_COLOR_RESET);
+
         archi_print("\n");
     }
-
-    if (!archi_process.args.no_color)
-        archi_print(ARCHI_COLOR_RESET);
 
     archi_print("\n\n");
 
@@ -395,6 +396,9 @@ create_hashmap_of_interfaces(void)
 #define M "main@create_hashmap_of_interfaces()"
 
     archi_log_debug(M, "Creating the hashmap of built-in context interfaces...");
+
+    if (archi_process.args.dry_run)
+        return;
 
     size_t hashmap_capacity = 1024;
 
@@ -498,6 +502,9 @@ obtain_handle_of_executable(void)
 
     archi_log_debug(M, "Obtaining library handle of the executable itself...");
 
+    if (archi_process.args.dry_run)
+        return;
+
     archi_context_parameter_list_t params[] = {
         {
             .name = "pathname",
@@ -598,7 +605,7 @@ open_and_map_input_files(void)
             }
         }
 
-        archi_log_debug(M, " * mapping file #%llu ('%s')", (unsigned long long)i, archi_process.args.input[i]);
+        archi_log_debug(M, " * mapping file #%llu", (unsigned long long)i);
         {
             bool value_true = true;
 
@@ -632,6 +639,21 @@ open_and_map_input_files(void)
             if (code != 0)
             {
                 archi_log_error(M, "Couldn't map the input file into memory (error %i).", code);
+                exit(EXIT_FAILURE);
+            }
+
+            archi_pointer_t file = archi_context_data(archi_process.input_file[i]);
+
+            if (file.element.num_of < sizeof(archi_exe_input_t))
+            {
+                archi_log_error(M, "Input file #%llu is invalid (file size is smaller than the header structure size).");
+                exit(EXIT_FAILURE);
+            }
+
+            archi_exe_input_t *input = file.ptr;
+            if (strncmp(input->magic, ARCHI_EXE_INPUT_MAGIC, strlen(ARCHI_EXE_INPUT_MAGIC) + 1) != 0)
+            {
+                archi_log_error(M, "Input file #%llu is invalid (magic bytes are incorrect).");
                 exit(EXIT_FAILURE);
             }
         }
@@ -694,6 +716,8 @@ process_parameters_of_input_files(void)
 
         for (archi_context_parameter_list_t *params = input->params; params != NULL; params = params->next)
         {
+            archi_log_debug(M, "   %s =", params->name);
+
             if (strcmp("signals", params->name) == 0)
             {
                 if ((params->value.flags & ARCHI_POINTER_FLAG_FUNCTION) || (params->value.ptr == NULL))
@@ -704,6 +728,46 @@ process_parameters_of_input_files(void)
 
                 archi_signal_watch_set_t *signal_watch_set = params->value.ptr;
                 archi_signal_watch_set_join(archi_process.signal_watch_set, signal_watch_set);
+
+#define LOG_SIGNAL(signal) do { \
+                if (signal_watch_set->f_##signal) \
+                    archi_log_debug(M, "     %s", #signal); \
+                } while (0)
+
+                LOG_SIGNAL(SIGINT);
+                LOG_SIGNAL(SIGQUIT);
+                LOG_SIGNAL(SIGTERM);
+
+                LOG_SIGNAL(SIGCHLD);
+                LOG_SIGNAL(SIGCONT);
+                LOG_SIGNAL(SIGTSTP);
+
+                LOG_SIGNAL(SIGXCPU);
+                LOG_SIGNAL(SIGXFSZ);
+
+                LOG_SIGNAL(SIGPIPE);
+                LOG_SIGNAL(SIGPOLL);
+                LOG_SIGNAL(SIGURG);
+
+                LOG_SIGNAL(SIGALRM);
+                LOG_SIGNAL(SIGVTALRM);
+                LOG_SIGNAL(SIGPROF);
+
+                LOG_SIGNAL(SIGHUP);
+                LOG_SIGNAL(SIGTTIN);
+                LOG_SIGNAL(SIGTTOU);
+                LOG_SIGNAL(SIGWINCH);
+
+                LOG_SIGNAL(SIGUSR1);
+                LOG_SIGNAL(SIGUSR2);
+
+#undef LOG_SIGNAL
+
+                for (size_t i = 0; i < archi_signal_number_of_rt_signals(); i++)
+                {
+                    if (signal_watch_set->f_SIGRTMIN[i])
+                        archi_log_debug(M, "     SIGRTMIN+%u", (unsigned)i);
+                }
             }
             else
             {
@@ -750,6 +814,49 @@ start_signal_management(void)
     {
         archi_log_debug(M, "Creating the signal management context...");
 
+#define LOG_SIGNAL(signal) do { \
+            if (archi_process.signal_watch_set->f_##signal) \
+                archi_log_debug(M, "  %s", #signal); \
+            } while (0)
+
+            LOG_SIGNAL(SIGINT);
+            LOG_SIGNAL(SIGQUIT);
+            LOG_SIGNAL(SIGTERM);
+
+            LOG_SIGNAL(SIGCHLD);
+            LOG_SIGNAL(SIGCONT);
+            LOG_SIGNAL(SIGTSTP);
+
+            LOG_SIGNAL(SIGXCPU);
+            LOG_SIGNAL(SIGXFSZ);
+
+            LOG_SIGNAL(SIGPIPE);
+            LOG_SIGNAL(SIGPOLL);
+            LOG_SIGNAL(SIGURG);
+
+            LOG_SIGNAL(SIGALRM);
+            LOG_SIGNAL(SIGVTALRM);
+            LOG_SIGNAL(SIGPROF);
+
+            LOG_SIGNAL(SIGHUP);
+            LOG_SIGNAL(SIGTTIN);
+            LOG_SIGNAL(SIGTTOU);
+            LOG_SIGNAL(SIGWINCH);
+
+            LOG_SIGNAL(SIGUSR1);
+            LOG_SIGNAL(SIGUSR2);
+
+#undef LOG_SIGNAL
+
+            for (size_t i = 0; i < archi_signal_number_of_rt_signals(); i++)
+            {
+                if (archi_process.signal_watch_set->f_SIGRTMIN[i])
+                    archi_log_debug(M, "  SIGRTMIN+%u", (unsigned)i);
+            }
+
+        if (archi_process.args.dry_run)
+            return;
+
         archi_context_parameter_list_t params[] = {
             {
                 .name = "signals",
@@ -787,6 +894,8 @@ start_signal_management(void)
         }
 
     }
+    else
+        archi_log_debug(M, "No signals in the watch set, skipping the signal management context creation.");
 
     free(archi_process.signal_watch_set);
     archi_process.signal_watch_set = NULL;
@@ -799,9 +908,12 @@ decrement_refcount_of_signal_management(void)
 {
 #define M "exit@decrement_refcount_of_signal_management()"
 
-    archi_log_debug(M, "Decrementing reference count of the signal management context...");
+    if (archi_process.signal != NULL)
+    {
+        archi_log_debug(M, "Decrementing reference count of the signal management context...");
 
-    archi_reference_count_decrement(archi_context_data(archi_process.signal).ref_count);
+        archi_reference_count_decrement(archi_context_data(archi_process.signal).ref_count);
+    }
 
     archi_process.signal = NULL;
     archi_process.signal_interface = (archi_context_interface_t){0};
@@ -812,9 +924,31 @@ decrement_refcount_of_signal_management(void)
 void
 execute_instructions(void)
 {
-#define M "main@start_signal_management()"
+#define M "main@execute_instructions()"
 
-    // TODO: execute instructions in the input files
+    archi_log_debug(M, "Executing instructions in input files...");
+
+    for (size_t i = 0; i < archi_process.args.num_inputs; i++)
+    {
+        archi_log_debug(M, " * executing file #%llu ('%s')", (unsigned long long)i, archi_process.args.input[i]);
+
+        archi_exe_input_t *input = archi_context_data(archi_process.input_file[i]).ptr;
+
+        for (archi_exe_registry_instr_list_t *instr_list = input->instructions;
+                instr_list != NULL; instr_list = instr_list->next)
+        {
+            archi_status_t code = archi_exe_registry_instr_execute(archi_process.registry,
+                    instr_list->instruction, archi_process.args.dry_run);
+
+            if (code > 0)
+                archi_log_warning(M, "Got non-zero instruction execution status %i, attempting to continue...", code);
+            else if (code < 0)
+            {
+                archi_log_error(M, "Couldn't execute the instruction (error %i).", code);
+                exit(EXIT_FAILURE);
+            }
+        }
+    }
 
 #undef M
 }

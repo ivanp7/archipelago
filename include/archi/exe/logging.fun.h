@@ -96,7 +96,7 @@ archi_exe_log_init_verbosity(
  *     false to disable colors.
  */
 void
-archi_exe_log_init_colors(
+archi_exe_log_init_color(
         bool colorful_output
 );
 

@@ -86,7 +86,7 @@ archi_exe_log_init_verbosity(
 }
 
 void
-archi_exe_log_init_colors(
+archi_exe_log_init_color(
         bool colorful_output)
 {
     static bool colorful_output_set = false;

@@ -29,7 +29,6 @@ class Application:
     class _Instruction:
         """Internal representation of an application initialization instruction.
         """
-        HALT = -1
         NOOP, INIT_STATIC, INIT_DYNAMIC, FINAL, \
                 SET_VALUE, SET_CONTEXT, SET_SLOT, \
                 ACT_STATIC, ACT_DYNAMIC = range(9)
@@ -457,7 +456,7 @@ class Context:
 
 ###############################################################################
 
-class Pointer:
+class Pointer: # TODO use 'yield' or something
     """Representation of a pointer into a data section of initialization file.
     """
     def __init__(self, num_of: int, size: int, alignment: int=1): # TODO: take lambda accepting memory pointer and generating content bytes

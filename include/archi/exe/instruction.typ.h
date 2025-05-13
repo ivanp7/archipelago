@@ -33,7 +33,6 @@
  * @brief Type of context registry instructions.
  */
 typedef enum archi_exe_registry_instr_type {
-    ARCHI_EXE_REGISTRY_INSTR_HALT = -1,    ///< Instruction list terminator.
     ARCHI_EXE_REGISTRY_INSTR_NOOP = 0,     ///< No operation.
 
     ARCHI_EXE_REGISTRY_INSTR_INIT_STATIC,  ///< Initialize a new context (using static parameter list).

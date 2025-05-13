@@ -28,6 +28,7 @@
 #include "archi/ctx/interface.fun.h"
 #include "archi/ctx/interface/parameters.var.h"
 #include "archi/ctx/interface/pointer.var.h"
+#include "archi/log/print.fun.h"
 
 #include <stdlib.h> // for malloc(), free()
 #include <stdbool.h>
@@ -71,8 +72,14 @@ archi_status_t
 archi_exe_registry_instr_execute_init(
         archi_context_t registry,
         const archi_exe_registry_instr_init_t *instr_init,
+        bool dry_run,
         bool dynamic_params)
 {
+    // TODO
+
+    if (dry_run)
+        return 0;
+
     if (dynamic_params && ((instr_init->dparams_key == NULL) ||
                 (instr_init->dparams_key[0] == '\0')))
         return ARCHI_STATUS_EMISUSE;
@@ -193,8 +200,12 @@ static
 archi_status_t
 archi_exe_registry_instr_execute_final(
         archi_context_t registry,
-        const archi_exe_registry_instr_base_t *instruction)
+        const archi_exe_registry_instr_base_t *instruction,
+        bool dry_run)
 {
+    if (dry_run)
+        return 0;
+
     // Remove the context from the registry, which also decrements the reference count
     archi_status_t code = archi_context_set_slot(registry,
             (archi_context_op_designator_t){.name = instruction->key}, (archi_pointer_t){0});
@@ -216,8 +227,14 @@ static
 archi_status_t
 archi_exe_registry_instr_execute_set_value(
         archi_context_t registry,
-        const archi_exe_registry_instr_set_value_t *instr_set_value)
+        const archi_exe_registry_instr_set_value_t *instr_set_value,
+        bool dry_run)
 {
+    // TODO
+
+    if (dry_run)
+        return 0;
+
     archi_status_t code;
 
     // Obtain the context from the registry
@@ -250,8 +267,14 @@ static
 archi_status_t
 archi_exe_registry_instr_execute_set_context(
         archi_context_t registry,
-        const archi_exe_registry_instr_set_context_t *instr_set_context)
+        const archi_exe_registry_instr_set_context_t *instr_set_context,
+        bool dry_run)
 {
+    // TODO
+
+    if (dry_run)
+        return 0;
+
     if ((instr_set_context->source_key == NULL) || (instr_set_context->source_key[0] == '\0'))
         return ARCHI_STATUS_EMISUSE;
 
@@ -305,8 +328,14 @@ static
 archi_status_t
 archi_exe_registry_instr_execute_set_slot(
         archi_context_t registry,
-        const archi_exe_registry_instr_set_slot_t *instr_set_slot)
+        const archi_exe_registry_instr_set_slot_t *instr_set_slot,
+        bool dry_run)
 {
+    // TODO
+
+    if (dry_run)
+        return 0;
+
     if ((instr_set_slot->source_key == NULL) || (instr_set_slot->source_key[0] == '\0'))
         return ARCHI_STATUS_EMISUSE;
 
@@ -361,8 +390,14 @@ archi_status_t
 archi_exe_registry_instr_execute_act(
         archi_context_t registry,
         const archi_exe_registry_instr_act_t *instr_act,
+        bool dry_run,
         bool dynamic_params)
 {
+    // TODO
+
+    if (dry_run)
+        return 0;
+
     if (dynamic_params && ((instr_act->dparams_key == NULL) ||
                 (instr_act->dparams_key[0] == '\0')))
         return ARCHI_STATUS_EMISUSE;
@@ -424,51 +459,96 @@ archi_exe_registry_instr_execute_act(
 archi_status_t
 archi_exe_registry_instr_execute(
         archi_context_t registry,
-        const archi_exe_registry_instr_base_t *instruction)
+        const archi_exe_registry_instr_base_t *instruction,
+        bool dry_run)
 {
-    if ((registry == NULL) || (instruction == NULL))
+    if (registry == NULL)
         return ARCHI_STATUS_EMISUSE;
 
-    if (instruction->type == ARCHI_EXE_REGISTRY_INSTR_NOOP)
+    if ((instruction == NULL) || (instruction->type == ARCHI_EXE_REGISTRY_INSTR_NOOP))
+    {
+        archi_log_debug("instruction(NOOP)", "");
         return 0;
+    }
 
-    if (instruction->type == ARCHI_EXE_REGISTRY_INSTR_HALT)
-        return ARCHI_STATUS_EMISUSE;
-    else if ((instruction->key == NULL) || (instruction->key[0] == '\0'))
-        return ARCHI_STATUS_EMISUSE;
+    if (instruction->key == NULL)
+    {
+        archi_log_debug("instruction()", "key = NULL");
+        return !dry_run ? ARCHI_STATUS_EMISUSE : 0;
+    }
+    else if (instruction->key[0] == '\0')
+    {
+        archi_log_debug("instruction()", "key = \"\"");
+        return !dry_run ? ARCHI_STATUS_EMISUSE : 0;
+    }
 
     switch (instruction->type)
     {
         case ARCHI_EXE_REGISTRY_INSTR_INIT_STATIC:
-        case ARCHI_EXE_REGISTRY_INSTR_INIT_DYNAMIC:
+            archi_log_debug("instruction(INIT_STATIC)",
+                    "key = \"%s\"", instruction->key);
+
             return archi_exe_registry_instr_execute_init(registry,
-                    (const archi_exe_registry_instr_init_t*)instruction,
-                    instruction->type == ARCHI_EXE_REGISTRY_INSTR_INIT_DYNAMIC);
+                    (const archi_exe_registry_instr_init_t*)instruction, dry_run,
+                    false);
+
+        case ARCHI_EXE_REGISTRY_INSTR_INIT_DYNAMIC:
+            archi_log_debug("instruction(INIT_DYNAMIC)",
+                    "key = \"%s\"", instruction->key);
+
+            return archi_exe_registry_instr_execute_init(registry,
+                    (const archi_exe_registry_instr_init_t*)instruction, dry_run,
+                    true);
 
         case ARCHI_EXE_REGISTRY_INSTR_FINAL:
+            archi_log_debug("instruction(FINAL)",
+                    "key = \"%s\"", instruction->key);
+
             return archi_exe_registry_instr_execute_final(registry,
-                    instruction);
+                    instruction, dry_run);
 
         case ARCHI_EXE_REGISTRY_INSTR_SET_VALUE:
+            archi_log_debug("instruction(SET_VALUE)",
+                    "key = \"%s\"", instruction->key);
+
             return archi_exe_registry_instr_execute_set_value(registry,
-                    (const archi_exe_registry_instr_set_value_t*)instruction);
+                    (const archi_exe_registry_instr_set_value_t*)instruction, dry_run);
 
         case ARCHI_EXE_REGISTRY_INSTR_SET_CONTEXT:
+            archi_log_debug("instruction(SET_CONTEXT)",
+                    "key = \"%s\"", instruction->key);
+
             return archi_exe_registry_instr_execute_set_context(registry,
-                    (const archi_exe_registry_instr_set_context_t*)instruction);
+                    (const archi_exe_registry_instr_set_context_t*)instruction, dry_run);
 
         case ARCHI_EXE_REGISTRY_INSTR_SET_SLOT:
+            archi_log_debug("instruction(SET_SLOT)",
+                    "key = \"%s\"", instruction->key);
+
             return archi_exe_registry_instr_execute_set_slot(registry,
-                    (const archi_exe_registry_instr_set_slot_t*)instruction);
+                    (const archi_exe_registry_instr_set_slot_t*)instruction, dry_run);
 
         case ARCHI_EXE_REGISTRY_INSTR_ACT_STATIC:
-        case ARCHI_EXE_REGISTRY_INSTR_ACT_DYNAMIC:
+            archi_log_debug("instruction(ACT_STATIC)",
+                    "key = \"%s\"", instruction->key);
+
             return archi_exe_registry_instr_execute_act(registry,
-                    (const archi_exe_registry_instr_act_t*)instruction,
-                    instruction->type == ARCHI_EXE_REGISTRY_INSTR_ACT_DYNAMIC);
+                    (const archi_exe_registry_instr_act_t*)instruction, dry_run,
+                    false);
+
+        case ARCHI_EXE_REGISTRY_INSTR_ACT_DYNAMIC:
+            archi_log_debug("instruction(ACT_DYNAMIC)",
+                    "key = \"%s\"", instruction->key);
+
+            return archi_exe_registry_instr_execute_act(registry,
+                    (const archi_exe_registry_instr_act_t*)instruction, dry_run,
+                    true);
 
         default:
-            return ARCHI_STATUS_EMISUSE;
+            archi_log_debug("instruction(<invalid type>)",
+                    "key = \"%s\"", instruction->key);
+
+            return !dry_run ? ARCHI_STATUS_EMISUSE : 0;
     }
 }
 

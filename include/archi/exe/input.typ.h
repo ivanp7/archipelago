@@ -30,16 +30,21 @@
 #include "archi/res/file/header.typ.h"
 
 struct archi_context_parameter_list;
-struct archi_context_registry_instr_list;
+struct archi_exe_registry_instr_list;
+
+#define ARCHI_EXE_INPUT_MAGIC   "[ARCHI]" ///< Magic bytes identifying the format of input files.
 
 /**
  * @brief Description of an input file for the executable.
+ *
+ * @note Valid input files always have `magic` containing the same bytes as ARCHI_EXE_INPUT_MAGIC.
  */
 typedef struct archi_exe_input {
     archi_file_header_t header; ///< Memory-mapped file header.
+    char magic[8]; ///< Magic bytes identifying the format.
 
     struct archi_context_parameter_list *params; ///< File parameter list.
-    struct archi_context_registry_instr_list *instruction; ///< List of instructions.
+    struct archi_exe_registry_instr_list *instructions; ///< List of instructions.
 } archi_exe_input_t;
 
 #endif // _ARCHI_EXE_INPUT_TYP_H_

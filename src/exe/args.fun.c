@@ -38,9 +38,9 @@
 enum {
     ARGKEY_DRY_RUN = 'n',
 
-    ARGKEY_NO_LOGO = 'q',
-    ARGKEY_VERBOSITY = 'v',
+    ARGKEY_NO_LOGO = 'L',
     ARGKEY_NO_COLOR = 'm',
+    ARGKEY_VERBOSITY = 'v',
 
     ARGKEY_HELP = 0xFF,
 };
@@ -50,18 +50,21 @@ enum {
 
 static
 const struct argp_option args_options[] = {
-    {.doc = "Execution options:"},
+    {.doc = "Execution:"},
 
-    {.key = ARGKEY_DRY_RUN,     .name = "dry-run",  .doc = "Simulate initialization: instructions are logged, not executed"},
+    {.key = ARGKEY_DRY_RUN,     .name = "dry-run",  .group = 1,
+        .doc = "Simulate initialization: instructions are logged, not executed"},
 
-    {.doc = "Verbosity options:"},
+    {.doc = "Output:"},
 
-    {.key = ARGKEY_NO_LOGO,     .name = "no-logo",  .doc = "Don't display the logo"},
-    {.key = ARGKEY_NO_COLOR,    .name = "no-color", .doc = "Disable use of color for log messages"},
-    {.key = ARGKEY_VERBOSITY,   .name = "verbose",  .arg = "[LEVEL]", .flags = OPTION_ARG_OPTIONAL,
+    {.key = ARGKEY_NO_LOGO,     .name = "no-logo",  .group = 2,
+                                    .doc = "Don't display the logo"},
+    {.key = ARGKEY_NO_COLOR,    .name = "no-color", .group = 3,
+                                    .doc = "Monochrome logging - don't use ANSI escape codes"},
+    {.key = ARGKEY_VERBOSITY,   .name = "verbose",  .arg = "[LEVEL]", .flags = OPTION_ARG_OPTIONAL, .group = 3,
                                     .doc = "Set logging verbosity level (0-" STRINGIFY(ARCHI_LOG_VERBOSITY_MAX)
                                            " or quiet/error/warning/notice/info/debug/max).\n"
-                                           "No argument = notice. Default = info"},
+                                           "No argument = info. Default = notice"},
 
     {0}
 };
@@ -155,7 +158,7 @@ archi_exe_args_parse(
         .parser = args_parse,
         .args_doc = "[PATHNAME...]",
         .doc = "\n\
-A versatile, modular application configured by memory-mapped files and plugins that define its specific behavior.\n\
+A versatile, modular application using plugins configured by memory-mapped initialization files that define its specific behavior.\n\
 \v\
 "
     };

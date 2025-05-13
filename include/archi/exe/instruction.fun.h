@@ -55,7 +55,8 @@ archi_exe_registry_instr_sizeof(
 archi_status_t
 archi_exe_registry_instr_execute(
         archi_context_t registry, ///< [in,out] Application registry.
-        const struct archi_exe_registry_instr_base *instruction ///< [in] Instruction to execute.
+        const struct archi_exe_registry_instr_base *instruction, ///< [in] Instruction to execute.
+        bool dry_run ///< [in] Whether dry run is done: initialization instructions are logged only, not executed.
 );
 
 #endif // _ARCHI_EXE_INSTRUCTION_FUN_H_
