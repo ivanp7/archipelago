@@ -54,6 +54,22 @@ size_t
 archi_signal_number_of_rt_signals(void);
 
 /**
+ * @brief Allocate and initialize a new signal watch set.
+ *
+ * This function allocates a zero-initialized archi_signal_watch_set_t
+ * structure whose size is equal to ARCHI_SIGNAL_WATCH_SET_SIZEOF.
+ * All signal watch flags (standard and real‑time) are cleared (false).
+ *
+ * @note The returned pointer must eventually be released via free().
+ *
+ * @return
+ *   Pointer to a freshly allocated and initialized signal watch set,
+ *   or NULL if memory allocation fails.
+ */
+archi_signal_watch_set_t*
+archi_signal_watch_set_alloc(void);
+
+/**
  * @brief Merge two signal watch sets by logical OR.
  *
  * For each signal in the standard and real-time ranges, this function
@@ -77,20 +93,19 @@ archi_signal_watch_set_join(
 );
 
 /**
- * @brief Allocate and initialize a new signal watch set.
+ * @brief Test if a signal watch set is not empty.
  *
- * This function allocates a zero-initialized archi_signal_watch_set_t
- * structure whose size is equal to ARCHI_SIGNAL_WATCH_SET_SIZEOF.
- * All signal watch flags (standard and real‑time) are cleared (false).
+ * If any of the signal watch set fields is set to true, the function returns true.
+ * Otherwise, it returns false.
+ * If the pointer is NULL, the function returns false.
  *
- * @note The returned pointer must eventually be released via free().
- *
- * @return
- *   Pointer to a freshly allocated and initialized signal watch set,
- *   or NULL if memory allocation fails.
+ * @param[in] signals
+ *   Pointer to the watch set.
  */
-archi_signal_watch_set_t*
-archi_signal_watch_set_alloc(void);
+bool
+archi_signal_watch_set_not_empty(
+        const archi_signal_watch_set_t *signals
+);
 
 /**
  * @brief Allocate and initialize a new signal flags structure.

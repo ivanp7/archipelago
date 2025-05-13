@@ -30,9 +30,6 @@
 #include "archi/exe/input.typ.h"
 #include "archi/exe/instruction.fun.h"
 
-// Signal management
-#include "archi/ipc/signal/api.fun.h"
-
 // Logging
 #include "archi/exe/logging.fun.h"
 #include "archi/log/context.fun.h"
@@ -52,8 +49,13 @@
 #include "archi/builtin/res_library/context.var.h"
 #include "archi/builtin/res_thread_group/context.var.h"
 
+// Signal management
+#include "archi/ipc/signal/api.fun.h"
+
 #include <stdlib.h>
-#include <stdalign.h>
+#include <string.h> // for strcmp()
+#include <stdio.h> // for snprintf()
+#include <stdalign.h> // for alignof()
 
 ///////////////////////////////////////////////////////////////////////////////
 
@@ -104,11 +106,31 @@ obtain_handle_of_executable(void);
 
 static
 void
+open_and_map_input_files(void);
+
+static
+void
+decrement_refcount_of_input_files(void);
+
+static
+void
+process_parameters_of_input_files(void);
+
+static
+void
 prepare_signal_management(void);
 
 static
 void
-open_and_map_input_files(void);
+start_signal_management(void);
+
+static
+void
+decrement_refcount_of_signal_management(void);
+
+static
+void
+execute_instructions(void);
 
 ///////////////////////////////////////////////////////////////////////////////
 
@@ -170,7 +192,7 @@ main(
     atexit(exit_cleanup);
     at_quick_exit(exit_quick);
 
-    archi_log_info(M, "Preparing the application for initialization and execution...");
+    archi_log_info(M, "Preparing the application context registry...");
 
     // Create the context registry
     create_context_registry();
@@ -187,9 +209,11 @@ main(
     // Open and map input files
     open_and_map_input_files();
 
-    // TODO: traverse parameter lists of the input files, join signal watch sets
+    // Process parameter lists of input files
+    process_parameters_of_input_files();
 
-    // TODO: create signal management context & insert it into the registry & deallocate the signal watch set
+    // Create signal management context
+    start_signal_management();
 
     //////////////////////////////////////
     // Initialization & execution phase //
@@ -197,7 +221,8 @@ main(
 
     archi_log_info(M, "Initializing and executing the application...");
 
-    // TODO: execute instructions in the input files
+    // Execute instructions in input files
+    execute_instructions();
 
     return 0;
 
@@ -219,6 +244,12 @@ exit_cleanup(void) // is called on exit() or if main() returns
 
     // Destroy the context registry
     destroy_context_registry();
+
+    // Decrement reference counts of input file contexts
+    decrement_refcount_of_input_files();
+
+    // Decrement reference count of the signal management context
+    decrement_refcount_of_signal_management();
 
     // Finalization is done
     archi_log_info(M, "The application has exited successfully.");
@@ -344,13 +375,15 @@ create_context_registry(void)
 void
 destroy_context_registry(void)
 {
-#define M "exit:destroy_context_registry()"
+#define M "exit@destroy_context_registry()"
 
     if (archi_process.registry != NULL)
     {
         archi_log_debug(M, "Destroying the context registry...");
 
         archi_context_finalize(archi_process.registry);
+
+        archi_process.registry = NULL;
     }
 
 #undef M
@@ -397,6 +430,9 @@ create_hashmap_of_interfaces(void)
 
     // Decrement the reference count back to 1
     archi_reference_count_decrement(archi_context_data(archi_process.interfaces).ref_count);
+
+    // Reset the separate context pointer as it isn't needed anymore
+    archi_process.interfaces = NULL;
 
     if (code != 0)
     {
@@ -483,7 +519,7 @@ obtain_handle_of_executable(void)
 
     archi_log_debug(M, "Inserting handle of the executable into the registry...");
 
-    // Insert the handle into the registry, which also increments the reference count
+    // Insert the context into the registry, which also increments the reference count
     code = archi_context_set_slot(archi_process.registry,
             (archi_context_op_designator_t){.name = ARCHI_EXE_REGISTRY_KEY_EXE_HANDLE},
             (archi_pointer_t){
@@ -495,34 +531,12 @@ obtain_handle_of_executable(void)
     // Decrement the reference count back to 1
     archi_reference_count_decrement(archi_context_data(archi_process.exe_handle).ref_count);
 
+    // Reset the separate context pointer as it isn't needed anymore
+    archi_process.exe_handle = NULL;
+
     if (code != 0)
     {
         archi_log_error(M, "Couldn't insert handle of the executable into the registry (error %i).", code);
-        exit(EXIT_FAILURE);
-    }
-
-#undef M
-}
-
-void
-prepare_signal_management(void)
-{
-#define M "main@prepare_signal_management()"
-
-    archi_process.signal_interface = (archi_context_interface_t){
-        .init_fn = archi_context_ipc_signal_management_init,
-        .final_fn = archi_context_ipc_signal_management_final,
-        .get_fn = archi_context_ipc_signal_management_get,
-        .set_fn = archi_context_ipc_signal_management_set,
-    };
-
-    archi_log_debug(M, "Allocating the signal watch set...");
-
-    archi_process.signal_watch_set = archi_signal_watch_set_alloc();
-
-    if (archi_process.signal_watch_set == NULL)
-    {
-        archi_log_error(M, "Couldn't allocate the signal watch set.");
         exit(EXIT_FAILURE);
     }
 
@@ -622,28 +636,185 @@ open_and_map_input_files(void)
             }
         }
 
-        archi_log_debug(M, " * inserting file #%llu into the registry...", (unsigned long long)i);
+        archi_log_debug(M, " * inserting file context #%llu into the registry...", (unsigned long long)i);
         {
-            // Insert the file into the registry, which also increments the reference count
+            char file_context_key[64]; // should be enough
+            snprintf(file_context_key, sizeof(file_context_key),
+                    "%s%llu", ARCHI_EXE_REGISTRY_KEY_INPUT_FILE, (unsigned long long)i);
+
+            // Insert the context into the registry, which also increments the reference count
             archi_status_t code = archi_context_set_slot(archi_process.registry,
-                    (archi_context_op_designator_t){.name = NULL/*XXX*/},
+                    (archi_context_op_designator_t){.name = file_context_key},
                     (archi_pointer_t){
                         .ptr = archi_process.input_file[i],
                         .ref_count = archi_context_data(archi_process.input_file[i]).ref_count,
                         .element.num_of = 1,
                     });
 
-            // Decrement the reference count back to 1
-            archi_reference_count_decrement(archi_context_data(archi_process.input_file[i]).ref_count);
-
             if (code != 0)
             {
-                archi_log_error(M, "Couldn't insert file #%llu into the registry (error %i).", code,
+                archi_log_error(M, "Couldn't insert file context #%llu into the registry (error %i).", code,
                         (unsigned long long)i);
                 exit(EXIT_FAILURE);
             }
         }
     }
+
+#undef M
+}
+
+void
+decrement_refcount_of_input_files(void)
+{
+#define M "exit@decrement_refcount_of_input_files()"
+
+    archi_log_debug(M, "Decrementing reference counts of input file contexts...");
+
+    for (size_t i = 0; i < archi_process.args.num_inputs; i++)
+        archi_reference_count_decrement(archi_context_data(archi_process.input_file[i]).ref_count);
+
+    free(archi_process.input_file);
+    archi_process.input_file = NULL;
+
+#undef M
+}
+
+void
+process_parameters_of_input_files(void)
+{
+#define M "main@process_parameters_of_input_files()"
+
+    archi_log_debug(M, "Processing parameter lists of input files...");
+
+    for (size_t i = 0; i < archi_process.args.num_inputs; i++)
+    {
+        archi_log_debug(M, " * file #%llu ('%s')", (unsigned long long)i, archi_process.args.input[i]);
+
+        archi_exe_input_t *input = archi_context_data(archi_process.input_file[i]).ptr;
+
+        for (archi_context_parameter_list_t *params = input->params; params != NULL; params = params->next)
+        {
+            if (strcmp("signals", params->name) == 0)
+            {
+                if ((params->value.flags & ARCHI_POINTER_FLAG_FUNCTION) || (params->value.ptr == NULL))
+                {
+                    archi_log_error(M, "Parameter '%s' has invalid value.", params->name);
+                    exit(EXIT_FAILURE);
+                }
+
+                archi_signal_watch_set_t *signal_watch_set = params->value.ptr;
+                archi_signal_watch_set_join(archi_process.signal_watch_set, signal_watch_set);
+            }
+            else
+            {
+                archi_log_error(M, "Met unrecognized parameter '%s'.", params->name);
+                exit(EXIT_FAILURE);
+            }
+        }
+    }
+
+#undef M
+}
+
+void
+prepare_signal_management(void)
+{
+#define M "main@prepare_signal_management()"
+
+    archi_process.signal_interface = (archi_context_interface_t){
+        .init_fn = archi_context_ipc_signal_management_init,
+        .final_fn = archi_context_ipc_signal_management_final,
+        .get_fn = archi_context_ipc_signal_management_get,
+        .set_fn = archi_context_ipc_signal_management_set,
+    };
+
+    archi_log_debug(M, "Allocating the signal watch set...");
+
+    archi_process.signal_watch_set = archi_signal_watch_set_alloc();
+
+    if (archi_process.signal_watch_set == NULL)
+    {
+        archi_log_error(M, "Couldn't allocate the signal watch set.");
+        exit(EXIT_FAILURE);
+    }
+
+#undef M
+}
+
+void
+start_signal_management(void)
+{
+#define M "main@start_signal_management()"
+
+    if (archi_signal_watch_set_not_empty(archi_process.signal_watch_set))
+    {
+        archi_log_debug(M, "Creating the signal management context...");
+
+        archi_context_parameter_list_t params[] = {
+            {
+                .name = "signals",
+                .value.ptr = archi_process.signal_watch_set,
+            },
+        };
+
+        archi_status_t code;
+
+        archi_process.signal = archi_context_initialize(
+                (archi_pointer_t){.ptr = (void*)&archi_process.signal_interface},
+                params, &code);
+
+        if (archi_process.signal == NULL)
+        {
+            archi_log_error(M, "Couldn't create the signal management context (error %i).", code);
+            exit(EXIT_FAILURE);
+        }
+
+        archi_log_debug(M, "Inserting the signal management context into the registry...");
+
+        // Insert the context into the registry, which also increments the reference count
+        code = archi_context_set_slot(archi_process.registry,
+                (archi_context_op_designator_t){.name = ARCHI_EXE_REGISTRY_KEY_SIGNAL},
+                (archi_pointer_t){
+                    .ptr = archi_process.signal,
+                    .ref_count = archi_context_data(archi_process.signal).ref_count,
+                    .element.num_of = 1,
+                });
+
+        if (code != 0)
+        {
+            archi_log_error(M, "Couldn't insert the signal management context into the registry (error %i).", code);
+            exit(EXIT_FAILURE);
+        }
+
+    }
+
+    free(archi_process.signal_watch_set);
+    archi_process.signal_watch_set = NULL;
+
+#undef M
+}
+
+void
+decrement_refcount_of_signal_management(void)
+{
+#define M "exit@decrement_refcount_of_signal_management()"
+
+    archi_log_debug(M, "Decrementing reference count of the signal management context...");
+
+    archi_reference_count_decrement(archi_context_data(archi_process.signal).ref_count);
+
+    archi_process.signal = NULL;
+    archi_process.signal_interface = (archi_context_interface_t){0};
+
+#undef M
+}
+
+void
+execute_instructions(void)
+{
+#define M "main@start_signal_management()"
+
+    // TODO: execute instructions in the input files
 
 #undef M
 }

@@ -37,50 +37,6 @@ archi_signal_number_of_rt_signals(void)
     return (SIGRTMAX - SIGRTMIN + 1);
 }
 
-void
-archi_signal_watch_set_join(
-        archi_signal_watch_set_t *out,
-        const archi_signal_watch_set_t *in)
-{
-    if ((out == NULL) || (in == NULL))
-        return;
-
-#define JOIN_SIGNAL(signal) do { \
-        out->f_##signal = out->f_##signal || in->f_##signal; \
-    } while (0)
-
-    JOIN_SIGNAL(SIGINT);
-    JOIN_SIGNAL(SIGQUIT);
-    JOIN_SIGNAL(SIGTERM);
-
-    JOIN_SIGNAL(SIGCHLD);
-    JOIN_SIGNAL(SIGCONT);
-    JOIN_SIGNAL(SIGTSTP);
-    JOIN_SIGNAL(SIGXCPU);
-    JOIN_SIGNAL(SIGXFSZ);
-
-    JOIN_SIGNAL(SIGPIPE);
-    JOIN_SIGNAL(SIGPOLL);
-    JOIN_SIGNAL(SIGURG);
-
-    JOIN_SIGNAL(SIGALRM);
-    JOIN_SIGNAL(SIGVTALRM);
-    JOIN_SIGNAL(SIGPROF);
-
-    JOIN_SIGNAL(SIGHUP);
-    JOIN_SIGNAL(SIGTTIN);
-    JOIN_SIGNAL(SIGTTOU);
-    JOIN_SIGNAL(SIGWINCH);
-
-    JOIN_SIGNAL(SIGUSR1);
-    JOIN_SIGNAL(SIGUSR2);
-
-#undef JOIN_SIGNAL
-
-    for (size_t i = 0; i < archi_signal_number_of_rt_signals(); i++)
-        out->f_SIGRTMIN[i] = out->f_SIGRTMIN[i] || in->f_SIGRTMIN[i];
-}
-
 archi_signal_watch_set_t*
 archi_signal_watch_set_alloc(void)
 {
@@ -125,6 +81,99 @@ archi_signal_watch_set_alloc(void)
         signals->f_SIGRTMIN[i] = false;
 
     return signals;
+}
+
+void
+archi_signal_watch_set_join(
+        archi_signal_watch_set_t *out,
+        const archi_signal_watch_set_t *in)
+{
+    if ((out == NULL) || (in == NULL))
+        return;
+
+#define JOIN_SIGNAL(signal) do { \
+        out->f_##signal = out->f_##signal || in->f_##signal; \
+    } while (0)
+
+    JOIN_SIGNAL(SIGINT);
+    JOIN_SIGNAL(SIGQUIT);
+    JOIN_SIGNAL(SIGTERM);
+
+    JOIN_SIGNAL(SIGCHLD);
+    JOIN_SIGNAL(SIGCONT);
+    JOIN_SIGNAL(SIGTSTP);
+    JOIN_SIGNAL(SIGXCPU);
+    JOIN_SIGNAL(SIGXFSZ);
+
+    JOIN_SIGNAL(SIGPIPE);
+    JOIN_SIGNAL(SIGPOLL);
+    JOIN_SIGNAL(SIGURG);
+
+    JOIN_SIGNAL(SIGALRM);
+    JOIN_SIGNAL(SIGVTALRM);
+    JOIN_SIGNAL(SIGPROF);
+
+    JOIN_SIGNAL(SIGHUP);
+    JOIN_SIGNAL(SIGTTIN);
+    JOIN_SIGNAL(SIGTTOU);
+    JOIN_SIGNAL(SIGWINCH);
+
+    JOIN_SIGNAL(SIGUSR1);
+    JOIN_SIGNAL(SIGUSR2);
+
+#undef JOIN_SIGNAL
+
+    for (size_t i = 0; i < archi_signal_number_of_rt_signals(); i++)
+        out->f_SIGRTMIN[i] = out->f_SIGRTMIN[i] || in->f_SIGRTMIN[i];
+}
+
+bool
+archi_signal_watch_set_not_empty(
+        const archi_signal_watch_set_t *signals)
+{
+    if (signals == NULL)
+        return false;
+
+#define TEST_SIGNAL(signal) do { \
+        if (signals->f_##signal) \
+            return true;         \
+    } while (0)
+
+    TEST_SIGNAL(SIGINT);
+    TEST_SIGNAL(SIGQUIT);
+    TEST_SIGNAL(SIGTERM);
+
+    TEST_SIGNAL(SIGCHLD);
+    TEST_SIGNAL(SIGCONT);
+    TEST_SIGNAL(SIGTSTP);
+    TEST_SIGNAL(SIGXCPU);
+    TEST_SIGNAL(SIGXFSZ);
+
+    TEST_SIGNAL(SIGPIPE);
+    TEST_SIGNAL(SIGPOLL);
+    TEST_SIGNAL(SIGURG);
+
+    TEST_SIGNAL(SIGALRM);
+    TEST_SIGNAL(SIGVTALRM);
+    TEST_SIGNAL(SIGPROF);
+
+    TEST_SIGNAL(SIGHUP);
+    TEST_SIGNAL(SIGTTIN);
+    TEST_SIGNAL(SIGTTOU);
+    TEST_SIGNAL(SIGWINCH);
+
+    TEST_SIGNAL(SIGUSR1);
+    TEST_SIGNAL(SIGUSR2);
+
+#undef TEST_SIGNAL
+
+    for (size_t i = 0; i < archi_signal_number_of_rt_signals(); i++)
+    {
+        if (signals->f_SIGRTMIN[i])
+            return true;
+    }
+
+    return false;
 }
 
 archi_signal_flags_t*
