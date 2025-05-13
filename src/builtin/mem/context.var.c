@@ -37,6 +37,7 @@ ARCHI_CONTEXT_INIT_FUNC(archi_context_memory_init)
     archi_pointer_t interface = {0};
     void *alloc_data = NULL;
     archi_array_layout_t layout = {0};
+    archi_array_layout_t layout_fields = {0};
 
     bool param_interface_set = false;
     bool param_alloc_data_set = false;
@@ -92,7 +93,7 @@ ARCHI_CONTEXT_INIT_FUNC(archi_context_memory_init)
                     (params->value.ptr == NULL))
                 return ARCHI_STATUS_EVALUE;
 
-            layout.num_of = *(size_t*)params->value.ptr;
+            layout_fields.num_of = *(size_t*)params->value.ptr;
         }
         else if (strcmp("element_size", params->name) == 0)
         {
@@ -104,7 +105,7 @@ ARCHI_CONTEXT_INIT_FUNC(archi_context_memory_init)
                     (params->value.ptr == NULL))
                 return ARCHI_STATUS_EVALUE;
 
-            layout.size = *(size_t*)params->value.ptr;
+            layout_fields.size = *(size_t*)params->value.ptr;
         }
         else if (strcmp("element_alignment", params->name) == 0)
         {
@@ -116,11 +117,20 @@ ARCHI_CONTEXT_INIT_FUNC(archi_context_memory_init)
                     (params->value.ptr == NULL))
                 return ARCHI_STATUS_EVALUE;
 
-            layout.alignment = *(size_t*)params->value.ptr;
+            layout_fields.alignment = *(size_t*)params->value.ptr;
         }
         else
             return ARCHI_STATUS_EKEY;
     }
+
+    if (param_num_elements_set)
+        layout.num_of = layout_fields.num_of;
+
+    if (param_element_size_set)
+        layout.size = layout_fields.size;
+
+    if (param_element_alignment_set)
+        layout.alignment = layout_fields.alignment;
 
     archi_status_t code;
 

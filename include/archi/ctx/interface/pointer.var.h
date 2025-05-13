@@ -33,7 +33,12 @@
  * @brief Pointer initialization function.
  *
  * Accepts the following parameters:
- * - "value" : pointer to store
+ * - "value"        : pointer to store
+ * - "flags"        : new pointer flags
+ * - "layout"       : new array layout
+ * - "num_elements" : new number of elements
+ * - "element_size" : new element size
+ * - "element_alignment" : new element alignment requirement
  */
 ARCHI_CONTEXT_INIT_FUNC(archi_context_pointer_init);
 
@@ -46,18 +51,13 @@ ARCHI_CONTEXT_FINAL_FUNC(archi_context_pointer_final);
  * @brief Pointer getter function.
  *
  * Provides the following slots:
- * - "value" : stored pointer
- * - "value" [offset] : stored pointer + (offset) * (data element size)
+ * - "" : stored pointer
+ * - "" [offset] : stored pointer + (offset) * (data element size)
+ * - "num_elements" : number of elements
+ * - "element_size" : element size
+ * - "element_alignment" : element alignment requirement
  */
 ARCHI_CONTEXT_GET_FUNC(archi_context_pointer_get);
-
-/**
- * @brief Pointer setter function.
- *
- * Accepts the following slots:
- * - "value" : pointer to store
- */
-ARCHI_CONTEXT_SET_FUNC(archi_context_pointer_set);
 
 /**
  * @brief Pointer interface.
