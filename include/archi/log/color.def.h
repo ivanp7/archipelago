@@ -65,5 +65,11 @@
 #define ARCHI_COLOR_BG_BRI_CYAN     "\033[106m" ///< Bright cyan background.
 #define ARCHI_COLOR_BG_BRI_WHITE    "\033[107m" ///< White background.
 
+#define ARCHI_COLOR_FG(num) "\033[38;5;" #num "m" ///< Foreground color #num (0-255).
+#define ARCHI_COLOR_BG(num) "\033[48;5;" #num "m" ///< Background color #num (0-255).
+
+#define ARCHI_COLOR_FG_RGB(r, g, b) "\033[38;2;" #r ";" #g ";" #b "m" ///< Foreground color in RGB format.
+#define ARCHI_COLOR_BG_RGB(r, g, b) "\033[48;2;" #r ";" #g ";" #b "m" ///< Background color in RGB format.
+
 #endif // _ARCHI_LOG_COLOR_DEF_H_
 
