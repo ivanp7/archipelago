@@ -111,9 +111,6 @@ ARCHI_CONTEXT_INIT_FUNC(archi_context_pointer_init)
                 return ARCHI_STATUS_EVALUE;
 
             layout_fields.alignment = *(size_t*)params->value.ptr;
-
-            if ((layout_fields.alignment & (layout_fields.alignment - 1)) != 0)
-                return ARCHI_STATUS_EVALUE;
         }
         else
             return ARCHI_STATUS_EKEY;
@@ -135,6 +132,10 @@ ARCHI_CONTEXT_INIT_FUNC(archi_context_pointer_init)
 
     if (param_element_alignment_set)
         context->public_value.element.alignment = layout_fields.alignment;
+
+    if ((context->public_value.element.alignment &
+                (context->public_value.element.alignment - 1)) != 0)
+        return ARCHI_STATUS_EVALUE;
 
     archi_reference_count_increment(value.ref_count);
 

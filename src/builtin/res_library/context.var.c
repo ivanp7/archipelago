@@ -123,45 +123,13 @@ ARCHI_CONTEXT_FINAL_FUNC(archi_context_res_library_final)
 
 ARCHI_CONTEXT_GET_FUNC(archi_context_res_library_get)
 {
-    if (slot.num_indices > 5)
+    if (slot.num_indices != 0)
         return ARCHI_STATUS_EMISUSE;
 
-    archi_pointer_t symbol = {.ref_count = context.public_value.ref_count};
+    archi_pointer_t symbol = context.private_value;
+    context.private_value = (archi_pointer_t){0};
 
-    if (slot.num_indices >= 1)
-    {
-        if (slot.index[0] > 1)
-            return ARCHI_STATUS_EMISUSE;
-
-        symbol.flags |= slot.index[0] ? ARCHI_POINTER_FLAG_FUNCTION : 0;
-    }
-
-    if (slot.num_indices >= 2)
-    {
-        if (slot.index[1] > ARCHI_POINTER_USER_FLAGS_MASK)
-            return ARCHI_STATUS_EMISUSE;
-
-        symbol.flags |= slot.index[1];
-    }
-
-    if (slot.num_indices >= 3)
-    {
-        if (slot.index[2] == 0)
-            return ARCHI_STATUS_EMISUSE;
-
-        symbol.element.num_of = slot.index[2];
-    }
-
-    if (slot.num_indices >= 4)
-        symbol.element.size = slot.index[3];
-
-    if (slot.num_indices >= 5)
-    {
-        if ((slot.index[4] & (slot.index[4] - 1)) != 0)
-            return ARCHI_STATUS_EMISUSE;
-
-        symbol.element.alignment = slot.index[4];
-    }
+    symbol.ref_count = context.public_value.ref_count;
 
     symbol.ptr = archi_library_get_symbol(context.public_value.ptr, slot.name);
     if (symbol.ptr == NULL)
@@ -171,9 +139,125 @@ ARCHI_CONTEXT_GET_FUNC(archi_context_res_library_get)
     return 0;
 }
 
+ARCHI_CONTEXT_ACT_FUNC(archi_context_res_library_act)
+{
+    if (action.num_indices != 0)
+        return ARCHI_STATUS_EMISUSE;
+
+    archi_pointer_t attributes = {0};
+    bool flag_function = false;
+    archi_array_layout_t layout_fields = {0};
+
+    bool param_flag_function_set = false;
+    bool param_flags_set = false;
+    bool param_layout_set = false;
+    bool param_num_elements_set = false;
+    bool param_element_size_set = false;
+    bool param_element_alignment_set = false;
+
+    for (; params != NULL; params = params->next)
+    {
+        if (strcmp("function", params->name) == 0)
+        {
+            if (param_flag_function_set)
+                continue;
+            param_flag_function_set = true;
+
+            if ((params->value.flags & ARCHI_POINTER_FLAG_FUNCTION) ||
+                    (params->value.ptr == NULL))
+                return ARCHI_STATUS_EVALUE;
+
+            flag_function = *(bool*)params->value.ptr;
+        }
+        else if (strcmp("flags", params->name) == 0)
+        {
+            if (param_flags_set)
+                continue;
+            param_flags_set = true;
+
+            if ((params->value.flags & ARCHI_POINTER_FLAG_FUNCTION) ||
+                    (params->value.ptr == NULL))
+                return ARCHI_STATUS_EVALUE;
+
+            attributes.flags = *(uintptr_t*)params->value.ptr;
+
+            if (attributes.flags > ARCHI_POINTER_USER_FLAGS_MASK)
+                return ARCHI_STATUS_EVALUE;
+        }
+        else if (strcmp("layout", params->name) == 0)
+        {
+            if (param_layout_set)
+                continue;
+            param_layout_set = true;
+
+            if ((params->value.flags & ARCHI_POINTER_FLAG_FUNCTION) ||
+                    (params->value.ptr == NULL))
+                return ARCHI_STATUS_EVALUE;
+
+            attributes.element = *(archi_array_layout_t*)params->value.ptr;
+        }
+        else if (strcmp("num_elements", params->name) == 0)
+        {
+            if (param_num_elements_set)
+                continue;
+            param_num_elements_set = true;
+
+            if ((params->value.flags & ARCHI_POINTER_FLAG_FUNCTION) ||
+                    (params->value.ptr == NULL))
+                return ARCHI_STATUS_EVALUE;
+
+            layout_fields.num_of = *(size_t*)params->value.ptr;
+        }
+        else if (strcmp("element_size", params->name) == 0)
+        {
+            if (param_element_size_set)
+                continue;
+            param_element_size_set = true;
+
+            if ((params->value.flags & ARCHI_POINTER_FLAG_FUNCTION) ||
+                    (params->value.ptr == NULL))
+                return ARCHI_STATUS_EVALUE;
+
+            layout_fields.size = *(size_t*)params->value.ptr;
+        }
+        else if (strcmp("element_alignment", params->name) == 0)
+        {
+            if (param_element_alignment_set)
+                continue;
+            param_element_alignment_set = true;
+
+            if ((params->value.flags & ARCHI_POINTER_FLAG_FUNCTION) ||
+                    (params->value.ptr == NULL))
+                return ARCHI_STATUS_EVALUE;
+
+            layout_fields.alignment = *(size_t*)params->value.ptr;
+        }
+        else
+            return ARCHI_STATUS_EKEY;
+    }
+
+    attributes.flags |= flag_function ? ARCHI_POINTER_FLAG_FUNCTION : 0;
+
+    if (param_num_elements_set)
+        attributes.element.num_of = layout_fields.num_of;
+
+    if (param_element_size_set)
+        attributes.element.size = layout_fields.size;
+
+    if (param_element_alignment_set)
+        attributes.element.alignment = layout_fields.alignment;
+
+    if ((attributes.element.alignment & (attributes.element.alignment - 1)) != 0)
+        return ARCHI_STATUS_EVALUE;
+
+    context.private_value = attributes;
+    return 0;
+}
+
 const archi_context_interface_t archi_context_res_library_interface = {
     .init_fn = archi_context_res_library_init,
     .final_fn = archi_context_res_library_final,
     .get_fn = archi_context_res_library_get,
+    .act_fn = archi_context_res_library_act,
 };
 

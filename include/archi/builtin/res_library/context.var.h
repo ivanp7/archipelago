@@ -32,6 +32,7 @@
 ARCHI_CONTEXT_INIT_FUNC(archi_context_res_library_init);   ///< Shared library context initialization function.
 ARCHI_CONTEXT_FINAL_FUNC(archi_context_res_library_final); ///< Shared library context finalization function.
 ARCHI_CONTEXT_GET_FUNC(archi_context_res_library_get);     ///< Shared library context slot getter function.
+ARCHI_CONTEXT_ACT_FUNC(archi_context_res_library_act);     ///< Shared library context action function.
 
 extern
 const archi_context_interface_t archi_context_res_library_interface; ///< Shared library context interface.
