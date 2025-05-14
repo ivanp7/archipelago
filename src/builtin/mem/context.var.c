@@ -294,7 +294,7 @@ ARCHI_CONTEXT_INIT_FUNC(archi_context_memory_mapping_init)
                     (params->value.ptr == NULL))
                 return ARCHI_STATUS_EVALUE;
 
-            writeable = *(bool*)params->value.ptr;
+            writeable = *(char*)params->value.ptr;
         }
         else
             return ARCHI_STATUS_EKEY;

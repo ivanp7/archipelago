@@ -77,7 +77,7 @@ ARCHI_CONTEXT_INIT_FUNC(archi_context_res_file_init)
                     (params->value.ptr == NULL))
                 return ARCHI_STATUS_EVALUE;
 
-            file_open_params.readable = *(bool*)params->value.ptr;
+            file_open_params.readable = *(char*)params->value.ptr;
         }
         else if (strcmp("writable", params->name) == 0)
         {
@@ -89,7 +89,7 @@ ARCHI_CONTEXT_INIT_FUNC(archi_context_res_file_init)
                     (params->value.ptr == NULL))
                 return ARCHI_STATUS_EVALUE;
 
-            file_open_params.writable = *(bool*)params->value.ptr;
+            file_open_params.writable = *(char*)params->value.ptr;
         }
         else if (strcmp("nonblock", params->name) == 0)
         {
@@ -101,7 +101,7 @@ ARCHI_CONTEXT_INIT_FUNC(archi_context_res_file_init)
                     (params->value.ptr == NULL))
                 return ARCHI_STATUS_EVALUE;
 
-            file_open_params.nonblock = *(bool*)params->value.ptr;
+            file_open_params.nonblock = *(char*)params->value.ptr;
         }
         else if (strcmp("flags", params->name) == 0)
         {
@@ -244,7 +244,7 @@ ARCHI_CONTEXT_ACT_FUNC(archi_context_res_file_act)
                         (params->value.ptr == NULL))
                     return ARCHI_STATUS_EVALUE;
 
-                file_map_params.has_header = *(bool*)params->value.ptr;
+                file_map_params.has_header = *(char*)params->value.ptr;
             }
             else if (strcmp("readable", params->name) == 0)
             {
@@ -256,7 +256,7 @@ ARCHI_CONTEXT_ACT_FUNC(archi_context_res_file_act)
                         (params->value.ptr == NULL))
                     return ARCHI_STATUS_EVALUE;
 
-                file_map_params.readable = *(bool*)params->value.ptr;
+                file_map_params.readable = *(char*)params->value.ptr;
             }
             else if (strcmp("writable", params->name) == 0)
             {
@@ -268,7 +268,7 @@ ARCHI_CONTEXT_ACT_FUNC(archi_context_res_file_act)
                         (params->value.ptr == NULL))
                     return ARCHI_STATUS_EVALUE;
 
-                file_map_params.writable = *(bool*)params->value.ptr;
+                file_map_params.writable = *(char*)params->value.ptr;
             }
             else if (strcmp("shared", params->name) == 0)
             {
@@ -280,7 +280,7 @@ ARCHI_CONTEXT_ACT_FUNC(archi_context_res_file_act)
                         (params->value.ptr == NULL))
                     return ARCHI_STATUS_EVALUE;
 
-                file_map_params.shared = *(bool*)params->value.ptr;
+                file_map_params.shared = *(char*)params->value.ptr;
             }
             else if (strcmp("flags", params->name) == 0)
             {
@@ -304,7 +304,7 @@ ARCHI_CONTEXT_ACT_FUNC(archi_context_res_file_act)
                         (params->value.ptr == NULL))
                     return ARCHI_STATUS_EVALUE;
 
-                close_fd = *(bool*)params->value.ptr;
+                close_fd = *(char*)params->value.ptr;
             }
             else
                 return ARCHI_STATUS_EKEY;

@@ -73,7 +73,7 @@ ARCHI_CONTEXT_INIT_FUNC(archi_context_res_library_init)
                     (params->value.ptr == NULL))
                 return ARCHI_STATUS_EVALUE;
 
-            library_load_params.lazy = *(bool*)params->value.ptr;
+            library_load_params.lazy = *(char*)params->value.ptr;
         }
         else if (strcmp("global", params->name) == 0)
         {
@@ -85,7 +85,7 @@ ARCHI_CONTEXT_INIT_FUNC(archi_context_res_library_init)
                     (params->value.ptr == NULL))
                 return ARCHI_STATUS_EVALUE;
 
-            library_load_params.global = *(bool*)params->value.ptr;
+            library_load_params.global = *(char*)params->value.ptr;
         }
         else if (strcmp("flags", params->name) == 0)
         {
@@ -167,7 +167,7 @@ ARCHI_CONTEXT_ACT_FUNC(archi_context_res_library_act)
                     (params->value.ptr == NULL))
                 return ARCHI_STATUS_EVALUE;
 
-            flag_function = *(bool*)params->value.ptr;
+            flag_function = *(char*)params->value.ptr;
         }
         else if (strcmp("flags", params->name) == 0)
         {
