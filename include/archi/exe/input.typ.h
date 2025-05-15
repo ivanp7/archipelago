@@ -32,7 +32,7 @@
 struct archi_context_parameter_list;
 struct archi_exe_registry_instr_list;
 
-#define ARCHI_EXE_INPUT_MAGIC   "[ARCHI]" ///< Magic bytes identifying the format of input files.
+#define ARCHI_EXE_INPUT_MAGIC   "[archi]" ///< Magic bytes identifying the format of input files.
 
 /**
  * @brief Description of an input file for the executable.
@@ -41,7 +41,7 @@ struct archi_exe_registry_instr_list;
  */
 typedef struct archi_exe_input {
     archi_file_header_t header; ///< Memory-mapped file header.
-    char magic[8]; ///< Magic bytes identifying the format.
+    char magic[8]; ///< Magic bytes identifying the file format.
 
     struct archi_context_parameter_list *params; ///< File parameter list.
     struct archi_exe_registry_instr_list *instructions; ///< List of instructions.

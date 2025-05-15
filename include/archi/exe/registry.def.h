@@ -27,11 +27,13 @@
 #ifndef _ARCHI_EXE_REGISTRY_DEF_H_
 #define _ARCHI_EXE_REGISTRY_DEF_H_
 
+// After modifying this list, don't forget to update the help message in `exe/args.c`
+
 #define ARCHI_EXE_REGISTRY_KEY_REGISTRY     "archi.registry"    ///< Registry key: the context registry itself.
 #define ARCHI_EXE_REGISTRY_KEY_INTERFACES   "archi.interface"   ///< Registry key: the hashmap of built-in context interfaces.
 #define ARCHI_EXE_REGISTRY_KEY_EXE_HANDLE   "archi.exe"         ///< Registry key: the library handle of the executable itself.
 
-#define ARCHI_EXE_REGISTRY_KEY_SIGNAL       "archi.signal"      ///< Registry key: signal management.
+#define ARCHI_EXE_REGISTRY_KEY_SIGNAL       "archi.signal"      ///< Registry key: signal management context.
 
 #define ARCHI_EXE_REGISTRY_KEY_INPUT_FILE   "archi.input#"      ///< Registry key prefix: input file.
 

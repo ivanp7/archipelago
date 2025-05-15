@@ -25,6 +25,7 @@
 
 #include "archi/exe/args.fun.h"
 #include "archi/exe/args.typ.h"
+#include "archi/exe/registry.def.h"
 #include "archi/log/print.def.h" // for ARCHI_LOG_VERBOSITY_*
 
 #include <stdlib.h>
@@ -160,6 +161,38 @@ archi_exe_args_parse(
         .doc = "\n\
 A versatile, modular application using plugins configured by memory-mapped initialization files that define its specific behavior.\n\
 \v\
+Built-in contexts (keys for the application context registry):\n\
+ \"" ARCHI_EXE_REGISTRY_KEY_REGISTRY "\" \t: the context registry itself\n\
+ \"" ARCHI_EXE_REGISTRY_KEY_INTERFACES "\" \t: the hashmap of built-in context interfaces\n\
+ \"" ARCHI_EXE_REGISTRY_KEY_EXE_HANDLE "\" \t\t: the library handle of the executable itself\n\
+ \"" ARCHI_EXE_REGISTRY_KEY_SIGNAL "\" \t: the signal management context\n\
+ \"" ARCHI_EXE_REGISTRY_KEY_INPUT_FILE "<index>\" \t: context of an input file #<index>\n\
+\n\
+Built-in context interfaces (keys for the built-in hashmap of interfaces):\n\
+ \"parameters\" : list of named parameters that can be passed to init() or act()\n\
+ \"pointer\"    : copied pointer with modified attributes\n\
+\n\
+ \"memory\"         : memory allocation context\n\
+ \"memory_mapping\" : pointer to a mapped memory region\n\
+\n\
+ \"hsp_state\"              : hierachical state processing state\n\
+ \"hsp_transition\"         : hierachical state processing transition\n\
+ \"hsp\"                    : hierachical state processing instance\n\
+ \"hsp_frame\"              : hierachical state processing frame\n\
+ \"hsp_branch_state_data\"  : data for hierachical state processing branch state\n\
+\n\
+ \"ds_hashmap\" : hashmap\n\
+ \"ds_lfqueue\" : lock-free queue\n\
+\n\
+ \"ipc_env\"            : environmental variable\n\
+ \"ipc_signal_handler\" : signal handler\n\
+\n\
+ \"res_file\"                       : opened and/or mapped file\n\
+ \"res_library\"                    : loaded library handle\n\
+ \"res_thread_group\"               : group of threads for concurrent processing\n\
+ \"res_thread_group_work\"          : work task for a thread group\n\
+ \"res_thread_group_callback\"      : callback for work completion notification\n\
+ \"res_thread_group_dispatch_data\" : data for work dispatch HSP state\n\
 "
     };
 
