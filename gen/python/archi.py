@@ -72,13 +72,13 @@ class Application:
                 self._add_instruction_init_dynamic(
                         key=alias, interface_key=entity.interface() \
                                 if isinstance(entity, ContextSpec) else None,
-                        dparams_key=entity.dparams().alias())
+                        dparams_key=entity.dparams()._alias)
             else: # temporary (dynamic + static) parameter list
-                temp_params_alias = f'.~{alias}:{entity.dparams().alias()}'
+                temp_params_alias = f'.~{alias}:{entity.dparams()._alias}'
 
                 self._app._add_instruction_init_dynamic(
                         key=temp_params_alias, interface_key=None,
-                        dparams_key=entity.dparams().alias())
+                        dparams_key=entity.dparams()._alias)
                 self._app._add_instruction_act_static(
                         key=temp_params_alias,
                         action_name='_', action_indices=[],
@@ -99,16 +99,16 @@ class Application:
                     key=alias, interface_key='')
             self._add_instruction_set_context(
                     key=alias, slot_name='value', slot_indices=[],
-                    source_key=entity.alias())
-        elif isinstance(entity, Context.Slot) or isinstance(entity, Context.Action):
+                    source_key=entity._alias)
+        elif isinstance(entity, Context._Slot) or isinstance(entity, Context._Action):
             self._add_instruction_init_static(
                     key=alias, interface_key='')
             self._add_instruction_set_slot(
                     key=alias, slot_name='value', slot_indices=[],
-                    source_key=entity.context().alias(),
-                    source_slot_name=entity.name(), source_slot_indices=entity.indices())
+                    source_key=entity._context._alias,
+                    source_slot_name=entity._name, source_slot_indices=entity._indices)
         else:
-            raise TypeError("Context can only be initialized from: ContextSpec, Context.Slot, or Context.Action")
+            raise TypeError("Context can only be initialized from: ContextSpec, Context._Slot, or Context._Action")
 
     def __delitem__(self, alias: str):
         """Finalize a context and remove it from the registry.
@@ -205,7 +205,7 @@ class ContextSpec:
 class Context:
     """Representation of a context.
     """
-    class Slot:
+    class _Slot:
         """Representation of a context slot.
         """
         def __init__(self, context: Context, name: str, indices: list=[]):
@@ -225,43 +225,43 @@ class Context:
 
             self._app = context._app
 
-        def __getattr__(self, name: str) -> Slot:
+        def __getattr__(self, name: str) -> _Slot:
             """Obtain a context slot object.
             """
             if self.indices():
                 raise RuntimeError("Indexed slot cannot extend its name using dot (.)")
 
-            return Slot(self.context(), f'{self.name()}.{name}')
+            return _Slot(self._context, f'{self._name}.{name}')
 
-        def __getitem__(self, index: int) -> Slot:
+        def __getitem__(self, index: int) -> _Slot:
             """Obtain a context slot object.
             """
             if not isinstance(index, int):
                 raise TypeError("Slot index must be an integer")
 
-            return Slot(self.context(), self.name(), self.indices() + [index])
+            return _Slot(self._context, self._name, self._indices + [index])
 
         def __setattr__(self, name: str, value):
             """Perform a slot setting operation.
             """
             if isinstance(value, Pointer):
                 self._app._add_instruction_set_value(
-                        key=self.context().alias(),
-                        slot_name=f'{self.name()}.{name}', slot_indices=self.indices(),
+                        key=self._context._alias,
+                        slot_name=f'{self._name}.{name}', slot_indices=self._indices,
                         value=value)
             elif isinstance(value, Context):
                 self._app._add_instruction_set_context(
-                        key=self.context().alias(),
-                        slot_name=f'{self.name()}.{name}', slot_indices=self.indices(),
-                        source_key=value.alias())
-            elif isinstance(value, Slot) or isinstance(value, Action):
+                        key=self._context._alias,
+                        slot_name=f'{self._name}.{name}', slot_indices=self._indices,
+                        source_key=value._alias)
+            elif isinstance(value, _Slot) or isinstance(value, _Action):
                 self._app._add_instruction_set_slot(
-                        key=self.context().alias(),
-                        slot_name=f'{self.name()}.{name}', slot_indices=self.indices(),
-                        source_key=value.context().alias(),
-                        source_slot_name=value.name(), source_slot_indices=value.indices())
+                        key=self._context._alias,
+                        slot_name=f'{self._name}.{name}', slot_indices=self._indices,
+                        source_key=value._context._alias,
+                        source_slot_name=value._name, source_slot_indices=value._indices)
             else:
-                raise TypeError("Context slot can only be set to an object of Pointer, Context, Context.Slot, or Context.Action")
+                raise TypeError("Context slot can only be set to an object of Pointer, Context, Context._Slot, or Context._Action")
 
         def __setitem__(self, index: int, value):
             """Perform a slot setting operation.
@@ -271,24 +271,24 @@ class Context:
 
             if isinstance(value, Pointer):
                 self._app._add_instruction_set_value(
-                        key=self.context().alias(),
-                        slot_name=self.name(), slot_indices=self.indices() + [index],
+                        key=self._context._alias,
+                        slot_name=self._name, slot_indices=self._indices + [index],
                         value=value)
             elif isinstance(value, Context):
                 self._app._add_instruction_set_context(
-                        key=self.context().alias(),
-                        slot_name=self.name(), slot_indices=self.indices() + [index],
-                        source_key=value.alias())
-            elif isinstance(value, Slot) or isinstance(value, Action):
+                        key=self._context._alias,
+                        slot_name=self._name, slot_indices=self._indices + [index],
+                        source_key=value._alias)
+            elif isinstance(value, _Slot) or isinstance(value, _Action):
                 self._app._add_instruction_set_slot(
-                        key=self.context().alias(),
-                        slot_name=self.name(), slot_indices=self.indices() + [index],
-                        source_key=value.context().alias(),
-                        source_slot_name=value.name(), source_slot_indices=value.indices())
+                        key=self._context._alias,
+                        slot_name=self._name, slot_indices=self._indices + [index],
+                        source_key=value._context._alias,
+                        source_slot_name=value._name, source_slot_indices=value._indices)
             else:
-                raise TypeError("Context slot can only be set to: Pointer, Context, Context.Slot, or Context.Action")
+                raise TypeError("Context slot can only be set to: Pointer, Context, Context._Slot, or Context._Action")
 
-        def __call__(self, _: Context=None, **params) -> Action:
+        def __call__(self, _: Context=None, **params) -> _Action:
             """Perform an action.
             """
             if _ is not None and not isinstance(_, Context):
@@ -298,50 +298,35 @@ class Context:
 
             if _ is None: # static parameter list
                 self._app._add_instruction_act_static(
-                        key=self.context().alias(),
-                        action_name=self.name(), action_indices=self.indices(),
+                        key=self._context._alias,
+                        action_name=self._name, action_indices=self._indices,
                         sparams=params)
             elif len(params) == 0: # dynamic parameter list
                 self._app._add_instruction_act_dynamic(
-                        key=self.context().alias(),
-                        action_name=self.name(), action_indices=self.indices(),
-                        dparams_key=_.alias())
+                        key=self._context._alias,
+                        action_name=self._name, action_indices=self._indices,
+                        dparams_key=_._alias)
             else: # temporary (dynamic + static) parameter list
-                temp_params_alias = f'.~{self.context().alias()}:{_.alias()}'
+                temp_params_alias = f'.~{self._context._alias}:{_._alias}'
 
                 self._app._add_instruction_init_dynamic(
                         key=temp_params_alias, interface_key=None,
-                        dparams_key=_.alias())
+                        dparams_key=_._alias)
                 self._app._add_instruction_act_static(
                         key=temp_params_alias,
                         action_name='_', action_indices=[],
                         sparams=params)
 
                 self._app._add_instruction_act_dynamic(
-                        key=self.context().alias(),
-                        action_name=self.name(), action_indices=self.indices(),
+                        key=self._context._alias,
+                        action_name=self._name, action_indices=self._indices,
                         dparams_key=temp_params_alias)
 
                 self._app._add_instruction_final(key=temp_params_alias)
 
-            return Action(self.context(), self.name(), self.indices())
+            return _Action(self._context, self._name, self._indices)
 
-        def context(self) -> Context:
-            """Get the context the slot belongs to.
-            """
-            return self._context
-
-        def name(self) -> str:
-            """Get the slot name.
-            """
-            return self._name
-
-        def indices(self):
-            """Get the slot indices
-            """
-            return self._indices
-
-    class Action:
+    class _Action:
         """Representation of a context action.
         """
         def __init__(self, context: Context, name: str, indices: list=[]):
@@ -359,21 +344,6 @@ class Context:
             self._name = name
             self._indices = indices
 
-        def context(self) -> Context:
-            """Get the context the action belongs to.
-            """
-            return self._context
-
-        def name(self) -> str:
-            """Get the action name.
-            """
-            return self._name
-
-        def indices(self):
-            """Get the action indices.
-            """
-            return self._indices
-
     def __init__(self, app: Application, alias: str):
         """Create a context representation instance.
         """
@@ -385,37 +355,37 @@ class Context:
         self._app = app
         self._alias = alias
 
-    def __getattr__(self, name: str) -> Slot:
+    def __getattr__(self, name: str) -> _Slot:
         """Obtain a context slot object.
         """
-        return Slot(self, name)
+        return _Slot(self, name)
 
-    def __getitem__(self, index: int) -> Slot:
+    def __getitem__(self, index: int) -> _Slot:
         """Obtain a context slot object.
         """
         if not isinstance(index, int):
             raise TypeError("Slot index must be an integer")
 
-        return Slot(self, '', [index])
+        return _Slot(self, '', [index])
 
     def __setattr__(self, name: str, value):
         """Perform a slot setting operation.
         """
         if isinstance(value, Pointer):
             self._app._add_instruction_set_value(
-                    key=self.alias(), slot_name=name, slot_indices=[],
+                    key=self._alias, slot_name=name, slot_indices=[],
                     value=value)
         elif isinstance(value, Context):
             self._app._add_instruction_set_context(
-                    key=self.alias(), slot_name=name, slot_indices=[],
-                    source_key=value.alias())
-        elif isinstance(value, Slot) or isinstance(value, Action):
+                    key=self._alias, slot_name=name, slot_indices=[],
+                    source_key=value._alias)
+        elif isinstance(value, _Slot) or isinstance(value, _Action):
             self._app._add_instruction_set_slot(
-                    key=self.alias(), slot_name=name, slot_indices=[],
-                    source_key=value.context().alias(),
-                    source_slot_name=value.name(), source_slot_indices=value.indices())
+                    key=self._alias, slot_name=name, slot_indices=[],
+                    source_key=value._context._alias,
+                    source_slot_name=value._name, source_slot_indices=value._indices)
         else:
-            raise TypeError("Context slot can only be set to: Pointer, Context, Context.Slot, or Context.Action")
+            raise TypeError("Context slot can only be set to: Pointer, Context, Context._Slot, or Context._Action")
 
     def __setitem__(self, index: int, value):
         """Perform a slot setting operation.
@@ -425,34 +395,42 @@ class Context:
 
         if isinstance(value, Pointer):
             self._app._add_instruction_set_value(
-                    key=self.alias(), slot_name='', slot_indices=[index],
+                    key=self._alias, slot_name='', slot_indices=[index],
                     value=value)
         elif isinstance(value, Context):
             self._app._add_instruction_set_context(
-                    key=self.alias(), slot_name='', slot_indices=[index],
-                    source_key=value.alias())
-        elif isinstance(value, Slot) or isinstance(value, Action):
+                    key=self._alias, slot_name='', slot_indices=[index],
+                    source_key=value._alias)
+        elif isinstance(value, _Slot) or isinstance(value, _Action):
             self._app._add_instruction_set_slot(
-                    key=self.alias(), slot_name='', slot_indices=[index],
-                    source_key=value.context().alias(),
-                    source_slot_name=value.name(), source_slot_indices=value.indices())
+                    key=self._alias, slot_name='', slot_indices=[index],
+                    source_key=value._context._alias,
+                    source_slot_name=value._name, source_slot_indices=value._indices)
         else:
-            raise TypeError("Context slot can only be set to: Pointer, Context, Context.Slot, or Context.Action")
+            raise TypeError("Context slot can only be set to: Pointer, Context, Context._Slot, or Context._Action")
 
     def __call__(self, _: Context=None, **params) -> ContextSpec:
         """Create a context specification instance.
         """
         return ContextSpec(self, dparams=_, sparams=params)
 
-    def application(self) -> Application:
-        """Get the application the context belongs to.
+    @staticmethod
+    def alias_of(context: Context) -> str:
+        """Obtain alias of a context.
         """
-        return self._app
+        if not isinstance(context, Context):
+            raise TypeError("Context object must be of type Context")
 
-    def alias(self) -> str:
-        """Get the context alias.
+        return context._alias
+
+    @staticmethod
+    def application_of(context: Context) -> str:
+        """Obtain owning application of a context.
         """
-        return self._alias
+        if not isinstance(context, Context):
+            raise TypeError("Context object must be of type Context")
+
+        return context._app
 
 ###############################################################################
 
