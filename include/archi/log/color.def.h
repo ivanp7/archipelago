@@ -27,7 +27,7 @@
 #ifndef _ARCHI_LOG_COLOR_DEF_H_
 #define _ARCHI_LOG_COLOR_DEF_H_
 
-#define ARCHI_COLOR_RESET           "\033[0m" ///< Reset colors to default.
+#define ARCHI_COLOR_RESET           "\033[0m" ///< Reset color to default.
 
 #define ARCHI_COLOR_FG_BLACK        "\033[30m" ///< Black foreground.
 #define ARCHI_COLOR_FG_RED          "\033[31m" ///< Dark red foreground.

@@ -87,13 +87,13 @@ archi_exe_log_init_verbosity(
 
 void
 archi_exe_log_init_color(
-        bool colorful_output)
+        bool colorful)
 {
-    static bool colorful_output_set = false;
-    if (colorful_output_set)
+    static bool colorful_set = false;
+    if (colorful_set)
         return;
-    colorful_output_set = true;
+    colorful_set = true;
 
-    archi_logger.colorful_output = colorful_output;
+    archi_logger.colorful = colorful;
 }
 

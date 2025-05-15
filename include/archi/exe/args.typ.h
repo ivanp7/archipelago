@@ -34,15 +34,15 @@
  * @brief Parsed values of command line arguments.
  */
 typedef struct archi_exe_args {
-    // Functionality
+    // Execution
     char **input;      ///< Array of pathnames of input memory-mapped initialization files.
     size_t num_inputs; ///< Number of input initialization files.
 
     bool dry_run; ///< Whether dry run is done: initialization instructions are logged only, not executed.
 
     // Logging
-    bool no_logo;  ///< Whether display of the application logo is suppressed.
-    bool no_color; ///< Whether use of colors for log messages is disabled.
+    bool no_logo;  ///< True if the application logo is not displayed.
+    bool no_color; ///< True if color codes are not used when printing log messages.
     int verbosity_level; ///< Application verbosity level.
 } archi_exe_args_t;
 

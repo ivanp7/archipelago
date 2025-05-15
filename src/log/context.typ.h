@@ -39,7 +39,7 @@ struct archi_log_context {
 
     struct timespec start_time; ///< Application start time.
     int verbosity_level;        ///< Log verbosity level.
-    bool colorful_output;       ///< Whether colors are used.
+    bool colorful;              ///< Whether color is used in log messages.
 
 #ifndef __STDC_NO_ATOMICS__
     atomic_flag spinlock; ///< Spinlock for message printing atomicity.

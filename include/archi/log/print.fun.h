@@ -28,29 +28,49 @@
 #define _ARCHI_LOG_PRINT_FUN_H_
 
 /**
- * @brief Thread-safe, printf-style output to the standard error stream.
+ * @brief Print formatted text to the log stream using a printf-style format string.
  *
- * Prints formatted text to the log stream using a printf-style format string.
  * If @p format is NULL, the function returns immediately without printing.
- *
- * Internally, this routine uses an atomic spinlock (when C11 atomics
- * are available) to serialize concurrent calls and prevent interleaved
- * output from multiple threads.
  *
  * @param[in] format
  *     A null-terminated printf-style format string. May be NULL,
  *     in which case no output is generated.
  * @param[in] ...
  *     Zero or more arguments matching the format specifiers in @p format.
- *
- * @note Thread safe when compiled with C11 atomics; otherwise,
- *       thread safety is not guaranteed (output may interleave in multithreaded scenarios).
  */
 void
 archi_print(
         const char *format,
         ...
 );
+
+/**
+ * @brief Lock an internal spinlock to protect a composite printing operation.
+ *
+ * Internally, this routine uses an atomic spinlock (when C11 atomics
+ * are available) to serialize concurrent calls and prevent interleaved
+ * output from multiple threads.
+ *
+ * @note When C11 atomics are not available, this operation is a no-op:
+ *       thread safety is not guaranteed (output may interleave in multithreaded scenarios).
+ *
+ * @warning This lock is not recursive.
+ * Each archi_print_lock() must be followed by archi_print_unlock().
+ * archi_log_*() functions must not be called within lock-unlock section,
+ * as they use the same spinlock.
+ */
+void
+archi_print_lock(void);
+
+/**
+ * @brief Unock an internal spinlock to protect a composite printing operation.
+ *
+ * @note When C11 atomics are not available, this operation is a no-op.
+ *
+ * @warning Each archi_print_unlock() must be preceded by archi_print_lock().
+ */
+void
+archi_print_unlock(void);
 
 /*****************************************************************************/
 
@@ -60,7 +80,9 @@ archi_print(
  * Each message is colorized, prefixed with an elapsed-time timestamp,
  * a single-character level indicator, and optionally the module name.
  * Messages are emitted only if the current verbosity allows it.
- * Thread-safe via an atomic spinlock around the actual print.
+ *
+ * Thread-safe via an atomic spinlock around the actual print,
+ * as if implicitly surrounded by a pair of archi_print_lock() and archi_print_unlock().
  *
  * @param[in] module
  *     Optional null-terminated module name;

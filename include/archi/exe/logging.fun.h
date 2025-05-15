@@ -88,16 +88,15 @@ archi_exe_log_init_verbosity(
 /**
  * @brief Initialize the log color usage flag (first call only).
  *
- * This function sets the usage of colors in log the very first time it's called.
+ * This function sets the usage of color in log the very first time it's called.
  * Subsequent invocations have no effect.
  *
- * @param[in] colorful_output
- *     True to enable use of colors in log messages,
- *     false to disable colors.
+ * @param[in] colorful
+ *     True to allow use of color in log messages, false to force monochrome output.
  */
 void
 archi_exe_log_init_color(
-        bool colorful_output
+        bool colorful
 );
 
 #endif // _ARCHI_EXE_LOGGING_FUN_H_

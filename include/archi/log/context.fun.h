@@ -123,7 +123,7 @@ archi_log_verbosity(void);
  *   true if colored output is enabled for logs; false otherwise.
  */
 bool
-archi_log_colorful_output(void);
+archi_log_colorful(void);
 
 #endif // _ARCHI_LOG_CONTEXT_FUN_H_
 

@@ -89,9 +89,9 @@ archi_log_verbosity(void)
 }
 
 bool
-archi_log_colorful_output(void)
+archi_log_colorful(void)
 {
-    return (archi_logger != NULL) ? archi_logger->colorful_output : false;
+    return (archi_logger != NULL) ? archi_logger->colorful : false;
 }
 
 /*****************************************************************************/
@@ -107,18 +107,26 @@ archi_print(
     va_list args;
     va_start(args, format);
 
+    vfprintf(archi_logger->stream, format, args);
+
+    va_end(args);
+}
+
+void
+archi_print_lock(void)
+{
 #ifndef __STDC_NO_ATOMICS__
     while (atomic_flag_test_and_set_explicit(&archi_logger->spinlock, memory_order_acquire))
         ; // spin until the lock is acquired
 #endif
+}
 
-    vfprintf(archi_logger->stream, format, args);
-
+void
+archi_print_unlock(void)
+{
 #ifndef __STDC_NO_ATOMICS__
     atomic_flag_clear_explicit(&archi_logger->spinlock, memory_order_release); // release the lock
 #endif
-
-    va_end(args);
 }
 
 /*****************************************************************************/
@@ -136,17 +144,14 @@ archi_log(
     struct timespec ts;
     archi_log_elapsed_time(&ts);
 
-#ifndef __STDC_NO_ATOMICS__
-    while (atomic_flag_test_and_set_explicit(&archi_logger->spinlock, memory_order_acquire))
-        ; // spin until the lock is acquired
-#endif
+    archi_print_lock();
 
-    if (archi_logger->colorful_output)
+    if (archi_logger->colorful)
         fprintf(archi_logger->stream, ARCHI_COLOR_RESET);
 
     fprintf(archi_logger->stream, "\r");
 
-    if (archi_logger->colorful_output)
+    if (archi_logger->colorful)
         fprintf(archi_logger->stream, message_color);
 
     // Set the color, print date/time and message type character
@@ -167,14 +172,12 @@ archi_log(
         vfprintf(archi_logger->stream, format, args);
 
     // Finally, reset the color
-    if (archi_logger->colorful_output)
+    if (archi_logger->colorful)
         fprintf(archi_logger->stream, ARCHI_COLOR_RESET);
 
     fprintf(archi_logger->stream, "\n");
 
-#ifndef __STDC_NO_ATOMICS__
-    atomic_flag_clear_explicit(&archi_logger->spinlock, memory_order_release); // release the lock
-#endif
+    archi_print_unlock();
 }
 
 /*****************************************************************************/
