@@ -133,7 +133,9 @@ ARCHI_CONTEXT_INIT_FUNC(archi_context_pointer_init)
     if (param_element_alignment_set)
         context->public_value.element.alignment = layout_fields.alignment;
 
-    if ((context->public_value.element.alignment &
+    if (context->public_value.element.num_of == 0)
+        return ARCHI_STATUS_EVALUE;
+    else if ((context->public_value.element.alignment &
                 (context->public_value.element.alignment - 1)) != 0)
         return ARCHI_STATUS_EVALUE;
 

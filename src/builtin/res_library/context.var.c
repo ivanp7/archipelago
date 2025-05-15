@@ -113,6 +113,8 @@ ARCHI_CONTEXT_INIT_FUNC(archi_context_res_library_init)
             .num_of = 1,
         },
     };
+    context->private_value.element.num_of = 1;
+
     return 0;
 }
 
@@ -127,7 +129,7 @@ ARCHI_CONTEXT_GET_FUNC(archi_context_res_library_get)
         return ARCHI_STATUS_EMISUSE;
 
     archi_pointer_t symbol = context.private_value;
-    context.private_value = (archi_pointer_t){0};
+    context.private_value = (archi_pointer_t){.element.num_of = 1};
 
     symbol.ref_count = context.public_value.ref_count;
 
@@ -247,7 +249,9 @@ ARCHI_CONTEXT_ACT_FUNC(archi_context_res_library_act)
     if (param_element_alignment_set)
         attributes.element.alignment = layout_fields.alignment;
 
-    if ((attributes.element.alignment & (attributes.element.alignment - 1)) != 0)
+    if (attributes.element.num_of == 0)
+        return ARCHI_STATUS_EVALUE;
+    else if ((attributes.element.alignment & (attributes.element.alignment - 1)) != 0)
         return ARCHI_STATUS_EVALUE;
 
     context.private_value = attributes;
