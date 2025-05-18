@@ -200,8 +200,11 @@ main(
         return 0;
 
     // Set exit functions
-    atexit(exit_cleanup);
-    at_quick_exit(exit_quick);
+    if (atexit(exit_cleanup) != 0)
+        archi_log_warning(M, "atexit() failed, attempting to continue...");
+
+    if (at_quick_exit(exit_quick) != 0)
+        archi_log_warning(M, "at_quick_exit() failed, attempting to continue...");
 
     archi_log_info(M, "Preparing the application context registry...");
 
@@ -588,7 +591,7 @@ open_and_map_input_files(void)
 
     for (size_t i = 0; i < archi_process.args.num_inputs; i++)
     {
-        archi_log_debug(M, " * opening file #%llu ('%s')", (unsigned long long)i, archi_process.args.input[i]);
+        archi_log_debug(M, " * opening file #%zu ('%s')", i, archi_process.args.input[i]);
         {
             bool value_true = true;
 
@@ -621,7 +624,7 @@ open_and_map_input_files(void)
             }
         }
 
-        archi_log_debug(M, " * mapping file #%llu", (unsigned long long)i);
+        archi_log_debug(M, " * mapping file #%zu", i);
         {
             bool value_true = true;
 
@@ -662,23 +665,22 @@ open_and_map_input_files(void)
 
             if (file.element.num_of < sizeof(archi_exe_input_t))
             {
-                archi_log_error(M, "Input file #%llu is invalid (file size is smaller than the header structure size).");
+                archi_log_error(M, "Input file #%zu is invalid (file size is smaller than the header structure size).", i);
                 exit(EXIT_FAILURE);
             }
 
-            archi_exe_input_t *input = file.ptr;
+            const archi_exe_input_t *input = file.ptr;
             if (strncmp(ARCHI_EXE_INPUT_MAGIC, input->magic, sizeof(input->magic)) != 0)
             {
-                archi_log_error(M, "Input file #%llu is invalid (magic bytes are incorrect).");
+                archi_log_error(M, "Input file #%zu is invalid (magic bytes are incorrect).", i);
                 exit(EXIT_FAILURE);
             }
         }
 
-        archi_log_debug(M, " * inserting file context #%llu into the registry...", (unsigned long long)i);
+        archi_log_debug(M, " * inserting file context #%zu into the registry...", i);
         {
             char file_context_key[64]; // should be enough
-            snprintf(file_context_key, sizeof(file_context_key),
-                    "%s%llu", ARCHI_EXE_REGISTRY_KEY_INPUT_FILE, (unsigned long long)i);
+            snprintf(file_context_key, sizeof(file_context_key), "%s%zu", ARCHI_EXE_REGISTRY_KEY_INPUT_FILE, i);
 
             // Insert the context into the registry, which also increments the reference count
             archi_status_t code = archi_context_set_slot(archi_process.registry,
@@ -691,8 +693,7 @@ open_and_map_input_files(void)
 
             if (code != 0)
             {
-                archi_log_error(M, "Couldn't insert file context #%llu into the registry (error %i).", code,
-                        (unsigned long long)i);
+                archi_log_error(M, "Couldn't insert file context #%zu into the registry (error %i).", i, code);
                 exit(EXIT_FAILURE);
             }
         }
@@ -726,9 +727,9 @@ process_parameters_of_input_files(void)
 
     for (size_t i = 0; i < archi_process.args.num_inputs; i++)
     {
-        archi_log_debug(M, " * file #%llu ('%s')", (unsigned long long)i, archi_process.args.input[i]);
+        archi_log_debug(M, " * file #%zu ('%s')", i, archi_process.args.input[i]);
 
-        archi_exe_input_t *input = archi_context_data(archi_process.input_file[i]).ptr;
+        const archi_exe_input_t *input = archi_context_data(archi_process.input_file[i]).ptr;
 
         for (archi_context_parameter_list_t *params = input->params; params != NULL; params = params->next)
         {
@@ -880,9 +881,9 @@ execute_instructions(void)
 
     for (size_t i = 0; i < archi_process.args.num_inputs; i++)
     {
-        archi_log_debug(M, " * executing file #%llu ('%s')", (unsigned long long)i, archi_process.args.input[i]);
+        archi_log_debug(M, " * executing file #%zu ('%s')", i, archi_process.args.input[i]);
 
-        archi_exe_input_t *input = archi_context_data(archi_process.input_file[i]).ptr;
+        const archi_exe_input_t *input = archi_context_data(archi_process.input_file[i]).ptr;
 
         for (archi_exe_registry_instr_list_t *instr_list = input->instructions;
                 instr_list != NULL; instr_list = instr_list->next)
@@ -950,7 +951,7 @@ print_signal_watch_set(
     for (size_t i = 0; i < archi_signal_number_of_rt_signals(); i++)
     {
         if (signal_watch_set->f_SIGRTMIN[i])
-            archi_print(verbosity, " SIGRTMIN+%u", (unsigned)i);
+            archi_print(verbosity, " SIGRTMIN+%zu", i);
     }
 }
 

@@ -178,7 +178,7 @@ plugin_opencl_program_build_log(
                 char *new_build_log = realloc(build_log, length);
                 if (new_build_log == NULL)
                 {
-                    archi_log_debug(M, "couldn't realloc(%llu bytes) for build log", length);
+                    archi_log_debug(M, "couldn't realloc(%zu bytes) for build log", length);
                     continue;
                 }
 

@@ -105,13 +105,13 @@ archi_print_value(
 
     // Print array layout
     {
-        PRINT("%snum_of = %llu", indent, (unsigned long long)value.element.num_of);
+        PRINT("%snum_of = %zu", indent, value.element.num_of);
 
         if (value.element.size != 0)
-            PRINT(", size = %llu", (unsigned long long)value.element.size);
+            PRINT(", size = %zu", value.element.size);
 
         if (value.element.alignment != 0)
-            PRINT(", alignment = %llu", (unsigned long long)value.element.alignment);
+            PRINT(", alignment = %zu", value.element.alignment);
 
         PRINT("\n");
     }
@@ -124,7 +124,7 @@ archi_print_value(
             if (i >= value.element.num_of)
                 break;
 
-            PRINT("%s  [%llu]:", indent, (unsigned long long)i);
+            PRINT("%s  [%zu]:", indent, i);
 
             size_t alignment = (value.element.alignment != 0) ? value.element.alignment : 1;
             size_t size_padded = ARCHI_SIZE_PADDED(value.element.size, alignment);
@@ -443,11 +443,10 @@ archi_exe_registry_instr_execute_set_value(
 
         if (instr_set_value->slot.num_indices > 0)
         {
-            PRINT(ARCHI_LOG_INDENT "slot.indices[%llu] =",
-                    (unsigned long long)instr_set_value->slot.num_indices);
+            PRINT(ARCHI_LOG_INDENT "slot.indices[%zu] =", instr_set_value->slot.num_indices);
 
             for (size_t i = 0; i < instr_set_value->slot.num_indices; i++)
-                PRINT(" %llu", (unsigned long long)instr_set_value->slot.index[i]);
+                PRINT(" %zu", instr_set_value->slot.index[i]);
 
             PRINT("\n");
         }
@@ -512,11 +511,10 @@ archi_exe_registry_instr_execute_set_context(
 
         if (instr_set_context->slot.num_indices > 0)
         {
-            PRINT(ARCHI_LOG_INDENT "slot.indices[%llu] =",
-                    (unsigned long long)instr_set_context->slot.num_indices);
+            PRINT(ARCHI_LOG_INDENT "slot.indices[%zu] =", instr_set_context->slot.num_indices);
 
             for (size_t i = 0; i < instr_set_context->slot.num_indices; i++)
-                PRINT(" %llu", (unsigned long long)instr_set_context->slot.index[i]);
+                PRINT(" %zu", instr_set_context->slot.index[i]);
 
             PRINT("\n");
         }
@@ -606,11 +604,10 @@ archi_exe_registry_instr_execute_set_slot(
 
         if (instr_set_slot->slot.num_indices > 0)
         {
-            PRINT(ARCHI_LOG_INDENT "slot.indices[%llu] =",
-                    (unsigned long long)instr_set_slot->slot.num_indices);
+            PRINT(ARCHI_LOG_INDENT "slot.indices[%zu] =", instr_set_slot->slot.num_indices);
 
             for (size_t i = 0; i < instr_set_slot->slot.num_indices; i++)
-                PRINT(" %llu", (unsigned long long)instr_set_slot->slot.index[i]);
+                PRINT(" %zu", instr_set_slot->slot.index[i]);
 
             PRINT("\n");
         }
@@ -635,11 +632,11 @@ archi_exe_registry_instr_execute_set_slot(
 
         if (instr_set_slot->source_slot.num_indices > 0)
         {
-            PRINT(ARCHI_LOG_INDENT "source_slot.indices[%llu] =",
-                    (unsigned long long)instr_set_slot->source_slot.num_indices);
+            PRINT(ARCHI_LOG_INDENT "source_slot.indices[%zu] =",
+                    instr_set_slot->source_slot.num_indices);
 
             for (size_t i = 0; i < instr_set_slot->source_slot.num_indices; i++)
-                PRINT(" %llu", (unsigned long long)instr_set_slot->source_slot.index[i]);
+                PRINT(" %zu", instr_set_slot->source_slot.index[i]);
 
             PRINT("\n");
         }
@@ -721,11 +718,10 @@ archi_exe_registry_instr_execute_act(
 
         if (instr_act->action.num_indices > 0)
         {
-            PRINT(ARCHI_LOG_INDENT "action.indices[%llu] =",
-                    (unsigned long long)instr_act->action.num_indices);
+            PRINT(ARCHI_LOG_INDENT "action.indices[%zu] =", instr_act->action.num_indices);
 
             for (size_t i = 0; i < instr_act->action.num_indices; i++)
-                PRINT(" %llu", (unsigned long long)instr_act->action.index[i]);
+                PRINT(" %zu", instr_act->action.index[i]);
 
             PRINT("\n");
         }
