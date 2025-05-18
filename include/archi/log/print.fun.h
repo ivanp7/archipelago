@@ -32,14 +32,19 @@
  *
  * If @p format is NULL, the function returns immediately without printing.
  *
+ * @param[in] verbosity
+ *     Minimum verbosity level at which the message is printed.
+ *
  * @param[in] format
  *     A null-terminated printf-style format string. May be NULL,
  *     in which case no output is generated.
+ *
  * @param[in] ...
  *     Zero or more arguments matching the format specifiers in @p format.
  */
 void
 archi_print(
+        int verbosity,
         const char *format,
         ...
 );
@@ -51,6 +56,9 @@ archi_print(
  * are available) to serialize concurrent calls and prevent interleaved
  * output from multiple threads.
  *
+ * @param[in] verbosity
+ *     Minimum verbosity level at which the spinlock is acquired.
+ *
  * @note When C11 atomics are not available, this operation is a no-op:
  *       thread safety is not guaranteed (output may interleave in multithreaded scenarios).
  *
@@ -60,19 +68,31 @@ archi_print(
  * as they use the same spinlock.
  */
 void
-archi_print_lock(void);
+archi_print_lock(
+        int verbosity
+);
 
 /**
  * @brief Unock an internal spinlock to protect a composite printing operation.
+ *
+ * @param[in] verbosity
+ *     Minimum verbosity level at which the spinlock is released.
  *
  * @note When C11 atomics are not available, this operation is a no-op.
  *
  * @warning Each archi_print_unlock() must be preceded by archi_print_lock().
  */
 void
-archi_print_unlock(void);
+archi_print_unlock(
+        int verbosity
+);
 
 /*****************************************************************************/
+
+/**
+ * @brief An approximate indentation for custom messages aligning with log messages.
+ */
+#define ARCHI_LOG_INDENT  "                        "
 
 /**
  * @brief Log an error-level message.

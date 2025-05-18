@@ -98,10 +98,14 @@ archi_log_colorful(void)
 
 void
 archi_print(
+        int verbosity,
         const char *format,
         ...)
 {
     if ((archi_logger == NULL) || (format == NULL))
+        return;
+
+    if (archi_log_verbosity() < verbosity)
         return;
 
     va_list args;
@@ -113,19 +117,26 @@ archi_print(
 }
 
 void
-archi_print_lock(void)
+archi_print_lock(
+        int verbosity)
 {
+    if (archi_log_verbosity() < verbosity)
+        return;
+
 #ifndef __STDC_NO_ATOMICS__
-    while (atomic_flag_test_and_set_explicit(&archi_logger->spinlock, memory_order_acquire))
-        ; // spin until the lock is acquired
+    while (atomic_flag_test_and_set_explicit(&archi_logger->spinlock, memory_order_relaxed));
 #endif
 }
 
 void
-archi_print_unlock(void)
+archi_print_unlock(
+        int verbosity)
 {
+    if (archi_log_verbosity() < verbosity)
+        return;
+
 #ifndef __STDC_NO_ATOMICS__
-    atomic_flag_clear_explicit(&archi_logger->spinlock, memory_order_release); // release the lock
+    atomic_flag_clear_explicit(&archi_logger->spinlock, memory_order_relaxed);
 #endif
 }
 
@@ -144,7 +155,9 @@ archi_log(
     struct timespec ts;
     archi_log_elapsed_time(&ts);
 
-    archi_print_lock();
+#ifndef __STDC_NO_ATOMICS__
+    while (atomic_flag_test_and_set_explicit(&archi_logger->spinlock, memory_order_relaxed));
+#endif
 
     if (archi_logger->colorful)
         fprintf(archi_logger->stream, ARCHI_COLOR_RESET);
@@ -177,7 +190,9 @@ archi_log(
 
     fprintf(archi_logger->stream, "\n");
 
-    archi_print_unlock();
+#ifndef __STDC_NO_ATOMICS__
+    atomic_flag_clear_explicit(&archi_logger->spinlock, memory_order_relaxed);
+#endif
 }
 
 /*****************************************************************************/
