@@ -29,12 +29,21 @@
 #include "archi/ctx/interface/parameters.var.h"
 #include "archi/ctx/interface/pointer.var.h"
 #include "archi/log/print.fun.h"
+#include "archi/log/print.def.h"
+#include "archi/log/context.fun.h"
+#include "archi/util/size.def.h"
 
 #include <stdlib.h> // for malloc(), free()
+#include <string.h> // for memcpy()
 #include <stdbool.h>
 #include <stdalign.h>
 
-#define INSTRUCTION_POINTER(name, type) const type *name = (const type*)instruction
+#define PRINT(...) do { \
+    archi_print(ARCHI_LOG_VERBOSITY_DEBUG, __VA_ARGS__); \
+} while (0)
+
+#define MAX_ELEMENTS    8
+#define MAX_BYTES       16
 
 size_t
 archi_exe_registry_instr_sizeof(
@@ -68,6 +77,158 @@ archi_exe_registry_instr_sizeof(
 }
 
 static
+void
+archi_print_value(
+        const char *indent,
+        archi_pointer_t value)
+{
+    // Print attributes and flags
+    {
+        if (value.flags & ARCHI_POINTER_FLAG_FUNCTION)
+            PRINT("FUNCTION");
+        else
+        {
+            if (value.flags & ARCHI_POINTER_FLAG_WRITABLE)
+                PRINT("WRITABLE_DATA");
+            else
+                PRINT("READ_ONLY_DATA");
+        }
+
+        if ((value.flags & ARCHI_POINTER_USER_FLAGS_MASK) != 0)
+            PRINT(" | 0x%X", value.flags & ARCHI_POINTER_USER_FLAGS_MASK);
+
+        if (value.ref_count != NULL)
+            PRINT("    (ref_count)\n");
+
+        PRINT("\n");
+    }
+
+    // Print array layout
+    {
+        PRINT("%snum_of = %llu", indent, (unsigned long long)value.element.num_of);
+
+        if (value.element.size != 0)
+            PRINT(", size = %llu", (unsigned long long)value.element.size);
+
+        if (value.element.alignment != 0)
+            PRINT(", alignment = %llu", (unsigned long long)value.element.alignment);
+
+        PRINT("\n");
+    }
+
+    // Print memory contents
+    if (((value.flags & ARCHI_POINTER_FLAG_FUNCTION) == 0) && (value.element.size != 0))
+    {
+        for (size_t i = 0; i < MAX_ELEMENTS; i++)
+        {
+            if (i >= value.element.num_of)
+                break;
+
+            PRINT("%s  [%llu]:", indent, (unsigned long long)i);
+
+            size_t alignment = (value.element.alignment != 0) ? value.element.alignment : 1;
+            size_t size_padded = ARCHI_SIZE_PADDED(value.element.size, alignment);
+
+            // Print as integer
+            if (value.element.size == sizeof(char))
+            {
+                unsigned char uval;
+                signed char sval;
+
+                memcpy(&uval, (char*)value.ptr + i * size_padded, sizeof(char));
+                memcpy(&sval, (char*)value.ptr + i * size_padded, sizeof(char));
+
+                if (uval >= 32)
+                    PRINT(" '%c' x(%hhx) u(%hhu) i(%hhi)", (int)uval, uval, uval, sval);
+                else
+                    PRINT(" <.> x(%hhx) u(%hhu) i(%hhi)", uval, uval, sval);
+            }
+            else if (value.element.size == sizeof(short))
+            {
+                unsigned short uval;
+                signed short sval;
+
+                memcpy(&uval, (char*)value.ptr + i * size_padded, sizeof(short));
+                memcpy(&sval, (char*)value.ptr + i * size_padded, sizeof(short));
+
+                PRINT(" x(%hx), u(%hu), i(%hi)", uval, uval, sval);
+            }
+            else if (value.element.size == sizeof(int))
+            {
+                unsigned int uval;
+                signed int sval;
+
+                memcpy(&uval, (char*)value.ptr + i * size_padded, sizeof(int));
+                memcpy(&sval, (char*)value.ptr + i * size_padded, sizeof(int));
+
+                PRINT(" x(%x), u(%u), i(%i)", uval, uval, sval);
+            }
+            else if (value.element.size == sizeof(long))
+            {
+                unsigned long uval;
+                signed long sval;
+
+                memcpy(&uval, (char*)value.ptr + i * size_padded, sizeof(long));
+                memcpy(&sval, (char*)value.ptr + i * size_padded, sizeof(long));
+
+                PRINT(" x(%lx), u(%lu), i(%li)", uval, uval, sval);
+            }
+            else if (value.element.size == sizeof(long long))
+            {
+                unsigned long long uval;
+                signed long long sval;
+
+                memcpy(&uval, (char*)value.ptr + i * size_padded, sizeof(long long));
+                memcpy(&sval, (char*)value.ptr + i * size_padded, sizeof(long long));
+
+                PRINT(" x(%llx), u(%llu), i(%lli)", uval, uval, sval);
+            }
+
+            // Print as floating-point number
+            if (value.element.size == sizeof(float))
+            {
+                float val;
+
+                memcpy(&val, (char*)value.ptr + i * size_padded, sizeof(float));
+
+                PRINT(" f(%e)", (double)val);
+            }
+            else if (value.element.size == sizeof(double))
+            {
+                double val;
+
+                memcpy(&val, (char*)value.ptr + i * size_padded, sizeof(double));
+
+                PRINT(" f(%e)", val);
+            }
+            else if (value.element.size == sizeof(long double))
+            {
+                long double val;
+
+                memcpy(&val, (char*)value.ptr + i * size_padded, sizeof(long double));
+
+                PRINT(" f(%Le)", val);
+            }
+
+            PRINT("\n%s   ", indent);
+
+            for (size_t j = 0; j < MAX_BYTES; j++)
+            {
+                if (j >= value.element.size)
+                    break;
+
+                unsigned char uval;
+                memcpy(&uval, (char*)value.ptr + i * size_padded + j, sizeof(char));
+
+                PRINT(" %x", (int)uval);
+            }
+
+            PRINT("\n");
+        }
+    }
+}
+
+static
 archi_status_t
 archi_exe_registry_instr_execute_init(
         archi_context_t registry,
@@ -75,7 +236,43 @@ archi_exe_registry_instr_execute_init(
         bool dry_run,
         bool dynamic_params)
 {
-    // TODO
+    // Print the instruction details
+    if (archi_log_verbosity() >= ARCHI_LOG_VERBOSITY_DEBUG)
+    {
+        {
+            PRINT(ARCHI_LOG_INDENT "interface_key = ");
+
+            if (instr_init->interface_key == NULL)
+                PRINT("<parameter list>\n");
+            else if (instr_init->interface_key[0] == '\0')
+                PRINT("<copied pointer>\n");
+            else
+                PRINT("\"%s\"\n", instr_init->interface_key);
+        }
+
+        if (!dynamic_params)
+        {
+            PRINT(ARCHI_LOG_INDENT "parameters:\n");
+
+            for (const archi_context_parameter_list_t *params = instr_init->sparams;
+                    params != NULL; params = params->next)
+            {
+                PRINT(ARCHI_LOG_INDENT "  %s = ", params->name);
+                archi_print_value(ARCHI_LOG_INDENT "    ", params->value);
+            }
+        }
+        else
+        {
+            PRINT(ARCHI_LOG_INDENT "dparams_key = ");
+
+            if (instr_init->dparams_key != NULL)
+                PRINT("\"%s\"\n", instr_init->dparams_key);
+            else
+                PRINT("NULL\n");
+        }
+    }
+
+    archi_print_unlock(ARCHI_LOG_VERBOSITY_DEBUG);
 
     if (dry_run)
         return 0;
@@ -203,6 +400,8 @@ archi_exe_registry_instr_execute_final(
         const archi_exe_registry_instr_base_t *instruction,
         bool dry_run)
 {
+    archi_print_unlock(ARCHI_LOG_VERBOSITY_DEBUG);
+
     if (dry_run)
         return 0;
 
@@ -230,7 +429,36 @@ archi_exe_registry_instr_execute_set_value(
         const archi_exe_registry_instr_set_value_t *instr_set_value,
         bool dry_run)
 {
-    // TODO
+    // Print the instruction details
+    if (archi_log_verbosity() >= ARCHI_LOG_VERBOSITY_DEBUG)
+    {
+        {
+            PRINT(ARCHI_LOG_INDENT "slot.name = ");
+
+            if (instr_set_value->slot.name != NULL)
+                PRINT("\"%s\"\n", instr_set_value->slot.name);
+            else
+                PRINT("NULL\n");
+        }
+
+        if (instr_set_value->slot.num_indices > 0)
+        {
+            PRINT(ARCHI_LOG_INDENT "slot.indices[%llu] =",
+                    (unsigned long long)instr_set_value->slot.num_indices);
+
+            for (size_t i = 0; i < instr_set_value->slot.num_indices; i++)
+                PRINT(" %llu", (unsigned long long)instr_set_value->slot.index[i]);
+
+            PRINT("\n");
+        }
+
+        {
+            PRINT(ARCHI_LOG_INDENT "value = ");
+            archi_print_value(ARCHI_LOG_INDENT "  ", instr_set_value->value);
+        }
+    }
+
+    archi_print_unlock(ARCHI_LOG_VERBOSITY_DEBUG);
 
     if (dry_run)
         return 0;
@@ -270,7 +498,40 @@ archi_exe_registry_instr_execute_set_context(
         const archi_exe_registry_instr_set_context_t *instr_set_context,
         bool dry_run)
 {
-    // TODO
+    // Print the instruction details
+    if (archi_log_verbosity() >= ARCHI_LOG_VERBOSITY_DEBUG)
+    {
+        {
+            PRINT(ARCHI_LOG_INDENT "slot.name = ");
+
+            if (instr_set_context->slot.name != NULL)
+                PRINT("\"%s\"\n", instr_set_context->slot.name);
+            else
+                PRINT("NULL\n");
+        }
+
+        if (instr_set_context->slot.num_indices > 0)
+        {
+            PRINT(ARCHI_LOG_INDENT "slot.indices[%llu] =",
+                    (unsigned long long)instr_set_context->slot.num_indices);
+
+            for (size_t i = 0; i < instr_set_context->slot.num_indices; i++)
+                PRINT(" %llu", (unsigned long long)instr_set_context->slot.index[i]);
+
+            PRINT("\n");
+        }
+
+        {
+            PRINT(ARCHI_LOG_INDENT "source_key = ");
+
+            if (instr_set_context->source_key != NULL)
+                PRINT("\"%s\"\n", instr_set_context->source_key);
+            else
+                PRINT("NULL\n");
+        }
+    }
+
+    archi_print_unlock(ARCHI_LOG_VERBOSITY_DEBUG);
 
     if (dry_run)
         return 0;
@@ -331,7 +592,60 @@ archi_exe_registry_instr_execute_set_slot(
         const archi_exe_registry_instr_set_slot_t *instr_set_slot,
         bool dry_run)
 {
-    // TODO
+    // Print the instruction details
+    if (archi_log_verbosity() >= ARCHI_LOG_VERBOSITY_DEBUG)
+    {
+        {
+            PRINT(ARCHI_LOG_INDENT "slot.name = ");
+
+            if (instr_set_slot->slot.name != NULL)
+                PRINT("\"%s\"\n", instr_set_slot->slot.name);
+            else
+                PRINT("NULL\n");
+        }
+
+        if (instr_set_slot->slot.num_indices > 0)
+        {
+            PRINT(ARCHI_LOG_INDENT "slot.indices[%llu] =",
+                    (unsigned long long)instr_set_slot->slot.num_indices);
+
+            for (size_t i = 0; i < instr_set_slot->slot.num_indices; i++)
+                PRINT(" %llu", (unsigned long long)instr_set_slot->slot.index[i]);
+
+            PRINT("\n");
+        }
+
+        {
+            PRINT(ARCHI_LOG_INDENT "source_key = ");
+
+            if (instr_set_slot->source_key != NULL)
+                PRINT("\"%s\"\n", instr_set_slot->source_key);
+            else
+                PRINT("NULL\n");
+        }
+
+        {
+            PRINT(ARCHI_LOG_INDENT "source_slot.name = ");
+
+            if (instr_set_slot->source_slot.name != NULL)
+                PRINT("\"%s\"\n", instr_set_slot->source_slot.name);
+            else
+                PRINT("NULL\n");
+        }
+
+        if (instr_set_slot->source_slot.num_indices > 0)
+        {
+            PRINT(ARCHI_LOG_INDENT "source_slot.indices[%llu] =",
+                    (unsigned long long)instr_set_slot->source_slot.num_indices);
+
+            for (size_t i = 0; i < instr_set_slot->source_slot.num_indices; i++)
+                PRINT(" %llu", (unsigned long long)instr_set_slot->source_slot.index[i]);
+
+            PRINT("\n");
+        }
+    }
+
+    archi_print_unlock(ARCHI_LOG_VERBOSITY_DEBUG);
 
     if (dry_run)
         return 0;
@@ -393,7 +707,52 @@ archi_exe_registry_instr_execute_act(
         bool dry_run,
         bool dynamic_params)
 {
-    // TODO
+    // Print the instruction details
+    if (archi_log_verbosity() >= ARCHI_LOG_VERBOSITY_DEBUG)
+    {
+        {
+            PRINT(ARCHI_LOG_INDENT "action.name = ");
+
+            if (instr_act->action.name != NULL)
+                PRINT("\"%s\"\n", instr_act->action.name);
+            else
+                PRINT("NULL\n");
+        }
+
+        if (instr_act->action.num_indices > 0)
+        {
+            PRINT(ARCHI_LOG_INDENT "action.indices[%llu] =",
+                    (unsigned long long)instr_act->action.num_indices);
+
+            for (size_t i = 0; i < instr_act->action.num_indices; i++)
+                PRINT(" %llu", (unsigned long long)instr_act->action.index[i]);
+
+            PRINT("\n");
+        }
+
+        if (!dynamic_params)
+        {
+            PRINT(ARCHI_LOG_INDENT "parameters:\n");
+
+            for (const archi_context_parameter_list_t *params = instr_act->sparams;
+                    params != NULL; params = params->next)
+            {
+                PRINT(ARCHI_LOG_INDENT "  %s = ", params->name);
+                archi_print_value(ARCHI_LOG_INDENT "    ", params->value);
+            }
+        }
+        else
+        {
+            PRINT(ARCHI_LOG_INDENT "dparams_key = ");
+
+            if (instr_act->dparams_key != NULL)
+                PRINT("\"%s\"\n", instr_act->dparams_key);
+            else
+                PRINT("NULL\n");
+        }
+    }
+
+    archi_print_unlock(ARCHI_LOG_VERBOSITY_DEBUG);
 
     if (dry_run)
         return 0;
@@ -465,90 +824,82 @@ archi_exe_registry_instr_execute(
     if (registry == NULL)
         return ARCHI_STATUS_EMISUSE;
 
+    archi_print_lock(ARCHI_LOG_VERBOSITY_DEBUG);
+
     if ((instruction == NULL) || (instruction->type == ARCHI_EXE_REGISTRY_INSTR_NOOP))
     {
-        archi_log_debug("instruction(NOOP)", "");
+        PRINT(ARCHI_LOG_INDENT "instruction(NOOP)\n");
         return 0;
     }
 
-    if (instruction->key == NULL)
-    {
-        archi_log_debug("instruction()", "key = NULL");
-        return !dry_run ? ARCHI_STATUS_EMISUSE : 0;
-    }
-    else if (instruction->key[0] == '\0')
-    {
-        archi_log_debug("instruction()", "key = \"\"");
-        return !dry_run ? ARCHI_STATUS_EMISUSE : 0;
-    }
+#define PRINT_INSTRUCTION_BASE(type) do {                           \
+        PRINT(ARCHI_LOG_INDENT "instruction(" #type ") key = ");    \
+        if (instruction->key != NULL)                               \
+            PRINT("\"%s\"\n", instruction->key);                    \
+        else                                                        \
+            PRINT("NULL\n");                                        \
+    } while (0)
 
     switch (instruction->type)
     {
         case ARCHI_EXE_REGISTRY_INSTR_INIT_STATIC:
-            archi_log_debug("instruction(INIT_STATIC)",
-                    "key = \"%s\"", instruction->key);
+            PRINT_INSTRUCTION_BASE(INIT_STATIC);
 
             return archi_exe_registry_instr_execute_init(registry,
                     (const archi_exe_registry_instr_init_t*)instruction, dry_run,
                     false);
 
         case ARCHI_EXE_REGISTRY_INSTR_INIT_DYNAMIC:
-            archi_log_debug("instruction(INIT_DYNAMIC)",
-                    "key = \"%s\"", instruction->key);
+            PRINT_INSTRUCTION_BASE(INIT_DYNAMIC);
 
             return archi_exe_registry_instr_execute_init(registry,
                     (const archi_exe_registry_instr_init_t*)instruction, dry_run,
                     true);
 
         case ARCHI_EXE_REGISTRY_INSTR_FINAL:
-            archi_log_debug("instruction(FINAL)",
-                    "key = \"%s\"", instruction->key);
+            PRINT_INSTRUCTION_BASE(FINAL);
 
             return archi_exe_registry_instr_execute_final(registry,
                     instruction, dry_run);
 
         case ARCHI_EXE_REGISTRY_INSTR_SET_VALUE:
-            archi_log_debug("instruction(SET_VALUE)",
-                    "key = \"%s\"", instruction->key);
+            PRINT_INSTRUCTION_BASE(SET_VALUE);
 
             return archi_exe_registry_instr_execute_set_value(registry,
                     (const archi_exe_registry_instr_set_value_t*)instruction, dry_run);
 
         case ARCHI_EXE_REGISTRY_INSTR_SET_CONTEXT:
-            archi_log_debug("instruction(SET_CONTEXT)",
-                    "key = \"%s\"", instruction->key);
+            PRINT_INSTRUCTION_BASE(SET_CONTEXT);
 
             return archi_exe_registry_instr_execute_set_context(registry,
                     (const archi_exe_registry_instr_set_context_t*)instruction, dry_run);
 
         case ARCHI_EXE_REGISTRY_INSTR_SET_SLOT:
-            archi_log_debug("instruction(SET_SLOT)",
-                    "key = \"%s\"", instruction->key);
+            PRINT_INSTRUCTION_BASE(SET_SLOT);
 
             return archi_exe_registry_instr_execute_set_slot(registry,
                     (const archi_exe_registry_instr_set_slot_t*)instruction, dry_run);
 
         case ARCHI_EXE_REGISTRY_INSTR_ACT_STATIC:
-            archi_log_debug("instruction(ACT_STATIC)",
-                    "key = \"%s\"", instruction->key);
+            PRINT_INSTRUCTION_BASE(ACT_STATIC);
 
             return archi_exe_registry_instr_execute_act(registry,
                     (const archi_exe_registry_instr_act_t*)instruction, dry_run,
                     false);
 
         case ARCHI_EXE_REGISTRY_INSTR_ACT_DYNAMIC:
-            archi_log_debug("instruction(ACT_DYNAMIC)",
-                    "key = \"%s\"", instruction->key);
+            PRINT_INSTRUCTION_BASE(ACT_DYNAMIC);
 
             return archi_exe_registry_instr_execute_act(registry,
                     (const archi_exe_registry_instr_act_t*)instruction, dry_run,
                     true);
 
         default:
-            archi_log_debug("instruction(<invalid type>)",
-                    "key = \"%s\"", instruction->key);
+            PRINT_INSTRUCTION_BASE(<unknown>);
 
             return !dry_run ? ARCHI_STATUS_EMISUSE : 0;
     }
+
+#undef PRINT_INSTRUCTION_BASE
 }
 

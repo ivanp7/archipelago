@@ -35,6 +35,7 @@
 #include "archi/exe/logging.fun.h"
 #include "archi/log/context.fun.h"
 #include "archi/log/print.fun.h"
+#include "archi/log/print.def.h"
 #include "archi/log/color.def.h"
 
 // Built-in context interfaces
@@ -135,6 +136,15 @@ execute_instructions(void);
 
 ///////////////////////////////////////////////////////////////////////////////
 
+static
+void
+print_signal_watch_set(
+        int verbosity,
+        const archi_signal_watch_set_t *signal_watch_set
+);
+
+///////////////////////////////////////////////////////////////////////////////
+
 int
 main(
         int argc,
@@ -159,16 +169,16 @@ main(
             break;
 
         case ARCHI_STATUS_EVALUE: // incorrect arguments
-            archi_print("Error: incorrect command line arguments.\n");
+            archi_print(0, "Error: incorrect command line arguments.\n");
             return 2;
 
         case ARCHI_STATUS_ENOMEMORY: // memory allocation error
-            archi_print("Error: memory allocation failure while parsing command line arguments.\n");
+            archi_print(0, "Error: memory allocation failure while parsing command line arguments.\n");
             return 3;
 
         case ARCHI_STATUS_EFAILURE:
         default: // unknown error
-            archi_print("Error: unknown failure while parsing command line arguments.\n");
+            archi_print(0, "Error: unknown failure while parsing command line arguments.\n");
             return 1;
     }
 
@@ -297,30 +307,34 @@ print_logo(void)
 
     static const char *space = " ";
 
-    if (!archi_process.args.no_color)
-        archi_print(ARCHI_COLOR_RESET);
+    archi_print_lock(0);
 
-    archi_print("\n");
+    if (!archi_process.args.no_color)
+        archi_print(0, ARCHI_COLOR_RESET);
+
+    archi_print(0, "\n");
 
     for (int i = 0; i < LINES; i++)
     {
-        archi_print("  ");
+        archi_print(0, "  ");
 
         for (int j = 0; j < LETTERS; j++)
         {
             if (!archi_process.args.no_color)
-                archi_print("%s", colors[j]);
+                archi_print(0, "%s", colors[j]);
 
-            archi_print("%s%s", space, logo[i][j]);
+            archi_print(0, "%s%s", space, logo[i][j]);
         }
 
         if (!archi_process.args.no_color)
-            archi_print(ARCHI_COLOR_RESET);
+            archi_print(0, ARCHI_COLOR_RESET);
 
-        archi_print("\n");
+        archi_print(0, "\n");
     }
 
-    archi_print("\n\n");
+    archi_print(0, "\n\n");
+
+    archi_print_unlock(0);
 
 #undef LINES
 #undef LETTERS
@@ -464,6 +478,8 @@ create_hashmap_of_interfaces(void)
                 "_interface into the hashmap of interfaces (error %i).", code); \
         exit(EXIT_FAILURE);                                             \
     } } while (0)
+
+    // After modifying this list, don't forget to update the help message in `exe/args.c`
 
     BUILTIN_INTERFACE(parameters);
     BUILTIN_INTERFACE(pointer);
@@ -651,7 +667,7 @@ open_and_map_input_files(void)
             }
 
             archi_exe_input_t *input = file.ptr;
-            if (strncmp(input->magic, ARCHI_EXE_INPUT_MAGIC, strlen(ARCHI_EXE_INPUT_MAGIC) + 1) != 0)
+            if (strncmp(ARCHI_EXE_INPUT_MAGIC, input->magic, sizeof(input->magic)) != 0)
             {
                 archi_log_error(M, "Input file #%llu is invalid (magic bytes are incorrect).");
                 exit(EXIT_FAILURE);
@@ -716,8 +732,6 @@ process_parameters_of_input_files(void)
 
         for (archi_context_parameter_list_t *params = input->params; params != NULL; params = params->next)
         {
-            archi_log_debug(M, "   %s =", params->name);
-
             if (strcmp("signals", params->name) == 0)
             {
                 if ((params->value.flags & ARCHI_POINTER_FLAG_FUNCTION) || (params->value.ptr == NULL))
@@ -729,44 +743,12 @@ process_parameters_of_input_files(void)
                 archi_signal_watch_set_t *signal_watch_set = params->value.ptr;
                 archi_signal_watch_set_join(archi_process.signal_watch_set, signal_watch_set);
 
-#define LOG_SIGNAL(signal) do { \
-                if (signal_watch_set->f_##signal) \
-                    archi_log_debug(M, "     %s", #signal); \
-                } while (0)
-
-                LOG_SIGNAL(SIGINT);
-                LOG_SIGNAL(SIGQUIT);
-                LOG_SIGNAL(SIGTERM);
-
-                LOG_SIGNAL(SIGCHLD);
-                LOG_SIGNAL(SIGCONT);
-                LOG_SIGNAL(SIGTSTP);
-
-                LOG_SIGNAL(SIGXCPU);
-                LOG_SIGNAL(SIGXFSZ);
-
-                LOG_SIGNAL(SIGPIPE);
-                LOG_SIGNAL(SIGPOLL);
-                LOG_SIGNAL(SIGURG);
-
-                LOG_SIGNAL(SIGALRM);
-                LOG_SIGNAL(SIGVTALRM);
-                LOG_SIGNAL(SIGPROF);
-
-                LOG_SIGNAL(SIGHUP);
-                LOG_SIGNAL(SIGTTIN);
-                LOG_SIGNAL(SIGTTOU);
-                LOG_SIGNAL(SIGWINCH);
-
-                LOG_SIGNAL(SIGUSR1);
-                LOG_SIGNAL(SIGUSR2);
-
-#undef LOG_SIGNAL
-
-                for (size_t i = 0; i < archi_signal_number_of_rt_signals(); i++)
                 {
-                    if (signal_watch_set->f_SIGRTMIN[i])
-                        archi_log_debug(M, "     SIGRTMIN+%u", (unsigned)i);
+                    archi_print_lock(ARCHI_LOG_VERBOSITY_DEBUG);
+                    archi_print(ARCHI_LOG_VERBOSITY_DEBUG, ARCHI_LOG_INDENT "  signals =");
+                    print_signal_watch_set(ARCHI_LOG_VERBOSITY_DEBUG, signal_watch_set);
+                    archi_print(ARCHI_LOG_VERBOSITY_DEBUG, "\n");
+                    archi_print_unlock(ARCHI_LOG_VERBOSITY_DEBUG);
                 }
             }
             else
@@ -814,45 +796,13 @@ start_signal_management(void)
     {
         archi_log_debug(M, "Creating the signal management context...");
 
-#define LOG_SIGNAL(signal) do { \
-            if (archi_process.signal_watch_set->f_##signal) \
-                archi_log_debug(M, "  %s", #signal); \
-            } while (0)
-
-            LOG_SIGNAL(SIGINT);
-            LOG_SIGNAL(SIGQUIT);
-            LOG_SIGNAL(SIGTERM);
-
-            LOG_SIGNAL(SIGCHLD);
-            LOG_SIGNAL(SIGCONT);
-            LOG_SIGNAL(SIGTSTP);
-
-            LOG_SIGNAL(SIGXCPU);
-            LOG_SIGNAL(SIGXFSZ);
-
-            LOG_SIGNAL(SIGPIPE);
-            LOG_SIGNAL(SIGPOLL);
-            LOG_SIGNAL(SIGURG);
-
-            LOG_SIGNAL(SIGALRM);
-            LOG_SIGNAL(SIGVTALRM);
-            LOG_SIGNAL(SIGPROF);
-
-            LOG_SIGNAL(SIGHUP);
-            LOG_SIGNAL(SIGTTIN);
-            LOG_SIGNAL(SIGTTOU);
-            LOG_SIGNAL(SIGWINCH);
-
-            LOG_SIGNAL(SIGUSR1);
-            LOG_SIGNAL(SIGUSR2);
-
-#undef LOG_SIGNAL
-
-            for (size_t i = 0; i < archi_signal_number_of_rt_signals(); i++)
-            {
-                if (archi_process.signal_watch_set->f_SIGRTMIN[i])
-                    archi_log_debug(M, "  SIGRTMIN+%u", (unsigned)i);
-            }
+        {
+            archi_print_lock(ARCHI_LOG_VERBOSITY_DEBUG);
+            archi_print(ARCHI_LOG_VERBOSITY_DEBUG, ARCHI_LOG_INDENT "  signals =");
+            print_signal_watch_set(ARCHI_LOG_VERBOSITY_DEBUG, archi_process.signal_watch_set);
+            archi_print(ARCHI_LOG_VERBOSITY_DEBUG, "\n");
+            archi_print_unlock(ARCHI_LOG_VERBOSITY_DEBUG);
+        }
 
         if (archi_process.args.dry_run)
             return;
@@ -951,5 +901,56 @@ execute_instructions(void)
     }
 
 #undef M
+}
+
+///////////////////////////////////////////////////////////////////////////////
+
+void
+print_signal_watch_set(
+        int verbosity,
+        const archi_signal_watch_set_t *signal_watch_set)
+{
+    if (archi_log_verbosity() < verbosity)
+        return;
+
+#define PRINT_SIGNAL(signal) do { \
+        if (signal_watch_set->f_##signal) \
+            archi_print(verbosity, " %s", #signal); \
+    } while (0)
+
+    PRINT_SIGNAL(SIGINT);
+    PRINT_SIGNAL(SIGQUIT);
+    PRINT_SIGNAL(SIGTERM);
+
+    PRINT_SIGNAL(SIGCHLD);
+    PRINT_SIGNAL(SIGCONT);
+    PRINT_SIGNAL(SIGTSTP);
+
+    PRINT_SIGNAL(SIGXCPU);
+    PRINT_SIGNAL(SIGXFSZ);
+
+    PRINT_SIGNAL(SIGPIPE);
+    PRINT_SIGNAL(SIGPOLL);
+    PRINT_SIGNAL(SIGURG);
+
+    PRINT_SIGNAL(SIGALRM);
+    PRINT_SIGNAL(SIGVTALRM);
+    PRINT_SIGNAL(SIGPROF);
+
+    PRINT_SIGNAL(SIGHUP);
+    PRINT_SIGNAL(SIGTTIN);
+    PRINT_SIGNAL(SIGTTOU);
+    PRINT_SIGNAL(SIGWINCH);
+
+    PRINT_SIGNAL(SIGUSR1);
+    PRINT_SIGNAL(SIGUSR2);
+
+#undef PRINT_SIGNAL
+
+    for (size_t i = 0; i < archi_signal_number_of_rt_signals(); i++)
+    {
+        if (signal_watch_set->f_SIGRTMIN[i])
+            archi_print(verbosity, " SIGRTMIN+%u", (unsigned)i);
+    }
 }
 
