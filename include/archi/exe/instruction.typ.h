@@ -83,8 +83,8 @@ typedef struct archi_exe_registry_instr_init {
     const char *interface_key; ///< Key of the context interface.
 
     union {
-        const char *dparams_key; ///< Key of the dynamic parameter list.
         const archi_context_parameter_list_t *sparams; ///< Static parameter list.
+        const char *dparams_key; ///< Key of the dynamic parameter list.
     };
 } archi_exe_registry_instr_init_t;
 
@@ -120,7 +120,7 @@ typedef struct archi_exe_registry_instr_set_slot {
 } archi_exe_registry_instr_set_slot_t;
 
 /**
- * @brief Context registry instruction for context action.
+ * @brief Context registry instruction: invoke context action.
  */
 typedef struct archi_exe_registry_instr_act {
     archi_exe_registry_instr_base_t base; ///< Instruction base.
@@ -128,8 +128,8 @@ typedef struct archi_exe_registry_instr_act {
     archi_context_op_designator_t action; ///< Action designator.
 
     union {
-        const char *dparams_key; ///< Key of the dynamic parameter list.
         const archi_context_parameter_list_t *sparams; ///< Static parameter list.
+        const char *dparams_key; ///< Key of the dynamic parameter list.
     };
 } archi_exe_registry_instr_act_t;
 

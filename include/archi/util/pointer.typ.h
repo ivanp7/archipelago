@@ -30,7 +30,7 @@
 #include "archi/util/ref_count.fun.h"
 #include "archi/util/size.typ.h"
 
-#include <stdint.h> // for uintptr_t
+#include <stdint.h> // for uint64_t
 #include <limits.h> // for CHAR_BIT
 
 /**
@@ -83,7 +83,7 @@ typedef struct archi_pointer {
         archi_function_t fptr; ///< Generic function pointer (to single function or array).
     };
     archi_reference_count_t ref_count; ///< Reference count for the resource.
-    uintptr_t flags; ///< Flags describing pointer attributes.
+    uint64_t flags; ///< Flags describing pointer attributes.
     archi_array_layout_t element; ///< Layout of the array.
 } archi_pointer_t;
 
@@ -100,7 +100,7 @@ typedef struct archi_pointer {
  * @note This flag is stored in the highest-order bit.
  */
 #define ARCHI_POINTER_FLAG_FUNCTION         \
-    ((uintptr_t)1 << (sizeof(uintptr_t) * CHAR_BIT - 1))
+    ((uint64_t)1 << (sizeof(uint64_t) * CHAR_BIT - 1))
 
 /**
  * @def ARCHI_POINTER_FLAG_WRITABLE
@@ -138,7 +138,7 @@ typedef struct archi_pointer {
  * @brief Mask of bits available for user-defined flags.
  */
 #define ARCHI_POINTER_USER_FLAGS_MASK       \
-    (((uintptr_t)1 << ARCHI_POINTER_USER_FLAGS_BITS) - 1)
+    (((uint64_t)1 << ARCHI_POINTER_USER_FLAGS_BITS) - 1)
 
 #endif // _ARCHI_UTIL_POINTER_TYP_H_
 

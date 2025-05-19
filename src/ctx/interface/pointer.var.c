@@ -31,7 +31,7 @@
 ARCHI_CONTEXT_INIT_FUNC(archi_context_pointer_init)
 {
     archi_pointer_t value = {0};
-    uintptr_t flags = 0;
+    uint64_t flags = 0;
     archi_array_layout_t layout = {0};
     archi_array_layout_t layout_fields = {0};
 
@@ -62,7 +62,7 @@ ARCHI_CONTEXT_INIT_FUNC(archi_context_pointer_init)
                     (params->value.ptr == NULL))
                 return ARCHI_STATUS_EVALUE;
 
-            flags = *(uintptr_t*)params->value.ptr;
+            flags = *(uint64_t*)params->value.ptr;
         }
         else if (strcmp("layout", params->name) == 0)
         {
