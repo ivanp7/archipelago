@@ -254,7 +254,7 @@ archi_exe_registry_instr_execute_init(
         {
             PRINT(ARCHI_LOG_INDENT "parameters:\n");
 
-            for (const archi_context_parameter_list_t *params = instr_init->sparams;
+            for (const archi_parameter_list_t *params = instr_init->sparams;
                     params != NULL; params = params->next)
             {
                 PRINT(ARCHI_LOG_INDENT "  %s = ", params->name);
@@ -338,7 +338,7 @@ archi_exe_registry_instr_execute_init(
     }
 
     // Obtain the context initialization parameters
-    const archi_context_parameter_list_t *params;
+    const archi_parameter_list_t *params;
 
     if (!dynamic_params)
         params = instr_init->sparams;
@@ -730,7 +730,7 @@ archi_exe_registry_instr_execute_act(
         {
             PRINT(ARCHI_LOG_INDENT "parameters:\n");
 
-            for (const archi_context_parameter_list_t *params = instr_act->sparams;
+            for (const archi_parameter_list_t *params = instr_act->sparams;
                     params != NULL; params = params->next)
             {
                 PRINT(ARCHI_LOG_INDENT "  %s = ", params->name);
@@ -777,7 +777,7 @@ archi_exe_registry_instr_execute_act(
         return ARCHI_STATUS_EVALUE;
 
     // Obtain the context action parameters
-    const archi_context_parameter_list_t *params;
+    const archi_parameter_list_t *params;
 
     if (!dynamic_params)
         params = instr_act->sparams;

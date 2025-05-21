@@ -83,7 +83,7 @@ typedef struct archi_exe_registry_instr_init {
     const char *interface_key; ///< Key of the context interface.
 
     union {
-        const archi_context_parameter_list_t *sparams; ///< Static parameter list.
+        const archi_parameter_list_t *sparams; ///< Static parameter list.
         const char *dparams_key; ///< Key of the dynamic parameter list.
     };
 } archi_exe_registry_instr_init_t;
@@ -128,7 +128,7 @@ typedef struct archi_exe_registry_instr_act {
     archi_context_op_designator_t action; ///< Action designator.
 
     union {
-        const archi_context_parameter_list_t *sparams; ///< Static parameter list.
+        const archi_parameter_list_t *sparams; ///< Static parameter list.
         const char *dparams_key; ///< Key of the dynamic parameter list.
     };
 } archi_exe_registry_instr_act_t;

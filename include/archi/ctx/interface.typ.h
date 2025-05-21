@@ -28,6 +28,7 @@
 #define _ARCHI_CTX_INTERFACE_TYP_H_
 
 #include "archi/util/pointer.typ.h"
+#include "archi/util/params.typ.h"
 #include "archi/util/status.typ.h"
 
 /**
@@ -47,18 +48,6 @@ typedef struct archi_context_data {
 
 /*****************************************************************************/
 
-struct archi_context_parameter_list;
-
-/**
- * @brief List of named values.
- */
-typedef struct archi_context_parameter_list {
-    struct archi_context_parameter_list *next; ///< Pointer to the next list node.
-
-    const char *name;      ///< Parameter name.
-    archi_pointer_t value; ///< Parameter value.
-} archi_context_parameter_list_t;
-
 /**
  * @brief Declare/define context initialization function.
  *
@@ -68,7 +57,7 @@ typedef struct archi_context_parameter_list {
  */
 #define ARCHI_CONTEXT_INIT_FUNC(func_name) archi_status_t func_name( \
         archi_context_data_t *context, /* [out] Context data. */ \
-        const archi_context_parameter_list_t *params) /* [in] Initialization parameters. */
+        const archi_parameter_list_t *params) /* [in] Initialization parameters. */
 
 /**
  * @brief Context initialization function type.
@@ -144,7 +133,7 @@ typedef ARCHI_CONTEXT_SET_FUNC((*archi_context_set_func_t));
 #define ARCHI_CONTEXT_ACT_FUNC(func_name) archi_status_t func_name( \
         archi_context_data_t context, /* [in] Context data. */ \
         const archi_context_op_designator_t action, /* [in] Action designator. */ \
-        const archi_context_parameter_list_t *params) /* [in] Action parameters. */
+        const archi_parameter_list_t *params) /* [in] Action parameters. */
 
 /**
  * @brief Context action function type.

@@ -352,7 +352,7 @@ create_context_registry(void)
 
     size_t hashmap_capacity = 1024;
 
-    archi_context_parameter_list_t params[] = {
+    archi_parameter_list_t params[] = {
         {
             .name = "capacity",
             .value.ptr = &hashmap_capacity,
@@ -419,7 +419,7 @@ create_hashmap_of_interfaces(void)
 
     size_t hashmap_capacity = 1024;
 
-    archi_context_parameter_list_t params[] = {
+    archi_parameter_list_t params[] = {
         {
             .name = "capacity",
             .value.ptr = &hashmap_capacity,
@@ -524,7 +524,7 @@ obtain_handle_of_executable(void)
     if (archi_process.args.dry_run)
         return;
 
-    archi_context_parameter_list_t params[] = {
+    archi_parameter_list_t params[] = {
         {
             .name = "pathname",
             // value.ptr is NULL
@@ -595,7 +595,7 @@ open_and_map_input_files(void)
         {
             bool value_true = true;
 
-            archi_context_parameter_list_t params[] = {
+            archi_parameter_list_t params[] = {
                 {
                     .name = "pathname",
                     .value = (archi_pointer_t){
@@ -628,7 +628,7 @@ open_and_map_input_files(void)
         {
             bool value_true = true;
 
-            archi_context_parameter_list_t params[] = {
+            archi_parameter_list_t params[] = {
                 {
                     .name = "has_header",
                     .value = (archi_pointer_t){
@@ -731,7 +731,7 @@ process_parameters_of_input_files(void)
 
         const archi_exe_input_t *input = archi_context_data(archi_process.input_file[i]).ptr;
 
-        for (archi_context_parameter_list_t *params = input->params; params != NULL; params = params->next)
+        for (archi_parameter_list_t *params = input->params; params != NULL; params = params->next)
         {
             if (strcmp("signals", params->name) == 0)
             {
@@ -808,7 +808,7 @@ start_signal_management(void)
         if (archi_process.args.dry_run)
             return;
 
-        archi_context_parameter_list_t params[] = {
+        archi_parameter_list_t params[] = {
             {
                 .name = "signals",
                 .value.ptr = archi_process.signal_watch_set,

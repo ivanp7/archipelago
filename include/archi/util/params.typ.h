@@ -20,32 +20,26 @@
 
 /**
  * @file
- * @brief Description of an application initialization file (executable input file).
+ * @brief The type of list of named values.
  */
 
 #pragma once
-#ifndef _ARCHI_EXE_INPUT_TYP_H_
-#define _ARCHI_EXE_INPUT_TYP_H_
+#ifndef _ARCHI_UTIL_PARAMS_TYP_H_
+#define _ARCHI_UTIL_PARAMS_TYP_H_
 
-#include "archi/res/file/header.typ.h"
+#include "archi/util/pointer.typ.h"
 
 struct archi_parameter_list;
-struct archi_exe_registry_instr_list;
-
-#define ARCHI_EXE_INPUT_MAGIC   "[archi]" ///< Magic bytes identifying the format of input files.
 
 /**
- * @brief Description of an input file for the executable.
- *
- * @note Valid input files always have `magic` containing the same bytes as ARCHI_EXE_INPUT_MAGIC.
+ * @brief List of named values.
  */
-typedef struct archi_exe_input {
-    archi_file_header_t header; ///< Memory-mapped file header.
-    char magic[8]; ///< Magic bytes identifying the file format.
+typedef struct archi_parameter_list {
+    struct archi_parameter_list *next; ///< Pointer to the next list node.
 
-    struct archi_parameter_list *params; ///< File parameter list.
-    struct archi_exe_registry_instr_list *instructions; ///< List of instructions.
-} archi_exe_input_t;
+    const char *name;      ///< Parameter name.
+    archi_pointer_t value; ///< Parameter value.
+} archi_parameter_list_t;
 
-#endif // _ARCHI_EXE_INPUT_TYP_H_
+#endif // _ARCHI_UTIL_PARAMS_TYP_H_
 

@@ -66,7 +66,7 @@ archi_context_data(
 archi_context_t
 archi_context_initialize(
         archi_pointer_t interface, ///< [in] Context interface.
-        const archi_context_parameter_list_t *params, ///< [in] Initialization parameters.
+        const archi_parameter_list_t *params, ///< [in] Initialization parameters.
         archi_status_t *code ///< [out] Status code.
 );
 
@@ -131,7 +131,7 @@ archi_status_t
 archi_context_act(
         archi_context_t context, ///< [in] Initialized context.
         archi_context_op_designator_t action, ///< [in] Action designator.
-        const archi_context_parameter_list_t *params ///< [in] Action parameters.
+        const archi_parameter_list_t *params ///< [in] Action parameters.
 );
 
 #endif // _ARCHI_CTX_INTERFACE_FUN_H_

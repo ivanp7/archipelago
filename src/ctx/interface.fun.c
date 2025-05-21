@@ -67,7 +67,7 @@ ARCHI_DESTRUCTOR_FUNC(archi_context_destructor)
 archi_context_t
 archi_context_initialize(
         archi_pointer_t interface,
-        const archi_context_parameter_list_t *params,
+        const archi_parameter_list_t *params,
         archi_status_t *code)
 {
     if ((interface.flags & ARCHI_POINTER_FLAG_FUNCTION) || (interface.ptr == NULL))
@@ -247,7 +247,7 @@ archi_status_t
 archi_context_act(
         archi_context_t context,
         archi_context_op_designator_t action,
-        const archi_context_parameter_list_t *params)
+        const archi_parameter_list_t *params)
 {
     if (context == NULL)
         return ARCHI_STATUS_EMISUSE;

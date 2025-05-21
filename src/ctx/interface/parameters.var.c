@@ -57,11 +57,11 @@ ARCHI_CONTEXT_INIT_FUNC(archi_context_parameters_init)
 
 ARCHI_CONTEXT_FINAL_FUNC(archi_context_parameters_final)
 {
-    archi_context_parameter_list_t *node = context.public_value.ptr;
+    archi_parameter_list_t *node = context.public_value.ptr;
 
     while (node != context.private_value.ptr) // don't deallocate the base list (which is borrowed)
     {
-        archi_context_parameter_list_t *next = node->next;
+        archi_parameter_list_t *next = node->next;
 
         archi_reference_count_decrement(node->value.ref_count);
         free(node);
@@ -77,7 +77,7 @@ ARCHI_CONTEXT_GET_FUNC(archi_context_parameters_get)
     if (slot.num_indices != 0)
         return ARCHI_STATUS_EMISUSE;
 
-    for (const archi_context_parameter_list_t *node = context.public_value.ptr;
+    for (const archi_parameter_list_t *node = context.public_value.ptr;
             node != NULL; node = node->next)
     {
         if (strcmp(node->name, slot.name) == 0)
@@ -95,11 +95,11 @@ ARCHI_CONTEXT_SET_FUNC(archi_context_parameters_set)
     if (slot.num_indices != 0)
         return ARCHI_STATUS_EMISUSE;
 
-    archi_context_parameter_list_t *node = malloc(sizeof(*node));
+    archi_parameter_list_t *node = malloc(sizeof(*node));
     if (node == NULL)
         return ARCHI_STATUS_ENOMEMORY;
 
-    *node = (archi_context_parameter_list_t){
+    *node = (archi_parameter_list_t){
         .next = context.public_value.ptr,
         .name = slot.name,
         .value = value,
@@ -121,11 +121,11 @@ ARCHI_CONTEXT_ACT_FUNC(archi_context_parameters_act)
 
         for (; params != NULL; params = params->next)
         {
-            archi_context_parameter_list_t *node = malloc(sizeof(*node));
+            archi_parameter_list_t *node = malloc(sizeof(*node));
             if (node == NULL)
                 return ARCHI_STATUS_ENOMEMORY;
 
-            *node = (archi_context_parameter_list_t){
+            *node = (archi_parameter_list_t){
                 .next = context.public_value.ptr,
                 .name = params->name,
                 .value = params->value,
