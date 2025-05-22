@@ -26,6 +26,7 @@
 #include "archi/builtin/ds_lfqueue/context.var.h"
 #include "archi/ds/lfqueue/api.fun.h"
 
+#include <stdlib.h> // for malloc(), free()
 #include <string.h> // for strcmp()
 
 ARCHI_CONTEXT_INIT_FUNC(archi_context_ds_lfqueue_init)
@@ -91,24 +92,34 @@ ARCHI_CONTEXT_INIT_FUNC(archi_context_ds_lfqueue_init)
             return ARCHI_STATUS_EKEY;
     }
 
+    archi_pointer_t *context_data = malloc(sizeof(*context_data));
+    if (context_data == NULL)
+        return ARCHI_STATUS_ENOMEMORY;
+
     archi_status_t code;
     archi_lfqueue_t lfqueue = archi_lfqueue_alloc(lfqueue_alloc_params, &code);
 
     if (code < 0)
+    {
+        free(context_data);
         return code;
+    }
 
-    context->public_value = (archi_pointer_t){
+    *context_data = (archi_pointer_t){
         .ptr = lfqueue,
         .element = {
             .num_of = 1,
         },
     };
+
+    *context = context_data;
     return code;
 }
 
 ARCHI_CONTEXT_FINAL_FUNC(archi_context_ds_lfqueue_final)
 {
-    archi_lfqueue_free(context.public_value.ptr);
+    archi_lfqueue_free(context->ptr);
+    free(context);
 }
 
 const archi_context_interface_t archi_context_ds_lfqueue_interface = {

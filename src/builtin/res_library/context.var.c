@@ -26,7 +26,13 @@
 #include "archi/builtin/res_library/context.var.h"
 #include "archi/res/library/api.fun.h"
 
+#include <stdlib.h> // for malloc(), free()
 #include <string.h> // for strcmp()
+
+struct archi_context_res_library_data {
+    archi_pointer_t handle;
+    archi_pointer_t symbol;
+};
 
 ARCHI_CONTEXT_INIT_FUNC(archi_context_res_library_init)
 {
@@ -103,24 +109,42 @@ ARCHI_CONTEXT_INIT_FUNC(archi_context_res_library_init)
             return ARCHI_STATUS_EKEY;
     }
 
+    struct archi_context_res_library_data *context_data = malloc(sizeof(*context_data));
+    if (context_data == NULL)
+        return ARCHI_STATUS_ENOMEMORY;
+
     void *handle = archi_library_load(library_load_params);
     if (handle == NULL)
+    {
+        free(context_data);
         return ARCHI_STATUS_ERESOURCE;
+    }
 
-    context->public_value = (archi_pointer_t){
-        .ptr = handle,
-        .element = {
-            .num_of = 1,
+    *context_data = (struct archi_context_res_library_data){
+        .handle = {
+            .ptr = handle,
+            .element = {
+                .num_of = 1,
+            },
+        },
+        .symbol = {
+            .element = {
+                .num_of = 1,
+            }
         },
     };
-    context->private_value.element.num_of = 1;
 
+    *context = (archi_pointer_t*)context_data;
     return 0;
 }
 
 ARCHI_CONTEXT_FINAL_FUNC(archi_context_res_library_final)
 {
-    archi_library_unload(context.public_value.ptr);
+    struct archi_context_res_library_data *context_data =
+        (struct archi_context_res_library_data*)context;
+
+    archi_library_unload(context_data->handle.ptr);
+    free(context_data);
 }
 
 ARCHI_CONTEXT_GET_FUNC(archi_context_res_library_get)
@@ -128,14 +152,17 @@ ARCHI_CONTEXT_GET_FUNC(archi_context_res_library_get)
     if (slot.num_indices != 0)
         return ARCHI_STATUS_EMISUSE;
 
-    archi_pointer_t symbol = context.private_value;
-    context.private_value = (archi_pointer_t){.element.num_of = 1};
+    struct archi_context_res_library_data *context_data =
+        (struct archi_context_res_library_data*)context;
 
-    symbol.ref_count = context.public_value.ref_count;
+    archi_pointer_t symbol = context_data->symbol;
+    context_data->symbol = (archi_pointer_t){.element.num_of = 1}; // reset the attributes
 
-    symbol.ptr = archi_library_get_symbol(context.public_value.ptr, slot.name);
+    symbol.ptr = archi_library_get_symbol(context_data->handle.ptr, slot.name);
     if (symbol.ptr == NULL)
         return 1; // symbol not found
+
+    symbol.ref_count = context_data->handle.ref_count;
 
     *value = symbol;
     return 0;
@@ -145,6 +172,9 @@ ARCHI_CONTEXT_ACT_FUNC(archi_context_res_library_act)
 {
     if (action.num_indices != 0)
         return ARCHI_STATUS_EMISUSE;
+
+    struct archi_context_res_library_data *context_data =
+        (struct archi_context_res_library_data*)context;
 
     archi_pointer_t attributes = {0};
     bool flag_function = false;
@@ -254,7 +284,7 @@ ARCHI_CONTEXT_ACT_FUNC(archi_context_res_library_act)
     else if ((attributes.element.alignment & (attributes.element.alignment - 1)) != 0)
         return ARCHI_STATUS_EVALUE;
 
-    context.private_value = attributes;
+    context_data->symbol = attributes;
     return 0;
 }
 

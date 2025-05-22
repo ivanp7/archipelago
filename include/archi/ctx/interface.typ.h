@@ -32,19 +32,14 @@
 #include "archi/util/status.typ.h"
 
 /**
- * @brief Context data pointers.
- *
- * Public value will be available to other contexts
- * through the value parameter of the set() operation.
- * Private value is not accessible by other contexts.
+ * @brief Context operation designator.
  */
-typedef struct archi_context_data {
-    archi_pointer_t public_value;  ///< Public value.
-    archi_pointer_t private_value; ///< Private value.
+typedef struct archi_context_op_designator {
+    const char *name; ///< Name string.
 
-    archi_pointer_t *reference; ///< Array of references to borrowed resources.
-    size_t num_references; ///< Number of references.
-} archi_context_data_t;
+    const size_t *index; ///< Array of indices.
+    size_t num_indices;  ///< Size of the array of indices.
+} archi_context_op_designator_t;
 
 /*****************************************************************************/
 
@@ -56,7 +51,7 @@ typedef struct archi_context_data {
  * @return Status code.
  */
 #define ARCHI_CONTEXT_INIT_FUNC(func_name) archi_status_t func_name( \
-        archi_context_data_t *context, /* [out] Context data. */ \
+        archi_pointer_t **context, /* [out] Context data. */ \
         const archi_parameter_list_t *params) /* [in] Initialization parameters. */
 
 /**
@@ -70,24 +65,12 @@ typedef ARCHI_CONTEXT_INIT_FUNC((*archi_context_init_func_t));
  * This function is intended to finalize/release resources (contexts).
  */
 #define ARCHI_CONTEXT_FINAL_FUNC(func_name) void func_name( \
-        archi_context_data_t context) /* [in] Context data. */
+        archi_pointer_t *context) /* [in] Context data. */
 
 /**
  * @brief Context finalization function type.
  */
 typedef ARCHI_CONTEXT_FINAL_FUNC((*archi_context_final_func_t));
-
-/*****************************************************************************/
-
-/**
- * @brief Context operation designator.
- */
-typedef struct archi_context_op_designator {
-    const char *name; ///< Name string.
-
-    const size_t *index; ///< Array of indices.
-    size_t num_indices;  ///< Size of the array of indices.
-} archi_context_op_designator_t;
 
 /**
  * @brief Declare/define context slot getter function.
@@ -97,7 +80,7 @@ typedef struct archi_context_op_designator {
  * @return Status code.
  */
 #define ARCHI_CONTEXT_GET_FUNC(func_name) archi_status_t func_name( \
-        archi_context_data_t context, /* [in] Context data. */ \
+        archi_pointer_t *context, /* [in,out] Context data. */ \
         const archi_context_op_designator_t slot, /* [in] Slot designator. */ \
         archi_pointer_t *value) /* [out] Place to store the gotten value. */
 
@@ -114,7 +97,7 @@ typedef ARCHI_CONTEXT_GET_FUNC((*archi_context_get_func_t));
  * @return Status code.
  */
 #define ARCHI_CONTEXT_SET_FUNC(func_name) archi_status_t func_name( \
-        archi_context_data_t context, /* [in] Context data. */ \
+        archi_pointer_t *context, /* [in,out] Context data. */ \
         const archi_context_op_designator_t slot, /* [in] Slot designator. */ \
         const archi_pointer_t value) /* [in] Value to set. */
 
@@ -131,7 +114,7 @@ typedef ARCHI_CONTEXT_SET_FUNC((*archi_context_set_func_t));
  * @return Status code.
  */
 #define ARCHI_CONTEXT_ACT_FUNC(func_name) archi_status_t func_name( \
-        archi_context_data_t context, /* [in] Context data. */ \
+        archi_pointer_t *context, /* [in,out] Context data. */ \
         const archi_context_op_designator_t action, /* [in] Action designator. */ \
         const archi_parameter_list_t *params) /* [in] Action parameters. */
 

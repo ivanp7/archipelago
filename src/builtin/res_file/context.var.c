@@ -30,6 +30,11 @@
 #include <string.h> // for strcmp()
 #include <stdalign.h> // for alignof()
 
+struct archi_context_res_file_data {
+    archi_pointer_t mapping;
+    int fd;
+};
+
 ARCHI_CONTEXT_INIT_FUNC(archi_context_res_file_init)
 {
     archi_file_open_params_t file_open_params = {0};
@@ -119,54 +124,61 @@ ARCHI_CONTEXT_INIT_FUNC(archi_context_res_file_init)
             return ARCHI_STATUS_EKEY;
     }
 
-    int *fd = malloc(sizeof(*fd));
-    if (fd == NULL)
+    struct archi_context_res_file_data *context_data = malloc(sizeof(*context_data));
+    if (context_data == NULL)
         return ARCHI_STATUS_ENOMEMORY;
 
-    *fd = archi_file_open(file_open_params);
-
-    if (*fd < 0)
+    int fd = archi_file_open(file_open_params);
+    if (fd < 0)
     {
-        free(fd);
+        free(context_data);
         return ARCHI_STATUS_ERESOURCE;
     }
 
-    context->private_value = (archi_pointer_t){
-        .ptr = fd,
-        .element = {
-            .num_of = 1,
-            .size = sizeof(*fd),
-            .alignment = alignof(int),
-        },
+    *context_data = (struct archi_context_res_file_data){
+        .fd = fd,
     };
 
+    *context = (archi_pointer_t*)context_data;
     return 0;
 }
 
 ARCHI_CONTEXT_FINAL_FUNC(archi_context_res_file_final)
 {
-    archi_file_unmap(context.public_value.ptr, context.public_value.element.num_of);
+    struct archi_context_res_file_data *context_data =
+        (struct archi_context_res_file_data*)context;
 
-    int *fd = context.private_value.ptr;
-    if (fd != NULL)
-    {
-        archi_file_close(*fd);
-        free(fd);
-    }
+    archi_file_unmap(context_data->mapping.ptr, context_data->mapping.element.num_of);
+    archi_file_close(context_data->fd);
+    free(context_data);
 }
 
 ARCHI_CONTEXT_GET_FUNC(archi_context_res_file_get)
 {
+    struct archi_context_res_file_data *context_data =
+        (struct archi_context_res_file_data*)context;
+
     if (strcmp("fd", slot.name) == 0)
     {
         if (slot.num_indices != 0)
             return ARCHI_STATUS_EMISUSE;
 
         *value = (archi_pointer_t){
-            .ptr = context.private_value.ptr,
-            .ref_count = context.public_value.ref_count,
-            .element = context.private_value.element,
+            .ptr = &context_data->fd,
+            .ref_count = context_data->mapping.ref_count,
+            .element = {
+                .num_of = 1,
+                .size = sizeof(context_data->fd),
+                .alignment = alignof(int),
+            },
         };
+    }
+    else if (strcmp("map", slot.name) == 0)
+    {
+        if (slot.num_indices != 0)
+            return ARCHI_STATUS_EMISUSE;
+
+        *value = context_data->mapping;
     }
     else
         return ARCHI_STATUS_EKEY;
@@ -176,11 +188,14 @@ ARCHI_CONTEXT_GET_FUNC(archi_context_res_file_get)
 
 ARCHI_CONTEXT_ACT_FUNC(archi_context_res_file_act)
 {
+    struct archi_context_res_file_data *context_data =
+        (struct archi_context_res_file_data*)context;
+
     if (strcmp("map", action.name) == 0)
     {
         if (action.num_indices != 0)
             return ARCHI_STATUS_EMISUSE;
-        else if (context.public_value.ptr != NULL)
+        else if (context_data->mapping.ptr != NULL)
             return ARCHI_STATUS_EMISUSE;
 
         archi_file_map_params_t file_map_params = {0};
@@ -310,17 +325,14 @@ ARCHI_CONTEXT_ACT_FUNC(archi_context_res_file_act)
                 return ARCHI_STATUS_EKEY;
         }
 
-        int *fd = context.private_value.ptr;
-
         size_t mm_size = 0;
-        void *mm = archi_file_map(*fd, file_map_params, &mm_size);
+        void *mm = archi_file_map(context_data->fd, file_map_params, &mm_size);
 
         if (mm == NULL)
             return ARCHI_STATUS_ERESOURCE;
 
-        archi_reference_count_t ref_count = context.public_value.ref_count;
-
-        context.public_value = (archi_pointer_t){
+        archi_reference_count_t ref_count = context_data->mapping.ref_count;
+        context_data->mapping = (archi_pointer_t){
             .ptr = mm,
             .ref_count = ref_count,
             .flags = file_map_params.writable ? ARCHI_POINTER_FLAG_WRITABLE : 0,
@@ -332,9 +344,8 @@ ARCHI_CONTEXT_ACT_FUNC(archi_context_res_file_act)
 
         if (close_fd)
         {
-            archi_file_close(*fd);
-            free(fd);
-            context.private_value = (archi_pointer_t){0};
+            archi_file_close(context_data->fd);
+            context_data->fd = -1;
         }
     }
     else

@@ -33,10 +33,13 @@
 #include <stdalign.h> // for alignof()
 #include <stdbool.h>
 
-#define REF_FUNCTION 0
-#define REF_DATA 1
-#define REF_METADATA 2
-#define NUM_REFERENCES 3
+struct archi_context_hsp_state_data {
+    archi_pointer_t state;
+
+    archi_pointer_t state_function;
+    archi_pointer_t state_data;
+    archi_pointer_t state_metadata;
+};
 
 ARCHI_CONTEXT_INIT_FUNC(archi_context_hsp_state_init)
 {
@@ -87,9 +90,16 @@ ARCHI_CONTEXT_INIT_FUNC(archi_context_hsp_state_init)
             return ARCHI_STATUS_EKEY;
     }
 
+    struct archi_context_hsp_state_data *context_data = malloc(sizeof(*context_data));
+    if (context_data == NULL)
+        return ARCHI_STATUS_ENOMEMORY;
+
     archi_hsp_state_t *hsp_state = malloc(sizeof(*hsp_state));
     if (hsp_state == NULL)
+    {
+        free(context_data);
         return ARCHI_STATUS_ENOMEMORY;
+    }
 
     *hsp_state = (archi_hsp_state_t){
         .function = (archi_hsp_state_function_t)hsp_state_function.fptr,
@@ -97,64 +107,65 @@ ARCHI_CONTEXT_INIT_FUNC(archi_context_hsp_state_init)
         .metadata = hsp_state_metadata.ptr,
     };
 
-    context->num_references = NUM_REFERENCES;
-    context->reference = malloc(sizeof(*context->reference) * context->num_references);
-    if (context->reference == NULL)
-    {
-        free(hsp_state);
-        return ARCHI_STATUS_ENOMEMORY;
-    }
-
-    context->reference[REF_FUNCTION] = hsp_state_function;
-    context->reference[REF_DATA] = hsp_state_data;
-    context->reference[REF_METADATA] = hsp_state_metadata;
-
-    for (size_t i = 0; i < NUM_REFERENCES; i++)
-        archi_reference_count_increment(context->reference[i].ref_count);
-
-    context->public_value = (archi_pointer_t){
-        .ptr = hsp_state,
-        .element = {
-            .num_of = 1,
-            .size = sizeof(*hsp_state),
-            .alignment = alignof(archi_hsp_state_t),
+    *context_data = (struct archi_context_hsp_state_data){
+        .state = {
+            .ptr = hsp_state,
+            .element = {
+                .num_of = 1,
+                .size = sizeof(*hsp_state),
+                .alignment = alignof(archi_hsp_state_t),
+            },
         },
+        .state_function = hsp_state_function,
+        .state_data = hsp_state_data,
+        .state_metadata = hsp_state_metadata,
     };
 
+    archi_reference_count_increment(hsp_state_function.ref_count);
+    archi_reference_count_increment(hsp_state_data.ref_count);
+    archi_reference_count_increment(hsp_state_metadata.ref_count);
+
+    *context = (archi_pointer_t*)context_data;
     return 0;
 }
 
 ARCHI_CONTEXT_FINAL_FUNC(archi_context_hsp_state_final)
 {
-    for (size_t i = context.num_references; i-- > 0;)
-        archi_reference_count_decrement(context.reference[i].ref_count);
+    struct archi_context_hsp_state_data *context_data =
+        (struct archi_context_hsp_state_data*)context;
 
-    free(context.reference);
-    free(context.public_value.ptr);
+    archi_reference_count_decrement(context_data->state_function.ref_count);
+    archi_reference_count_decrement(context_data->state_data.ref_count);
+    archi_reference_count_decrement(context_data->state_metadata.ref_count);
+    free(context_data->state.ptr);
+    free(context_data);
 }
 
 ARCHI_CONTEXT_GET_FUNC(archi_context_hsp_state_get)
 {
+    struct archi_context_hsp_state_data *context_data =
+        (struct archi_context_hsp_state_data*)context;
+
     if (strcmp("function", slot.name) == 0)
     {
         if (slot.num_indices != 0)
             return ARCHI_STATUS_EMISUSE;
 
-        *value = context.reference[REF_FUNCTION];
+        *value = context_data->state_function;
     }
     else if (strcmp("data", slot.name) == 0)
     {
         if (slot.num_indices != 0)
             return ARCHI_STATUS_EMISUSE;
 
-        *value = context.reference[REF_DATA];
+        *value = context_data->state_data;
     }
     else if (strcmp("metadata", slot.name) == 0)
     {
         if (slot.num_indices != 0)
             return ARCHI_STATUS_EMISUSE;
 
-        *value = context.reference[REF_METADATA];
+        *value = context_data->state_metadata;
     }
     else
         return ARCHI_STATUS_EKEY;
@@ -164,7 +175,10 @@ ARCHI_CONTEXT_GET_FUNC(archi_context_hsp_state_get)
 
 ARCHI_CONTEXT_SET_FUNC(archi_context_hsp_state_set)
 {
-    archi_hsp_state_t *hsp_state = context.public_value.ptr;
+    struct archi_context_hsp_state_data *context_data =
+        (struct archi_context_hsp_state_data*)context;
+
+    archi_hsp_state_t *hsp_state = context_data->state.ptr;
 
     if (strcmp("function", slot.name) == 0)
     {
@@ -174,10 +188,10 @@ ARCHI_CONTEXT_SET_FUNC(archi_context_hsp_state_set)
             return ARCHI_STATUS_EVALUE;
 
         archi_reference_count_increment(value.ref_count);
-        archi_reference_count_decrement(context.reference[REF_FUNCTION].ref_count);
+        archi_reference_count_decrement(context_data->state_function.ref_count);
 
         hsp_state->function = (archi_hsp_state_function_t)value.fptr;
-        context.reference[REF_FUNCTION] = value;
+        context_data->state_function = value;
     }
     else if (strcmp("data", slot.name) == 0)
     {
@@ -187,10 +201,10 @@ ARCHI_CONTEXT_SET_FUNC(archi_context_hsp_state_set)
             return ARCHI_STATUS_EVALUE;
 
         archi_reference_count_increment(value.ref_count);
-        archi_reference_count_decrement(context.reference[REF_DATA].ref_count);
+        archi_reference_count_decrement(context_data->state_data.ref_count);
 
         hsp_state->data = value.ptr;
-        context.reference[REF_DATA] = value;
+        context_data->state_data = value;
     }
     else if (strcmp("metadata", slot.name) == 0)
     {
@@ -200,10 +214,10 @@ ARCHI_CONTEXT_SET_FUNC(archi_context_hsp_state_set)
             return ARCHI_STATUS_EVALUE;
 
         archi_reference_count_increment(value.ref_count);
-        archi_reference_count_decrement(context.reference[REF_METADATA].ref_count);
+        archi_reference_count_decrement(context_data->state_metadata.ref_count);
 
         hsp_state->metadata = value.ptr;
-        context.reference[REF_METADATA] = value;
+        context_data->state_metadata = value;
     }
     else
         return ARCHI_STATUS_EKEY;
@@ -218,16 +232,14 @@ const archi_context_interface_t archi_context_hsp_state_interface = {
     .set_fn = archi_context_hsp_state_set,
 };
 
-#undef REF_FUNCTION
-#undef REF_DATA
-#undef REF_METADATA
-#undef NUM_REFERENCES
-
 /*****************************************************************************/
 
-#define REF_FUNCTION 0
-#define REF_DATA 1
-#define NUM_REFERENCES 2
+struct archi_context_hsp_transition_data {
+    archi_pointer_t transition;
+
+    archi_pointer_t transition_function;
+    archi_pointer_t transition_data;
+};
 
 ARCHI_CONTEXT_INIT_FUNC(archi_context_hsp_transition_init)
 {
@@ -265,65 +277,71 @@ ARCHI_CONTEXT_INIT_FUNC(archi_context_hsp_transition_init)
             return ARCHI_STATUS_EKEY;
     }
 
+    struct archi_context_hsp_transition_data *context_data = malloc(sizeof(*context_data));
+    if (context_data == NULL)
+        return ARCHI_STATUS_ENOMEMORY;
+
     archi_hsp_transition_t *hsp_transition = malloc(sizeof(*hsp_transition));
     if (hsp_transition == NULL)
+    {
+        free(context_data);
         return ARCHI_STATUS_ENOMEMORY;
+    }
 
     *hsp_transition = (archi_hsp_transition_t){
         .function = (archi_hsp_transition_function_t)hsp_transition_function.fptr,
         .data = hsp_transition_data.ptr,
     };
 
-    context->num_references = NUM_REFERENCES;
-    context->reference = malloc(sizeof(*context->reference) * context->num_references);
-    if (context->reference == NULL)
-    {
-        free(hsp_transition);
-        return ARCHI_STATUS_ENOMEMORY;
-    }
-
-    context->reference[REF_FUNCTION] = hsp_transition_function;
-    context->reference[REF_DATA] = hsp_transition_data;
-
-    for (size_t i = 0; i < NUM_REFERENCES; i++)
-        archi_reference_count_increment(context->reference[i].ref_count);
-
-    context->public_value = (archi_pointer_t){
-        .ptr = hsp_transition,
-        .element = {
-            .num_of = 1,
-            .size = sizeof(*hsp_transition),
-            .alignment = alignof(archi_hsp_transition_t),
+    *context_data = (struct archi_context_hsp_transition_data){
+        .transition = {
+            .ptr = hsp_transition,
+            .element = {
+                .num_of = 1,
+                .size = sizeof(*hsp_transition),
+                .alignment = alignof(archi_hsp_transition_t),
+            },
         },
+        .transition_function = hsp_transition_function,
+        .transition_data = hsp_transition_data,
     };
 
+    archi_reference_count_increment(hsp_transition_function.ref_count);
+    archi_reference_count_increment(hsp_transition_data.ref_count);
+
+    *context = (archi_pointer_t*)context_data;
     return 0;
 }
 
 ARCHI_CONTEXT_FINAL_FUNC(archi_context_hsp_transition_final)
 {
-    for (size_t i = context.num_references; i-- > 0;)
-        archi_reference_count_decrement(context.reference[i].ref_count);
+    struct archi_context_hsp_transition_data *context_data =
+        (struct archi_context_hsp_transition_data*)context;
 
-    free(context.reference);
-    free(context.public_value.ptr);
+    archi_reference_count_decrement(context_data->transition_function.ref_count);
+    archi_reference_count_decrement(context_data->transition_data.ref_count);
+    free(context_data->transition.ptr);
+    free(context_data);
 }
 
 ARCHI_CONTEXT_GET_FUNC(archi_context_hsp_transition_get)
 {
+    struct archi_context_hsp_transition_data *context_data =
+        (struct archi_context_hsp_transition_data*)context;
+
     if (strcmp("function", slot.name) == 0)
     {
         if (slot.num_indices != 0)
             return ARCHI_STATUS_EMISUSE;
 
-        *value = context.reference[REF_FUNCTION];
+        *value = context_data->transition_function;
     }
     else if (strcmp("data", slot.name) == 0)
     {
         if (slot.num_indices != 0)
             return ARCHI_STATUS_EMISUSE;
 
-        *value = context.reference[REF_DATA];
+        *value = context_data->transition_data;
     }
     else
         return ARCHI_STATUS_EKEY;
@@ -333,7 +351,10 @@ ARCHI_CONTEXT_GET_FUNC(archi_context_hsp_transition_get)
 
 ARCHI_CONTEXT_SET_FUNC(archi_context_hsp_transition_set)
 {
-    archi_hsp_transition_t *hsp_transition = context.public_value.ptr;
+    struct archi_context_hsp_transition_data *context_data =
+        (struct archi_context_hsp_transition_data*)context;
+
+    archi_hsp_transition_t *hsp_transition = context_data->transition.ptr;
 
     if (strcmp("function", slot.name) == 0)
     {
@@ -343,10 +364,10 @@ ARCHI_CONTEXT_SET_FUNC(archi_context_hsp_transition_set)
             return ARCHI_STATUS_EVALUE;
 
         archi_reference_count_increment(value.ref_count);
-        archi_reference_count_decrement(context.reference[REF_FUNCTION].ref_count);
+        archi_reference_count_decrement(context_data->transition_function.ref_count);
 
         hsp_transition->function = (archi_hsp_transition_function_t)value.fptr;
-        context.reference[REF_FUNCTION] = value;
+        context_data->transition_function = value;
     }
     else if (strcmp("data", slot.name) == 0)
     {
@@ -356,10 +377,10 @@ ARCHI_CONTEXT_SET_FUNC(archi_context_hsp_transition_set)
             return ARCHI_STATUS_EVALUE;
 
         archi_reference_count_increment(value.ref_count);
-        archi_reference_count_decrement(context.reference[REF_DATA].ref_count);
+        archi_reference_count_decrement(context_data->transition_data.ref_count);
 
         hsp_transition->data = value.ptr;
-        context.reference[REF_DATA] = value;
+        context_data->transition_data = value;
     }
     else
         return ARCHI_STATUS_EKEY;
@@ -374,15 +395,14 @@ const archi_context_interface_t archi_context_hsp_transition_interface = {
     .set_fn = archi_context_hsp_transition_set,
 };
 
-#undef REF_FUNCTION
-#undef REF_DATA
-#undef NUM_REFERENCES
-
 /*****************************************************************************/
 
-#define REF_ENTRY_STATE 0
-#define REF_TRANSITION 1
-#define NUM_REFERENCES 2
+struct archi_context_hsp_data {
+    archi_pointer_t hsp;
+
+    archi_pointer_t entry_state;
+    archi_pointer_t transition;
+};
 
 ARCHI_CONTEXT_INIT_FUNC(archi_context_hsp_init)
 {
@@ -420,9 +440,16 @@ ARCHI_CONTEXT_INIT_FUNC(archi_context_hsp_init)
             return ARCHI_STATUS_EKEY;
     }
 
+    struct archi_context_hsp_data *context_data = malloc(sizeof(*context_data));
+    if (context_data == NULL)
+        return ARCHI_STATUS_ENOMEMORY;
+
     archi_hsp_t *hsp = malloc(sizeof(*hsp));
     if (hsp == NULL)
+    {
+        free(context_data);
         return ARCHI_STATUS_ENOMEMORY;
+    }
 
     *hsp = (archi_hsp_t){0};
 
@@ -432,56 +459,55 @@ ARCHI_CONTEXT_INIT_FUNC(archi_context_hsp_init)
     if (hsp_transition.ptr != NULL)
         hsp->transition = *(archi_hsp_transition_t*)hsp_transition.ptr;
 
-    context->num_references = NUM_REFERENCES;
-    context->reference = malloc(sizeof(*context->reference) * context->num_references);
-    if (context->reference == NULL)
-    {
-        free(hsp);
-        return ARCHI_STATUS_ENOMEMORY;
-    }
-
-    context->reference[REF_ENTRY_STATE] = hsp_entry_state;
-    context->reference[REF_TRANSITION] = hsp_transition;
-
-    for (size_t i = 0; i < NUM_REFERENCES; i++)
-        archi_reference_count_increment(context->reference[i].ref_count);
-
-    context->public_value = (archi_pointer_t){
-        .ptr = hsp,
-        .element = {
-            .num_of = 1,
-            .size = sizeof(*hsp),
-            .alignment = alignof(archi_hsp_t),
+    *context_data = (struct archi_context_hsp_data){
+        .hsp = {
+            .ptr = hsp,
+            .element = {
+                .num_of = 1,
+                .size = sizeof(*hsp),
+                .alignment = alignof(archi_hsp_t),
+            },
         },
+        .entry_state = hsp_entry_state,
+        .transition = hsp_transition,
     };
 
+    archi_reference_count_increment(hsp_entry_state.ref_count);
+    archi_reference_count_increment(hsp_transition.ref_count);
+
+    *context = (archi_pointer_t*)context_data;
     return 0;
 }
 
 ARCHI_CONTEXT_FINAL_FUNC(archi_context_hsp_final)
 {
-    for (size_t i = context.num_references; i-- > 0;)
-        archi_reference_count_decrement(context.reference[i].ref_count);
+    struct archi_context_hsp_data *context_data =
+        (struct archi_context_hsp_data*)context;
 
-    free(context.reference);
-    free(context.public_value.ptr);
+    archi_reference_count_decrement(context_data->entry_state.ref_count);
+    archi_reference_count_decrement(context_data->transition.ref_count);
+    free(context_data->hsp.ptr);
+    free(context_data);
 }
 
 ARCHI_CONTEXT_GET_FUNC(archi_context_hsp_get)
 {
+    struct archi_context_hsp_data *context_data =
+        (struct archi_context_hsp_data*)context;
+
     if (strcmp("entry_state", slot.name) == 0)
     {
         if (slot.num_indices != 0)
             return ARCHI_STATUS_EMISUSE;
 
-        *value = context.reference[REF_ENTRY_STATE];
+        *value = context_data->entry_state;
     }
     else if (strcmp("transition", slot.name) == 0)
     {
         if (slot.num_indices != 0)
             return ARCHI_STATUS_EMISUSE;
 
-        *value = context.reference[REF_TRANSITION];
+        *value = context_data->transition;
     }
     else
         return ARCHI_STATUS_EKEY;
@@ -491,7 +517,10 @@ ARCHI_CONTEXT_GET_FUNC(archi_context_hsp_get)
 
 ARCHI_CONTEXT_SET_FUNC(archi_context_hsp_set)
 {
-    archi_hsp_t *hsp = context.public_value.ptr;
+    struct archi_context_hsp_data *context_data =
+        (struct archi_context_hsp_data*)context;
+
+    archi_hsp_t *hsp = context_data->hsp.ptr;
 
     if (strcmp("entry_state", slot.name) == 0)
     {
@@ -501,14 +530,14 @@ ARCHI_CONTEXT_SET_FUNC(archi_context_hsp_set)
             return ARCHI_STATUS_EVALUE;
 
         archi_reference_count_increment(value.ref_count);
-        archi_reference_count_decrement(context.reference[REF_ENTRY_STATE].ref_count);
+        archi_reference_count_decrement(context_data->entry_state.ref_count);
 
         if (value.ptr != NULL)
             hsp->entry_state = *(archi_hsp_state_t*)value.ptr;
         else
             hsp->entry_state = (archi_hsp_state_t){0};
 
-        context.reference[REF_ENTRY_STATE] = value;
+        context_data->entry_state = value;
     }
     else if (strcmp("transition", slot.name) == 0)
     {
@@ -518,14 +547,14 @@ ARCHI_CONTEXT_SET_FUNC(archi_context_hsp_set)
             return ARCHI_STATUS_EVALUE;
 
         archi_reference_count_increment(value.ref_count);
-        archi_reference_count_decrement(context.reference[REF_TRANSITION].ref_count);
+        archi_reference_count_decrement(context_data->transition.ref_count);
 
         if (value.ptr != NULL)
             hsp->transition = *(archi_hsp_transition_t*)value.ptr;
         else
             hsp->transition = (archi_hsp_transition_t){0};
 
-        context.reference[REF_TRANSITION] = value;
+        context_data->transition = value;
     }
     else
         return ARCHI_STATUS_EKEY;
@@ -535,7 +564,10 @@ ARCHI_CONTEXT_SET_FUNC(archi_context_hsp_set)
 
 ARCHI_CONTEXT_ACT_FUNC(archi_context_hsp_act)
 {
-    archi_hsp_t *hsp = context.public_value.ptr;
+    struct archi_context_hsp_data *context_data =
+        (struct archi_context_hsp_data*)context;
+
+    archi_hsp_t *hsp = context_data->hsp.ptr;
 
     if (strcmp("execute", action.name) == 0)
     {
@@ -558,14 +590,14 @@ const archi_context_interface_t archi_context_hsp_interface = {
     .act_fn = archi_context_hsp_act,
 };
 
-#undef REF_ENTRY_STATE
-#undef REF_TRANSITION
-#undef NUM_REFERENCES
-
 /*****************************************************************************/
 
-#define REF_METADATA 0
-#define NUM_REFERENCES 1
+struct archi_context_hsp_frame_data {
+    archi_pointer_t frame;
+
+    archi_pointer_t frame_metadata;
+    archi_pointer_t *frame_state;
+};
 
 ARCHI_CONTEXT_INIT_FUNC(archi_context_hsp_frame_init)
 {
@@ -604,9 +636,16 @@ ARCHI_CONTEXT_INIT_FUNC(archi_context_hsp_frame_init)
             return ARCHI_STATUS_EKEY;
     }
 
+    struct archi_context_hsp_frame_data *context_data = malloc(sizeof(*context_data));
+    if (context_data == NULL)
+        return ARCHI_STATUS_ENOMEMORY;
+
     archi_hsp_frame_t *hsp_frame = malloc(sizeof(*hsp_frame));
     if (hsp_frame == NULL)
+    {
+        free(context_data);
         return ARCHI_STATUS_ENOMEMORY;
+    }
 
     *hsp_frame = (archi_hsp_frame_t){
         .num_states = num_states,
@@ -619,6 +658,7 @@ ARCHI_CONTEXT_INIT_FUNC(archi_context_hsp_frame_init)
         if (hsp_frame->state == NULL)
         {
             free(hsp_frame);
+            free(context_data);
             return ARCHI_STATUS_ENOMEMORY;
         }
 
@@ -626,50 +666,62 @@ ARCHI_CONTEXT_INIT_FUNC(archi_context_hsp_frame_init)
             hsp_frame->state[i] = (archi_hsp_state_t){0};
     }
 
-    context->num_references = NUM_REFERENCES + num_states;
-    context->reference = malloc(sizeof(*context->reference) * context->num_references);
-    if (context->reference == NULL)
-    {
-        free(hsp_frame->state);
-        free(hsp_frame);
-        return ARCHI_STATUS_ENOMEMORY;
-    }
-
-    context->reference[REF_METADATA] = hsp_frame_metadata;
-
-    for (size_t i = 0; i < NUM_REFERENCES; i++)
-        archi_reference_count_increment(context->reference[i].ref_count);
-
-    for (size_t i = NUM_REFERENCES; i < context->num_references; i++)
-        context->reference[i] = (archi_pointer_t){0};
-
-    context->public_value = (archi_pointer_t){
-        .ptr = hsp_frame,
-        .element = {
-            .num_of = 1,
-            .size = sizeof(*hsp_frame),
-            .alignment = alignof(archi_hsp_frame_t),
+    *context_data = (struct archi_context_hsp_frame_data){
+        .frame = {
+            .ptr = hsp_frame,
+            .element = {
+                .num_of = 1,
+                .size = sizeof(*hsp_frame),
+                .alignment = alignof(archi_hsp_frame_t),
+            },
         },
+        .frame_metadata = hsp_frame_metadata,
     };
 
+    if (num_states > 0)
+    {
+        context_data->frame_state = malloc(sizeof(*context_data->frame_state) * num_states);
+        if (context_data->frame_state == NULL)
+        {
+            free(hsp_frame->state);
+            free(hsp_frame);
+            free(context_data);
+            return ARCHI_STATUS_ENOMEMORY;
+        }
+
+        for (size_t i = 0; i < num_states; i++)
+            context_data->frame_state[i] = (archi_pointer_t){0};
+    }
+
+    archi_reference_count_increment(hsp_frame_metadata.ref_count);
+
+    *context = (archi_pointer_t*)context_data;
     return 0;
 }
 
 ARCHI_CONTEXT_FINAL_FUNC(archi_context_hsp_frame_final)
 {
-    for (size_t i = context.num_references; i-- > 0;)
-        archi_reference_count_decrement(context.reference[i].ref_count);
+    struct archi_context_hsp_frame_data *context_data =
+        (struct archi_context_hsp_frame_data*)context;
 
-    free(context.reference);
+    archi_hsp_frame_t *hsp_frame = context_data->frame.ptr;
 
-    archi_hsp_frame_t *hsp_frame = context.public_value.ptr;
+    for (size_t i = 0; i < hsp_frame->num_states; i++)
+        archi_reference_count_decrement(context_data->frame_state[i].ref_count);
+
+    archi_reference_count_decrement(context_data->frame_metadata.ref_count);
     free(hsp_frame->state);
     free(hsp_frame);
+    free(context_data->frame_state);
+    free(context_data);
 }
 
 ARCHI_CONTEXT_GET_FUNC(archi_context_hsp_frame_get)
 {
-    archi_hsp_frame_t *hsp_frame = context.public_value.ptr;
+    struct archi_context_hsp_frame_data *context_data =
+        (struct archi_context_hsp_frame_data*)context;
+
+    archi_hsp_frame_t *hsp_frame = context_data->frame.ptr;
 
     if (strcmp("num_states", slot.name) == 0)
     {
@@ -678,7 +730,7 @@ ARCHI_CONTEXT_GET_FUNC(archi_context_hsp_frame_get)
 
         *value = (archi_pointer_t){
             .ptr = &hsp_frame->num_states,
-            .ref_count = context.public_value.ref_count,
+            .ref_count = context_data->frame.ref_count,
             .element = {
                 .num_of = 1,
                 .size = sizeof(hsp_frame->num_states),
@@ -693,14 +745,14 @@ ARCHI_CONTEXT_GET_FUNC(archi_context_hsp_frame_get)
         else if (slot.index[0] >= hsp_frame->num_states)
             return ARCHI_STATUS_EMISUSE;
 
-        *value = context.reference[NUM_REFERENCES + slot.index[0]];
+        *value = context_data->frame_state[slot.index[0]];
     }
     else if (strcmp("metadata", slot.name) == 0)
     {
         if (slot.num_indices != 0)
             return ARCHI_STATUS_EMISUSE;
 
-        *value = context.reference[REF_METADATA];
+        *value = context_data->frame_metadata;
     }
     else
         return ARCHI_STATUS_EKEY;
@@ -710,7 +762,10 @@ ARCHI_CONTEXT_GET_FUNC(archi_context_hsp_frame_get)
 
 ARCHI_CONTEXT_SET_FUNC(archi_context_hsp_frame_set)
 {
-    archi_hsp_frame_t *hsp_frame = context.public_value.ptr;
+    struct archi_context_hsp_frame_data *context_data =
+        (struct archi_context_hsp_frame_data*)context;
+
+    archi_hsp_frame_t *hsp_frame = context_data->frame.ptr;
 
     if (strcmp("num_states", slot.name) == 0)
     {
@@ -741,24 +796,29 @@ ARCHI_CONTEXT_SET_FUNC(archi_context_hsp_frame_set)
         }
 
         // Reallocate the array of references
-        {
-            for (size_t i = new_num_states; i < hsp_frame->num_states; i++)
-                archi_reference_count_decrement(context.reference[NUM_REFERENCES + i].ref_count);
+        for (size_t i = new_num_states; i < hsp_frame->num_states; i++)
+            archi_reference_count_decrement(context_data->frame_state[i].ref_count);
 
-            archi_pointer_t *new_reference =
-                realloc(context.reference, sizeof(*new_reference) * (NUM_REFERENCES + new_num_states));
-            if (new_reference == NULL)
+        if (new_num_states > 0)
+        {
+            archi_pointer_t *new_states =
+                realloc(context_data->frame_state, sizeof(*new_states) * new_num_states);
+            if (new_states == NULL)
                 return ARCHI_STATUS_ENOMEMORY;
 
-            context.reference = new_reference;
+            context_data->frame_state = new_states;
 
             for (size_t i = hsp_frame->num_states; i < new_num_states; i++)
-                context.reference[NUM_REFERENCES + i] = (archi_pointer_t){0};
+                context_data->frame_state[i] = (archi_pointer_t){0};
+        }
+        else
+        {
+            free(context_data->frame_state);
+            context_data->frame_state = NULL;
         }
 
         // Update the sizes of arrays
         hsp_frame->num_states = new_num_states;
-        context.num_references = NUM_REFERENCES + new_num_states;
     }
     else if (strcmp("state", slot.name) == 0)
     {
@@ -770,14 +830,14 @@ ARCHI_CONTEXT_SET_FUNC(archi_context_hsp_frame_set)
             return ARCHI_STATUS_EVALUE;
 
         archi_reference_count_increment(value.ref_count);
-        archi_reference_count_decrement(context.reference[NUM_REFERENCES + slot.index[0]].ref_count);
+        archi_reference_count_decrement(context_data->frame_state[slot.index[0]].ref_count);
 
         if (value.ptr != NULL)
             hsp_frame->state[slot.index[0]] = *(archi_hsp_state_t*)value.ptr;
         else
             hsp_frame->state[slot.index[0]] = (archi_hsp_state_t){0};
 
-        context.reference[NUM_REFERENCES + slot.index[0]] = value;
+        context_data->frame_state[slot.index[0]] = value;
     }
     else if (strcmp("metadata", slot.name) == 0)
     {
@@ -787,10 +847,10 @@ ARCHI_CONTEXT_SET_FUNC(archi_context_hsp_frame_set)
             return ARCHI_STATUS_EVALUE;
 
         archi_reference_count_increment(value.ref_count);
-        archi_reference_count_decrement(context.reference[REF_METADATA].ref_count);
+        archi_reference_count_decrement(context_data->frame_metadata.ref_count);
 
         hsp_frame->metadata = value.ptr;
-        context.reference[REF_METADATA] = value;
+        context_data->frame_metadata = value;
     }
     else
         return ARCHI_STATUS_EKEY;
@@ -805,14 +865,15 @@ const archi_context_interface_t archi_context_hsp_frame_interface = {
     .set_fn = archi_context_hsp_frame_set,
 };
 
-#undef REF_METADATA
-#undef NUM_REFERENCES
-
 /*****************************************************************************/
 
-#define REF_SELECTOR_FN 0
-#define REF_SELECTOR_DATA 1
-#define NUM_REFERENCES 2
+struct archi_context_hsp_branch_state_data_data {
+    archi_pointer_t state_data;
+
+    archi_pointer_t branch_selector_fn;
+    archi_pointer_t branch_selector_data;
+    archi_pointer_t *branch_frame;
+};
 
 ARCHI_CONTEXT_INIT_FUNC(archi_context_hsp_branch_state_data_init)
 {
@@ -864,9 +925,16 @@ ARCHI_CONTEXT_INIT_FUNC(archi_context_hsp_branch_state_data_init)
             return ARCHI_STATUS_EKEY;
     }
 
+    struct archi_context_hsp_branch_state_data_data *context_data = malloc(sizeof(*context_data));
+    if (context_data == NULL)
+        return ARCHI_STATUS_ENOMEMORY;
+
     archi_hsp_branch_state_data_t *branch_state_data = malloc(sizeof(*branch_state_data));
     if (branch_state_data == NULL)
+    {
+        free(context_data);
         return ARCHI_STATUS_ENOMEMORY;
+    }
 
     *branch_state_data = (archi_hsp_branch_state_data_t){
         .num_branches = num_branches,
@@ -880,6 +948,7 @@ ARCHI_CONTEXT_INIT_FUNC(archi_context_hsp_branch_state_data_init)
         if (branch_state_data->branch == NULL)
         {
             free(branch_state_data);
+            free(context_data);
             return ARCHI_STATUS_ENOMEMORY;
         }
 
@@ -887,51 +956,65 @@ ARCHI_CONTEXT_INIT_FUNC(archi_context_hsp_branch_state_data_init)
             branch_state_data->branch[i] = (archi_hsp_frame_t){0};
     }
 
-    context->num_references = NUM_REFERENCES + num_branches;
-    context->reference = malloc(sizeof(*context->reference) * context->num_references);
-    if (context->reference == NULL)
-    {
-        free(branch_state_data->branch);
-        free(branch_state_data);
-        return ARCHI_STATUS_ENOMEMORY;
-    }
-
-    context->reference[REF_SELECTOR_FN] = selector_fn;
-    context->reference[REF_SELECTOR_DATA] = selector_data;
-
-    for (size_t i = 0; i < NUM_REFERENCES; i++)
-        archi_reference_count_increment(context->reference[i].ref_count);
-
-    for (size_t i = NUM_REFERENCES; i < context->num_references; i++)
-        context->reference[i] = (archi_pointer_t){0};
-
-    context->public_value = (archi_pointer_t){
-        .ptr = branch_state_data,
-        .element = {
-            .num_of = 1,
-            .size = sizeof(*branch_state_data),
-            .alignment = alignof(archi_hsp_branch_state_data_t),
+    *context_data = (struct archi_context_hsp_branch_state_data_data){
+        .state_data = {
+            .ptr = branch_state_data,
+            .element = {
+                .num_of = 1,
+                .size = sizeof(*branch_state_data),
+                .alignment = alignof(archi_hsp_branch_state_data_t),
+            },
         },
+        .branch_selector_fn = selector_fn,
+        .branch_selector_data = selector_data,
     };
 
+    if (num_branches > 0)
+    {
+        context_data->branch_frame = malloc(sizeof(*context_data->branch_frame) * num_branches);
+        if (context_data->branch_frame == NULL)
+        {
+            free(branch_state_data->branch);
+            free(branch_state_data);
+            free(context_data);
+            return ARCHI_STATUS_ENOMEMORY;
+        }
+
+        for (size_t i = 0; i < num_branches; i++)
+            context_data->branch_frame[i] = (archi_pointer_t){0};
+    }
+
+    archi_reference_count_increment(selector_fn.ref_count);
+    archi_reference_count_increment(selector_data.ref_count);
+
+    *context = (archi_pointer_t*)context_data;
     return 0;
 }
 
 ARCHI_CONTEXT_FINAL_FUNC(archi_context_hsp_branch_state_data_final)
 {
-    for (size_t i = context.num_references; i-- > 0;)
-        archi_reference_count_decrement(context.reference[i].ref_count);
+    struct archi_context_hsp_branch_state_data_data *context_data =
+        (struct archi_context_hsp_branch_state_data_data*)context;
 
-    free(context.reference);
+    archi_hsp_branch_state_data_t *branch_state_data = context_data->state_data.ptr;
 
-    archi_hsp_branch_state_data_t *branch_state_data = context.public_value.ptr;
+    for (size_t i = 0; i < branch_state_data->num_branches; i++)
+        archi_reference_count_decrement(context_data->branch_frame[i].ref_count);
+
+    archi_reference_count_decrement(context_data->branch_selector_fn.ref_count);
+    archi_reference_count_decrement(context_data->branch_selector_data.ref_count);
     free(branch_state_data->branch);
     free(branch_state_data);
+    free(context_data->branch_frame);
+    free(context_data);
 }
 
 ARCHI_CONTEXT_GET_FUNC(archi_context_hsp_branch_state_data_get)
 {
-    archi_hsp_branch_state_data_t *branch_state_data = context.public_value.ptr;
+    struct archi_context_hsp_branch_state_data_data *context_data =
+        (struct archi_context_hsp_branch_state_data_data*)context;
+
+    archi_hsp_branch_state_data_t *branch_state_data = context_data->state_data.ptr;
 
     if (strcmp("num_branches", slot.name) == 0)
     {
@@ -940,7 +1023,7 @@ ARCHI_CONTEXT_GET_FUNC(archi_context_hsp_branch_state_data_get)
 
         *value = (archi_pointer_t){
             .ptr = &branch_state_data->num_branches,
-            .ref_count = context.public_value.ref_count,
+            .ref_count = context_data->state_data.ref_count,
             .element = {
                 .num_of = 1,
                 .size = sizeof(branch_state_data->num_branches),
@@ -955,21 +1038,21 @@ ARCHI_CONTEXT_GET_FUNC(archi_context_hsp_branch_state_data_get)
         else if (slot.index[0] >= branch_state_data->num_branches)
             return ARCHI_STATUS_EMISUSE;
 
-        *value = context.reference[NUM_REFERENCES + slot.index[0]];
+        *value = context_data->branch_frame[slot.index[0]];
     }
     else if (strcmp("selector_fn", slot.name) == 0)
     {
         if (slot.num_indices != 0)
             return ARCHI_STATUS_EMISUSE;
 
-        *value = context.reference[REF_SELECTOR_FN];
+        *value = context_data->branch_selector_fn;
     }
     else if (strcmp("selector_data", slot.name) == 0)
     {
         if (slot.num_indices != 0)
             return ARCHI_STATUS_EMISUSE;
 
-        *value = context.reference[REF_SELECTOR_DATA];
+        *value = context_data->branch_selector_data;
     }
     else
         return ARCHI_STATUS_EKEY;
@@ -979,7 +1062,10 @@ ARCHI_CONTEXT_GET_FUNC(archi_context_hsp_branch_state_data_get)
 
 ARCHI_CONTEXT_SET_FUNC(archi_context_hsp_branch_state_data_set)
 {
-    archi_hsp_branch_state_data_t *branch_state_data = context.public_value.ptr;
+    struct archi_context_hsp_branch_state_data_data *context_data =
+        (struct archi_context_hsp_branch_state_data_data*)context;
+
+    archi_hsp_branch_state_data_t *branch_state_data = context_data->state_data.ptr;
 
     if (strcmp("num_branches", slot.name) == 0)
     {
@@ -1010,24 +1096,29 @@ ARCHI_CONTEXT_SET_FUNC(archi_context_hsp_branch_state_data_set)
         }
 
         // Reallocate the array of references
-        {
-            for (size_t i = new_num_branches; i < branch_state_data->num_branches; i++)
-                archi_reference_count_decrement(context.reference[NUM_REFERENCES + i].ref_count);
+        for (size_t i = new_num_branches; i < branch_state_data->num_branches; i++)
+            archi_reference_count_decrement(context_data->branch_frame[i].ref_count);
 
-            archi_pointer_t *new_reference =
-                realloc(context.reference, sizeof(*new_reference) * (NUM_REFERENCES + new_num_branches));
-            if (new_reference == NULL)
+        if (new_num_branches > 0)
+        {
+            archi_pointer_t *new_branches =
+                realloc(context_data->branch_frame, sizeof(*new_branches) * new_num_branches);
+            if (new_branches == NULL)
                 return ARCHI_STATUS_ENOMEMORY;
 
-            context.reference = new_reference;
+            context_data->branch_frame = new_branches;
 
             for (size_t i = branch_state_data->num_branches; i < new_num_branches; i++)
-                context.reference[NUM_REFERENCES + i] = (archi_pointer_t){0};
+                context_data->branch_frame[i] = (archi_pointer_t){0};
+        }
+        else
+        {
+            free(context_data->branch_frame);
+            context_data->branch_frame = NULL;
         }
 
         // Update the sizes of arrays
         branch_state_data->num_branches = new_num_branches;
-        context.num_references = NUM_REFERENCES + new_num_branches;
     }
     else if (strcmp("branch", slot.name) == 0)
     {
@@ -1039,14 +1130,14 @@ ARCHI_CONTEXT_SET_FUNC(archi_context_hsp_branch_state_data_set)
             return ARCHI_STATUS_EVALUE;
 
         archi_reference_count_increment(value.ref_count);
-        archi_reference_count_decrement(context.reference[NUM_REFERENCES + slot.index[0]].ref_count);
+        archi_reference_count_decrement(context_data->branch_frame[slot.index[0]].ref_count);
 
         if (value.ptr != NULL)
             branch_state_data->branch[slot.index[0]] = *(archi_hsp_frame_t*)value.ptr;
         else
             branch_state_data->branch[slot.index[0]] = (archi_hsp_frame_t){0};
 
-        context.reference[NUM_REFERENCES + slot.index[0]] = value;
+        context_data->branch_frame[slot.index[0]] = value;
     }
     else if (strcmp("selector_fn", slot.name) == 0)
     {
@@ -1056,10 +1147,10 @@ ARCHI_CONTEXT_SET_FUNC(archi_context_hsp_branch_state_data_set)
             return ARCHI_STATUS_EVALUE;
 
         archi_reference_count_increment(value.ref_count);
-        archi_reference_count_decrement(context.reference[REF_SELECTOR_FN].ref_count);
+        archi_reference_count_decrement(context_data->branch_selector_fn.ref_count);
 
         branch_state_data->selector_fn = (archi_hsp_branch_selector_func_t)value.fptr;
-        context.reference[REF_SELECTOR_FN] = value;
+        context_data->branch_selector_fn = value;
     }
     else if (strcmp("selector_data", slot.name) == 0)
     {
@@ -1069,10 +1160,10 @@ ARCHI_CONTEXT_SET_FUNC(archi_context_hsp_branch_state_data_set)
             return ARCHI_STATUS_EVALUE;
 
         archi_reference_count_increment(value.ref_count);
-        archi_reference_count_decrement(context.reference[REF_SELECTOR_DATA].ref_count);
+        archi_reference_count_decrement(context_data->branch_selector_data.ref_count);
 
         branch_state_data->selector_data = value.ptr;
-        context.reference[REF_SELECTOR_DATA] = value;
+        context_data->branch_selector_data = value;
     }
     else
         return ARCHI_STATUS_EKEY;
@@ -1086,8 +1177,4 @@ const archi_context_interface_t archi_context_hsp_branch_state_data_interface = 
     .get_fn = archi_context_hsp_branch_state_data_get,
     .set_fn = archi_context_hsp_branch_state_data_set,
 };
-
-#undef REF_SELECTOR_FN
-#undef REF_SELECTOR_DATA
-#undef NUM_REFERENCES
 

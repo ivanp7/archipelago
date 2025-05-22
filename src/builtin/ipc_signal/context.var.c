@@ -32,9 +32,12 @@
 #include <stdalign.h> // for alignof()
 #include <threads.h> // for mtx_*
 
-#define REF_FUNCTION 0
-#define REF_DATA 1
-#define NUM_REFERENCES 2
+struct archi_context_ipc_signal_handler_data {
+    archi_pointer_t signal_handler;
+
+    archi_pointer_t signal_handler_function;
+    archi_pointer_t signal_handler_data;
+};
 
 ARCHI_CONTEXT_INIT_FUNC(archi_context_ipc_signal_handler_init)
 {
@@ -72,65 +75,71 @@ ARCHI_CONTEXT_INIT_FUNC(archi_context_ipc_signal_handler_init)
             return ARCHI_STATUS_EKEY;
     }
 
+    struct archi_context_ipc_signal_handler_data *context_data = malloc(sizeof(*context_data));
+    if (context_data == NULL)
+        return ARCHI_STATUS_ENOMEMORY;
+
     archi_signal_handler_t *signal_handler = malloc(sizeof(*signal_handler));
     if (signal_handler == NULL)
+    {
+        free(context_data);
         return ARCHI_STATUS_ENOMEMORY;
+    }
 
     *signal_handler = (archi_signal_handler_t){
         .function = (archi_signal_handler_function_t)signal_handler_function.fptr,
         .data = signal_handler_data.ptr,
     };
 
-    context->num_references = NUM_REFERENCES;
-    context->reference = malloc(sizeof(*context->reference) * context->num_references);
-    if (context->reference == NULL)
-    {
-        free(signal_handler);
-        return ARCHI_STATUS_ENOMEMORY;
-    }
-
-    context->reference[REF_FUNCTION] = signal_handler_function;
-    context->reference[REF_DATA] = signal_handler_data;
-
-    for (size_t i = 0; i < NUM_REFERENCES; i++)
-        archi_reference_count_increment(context->reference[i].ref_count);
-
-    context->public_value = (archi_pointer_t){
-        .ptr = signal_handler,
-        .element = {
-            .num_of = 1,
-            .size = sizeof(*signal_handler),
-            .alignment = alignof(archi_signal_handler_t),
+    *context_data = (struct archi_context_ipc_signal_handler_data){
+        .signal_handler = {
+            .ptr = signal_handler,
+            .element = {
+                .num_of = 1,
+                .size = sizeof(*signal_handler),
+                .alignment = alignof(archi_signal_handler_t),
+            },
         },
+        .signal_handler_function = signal_handler_function,
+        .signal_handler_data = signal_handler_data,
     };
 
+    archi_reference_count_increment(signal_handler_function.ref_count);
+    archi_reference_count_increment(signal_handler_data.ref_count);
+
+    *context = (archi_pointer_t*)context_data;
     return 0;
 }
 
 ARCHI_CONTEXT_FINAL_FUNC(archi_context_ipc_signal_handler_final)
 {
-    for (size_t i = context.num_references; i-- > 0;)
-        archi_reference_count_decrement(context.reference[i].ref_count);
+    struct archi_context_ipc_signal_handler_data *context_data =
+        (struct archi_context_ipc_signal_handler_data*)context;
 
-    free(context.reference);
-    free(context.public_value.ptr);
+    archi_reference_count_decrement(context_data->signal_handler_function.ref_count);
+    archi_reference_count_decrement(context_data->signal_handler_data.ref_count);
+    free(context_data->signal_handler.ptr);
+    free(context_data);
 }
 
 ARCHI_CONTEXT_GET_FUNC(archi_context_ipc_signal_handler_get)
 {
+    struct archi_context_ipc_signal_handler_data *context_data =
+        (struct archi_context_ipc_signal_handler_data*)context;
+
     if (strcmp("function", slot.name) == 0)
     {
         if (slot.num_indices != 0)
             return ARCHI_STATUS_EMISUSE;
 
-        *value = context.reference[REF_FUNCTION];
+        *value = context_data->signal_handler_function;
     }
     else if (strcmp("data", slot.name) == 0)
     {
         if (slot.num_indices != 0)
             return ARCHI_STATUS_EMISUSE;
 
-        *value = context.reference[REF_DATA];
+        *value = context_data->signal_handler_data;
     }
     else
         return ARCHI_STATUS_EKEY;
@@ -140,7 +149,10 @@ ARCHI_CONTEXT_GET_FUNC(archi_context_ipc_signal_handler_get)
 
 ARCHI_CONTEXT_SET_FUNC(archi_context_ipc_signal_handler_set)
 {
-    archi_signal_handler_t *signal_handler = context.public_value.ptr;
+    struct archi_context_ipc_signal_handler_data *context_data =
+        (struct archi_context_ipc_signal_handler_data*)context;
+
+    archi_signal_handler_t *signal_handler = context_data->signal_handler.ptr;
 
     if (strcmp("function", slot.name) == 0)
     {
@@ -150,10 +162,10 @@ ARCHI_CONTEXT_SET_FUNC(archi_context_ipc_signal_handler_set)
             return ARCHI_STATUS_EVALUE;
 
         archi_reference_count_increment(value.ref_count);
-        archi_reference_count_decrement(context.reference[REF_FUNCTION].ref_count);
+        archi_reference_count_decrement(context_data->signal_handler_function.ref_count);
 
         signal_handler->function = (archi_signal_handler_function_t)value.fptr;
-        context.reference[REF_FUNCTION] = value;
+        context_data->signal_handler_function = value;
     }
     else if (strcmp("data", slot.name) == 0)
     {
@@ -163,10 +175,10 @@ ARCHI_CONTEXT_SET_FUNC(archi_context_ipc_signal_handler_set)
             return ARCHI_STATUS_EVALUE;
 
         archi_reference_count_increment(value.ref_count);
-        archi_reference_count_decrement(context.reference[REF_DATA].ref_count);
+        archi_reference_count_decrement(context_data->signal_handler_data.ref_count);
 
         signal_handler->data = value.ptr;
-        context.reference[REF_DATA] = value;
+        context_data->signal_handler_data = value;
     }
     else
         return ARCHI_STATUS_EKEY;
@@ -181,16 +193,12 @@ const archi_context_interface_t archi_context_ipc_signal_handler_interface = {
     .set_fn = archi_context_ipc_signal_handler_set,
 };
 
-#undef REF_FUNCTION
-#undef REF_DATA
-#undef NUM_REFERENCES
-
 /*****************************************************************************/
 
 #define ARCHI_CONTEXT_IPC_SIGNAL_HANDLERS_CAPACITY  16 // larger capacity isn't needed, probably
 
-struct archi_context_ipc_signal {
-    archi_signal_management_context_t context; ///< Signal management context.
+struct archi_context_ipc_signal_management_data {
+    archi_pointer_t context; ///< Signal management context.
 
     archi_hashmap_t signal_handlers; ///< Hashmap of signal handlers.
     mtx_t mutex_signal_handlers; ///< Mutex for the hashmap.
@@ -226,7 +234,7 @@ ARCHI_HASHMAP_TRAV_KV_FUNC(archi_context_ipc_signal_management_hashmap_traverse)
 static
 ARCHI_SIGNAL_HANDLER_FUNC(archi_context_ipc_signal_management_handler)
 {
-    struct archi_context_ipc_signal *signal_management = data;
+    struct archi_context_ipc_signal_management_data *context_data = data;
 
     struct archi_context_ipc_signal_handler_args args = {
         .signo = signo,
@@ -237,12 +245,12 @@ ARCHI_SIGNAL_HANDLER_FUNC(archi_context_ipc_signal_management_handler)
     };
 
     {
-        mtx_lock(&signal_management->mutex_signal_handlers);
+        mtx_lock(&context_data->mutex_signal_handlers);
 
-        archi_hashmap_traverse(signal_management->signal_handlers, true,
+        archi_hashmap_traverse(context_data->signal_handlers, true,
                 archi_context_ipc_signal_management_hashmap_traverse, &args);
 
-        mtx_unlock(&signal_management->mutex_signal_handlers);
+        mtx_unlock(&context_data->mutex_signal_handlers);
     }
 
     return args.set_signal_flag;
@@ -273,69 +281,73 @@ ARCHI_CONTEXT_INIT_FUNC(archi_context_ipc_signal_management_init)
 
     archi_status_t code;
 
-    struct archi_context_ipc_signal *signal_management = malloc(sizeof(*signal_management));
-    if (signal_management == NULL)
+    struct archi_context_ipc_signal_management_data *context_data = malloc(sizeof(*context_data));
+    if (context_data == NULL)
         return ARCHI_STATUS_ENOMEMORY;
 
-    *signal_management = (struct archi_context_ipc_signal){0};
-
-    if (mtx_init(&signal_management->mutex_signal_handlers, mtx_plain) != thrd_success)
+    mtx_t mutex_signal_handlers;
+    if (mtx_init(&mutex_signal_handlers, mtx_plain) != thrd_success)
     {
-        free(signal_management);
+        free(context_data);
         return ARCHI_STATUS_ERESOURCE;
     }
 
-    signal_management->signal_handlers = archi_hashmap_alloc((archi_hashmap_alloc_params_t){
+    archi_hashmap_t signal_handlers = archi_hashmap_alloc((archi_hashmap_alloc_params_t){
             .capacity = ARCHI_CONTEXT_IPC_SIGNAL_HANDLERS_CAPACITY}, &code);
-
-    if (signal_management->signal_handlers == NULL)
+    if (signal_handlers == NULL)
     {
-        mtx_destroy(&signal_management->mutex_signal_handlers);
-        free(signal_management);
+        mtx_destroy(&mutex_signal_handlers);
+        free(context_data);
         return code;
     }
 
-    signal_management->context = archi_signal_management_start(
+    archi_signal_management_context_t signal_management = archi_signal_management_start(
             (archi_signal_management_start_params_t){
                 .signals = signals,
                 .signal_handler = {
                     .function = archi_context_ipc_signal_management_handler,
-                    .data = signal_management,
+                    .data = context_data,
                 },
             },
             &code);
-
-    if (signal_management->context == NULL)
+    if (signal_management == NULL)
     {
-        mtx_destroy(&signal_management->mutex_signal_handlers);
-        archi_hashmap_free(signal_management->signal_handlers);
-        free(signal_management);
+        archi_hashmap_free(context_data->signal_handlers);
+        mtx_destroy(&mutex_signal_handlers);
+        free(context_data);
         return code;
     }
 
-    context->public_value = (archi_pointer_t){
-        .ptr = signal_management,
-        .element = {
-            .num_of = 1,
+    *context_data = (struct archi_context_ipc_signal_management_data){
+        .context = {
+            .ptr = signal_management,
+            .element = {
+                .num_of = 1,
+            },
         },
+        .signal_handlers = signal_handlers,
+        .mutex_signal_handlers = mutex_signal_handlers,
     };
 
+    *context = (archi_pointer_t*)context_data;
     return code;
 }
 
 ARCHI_CONTEXT_FINAL_FUNC(archi_context_ipc_signal_management_final)
 {
-    struct archi_context_ipc_signal *signal_management = context.public_value.ptr;
+    struct archi_context_ipc_signal_management_data *context_data =
+        (struct archi_context_ipc_signal_management_data*)context;
 
-    archi_signal_management_stop(signal_management->context);
-    archi_hashmap_free(signal_management->signal_handlers);
-    mtx_destroy(&signal_management->mutex_signal_handlers);
-    free(signal_management);
+    archi_signal_management_stop(context_data->context.ptr);
+    archi_hashmap_free(context_data->signal_handlers);
+    mtx_destroy(&context_data->mutex_signal_handlers);
+    free(context_data);
 }
 
 ARCHI_CONTEXT_GET_FUNC(archi_context_ipc_signal_management_get)
 {
-    struct archi_context_ipc_signal *signal_management = context.public_value.ptr;
+    struct archi_context_ipc_signal_management_data *context_data =
+        (struct archi_context_ipc_signal_management_data*)context;
 
     if (strcmp("flags", slot.name) == 0)
     {
@@ -343,8 +355,8 @@ ARCHI_CONTEXT_GET_FUNC(archi_context_ipc_signal_management_get)
             return ARCHI_STATUS_EMISUSE;
 
         *value = (archi_pointer_t){
-            .ptr = archi_signal_management_flags(signal_management->context),
-            .ref_count = context.public_value.ref_count,
+            .ptr = archi_signal_management_flags(context_data->context.ptr),
+            .ref_count = context_data->context.ref_count,
             .element = {
                 .num_of = 1,
                 .size = ARCHI_SIGNAL_FLAGS_SIZEOF,
@@ -360,11 +372,11 @@ ARCHI_CONTEXT_GET_FUNC(archi_context_ipc_signal_management_get)
         archi_status_t code;
 
         {
-            mtx_lock(&signal_management->mutex_signal_handlers);
+            mtx_lock(&context_data->mutex_signal_handlers);
 
-            *value = archi_hashmap_get(signal_management->signal_handlers, &slot.name[8], &code);
+            *value = archi_hashmap_get(context_data->signal_handlers, &slot.name[8], &code);
 
-            mtx_unlock(&signal_management->mutex_signal_handlers);
+            mtx_unlock(&context_data->mutex_signal_handlers);
         }
 
         if (code != 0)
@@ -378,7 +390,8 @@ ARCHI_CONTEXT_GET_FUNC(archi_context_ipc_signal_management_get)
 
 ARCHI_CONTEXT_SET_FUNC(archi_context_ipc_signal_management_set)
 {
-    struct archi_context_ipc_signal *signal_management = context.public_value.ptr;
+    struct archi_context_ipc_signal_management_data *context_data =
+        (struct archi_context_ipc_signal_management_data*)context;
 
     if (strncmp("handler.", slot.name, 8) == 0)
     {
@@ -396,21 +409,22 @@ ARCHI_CONTEXT_SET_FUNC(archi_context_ipc_signal_management_set)
                 .update_allowed = true,
             };
 
-            mtx_lock(&signal_management->mutex_signal_handlers);
+            {
+                mtx_lock(&context_data->mutex_signal_handlers);
 
-            code = archi_hashmap_set(signal_management->signal_handlers,
-                    &slot.name[8], value, params);
+                code = archi_hashmap_set(context_data->signal_handlers, &slot.name[8], value, params);
 
-            mtx_unlock(&signal_management->mutex_signal_handlers);
+                mtx_unlock(&context_data->mutex_signal_handlers);
+            }
         }
         else
         {
-            mtx_lock(&signal_management->mutex_signal_handlers);
+            mtx_lock(&context_data->mutex_signal_handlers);
 
-            code = archi_hashmap_unset(signal_management->signal_handlers,
+            code = archi_hashmap_unset(context_data->signal_handlers,
                     &slot.name[8], (archi_hashmap_unset_params_t){0});
 
-            mtx_unlock(&signal_management->mutex_signal_handlers);
+            mtx_unlock(&context_data->mutex_signal_handlers);
         }
 
         if (code != 0)

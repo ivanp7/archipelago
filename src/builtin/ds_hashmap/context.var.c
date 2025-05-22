@@ -26,6 +26,7 @@
 #include "archi/builtin/ds_hashmap/context.var.h"
 #include "archi/ds/hashmap/api.fun.h"
 
+#include <stdlib.h> // for malloc(), free()
 #include <string.h> // for strcmp()
 
 ARCHI_CONTEXT_INIT_FUNC(archi_context_ds_hashmap_init)
@@ -65,24 +66,34 @@ ARCHI_CONTEXT_INIT_FUNC(archi_context_ds_hashmap_init)
             return ARCHI_STATUS_EKEY;
     }
 
+    archi_pointer_t *context_data = malloc(sizeof(*context_data));
+    if (context_data == NULL)
+        return ARCHI_STATUS_ENOMEMORY;
+
     archi_status_t code;
     archi_hashmap_t hashmap = archi_hashmap_alloc(hashmap_alloc_params, &code);
 
     if (code < 0)
+    {
+        free(context_data);
         return code;
+    }
 
-    context->public_value = (archi_pointer_t){
+    *context_data = (archi_pointer_t){
         .ptr = hashmap,
         .element = {
             .num_of = 1,
         },
     };
+
+    *context = context_data;
     return code;
 }
 
 ARCHI_CONTEXT_FINAL_FUNC(archi_context_ds_hashmap_final)
 {
-    archi_hashmap_free(context.public_value.ptr);
+    archi_hashmap_free(context->ptr);
+    free(context);
 }
 
 ARCHI_CONTEXT_GET_FUNC(archi_context_ds_hashmap_get)
@@ -91,7 +102,7 @@ ARCHI_CONTEXT_GET_FUNC(archi_context_ds_hashmap_get)
         return ARCHI_STATUS_EMISUSE;
 
     archi_status_t code;
-    archi_pointer_t val = archi_hashmap_get(context.public_value.ptr, slot.name, &code);
+    archi_pointer_t val = archi_hashmap_get(context->ptr, slot.name, &code);
 
     if (code < 0)
         return code;
@@ -114,13 +125,13 @@ ARCHI_CONTEXT_SET_FUNC(archi_context_ds_hashmap_set)
             .update_allowed = (slot.num_indices > 0) ? slot.index[0] : false,
         };
 
-        return archi_hashmap_set(context.public_value.ptr, slot.name, value, params);
+        return archi_hashmap_set(context->ptr, slot.name, value, params);
     }
     else
     {
         archi_hashmap_unset_params_t params = {0};
 
-        return archi_hashmap_unset(context.public_value.ptr, slot.name, params);
+        return archi_hashmap_unset(context->ptr, slot.name, params);
     }
 }
 

@@ -54,13 +54,20 @@ ARCHI_CONTEXT_INIT_FUNC(archi_context_ipc_env_init)
             return ARCHI_STATUS_EKEY;
     }
 
+    archi_pointer_t *context_data = malloc(sizeof(*context_data));
+    if (context_data == NULL)
+        return ARCHI_STATUS_ENOMEMORY;
+
     archi_status_t code;
     char *var = archi_env_get(name, &code);
 
     if (var == NULL)
+    {
+        free(context_data);
         return code;
+    }
 
-    context->public_value = (archi_pointer_t){
+    *context_data = (archi_pointer_t){
         .ptr = var,
         .element = {
             .num_of = strlen(var) + 1,
@@ -69,12 +76,14 @@ ARCHI_CONTEXT_INIT_FUNC(archi_context_ipc_env_init)
         },
     };
 
+    *context = context_data;
     return 0;
 }
 
 ARCHI_CONTEXT_FINAL_FUNC(archi_context_ipc_env_final)
 {
-    free(context.public_value.ptr);
+    free(context->ptr);
+    free(context);
 }
 
 const archi_context_interface_t archi_context_ipc_env_interface = {

@@ -25,6 +25,7 @@
 
 #include "archi/ctx/interface/pointer.var.h"
 
+#include <stdlib.h> // for malloc(), free()
 #include <string.h> // for strcmp()
 #include <stdalign.h> // for alignof()
 
@@ -116,37 +117,42 @@ ARCHI_CONTEXT_INIT_FUNC(archi_context_pointer_init)
             return ARCHI_STATUS_EKEY;
     }
 
-    context->public_value = context->private_value = value;
-
     if (param_flags_set)
-        context->public_value.flags = flags;
+        value.flags = flags;
 
     if (param_layout_set)
-        context->public_value.element = layout;
+        value.element = layout;
 
     if (param_num_elements_set)
-        context->public_value.element.num_of = layout_fields.num_of;
+        value.element.num_of = layout_fields.num_of;
 
     if (param_element_size_set)
-        context->public_value.element.size = layout_fields.size;
+        value.element.size = layout_fields.size;
 
     if (param_element_alignment_set)
-        context->public_value.element.alignment = layout_fields.alignment;
+        value.element.alignment = layout_fields.alignment;
 
-    if (context->public_value.element.num_of == 0)
+    if (value.element.num_of == 0)
         return ARCHI_STATUS_EVALUE;
-    else if ((context->public_value.element.alignment &
-                (context->public_value.element.alignment - 1)) != 0)
+    else if ((value.element.alignment & (value.element.alignment - 1)) != 0)
         return ARCHI_STATUS_EVALUE;
+
+    archi_pointer_t *context_data = malloc(sizeof(*context_data));
+    if (context_data == NULL)
+        return ARCHI_STATUS_ENOMEMORY;
+
+    *context_data = value;
 
     archi_reference_count_increment(value.ref_count);
 
+    *context = context_data;
     return 0;
 }
 
 ARCHI_CONTEXT_FINAL_FUNC(archi_context_pointer_final)
 {
-    archi_reference_count_decrement(context.private_value.ref_count);
+    archi_reference_count_decrement(context->ref_count);
+    free(context);
 }
 
 ARCHI_CONTEXT_GET_FUNC(archi_context_pointer_get)
@@ -157,24 +163,24 @@ ARCHI_CONTEXT_GET_FUNC(archi_context_pointer_get)
             return ARCHI_STATUS_EMISUSE;
         else if (slot.num_indices > 0)
         {
-            if (slot.index[0] >= context.public_value.element.num_of)
+            if (slot.index[0] >= context->element.num_of)
                 return ARCHI_STATUS_EMISUSE;
-            else if ((slot.index[0] > 0) && (context.public_value.element.size == 0))
+            else if ((slot.index[0] > 0) && (context->element.size == 0))
                 return ARCHI_STATUS_EMISUSE;
         }
 
         size_t offset = (slot.num_indices > 0) ? slot.index[0] : 0;
-        size_t element_size = (context.public_value.flags & ARCHI_POINTER_FLAG_FUNCTION) ?
-            sizeof(archi_function_t) : context.public_value.element.size;
+        size_t element_size = (context->flags & ARCHI_POINTER_FLAG_FUNCTION) ?
+            sizeof(archi_function_t) : context->element.size;
 
         *value = (archi_pointer_t){
-            .ptr = (char*)context.public_value.ptr + offset * element_size,
-            .ref_count = context.public_value.ref_count,
-            .flags = context.public_value.flags,
+            .ptr = (char*)context->ptr + offset * element_size,
+            .ref_count = context->ref_count,
+            .flags = context->flags,
             .element = {
-                .num_of = context.public_value.element.num_of - offset,
-                .size = context.public_value.element.size,
-                .alignment = context.public_value.element.alignment,
+                .num_of = context->element.num_of - offset,
+                .size = context->element.size,
+                .alignment = context->element.alignment,
             },
         };
     }
@@ -184,11 +190,11 @@ ARCHI_CONTEXT_GET_FUNC(archi_context_pointer_get)
             return ARCHI_STATUS_EMISUSE;
 
         *value = (archi_pointer_t){
-            .ptr = &context.public_value.element.num_of,
-            .ref_count = context.public_value.ref_count,
+            .ptr = &context->element.num_of,
+            .ref_count = context->ref_count,
             .element = {
                 .num_of = 1,
-                .size = sizeof(context.public_value.element.num_of),
+                .size = sizeof(context->element.num_of),
                 .alignment = alignof(size_t),
             },
         };
@@ -199,11 +205,11 @@ ARCHI_CONTEXT_GET_FUNC(archi_context_pointer_get)
             return ARCHI_STATUS_EMISUSE;
 
         *value = (archi_pointer_t){
-            .ptr = &context.public_value.element.size,
-            .ref_count = context.public_value.ref_count,
+            .ptr = &context->element.size,
+            .ref_count = context->ref_count,
             .element = {
                 .num_of = 1,
-                .size = sizeof(context.public_value.element.size),
+                .size = sizeof(context->element.size),
                 .alignment = alignof(size_t),
             },
         };
@@ -214,11 +220,11 @@ ARCHI_CONTEXT_GET_FUNC(archi_context_pointer_get)
             return ARCHI_STATUS_EMISUSE;
 
         *value = (archi_pointer_t){
-            .ptr = &context.public_value.element.alignment,
-            .ref_count = context.public_value.ref_count,
+            .ptr = &context->element.alignment,
+            .ref_count = context->ref_count,
             .element = {
                 .num_of = 1,
-                .size = sizeof(context.public_value.element.alignment),
+                .size = sizeof(context->element.alignment),
                 .alignment = alignof(size_t),
             },
         };

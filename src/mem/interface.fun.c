@@ -178,12 +178,16 @@ archi_memory_free(
 }
 
 static
-ARCHI_DESTRUCTOR_FUNC(archi_memory_auto_unmap)
+ARCHI_DESTRUCTOR_FUNC(archi_memory_mapping_destructor)
 {
     archi_memory_t memory = data;
 
-    memory->mapping.ref_count = NULL; // prevent double deallocation
-    archi_memory_unmap(memory);
+    const archi_memory_interface_t *interface_ptr = memory->interface.ptr;
+
+    if (interface_ptr->unmap_fn != NULL)
+        interface_ptr->unmap_fn(memory->allocation.ptr, memory->mapping.ptr);
+
+    memory->mapping = (archi_pointer_t){0};
 }
 
 archi_pointer_t
@@ -228,7 +232,7 @@ archi_memory_map(
 
     // Allocate the reference counter
     archi_reference_count_t ref_count =
-        archi_reference_count_alloc(archi_memory_auto_unmap, memory);
+        archi_reference_count_alloc(archi_memory_mapping_destructor, memory);
     if (ref_count == NULL)
     {
         if (code != NULL)
@@ -280,17 +284,10 @@ void
 archi_memory_unmap(
         archi_memory_t memory)
 {
-    if ((memory == NULL) || (memory->mapping.ptr == NULL))
+    if (memory == NULL)
         return;
 
-    const archi_memory_interface_t *interface_ptr = memory->interface.ptr;
-
-    if (interface_ptr->unmap_fn != NULL)
-        interface_ptr->unmap_fn(memory->allocation.ptr, memory->mapping.ptr);
-
-    archi_reference_count_free(memory->mapping.ref_count);
-
-    memory->mapping = (archi_pointer_t){0};
+    archi_reference_count_decrement(memory->mapping.ref_count);
 }
 
 /*****************************************************************************/

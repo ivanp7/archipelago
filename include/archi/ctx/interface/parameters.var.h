@@ -60,7 +60,7 @@ ARCHI_CONTEXT_SET_FUNC(archi_context_parameters_set);
  * @brief Parameter list action function.
  *
  * Provides the following actions:
- * - "add" : prepend the parameter list with the action parameters
+ * - "_" : prepend the parameter list with the action parameters
  */
 ARCHI_CONTEXT_ACT_FUNC(archi_context_parameters_act);
 

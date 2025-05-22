@@ -29,8 +29,8 @@
 
 struct archi_context {
     archi_pointer_t interface; ///< Context interface.
-
-    archi_context_data_t data; ///< Public and private data of the context.
+    archi_pointer_t *data;     ///< Context data.
+    archi_reference_count_t ref_count; ///< Original reference count returned by init_fn().
 };
 
 archi_pointer_t
@@ -50,7 +50,7 @@ archi_context_data(
     if (context == NULL)
         return (archi_pointer_t){0};
 
-    return context->data.public_value;
+    return *context->data;
 }
 
 /*****************************************************************************/
@@ -60,8 +60,20 @@ ARCHI_DESTRUCTOR_FUNC(archi_context_destructor)
 {
     archi_context_t context = data;
 
-    context->data.public_value.ref_count = NULL; // prevent double deallocation
-    archi_context_finalize(context);
+    const archi_context_interface_t *interface_ptr = context->interface.ptr;
+
+    // Restore the original reference count
+    context->data->ref_count = context->ref_count;
+
+    // Finalize the context
+    if (interface_ptr->final_fn != NULL)
+        interface_ptr->final_fn(context->data);
+
+    // Decrement the reference count of the interface
+    archi_reference_count_decrement(context->interface.ref_count);
+
+    // Destroy the context object
+    free(context);
 }
 
 archi_context_t
@@ -125,12 +137,24 @@ archi_context_initialize(
         free(context);
         return NULL;
     }
+    else if (context->data == NULL)
+    {
+        if (code != NULL)
+            *code = ARCHI_STATUS_EFAILURE;
 
-    // Increase the reference count of the interface
+        archi_reference_count_free(ref_count);
+        free(context);
+        return NULL;
+    }
+
+    // Save the original reference counter to the context
+    context->ref_count = context->data->ref_count;
+
+    // Assign the new reference counter to the context data
+    context->data->ref_count = ref_count;
+
+    // Increment the reference count of the interface
     archi_reference_count_increment(interface.ref_count);
-
-    // Assign the reference counter to the context
-    context->data.public_value.ref_count = ref_count;
 
     if (code != NULL)
         *code = code_init;
@@ -145,15 +169,8 @@ archi_context_finalize(
     if (context == NULL)
         return;
 
-    const archi_context_interface_t *interface_ptr = context->interface.ptr;
-
-    if (interface_ptr->final_fn != NULL)
-        interface_ptr->final_fn(context->data);
-
-    archi_reference_count_free(context->data.public_value.ref_count);
-    archi_reference_count_decrement(context->interface.ref_count);
-
-    free(context);
+    // Decrement the reference count
+    archi_reference_count_decrement(context->data->ref_count);
 }
 
 /*****************************************************************************/
