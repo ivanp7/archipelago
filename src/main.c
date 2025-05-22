@@ -663,13 +663,13 @@ open_and_map_input_files(void)
 
             archi_pointer_t file = archi_context_data(archi_process.input_file[i]);
 
-            if (file.element.num_of < sizeof(archi_exe_input_t))
+            if (file.element.num_of < sizeof(archi_exe_input_file_header_t))
             {
                 archi_log_error(M, "Input file #%zu is invalid (file size is smaller than the header structure size).", i);
                 exit(EXIT_FAILURE);
             }
 
-            const archi_exe_input_t *input = file.ptr;
+            const archi_exe_input_file_header_t *input = file.ptr;
             if (strncmp(ARCHI_EXE_INPUT_MAGIC, input->magic, sizeof(input->magic)) != 0)
             {
                 archi_log_error(M, "Input file #%zu is invalid (magic bytes are incorrect).", i);
@@ -729,7 +729,7 @@ process_parameters_of_input_files(void)
     {
         archi_log_debug(M, " * file #%zu ('%s')", i, archi_process.args.input[i]);
 
-        const archi_exe_input_t *input = archi_context_data(archi_process.input_file[i]).ptr;
+        const archi_exe_input_file_header_t *input = archi_context_data(archi_process.input_file[i]).ptr;
 
         for (archi_parameter_list_t *params = input->params; params != NULL; params = params->next)
         {
@@ -883,7 +883,7 @@ execute_instructions(void)
     {
         archi_log_debug(M, " * executing file #%zu ('%s')", i, archi_process.args.input[i]);
 
-        const archi_exe_input_t *input = archi_context_data(archi_process.input_file[i]).ptr;
+        const archi_exe_input_file_header_t *input = archi_context_data(archi_process.input_file[i]).ptr;
 
         for (archi_exe_registry_instr_list_t *instr_list = input->instructions;
                 instr_list != NULL; instr_list = instr_list->next)

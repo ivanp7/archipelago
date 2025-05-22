@@ -20,7 +20,7 @@
 
 /**
  * @file
- * @brief Description of an application initialization file (executable input file).
+ * @brief Description of an executable input file.
  */
 
 #pragma once
@@ -39,13 +39,13 @@ struct archi_exe_registry_instr_list;
  *
  * @note Valid input files always have `magic` containing the same bytes as ARCHI_EXE_INPUT_MAGIC.
  */
-typedef struct archi_exe_input {
+typedef struct archi_exe_input_file_header {
     archi_file_header_t header; ///< Memory-mapped file header.
     char magic[8]; ///< Magic bytes identifying the file format.
 
     struct archi_parameter_list *params; ///< File parameter list.
     struct archi_exe_registry_instr_list *instructions; ///< List of instructions.
-} archi_exe_input_t;
+} archi_exe_input_file_header_t;
 
 #endif // _ARCHI_EXE_INPUT_TYP_H_
 
