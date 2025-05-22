@@ -56,9 +56,9 @@ MODULES = [
 
         "builtin/mem", # application context: memory objects
         "builtin/hsp", # application context: hierarchical state processor entities
-        "builtin/ds_hashmap",  # application context: data structure: hashmap
-        "builtin/ds_lfqueue",  # application context: data structure: lock-free queue
-        "builtin/ipc_env", # application context: inter-process communication: environmental variables
+        "builtin/ds_hashmap", # application context: data structure: hashmap
+        "builtin/ds_lfqueue", # application context: data structure: lock-free queue
+        "builtin/ipc_env",    # application context: inter-process communication: environmental variables
         "builtin/ipc_signal", # application context: inter-process communication: signal management
         "builtin/res_file",    # application context: system resource: file
         "builtin/res_library", # application context: system resource: shared library

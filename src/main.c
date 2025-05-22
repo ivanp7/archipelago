@@ -116,7 +116,7 @@ decrement_refcount_of_input_files(void);
 
 static
 void
-process_parameters_of_input_files(void);
+preliminary_pass_of_input_files(void);
 
 static
 void
@@ -223,8 +223,8 @@ main(
     // Open and map input files
     open_and_map_input_files();
 
-    // Process parameter lists of input files
-    process_parameters_of_input_files();
+    // Do preliminary pass of input files
+    preliminary_pass_of_input_files();
 
     // Create signal management context
     start_signal_management();
@@ -719,11 +719,11 @@ decrement_refcount_of_input_files(void)
 }
 
 void
-process_parameters_of_input_files(void)
+preliminary_pass_of_input_files(void)
 {
-#define M "main@process_parameters_of_input_files()"
+#define M "main@preliminary_pass_of_input_files()"
 
-    archi_log_debug(M, "Processing parameter lists of input files...");
+    archi_log_debug(M, "Passing lists of contents of input files...");
 
     for (size_t i = 0; i < archi_process.args.num_inputs; i++)
     {
@@ -731,17 +731,17 @@ process_parameters_of_input_files(void)
 
         const archi_exe_input_file_header_t *input = archi_context_data(archi_process.input_file[i]).ptr;
 
-        for (archi_parameter_list_t *params = input->params; params != NULL; params = params->next)
+        for (archi_parameter_list_t *contents = input->contents; contents != NULL; contents = contents->next)
         {
-            if (strcmp("signals", params->name) == 0)
+            if (strcmp("archi.signals", contents->name) == 0)
             {
-                if ((params->value.flags & ARCHI_POINTER_FLAG_FUNCTION) || (params->value.ptr == NULL))
+                if (contents->value.flags & ARCHI_POINTER_FLAG_FUNCTION)
                 {
-                    archi_log_error(M, "Parameter '%s' has invalid value.", params->name);
+                    archi_log_error(M, "Signal watch set must not be a function.");
                     exit(EXIT_FAILURE);
                 }
 
-                archi_signal_watch_set_t *signal_watch_set = params->value.ptr;
+                archi_signal_watch_set_t *signal_watch_set = contents->value.ptr;
                 archi_signal_watch_set_join(archi_process.signal_watch_set, signal_watch_set);
 
                 {
@@ -752,10 +752,13 @@ process_parameters_of_input_files(void)
                     archi_print_unlock(ARCHI_LOG_VERBOSITY_DEBUG);
                 }
             }
-            else
+            else if (strcmp("archi.instructions", contents->name) == 0)
             {
-                archi_log_error(M, "Met unrecognized parameter '%s'.", params->name);
-                exit(EXIT_FAILURE);
+                if (contents->value.flags & ARCHI_POINTER_FLAG_FUNCTION)
+                {
+                    archi_log_error(M, "List of instructions must not be a function.");
+                    exit(EXIT_FAILURE);
+                }
             }
         }
     }
@@ -885,7 +888,17 @@ execute_instructions(void)
 
         const archi_exe_input_file_header_t *input = archi_context_data(archi_process.input_file[i]).ptr;
 
-        for (archi_exe_registry_instr_list_t *instr_list = input->instructions;
+        archi_exe_registry_instr_list_t *instructions = NULL;
+        for (archi_parameter_list_t *contents = input->contents; contents != NULL; contents = contents->next)
+        {
+            if (strcmp("archi.instructions", contents->name) == 0)
+            {
+                instructions = contents->value.ptr;
+                break;
+            }
+        }
+
+        for (archi_exe_registry_instr_list_t *instr_list = instructions;
                 instr_list != NULL; instr_list = instr_list->next)
         {
             archi_status_t code = archi_exe_registry_instr_execute(archi_process.registry,
