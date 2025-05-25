@@ -22,15 +22,14 @@ TESTS_NAME = f"{PROJECT_PREFIX}-tests"
 
 
 INCLUDE_DIR = "include"
-
 SOURCE_DIR = "src"
 EXEC_SOURCE_FILE  = "main.c"
 
 TEST_DIR = "test"
-
-BUILD_DIR = "build"
 TEST_HEADER_FILE = "test.h"
 TEST_SOURCE_FILE = "test.c"
+
+BUILD_DIR = "build"
 
 # }}}
 # modules to build {{{

@@ -7,7 +7,7 @@
 #ifndef _ARCHIP_SDL_WINDOW_FUN_H_
 #define _ARCHIP_SDL_WINDOW_FUN_H_
 
-#include "archi/plugin/sdl/window.typ.h"
+#include "archip/sdl/window.typ.h"
 #include "archi/util/status.typ.h"
 
 #include <stdbool.h>
