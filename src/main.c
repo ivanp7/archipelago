@@ -878,12 +878,6 @@ execute_instructions(void)
                 archi_log_error(M, "Couldn't insert mapped memory of file #%zu into the registry (error %i).", i, code);
                 exit(EXIT_FAILURE);
             }
-
-            // Decrement the reference count back to 1
-            archi_reference_count_decrement(file.ref_count);
-
-            // Forget the file context
-            archi_process.input_file[i] = NULL;
         }
 
         archi_log_debug(M, " * inserting contents of file #%zu into the registry...", i);
@@ -953,6 +947,12 @@ execute_instructions(void)
                 exit(EXIT_FAILURE);
             }
         }
+
+        // Decrement the reference count back to 1
+        archi_reference_count_decrement(file.ref_count);
+
+        // Forget the file context
+        archi_process.input_file[i] = NULL;
     }
 
 #undef M
