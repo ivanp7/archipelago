@@ -161,14 +161,18 @@ archi_exe_args_parse(
         .doc = "\n\
 A versatile, modular application using plugins configured by memory-mapped initialization files that define its specific behavior.\n\
 \v\
+\n\
 Built-in contexts (keys for the application context registry):\n\
+\n\
  \"" ARCHI_EXE_REGISTRY_KEY_REGISTRY "\" \t: the context registry itself\n\
  \"" ARCHI_EXE_REGISTRY_KEY_INTERFACES "\" \t: the hashmap of built-in context interfaces\n\
  \"" ARCHI_EXE_REGISTRY_KEY_EXE_HANDLE "\" \t\t: the library handle of the executable itself\n\
  \"" ARCHI_EXE_REGISTRY_KEY_SIGNAL "\" \t: the signal management context\n\
  \"" ARCHI_EXE_REGISTRY_KEY_INPUT_FILE "<index>\" \t: context of an input file #<index>\n\
 \n\
+\n\
 Built-in context interfaces (keys for the built-in hashmap of interfaces):\n\
+\n\
  \"parameters\" : list of named parameters that can be passed to init() or act()\n\
  \"pointer\"    : copied pointer with modified attributes\n\
 \n\
