@@ -157,7 +157,14 @@ ARCHI_CONTEXT_FINAL_FUNC(archi_context_pointer_final)
 
 ARCHI_CONTEXT_GET_FUNC(archi_context_pointer_get)
 {
-    if (strcmp("", slot.name) == 0)
+    if (strcmp("value", slot.name) == 0)
+    {
+        if (slot.num_indices != 0)
+            return ARCHI_STATUS_EMISUSE;
+
+        *value = *context;
+    }
+    else if (strcmp("", slot.name) == 0)
     {
         if (slot.num_indices > 1)
             return ARCHI_STATUS_EMISUSE;
@@ -235,9 +242,28 @@ ARCHI_CONTEXT_GET_FUNC(archi_context_pointer_get)
     return 0;
 }
 
+ARCHI_CONTEXT_SET_FUNC(archi_context_pointer_set)
+{
+    if (strcmp("value", slot.name) == 0)
+    {
+        if (slot.num_indices != 0)
+            return ARCHI_STATUS_EMISUSE;
+
+        archi_reference_count_increment(value.ref_count);
+        archi_reference_count_decrement(context->ref_count);
+
+        *context = value;
+    }
+    else
+        return ARCHI_STATUS_EKEY;
+
+    return 0;
+}
+
 const archi_context_interface_t archi_context_pointer_interface = {
     .init_fn = archi_context_pointer_init,
     .final_fn = archi_context_pointer_final,
     .get_fn = archi_context_pointer_get,
+    .set_fn = archi_context_pointer_set,
 };
 

@@ -24,10 +24,11 @@
  */
 
 #include "archi/ctx/interface.fun.h"
-#include "archi/exe/registry.def.h"
 #include "archi/exe/args.fun.h"
 #include "archi/exe/args.typ.h"
 #include "archi/exe/input.typ.h"
+#include "archi/exe/input.def.h"
+#include "archi/exe/registry.def.h"
 #include "archi/exe/instruction.fun.h"
 #include "archi/exe/instruction.typ.h"
 
@@ -69,7 +70,7 @@ struct {
     archi_context_t interfaces; ///< The hashmap of built-in context interfaces.
     archi_context_t exe_handle; ///< The library handle of the executable itself.
 
-    archi_context_t *input_file; ///< The array of input files.
+    archi_context_t *input_file; ///< Array of the input file contexts.
 
     archi_context_t signal; ///< The signal management context.
     archi_context_interface_t signal_interface; ///< The signal management context interface.
@@ -112,11 +113,11 @@ open_and_map_input_files(void);
 
 static
 void
-decrement_refcount_of_input_files(void);
+preliminary_pass_of_input_files(void);
 
 static
 void
-preliminary_pass_of_input_files(void);
+decrement_refcount_of_input_files(void);
 
 static
 void
@@ -598,15 +599,11 @@ open_and_map_input_files(void)
             archi_parameter_list_t params[] = {
                 {
                     .name = "pathname",
-                    .value = (archi_pointer_t){
-                        .ptr = archi_process.args.input[i],
-                    },
+                    .value.ptr = archi_process.args.input[i],
                 },
                 {
                     .name = "readable",
-                    .value = (archi_pointer_t){
-                        .ptr = &value_true,
-                    },
+                    .value.ptr = &value_true,
                 },
             };
             params[0].next = &params[1];
@@ -631,21 +628,15 @@ open_and_map_input_files(void)
             archi_parameter_list_t params[] = {
                 {
                     .name = "has_header",
-                    .value = (archi_pointer_t){
-                        .ptr = &value_true,
-                    },
+                    .value.ptr = &value_true,
                 },
                 {
                     .name = "readable",
-                    .value = (archi_pointer_t){
-                        .ptr = &value_true,
-                    },
+                    .value.ptr = &value_true,
                 },
                 {
                     .name = "close_fd",
-                    .value = (archi_pointer_t){
-                        .ptr = &value_true,
-                    },
+                    .value.ptr = &value_true,
                 },
             };
             params[0].next = &params[1];
@@ -676,44 +667,7 @@ open_and_map_input_files(void)
                 exit(EXIT_FAILURE);
             }
         }
-
-        archi_log_debug(M, " * inserting file context #%zu into the registry...", i);
-        {
-            char file_context_key[64]; // should be enough
-            snprintf(file_context_key, sizeof(file_context_key), "%s%zu", ARCHI_EXE_REGISTRY_KEY_INPUT_FILE, i);
-
-            // Insert the context into the registry, which also increments the reference count
-            archi_status_t code = archi_context_set_slot(archi_process.registry,
-                    (archi_context_op_designator_t){.name = file_context_key},
-                    (archi_pointer_t){
-                        .ptr = archi_process.input_file[i],
-                        .ref_count = archi_context_data(archi_process.input_file[i]).ref_count,
-                        .element.num_of = 1,
-                    });
-
-            if (code != 0)
-            {
-                archi_log_error(M, "Couldn't insert file context #%zu into the registry (error %i).", i, code);
-                exit(EXIT_FAILURE);
-            }
-        }
     }
-
-#undef M
-}
-
-void
-decrement_refcount_of_input_files(void)
-{
-#define M "exit@decrement_refcount_of_input_files()"
-
-    archi_log_debug(M, "Decrementing reference counts of input file contexts...");
-
-    for (size_t i = 0; i < archi_process.args.num_inputs; i++)
-        archi_reference_count_decrement(archi_context_data(archi_process.input_file[i]).ref_count);
-
-    free(archi_process.input_file);
-    archi_process.input_file = NULL;
 
 #undef M
 }
@@ -733,7 +687,7 @@ preliminary_pass_of_input_files(void)
 
         for (archi_parameter_list_t *contents = input->contents; contents != NULL; contents = contents->next)
         {
-            if (strcmp("archi.signals", contents->name) == 0)
+            if (strcmp(ARCHI_EXE_INPUT_FILE_CONTENTS_KEY_SIGNALS, contents->name) == 0)
             {
                 if (contents->value.flags & ARCHI_POINTER_FLAG_FUNCTION)
                 {
@@ -752,7 +706,7 @@ preliminary_pass_of_input_files(void)
                     archi_print_unlock(ARCHI_LOG_VERBOSITY_DEBUG);
                 }
             }
-            else if (strcmp("archi.instructions", contents->name) == 0)
+            else if (strcmp(ARCHI_EXE_INPUT_FILE_CONTENTS_KEY_INSTRUCTIONS, contents->name) == 0)
             {
                 if (contents->value.flags & ARCHI_POINTER_FLAG_FUNCTION)
                 {
@@ -762,6 +716,25 @@ preliminary_pass_of_input_files(void)
             }
         }
     }
+
+#undef M
+}
+
+void
+decrement_refcount_of_input_files(void)
+{
+#define M "exit@decrement_refcount_of_input_files()"
+
+    archi_log_debug(M, "Decrementing reference counts of input file contexts...");
+
+    for (size_t i = 0; i < archi_process.args.num_inputs; i++)
+    {
+        if (archi_process.input_file[i] != NULL)
+            archi_reference_count_decrement(archi_context_data(archi_process.input_file[i]).ref_count);
+    }
+
+    free(archi_process.input_file);
+    archi_process.input_file = NULL;
 
 #undef M
 }
@@ -884,14 +857,63 @@ execute_instructions(void)
 
     for (size_t i = 0; i < archi_process.args.num_inputs; i++)
     {
-        archi_log_debug(M, " * executing file #%zu ('%s')", i, archi_process.args.input[i]);
+        archi_pointer_t file = archi_context_data(archi_process.input_file[i]);
+        const archi_exe_input_file_header_t *input = file.ptr;
 
-        const archi_exe_input_file_header_t *input = archi_context_data(archi_process.input_file[i]).ptr;
+        archi_log_debug(M, " * inserting mapped memory of file #%zu into the registry...", i);
+        {
+            // Insert the context into the registry, which also increments the reference count
+            archi_status_t code = archi_context_set_slot(archi_process.registry,
+                    (archi_context_op_designator_t){.name = ARCHI_EXE_REGISTRY_KEY_INPUT_FILE},
+                    (archi_pointer_t){
+                        .ptr = archi_process.input_file[i],
+                        .ref_count = file.ref_count,
+                        .element = {
+                            .num_of = 1,
+                        },
+                    });
+
+            if (code != 0)
+            {
+                archi_log_error(M, "Couldn't insert mapped memory of file #%zu into the registry (error %i).", i, code);
+                exit(EXIT_FAILURE);
+            }
+
+            // Decrement the reference count back to 1
+            archi_reference_count_decrement(file.ref_count);
+
+            // Forget the file context
+            archi_process.input_file[i] = NULL;
+        }
+
+        archi_log_debug(M, " * inserting contents of file #%zu into the registry...", i);
+        {
+            archi_exe_registry_instr_init_t instruction = {
+                .base = {
+                    .type = ARCHI_EXE_REGISTRY_INSTR_INIT,
+                    .key = ARCHI_EXE_REGISTRY_KEY_INPUT_CONTENTS,
+                },
+                .sparams = input->contents,
+            };
+
+            archi_status_t code = archi_exe_registry_instr_execute(archi_process.registry,
+                    (archi_exe_registry_instr_base_t*)&instruction, file.ref_count, archi_process.args.dry_run);
+
+            if (code > 0)
+                archi_log_warning(M, "Got non-zero instruction execution status %i, attempting to continue...", code);
+            else if (code < 0)
+            {
+                archi_log_error(M, "Couldn't execute the instruction (error %i).", code);
+                exit(EXIT_FAILURE);
+            }
+        }
+
+        archi_log_debug(M, " * executing instructions in file #%zu ('%s')", i, archi_process.args.input[i]);
 
         archi_exe_registry_instr_list_t *instructions = NULL;
         for (archi_parameter_list_t *contents = input->contents; contents != NULL; contents = contents->next)
         {
-            if (strcmp("archi.instructions", contents->name) == 0)
+            if (strcmp(ARCHI_EXE_INPUT_FILE_CONTENTS_KEY_INSTRUCTIONS, contents->name) == 0)
             {
                 instructions = contents->value.ptr;
                 break;
@@ -902,7 +924,26 @@ execute_instructions(void)
                 instr_list != NULL; instr_list = instr_list->next)
         {
             archi_status_t code = archi_exe_registry_instr_execute(archi_process.registry,
-                    instr_list->instruction, archi_process.args.dry_run);
+                    instr_list->instruction, file.ref_count, archi_process.args.dry_run);
+
+            if (code > 0)
+                archi_log_warning(M, "Got non-zero instruction execution status %i, attempting to continue...", code);
+            else if (code < 0)
+            {
+                archi_log_error(M, "Couldn't execute the instruction (error %i).", code);
+                exit(EXIT_FAILURE);
+            }
+        }
+
+        archi_log_debug(M, " * removing contents of file #%zu from the registry...", i);
+        {
+            archi_exe_registry_instr_base_t instruction = {
+                .type = ARCHI_EXE_REGISTRY_INSTR_FINAL,
+                .key = ARCHI_EXE_REGISTRY_KEY_INPUT_CONTENTS,
+            };
+
+            archi_status_t code = archi_exe_registry_instr_execute(archi_process.registry,
+                    &instruction, file.ref_count, archi_process.args.dry_run);
 
             if (code > 0)
                 archi_log_warning(M, "Got non-zero instruction execution status %i, attempting to continue...", code);

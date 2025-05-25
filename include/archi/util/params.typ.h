@@ -20,7 +20,7 @@
 
 /**
  * @file
- * @brief The type of list of named values.
+ * @brief The parameter list type.
  */
 
 #pragma once

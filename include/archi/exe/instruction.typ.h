@@ -35,16 +35,14 @@
 typedef enum archi_exe_registry_instr_type {
     ARCHI_EXE_REGISTRY_INSTR_NOOP = 0,     ///< No operation.
 
-    ARCHI_EXE_REGISTRY_INSTR_INIT_STATIC,  ///< Initialize a new context (using static parameter list).
-    ARCHI_EXE_REGISTRY_INSTR_INIT_DYNAMIC, ///< Initialize a new context (using dynamic parameter list).
-    ARCHI_EXE_REGISTRY_INSTR_FINAL,        ///< Finalize a context.
+    ARCHI_EXE_REGISTRY_INSTR_INIT,          ///< Initialize a new context.
+    ARCHI_EXE_REGISTRY_INSTR_FINAL,         ///< Finalize a context.
 
-    ARCHI_EXE_REGISTRY_INSTR_SET_VALUE,    ///< Set context slot to pointer to a value.
-    ARCHI_EXE_REGISTRY_INSTR_SET_CONTEXT,  ///< Set context slot to pointer to a source context.
-    ARCHI_EXE_REGISTRY_INSTR_SET_SLOT,     ///< Set context slot to a source context slot.
+    ARCHI_EXE_REGISTRY_INSTR_SET_VALUE,     ///< Set context slot to pointer to a value.
+    ARCHI_EXE_REGISTRY_INSTR_SET_CONTEXT,   ///< Set context slot to pointer to a source context.
+    ARCHI_EXE_REGISTRY_INSTR_SET_SLOT,      ///< Set context slot to a source context slot.
 
-    ARCHI_EXE_REGISTRY_INSTR_ACT_STATIC,   ///< Perform a context action (using static parameter list).
-    ARCHI_EXE_REGISTRY_INSTR_ACT_DYNAMIC,  ///< Perform a context action (using dynamic parameter list).
+    ARCHI_EXE_REGISTRY_INSTR_ACT,           ///< Perform a context action.
 } archi_exe_registry_instr_type_t;
 
 /**
@@ -82,10 +80,8 @@ typedef struct archi_exe_registry_instr_init {
 
     const char *interface_key; ///< Key of the context interface.
 
-    union {
-        const archi_parameter_list_t *sparams; ///< Static parameter list.
-        const char *dparams_key; ///< Key of the dynamic parameter list.
-    };
+    const char *dparams_key; ///< Key of the dynamic parameter list.
+    const archi_parameter_list_t *sparams; ///< Static parameter list.
 } archi_exe_registry_instr_init_t;
 
 /**
@@ -127,10 +123,8 @@ typedef struct archi_exe_registry_instr_act {
 
     archi_context_op_designator_t action; ///< Action designator.
 
-    union {
-        const archi_parameter_list_t *sparams; ///< Static parameter list.
-        const char *dparams_key; ///< Key of the dynamic parameter list.
-    };
+    const char *dparams_key; ///< Key of the dynamic parameter list.
+    const archi_parameter_list_t *sparams; ///< Static parameter list.
 } archi_exe_registry_instr_act_t;
 
 #endif // _ARCHI_EXE_INSTRUCTION_TYP_H_

@@ -167,8 +167,9 @@ Built-in contexts (keys for the application context registry):\n\
  \"" ARCHI_EXE_REGISTRY_KEY_REGISTRY "\" \t: the context registry itself\n\
  \"" ARCHI_EXE_REGISTRY_KEY_INTERFACES "\" \t: the hashmap of built-in context interfaces\n\
  \"" ARCHI_EXE_REGISTRY_KEY_EXE_HANDLE "\" \t\t: the library handle of the executable itself\n\
+ \"" ARCHI_EXE_REGISTRY_KEY_INPUT_FILE "\" \t: the current input file mapped to memory\n\
+ \"" ARCHI_EXE_REGISTRY_KEY_INPUT_CONTENTS "\" \t: the current input file contents (parameter list)\n\
  \"" ARCHI_EXE_REGISTRY_KEY_SIGNAL "\" \t: the signal management context\n\
- \"" ARCHI_EXE_REGISTRY_KEY_INPUT_FILE "<index>\" \t: context of an input file #<index>\n\
 \n\
 \n\
 Built-in context interfaces (keys for the built-in hashmap of interfaces):\n\

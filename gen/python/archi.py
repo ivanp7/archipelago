@@ -583,37 +583,10 @@ class Context:
         elif not all(isinstance(v, CValue) or isinstance(v, c._CData) for v in sparams.values()):
             raise TypeError("Values in a static parameter list must be of type CValue or ctypes._CData")
 
-        if dparams is None: # static parameter list
-            self._app._instructions.append(Application._InstructionActStatic(
-                key=self._key,
-                action_name=action_name, action_indices=action_indices,
-                sparams=sparams))
-
-        elif len(sparams) == 0: # dynamic parameter list
-            self._app._instructions.append(Application._InstructionActDynamic(
-                key=self._key,
-                action_name=action_name, action_indices=action_indices,
-                dparams_key=dparams._key))
-
-        else: # temporary (dynamic + static) parameter list
-            temp_params_key = f'.~{self._key}:{dparams._key}'
-
-            self._app._instructions.append(Application._InstructionInitDynamic(
-                key=temp_params_key,
-                interface_key=None, dparams_key=dparams._key))
-
-            self._app._instructions.append(Application._InstructionActStatic(
-                key=temp_params_key,
-                action_name='_', action_indices=[],
-                sparams=sparams))
-
-            self._app._instructions.append(Application._InstructionActDynamic(
-                key=self._key,
-                action_name=action_name, action_indices=action_indices,
-                dparams_key=temp_params_key))
-
-            self._app._instructions.append(Application._InstructionFinal(
-                key=temp_params_key))
+        self._app._instructions.append(Application._InstructionAct(
+            key=self._key,
+            action_name=action_name, action_indices=action_indices,
+            dparams_key=dparams._key, sparams=sparams))
 
     @staticmethod
     def key_of(context: "Context") -> "str":
@@ -641,9 +614,7 @@ class Application:
     class _Instruction:
         """Representation of an abstract application initialization instruction.
         """
-        NOOP, INIT_STATIC, INIT_DYNAMIC, FINAL, \
-                SET_VALUE, SET_CONTEXT, SET_SLOT, \
-                ACT_STATIC, ACT_DYNAMIC = range(9)
+        NOOP, INIT, FINAL, SET_VALUE, SET_CONTEXT, SET_SLOT, ACT = range(7)
 
         def __init__(self, key: "str"):
             """Initialize an instruction base.
@@ -670,21 +641,24 @@ class Application:
 
             return MemoryBlock(CValue(instr))
 
-    class _InstructionInitStatic(_Instruction):
+    class _InstructionInit(_Instruction):
         """Representation of an application initialization instruction:
-        initialize a context using static parameter list.
+        initialize a new context.
         """
-        def __init__(self, key: "str", interface_key: "str", sparams: "dict"):
+        def __init__(self, key: "str", interface_key: "str", dparams_key: "str", sparams: "dict"):
             """Initialize an instruction.
             """
             if not isinstance(interface_key, str):
                 raise TypeError("Context interface key must be a string")
+            elif not isinstance(dparams_key, str):
+                raise TypeError("Dynamic parameter list key must be a string")
             elif not isinstance(sparams, dict):
-                raise TypeError("Context specification object must be of type ContextSpec")
+                raise TypeError("Static parameter list must be of type dict")
 
-            self._type = INIT_STATIC
+            self._type = INIT
             _Instruction.__init__(key)
             self._interface_key = interface_key
+            self._dparams_key = dparams_key
             self._sparams = sparams
 
         def alloc(self, app: "Application", ptr_instructions: "list[MemoryBlock]", idx: "int"):
@@ -696,49 +670,15 @@ class Application:
             ptr_key = app._alloc_string(self._key)
 
             ptr_interface_key = app._alloc_string(self._interface_key)
+            ptr_dparams_key = app._alloc_string(self._dparams_key)
             ptr_sparams = app._alloc_params(self._sparams)
 
             def init_instr(instr: "archi_exe_registry_instr_init_t"):
                 instr.base.key = ptr_key.address()
 
                 instr.interface_key = ptr_interface_key.address()
-                instr.sparams = ptr_sparams.address()
-
-            return MemoryBlock(CValue(instr, callback=init_instr))
-
-    class _InstructionInitDynamic(_Instruction):
-        """Representation of an application initialization instruction:
-        initialize a context using dynamic parameter list.
-        """
-        def __init__(self, key: "str", interface_key: "str", dparams_key: "str"):
-            """Initialize an instruction.
-            """
-            if not isinstance(interface_key, str):
-                raise TypeError("Context interface key must be a string")
-            elif not isinstance(dparams_key, str):
-                raise TypeError("Dynamic parameter list key must be a string")
-
-            self._type = INIT_DYNAMIC
-            _Instruction.__init__(key)
-            self._interface_key = interface_key
-            self._dparams_key = dparams_key
-
-        def alloc(self, app: "Application", ptr_instructions: "list[MemoryBlock]", idx: "int"):
-            """Allocate all required blocks.
-            """
-            instr = archi_exe_registry_instr_init_t()
-            instr.base.type = self._type
-
-            ptr_key = app._alloc_string(self._key)
-
-            ptr_interface_key = app._alloc_string(self._interface_key)
-            ptr_dparams_key = app._alloc_string(self._dparams_key)
-
-            def init_instr(instr: "archi_exe_registry_instr_init_t"):
-                instr.base.key = ptr_key.address()
-
-                instr.interface_key = ptr_interface_key.address()
                 instr.dparams_key = ptr_dparams_key.address()
+                instr.sparams = ptr_sparams.address()
 
             return MemoryBlock(CValue(instr, callback=init_instr))
 
@@ -916,12 +856,12 @@ class Application:
 
             return MemoryBlock(CValue(instr, callback=init_instr))
 
-    class _InstructionActStatic(_Instruction):
+    class _InstructionAct(_Instruction):
         """Representation of an application initialization instruction:
-        invoke a context action using static parameter list.
+        invoke a context action.
         """
         def __init__(self, key: "str",
-                     action_name: "str", action_indices: "list[int]", sparams: "dict"):
+                     action_name: "str", action_indices: "list[int]", dparams_key: "str", sparams: "dict"):
             """Initialize an instruction.
             """
             if not isinstance(action_name, str):
@@ -929,13 +869,16 @@ class Application:
             elif not isinstance(action_indices, list) \
                     or not all(isinstance(index, int) for index in action_indices):
                 raise TypeError("Action indices must be a list of integers")
+            elif not isinstance(dparams_key, str):
+                raise TypeError("Dynamic parameter list key must be a string")
             elif not isinstance(sparams, dict):
-                raise TypeError("Context specification object must be of type ContextSpec")
+                raise TypeError("Static parameter list must be of type dict")
 
-            self._type = ACT_STATIC
+            self._type = ACT
             _Instruction.__init__(key)
             self._action_name = action_name
             self._action_indices = action_indices
+            self._dparams_key = dparams_key
             self._sparams = sparams
 
         def alloc(self, app: "Application", ptr_instructions: "list[MemoryBlock]", idx: "int"):
@@ -949,6 +892,7 @@ class Application:
 
             ptr_action_name = app._alloc_string(self._action_name)
             ptr_action_indices = app._alloc_index_array(self._action_indices)
+            ptr_dparams_key = app._alloc_string(self._dparams_key)
             ptr_sparams = app._alloc_params(self._sparams)
 
             def init_instr(instr: "archi_exe_registry_instr_act_t"):
@@ -956,55 +900,20 @@ class Application:
 
                 instr.action.name = ptr_action_name.address()
                 instr.action.index = ptr_action_indices.address()
+                instr.dparams_key = ptr_dparams_key.address()
                 instr.sparams = ptr_sparams.address()
 
             return MemoryBlock(CValue(instr, callback=init_instr))
 
-    class _InstructionActDynamic(_Instruction):
-        """Representation of an application initialization instruction:
-        invoke a context action using dynamic parameter list.
-        """
-        def __init__(self, key: "str",
-                     action_name: "str", action_indices: "list[int]", dparams_key: "str"):
-            """Initialize an instruction.
-            """
-            if not isinstance(action_name, str):
-                raise TypeError("Action name must be a string")
-            elif not isinstance(action_indices, list) \
-                    or not all(isinstance(index, int) for index in action_indices):
-                raise TypeError("Action indices must be a list of integers")
-            elif not isinstance(dparams_key, str):
-                raise TypeError("Dynamic parameter list key must be a string")
+    CONTENTS_KEY_INSTRUCTIONS = 'archi.instructions'
+    CONTENTS_KEY_SIGNALS      = 'archi.signals'
 
-            self._type = ACT_DYNAMIC
-            _Instruction.__init__(key)
-            self._action_name = action_name
-            self._action_indices = action_indices
-            self._dparams_key = dparams_key
-
-        def alloc(self, app: "Application", ptr_instructions: "list[MemoryBlock]", idx: "int"):
-            """Allocate all required blocks.
-            """
-            instr = archi_exe_registry_instr_act_t()
-            instr.base.type = self._type
-            instr.action.num_indices = len(self._action_indices)
-
-            ptr_key = app._alloc_string(self._key)
-
-            ptr_action_name = app._alloc_string(self._action_name)
-            ptr_action_indices = app._alloc_index_array(self._action_indices)
-            ptr_dparams_key = app._alloc_string(self._dparams_key)
-
-            def init_instr(instr: "archi_exe_registry_instr_act_t"):
-                instr.base.key = ptr_key.address()
-
-                instr.action.name = ptr_action_name.address()
-                instr.action.index = ptr_action_indices.address()
-                instr.dparams_key = ptr_dparams_key.address()
-
-            return MemoryBlock(CValue(instr, callback=init_instr))
-
-    INSTRUCTIONS_KEY = 'archi.instructions'
+    KEY_REGISTRY       = 'archi.registry'
+    KEY_INTERFACES     = 'archi.interfaces'
+    KEY_EXE_HANDLE     = 'archi.executable'
+    KEY_INPUT_FILE     = 'archi.input.file'
+    KEY_INPUT_CONTENTS = 'archi.input.contents'
+    KEY_SIGNAL         = 'archi.signal'
 
     def __init__(self):
         """Initialize a file.
@@ -1041,87 +950,40 @@ class Application:
                     if isinstance(entity, ContextSpec) \
                     else entity
 
-            if params.dynamic_list() is None: # static parameter list
-                self._instructions.append(_InstructionInitStatic(
-                    key=key,
-                    interface_key=interface_key,
-                    sparams=params.static_list()))
-
-            elif len(params.static_list()) == 0: # dynamic parameter list
-                self._instructions.append(_InstructionInitDynamic(
-                    key=key,
-                    interface_key=interface_key,
-                    dparams_key=params.dynamic_list()._key))
-
-            else: # temporary (dynamic + static) parameter list
-                temp_params_key = f'.~{key}:{entity.dynamic_list()._key}'
-
-                self._instructions.append(_InstructionInitDynamic(
-                    key=temp_params_key,
-                    interface_key=None,
-                    dparams_key=params.dynamic_list()._key))
-
-                self._instructions.append(_InstructionActStatic(
-                    key=temp_params_key,
-                    action_name='_', action_indices=[],
-                    sparams=params.static_list()))
-
-                self._instructions.append(_InstructionInitDynamic(
-                    key=key,
-                    interface_key=interface_key,
-                    dparams_key=temp_params_key))
-
-                self._instructions.append(_InstructionFinal(
-                    key=temp_params_key))
+            self._instructions.append(_InstructionInit(
+                key=key,
+                interface_key=interface_key,
+                dparams_key=params.dynamic_list()._key, sparams=params.static_list()))
 
         elif isinstance(entity, c._CData) or isinstance(entity, CValue):
-            self._instructions.append(_InstructionInitStatic(
+            self._instructions.append(_InstructionInit(
                 key=key,
                 interface_key='',
-                sparams={'value': CValue(entity) if isinstance(entity, c._CData) else entity}))
+                dparams_key=None, sparams={'value': CValue(entity) \
+                        if isinstance(entity, c._CData) else entity}))
 
         elif isinstance(entity, Context):
-            temp_params_key = f'.~{key}:{entity._key}'
-
-            self._instructions.append(_InstructionInitStatic(
-                key=temp_params_key,
-                interface_key=None,
-                sparams={}))
+            self._instructions.append(_InstructionInit(
+                key=key,
+                interface_key='',
+                dparams_key=None, sparams={}))
 
             self._instructions.append(_InstructionSetContext(
-                key=temp_params_key,
+                key=key,
                 slot_name='value', slot_indices=[],
                 source_key=entity._key))
 
-            self._instructions.append(_InstructionInitDynamic(
+        elif isinstance(entity, Context._Slot) or isinstance(entity, Context._Action):
+            self._instructions.append(_InstructionInit(
                 key=key,
                 interface_key='',
-                dparams_key=temp_params_key))
-
-            self._instructions.append(_InstructionFinal(
-                key=temp_params_key))
-
-        elif isinstance(entity, Context._Slot) or isinstance(entity, Context._Action):
-            temp_params_key = f'.~{key}:{entity._name}{entity._indices}'
-
-            self._instructions.append(_InstructionInitStatic(
-                key=temp_params_key,
-                interface_key=None,
-                sparams={}))
+                dparams_key=None, sparams={}))
 
             self._instructions.append(_InstructionSetSlot(
-                key=temp_params_key,
+                key=key,
                 slot_name='value', slot_indices=[],
                 source_key=entity._context._key,
                 source_slot_name=entity._name, source_slot_indices=entity._indices))
-
-            self._instructions.append(_InstructionInitDynamic(
-                key=key,
-                interface_key='',
-                dparams_key=temp_params_key))
-
-            self._instructions.append(_InstructionFinal(
-                key=temp_params_key))
 
         else:
             raise TypeError("Context can only be initialized from: ParameterList, ContextSpec, ctypes._CData, CValue, Context._Slot, or Context._Action")
@@ -1146,8 +1008,8 @@ class Application:
         if not all(isinstance(value, c._CData) or isinstance(value, CValue) \
                 for value in contents.values()):
             raise TypeError("Content values must be objects of type ctypes._CData or CValue")
-        elif INSTRUCTIONS_KEY in contents:
-            raise KeyError(f"Application contents list cannot contain key '{INSTRUCTIONS_KEY}'")
+        elif CONTENTS_KEY_INSTRUCTIONS in contents:
+            raise KeyError(f"Application contents list cannot contain key '{CONTENTS_KEY_INSTRUCTIONS}'")
 
         self._contents = contents
 
@@ -1215,7 +1077,7 @@ class Application:
             node.value.element.size = c.sizeof(archi_exe_registry_instr_list_t)
             node.value.element.alignment = c.alignment(archi_exe_registry_instr_list_t)
 
-            ptr_key = self._alloc_string(INSTRUCTIONS_KEY)
+            ptr_key = self._alloc_string(CONTENTS_KEY_INSTRUCTIONS)
 
             def init_contents_node(node: "archi_parameter_list_t",
                                    ptr_contents=ptr_contents, ptr_key=ptr_key,
@@ -1422,20 +1284,14 @@ class archi_exe_input_file_header_t(c.Structure):
 
 ###############################################################################
 
-class archi_exe_registry_instr_params_union(c.Union):
-    """Union of a pointer to static parameter list and a pointer to dynamic parameter list key.
-    """
-    _fields_ = [('sparams', c.POINTER(archi_parameter_list_t)),
-                ('dparams_key', c.c_char_p)]
-
-
 class archi_exe_registry_instr_init_t(c.Structure):
     """Context registry instruction: initialize a new context.
     """
     _anonymous_ = ['params']
     _fields_ = [('base', archi_exe_registry_instr_base_t),
                 ('interface_key', c.c_char_p),
-                ('params', archi_exe_registry_instr_params_union)]
+                ('dparams_key', c.c_char_p),
+                ('sparams', c.POINTER(archi_parameter_list_t))]
 
 
 class archi_exe_registry_instr_set_value_t(c.Structure):
@@ -1469,7 +1325,8 @@ class archi_exe_registry_instr_act_t(c.Structure):
     _anonymous_ = ['params']
     _fields_ = [('base', archi_exe_registry_instr_base_t),
                 ('action', archi_context_op_designator_t),
-                ('params', archi_exe_registry_instr_params_union)]
+                ('dparams_key', c.c_char_p),
+                ('sparams', c.POINTER(archi_parameter_list_t))]
 
 ###############################################################################
 

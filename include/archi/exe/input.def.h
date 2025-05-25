@@ -20,58 +20,15 @@
 
 /**
  * @file
- * @brief Context interface for pointer wrappers.
+ * @brief The recognized keys in input file contents list.
  */
 
 #pragma once
-#ifndef _ARCHI_CTX_INTERFACE_POINTER_VAR_H_
-#define _ARCHI_CTX_INTERFACE_POINTER_VAR_H_
+#ifndef _ARCHI_EXE_INPUT_DEF_H_
+#define _ARCHI_EXE_INPUT_DEF_H_
 
-#include "archi/ctx/interface.typ.h"
+#define ARCHI_EXE_INPUT_FILE_CONTENTS_KEY_INSTRUCTIONS  "archi.instructions" ///< File contents key: the list of instructions.
+#define ARCHI_EXE_INPUT_FILE_CONTENTS_KEY_SIGNALS       "archi.signals"      ///< File contents key: the signal watch set.
 
-/**
- * @brief Pointer initialization function.
- *
- * Accepts the following parameters:
- * - "value"        : pointer to store
- * - "flags"        : new pointer flags
- * - "layout"       : new array layout
- * - "num_elements" : new number of elements
- * - "element_size" : new element size
- * - "element_alignment" : new element alignment requirement
- */
-ARCHI_CONTEXT_INIT_FUNC(archi_context_pointer_init);
-
-/**
- * @brief Pointer finalization function.
- */
-ARCHI_CONTEXT_FINAL_FUNC(archi_context_pointer_final);
-
-/**
- * @brief Pointer getter function.
- *
- * Provides the following slots:
- * - "value" : stored pointer
- * - "" [offset] : stored pointer + (offset) * (data element size)
- * - "num_elements" : number of elements
- * - "element_size" : element size
- * - "element_alignment" : element alignment requirement
- */
-ARCHI_CONTEXT_GET_FUNC(archi_context_pointer_get);
-
-/**
- * @brief Pointer setter function.
- *
- * Accepts the following slots:
- * - "value" : pointer to store
- */
-ARCHI_CONTEXT_SET_FUNC(archi_context_pointer_set);
-
-/**
- * @brief Pointer interface.
- */
-extern
-const archi_context_interface_t archi_context_pointer_interface;
-
-#endif // _ARCHI_CTX_INTERFACE_POINTER_VAR_H_
+#endif // _ARCHI_EXE_INPUT_DEF_H_
 
