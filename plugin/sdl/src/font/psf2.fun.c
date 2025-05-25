@@ -3,13 +3,21 @@
  * @brief Operations with fonts.
  */
 
-#include "archi/plugin/sdl/font.fun.h"
-#include "archi/util/list.fun.h"
-#include "archi/util/error.def.h"
+#include "archip/font/psf2.fun.h"
 
 #include <stdlib.h> // for malloc(), free()
 
-#define NUM_UNICODE_CODE_POINTS (1 + 0x10FFFF) // 0 - 0x10FFFF
+#define NUM_UNICODE_CODE_POINTS (0x10FFFF + 1) // 0 - 0x10FFFF
+
+/**
+ * @brief PC Screen Font version 2, representation in memory.
+ */
+struct archip_font_psf2 {
+    archip_font_psf2_header_t *header; ///< Font header.
+    unsigned char *glyphs;             ///< Font glyphs.
+
+    uint32_t *mapping_table; ///< (Unicode code point) -> (glyph index) mapping table.
+};
 
 static
 size_t
@@ -99,8 +107,8 @@ archip_decode_utf8_code_point(
     }
 }
 
-archip_font_psf2_t*
-archip_font_psf2_load_from_bytes(
+archip_font_psf2_t
+archip_font_psf2_load(
         const void *bytes,
         size_t num_bytes,
 
@@ -109,14 +117,14 @@ archip_font_psf2_load_from_bytes(
     if (bytes == NULL)
     {
         if (code != NULL)
-            *code = ARCHI_ERROR_MISUSE;
+            *code = ARCHI_STATUS_EMISUSE;
         return NULL;
     }
 
     if (num_bytes < sizeof(archip_font_psf2_header_t))
     {
         if (code != NULL)
-            *code = ARCHI_ERROR_FORMAT;
+            *code = ARCHI_STATUS_EVALUE;
         return NULL;
     }
 
@@ -124,7 +132,7 @@ archip_font_psf2_load_from_bytes(
     if ((header->magic != ARCHIP_FONT_PSF2_MAGIC) || (header->version != 0))
     {
         if (code != NULL)
-            *code = ARCHI_ERROR_FORMAT;
+            *code = ARCHI_STATUS_EVALUE;
         return NULL;
     }
 
@@ -132,7 +140,7 @@ archip_font_psf2_load_from_bytes(
             (header->bytes_per_glyph == 0) || (header->num_glyphs == 0))
     {
         if (code != NULL)
-            *code = ARCHI_ERROR_FORMAT;
+            *code = ARCHI_STATUS_EVALUE;
         return NULL;
     }
 
@@ -140,15 +148,15 @@ archip_font_psf2_load_from_bytes(
             (size_t)header->bytes_per_glyph * header->num_glyphs)
     {
         if (code != NULL)
-            *code = ARCHI_ERROR_FORMAT;
+            *code = ARCHI_STATUS_EVALUE;
         return NULL;
     }
 
-    archip_font_psf2_t *font = malloc(sizeof(*font));
+    archip_font_psf2_t font = malloc(sizeof(*font));
     if (font == NULL)
     {
         if (code != NULL)
-            *code = ARCHI_ERROR_ALLOC;
+            *code = ARCHI_STATUS_ENOMEMORY;
         return NULL;
     }
 
@@ -171,7 +179,7 @@ archip_font_psf2_load_from_bytes(
             free(font);
 
             if (code != NULL)
-                *code = ARCHI_ERROR_ALLOC;
+                *code = ARCHI_STATUS_ENOMEMORY;
             return NULL;
         }
 
@@ -203,7 +211,7 @@ archip_font_psf2_load_from_bytes(
 
 void
 archip_font_psf2_unload(
-        archip_font_psf2_t *font)
+        archip_font_psf2_t font)
 {
     if (font == NULL)
         return;
@@ -214,7 +222,7 @@ archip_font_psf2_unload(
 
 const unsigned char*
 archip_font_psf2_glyph(
-        const archip_font_psf2_t *font,
+        archip_font_psf2_t font,
 
         const char *utf8_str,
         size_t utf8_str_len,
@@ -243,13 +251,13 @@ archip_font_psf2_glyph(
     return font->glyphs + (size_t)font->header->bytes_per_glyph * glyph_idx;
 }
 
-size_t
-archip_font_psf2_glyph_data_size(
-        archip_font_psf2_header_t *header)
+archip_font_psf2_header_t
+archip_font_psf2_header(
+        archip_font_psf2_t font)
 {
-    if (header == NULL)
-        return 0;
+    if ((font == NULL) || (font->header == NULL))
+        return (archip_font_psf2_header_t){0};
 
-    return header->header_size + (size_t)header->bytes_per_glyph * header->num_glyphs;
+    return *font->header;
 }
 

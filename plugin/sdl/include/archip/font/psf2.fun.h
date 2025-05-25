@@ -4,21 +4,28 @@
  */
 
 #pragma once
-#ifndef _ARCHI_PLUGIN_SDL_FONT_FUN_H_
-#define _ARCHI_PLUGIN_SDL_FONT_FUN_H_
+#ifndef _ARCHIP_FONT_PSF2_FUN_H_
+#define _ARCHIP_FONT_PSF2_FUN_H_
 
-#include "archi/plugin/sdl/font.typ.h"
+#include "archip/font/psf2.typ.h"
 #include "archi/util/status.typ.h"
 
-#include <stddef.h>
+#include <stddef.h> // for size_t
+
+struct archip_font_psf2;
+
+/**
+ * @brief Pointer to PC Screen Font version 2.
+ */
+typedef struct archip_font_psf2 *archip_font_psf2_t;
 
 /**
  * @brief Load PC Screen Font version 2 from buffer.
  *
  * @return Font.
  */
-archip_font_psf2_t*
-archip_font_psf2_load_from_bytes(
+archip_font_psf2_t
+archip_font_psf2_load(
         const void *bytes, ///< [in] Buffer with font data.
         size_t num_bytes,  ///< [in] Size of the buffer.
 
@@ -30,7 +37,7 @@ archip_font_psf2_load_from_bytes(
  */
 void
 archip_font_psf2_unload(
-        archip_font_psf2_t *font ///< [in] Font to unload.
+        archip_font_psf2_t font ///< [in] Font to unload.
 );
 
 /**
@@ -40,7 +47,7 @@ archip_font_psf2_unload(
  */
 const unsigned char*
 archip_font_psf2_glyph(
-        const archip_font_psf2_t *font, ///< [in] Font.
+        archip_font_psf2_t font, ///< [in] Font.
 
         const char *utf8_str, ///< [in] UTF-8 string.
         size_t utf8_str_len,  ///< [in] Length of UTF-8 string in bytes.
@@ -49,17 +56,14 @@ archip_font_psf2_glyph(
 );
 
 /**
- * @brief Get font data size -- full font size minus Unicode table.
+ * @brief Get PSFv2 font header.
  *
- * This function can be used to resize font buffer after loading the font
- * to release Unicode table that is no longer needed.
- *
- * @return Font data size.
+ * @return Font header.
  */
-size_t
-archip_font_psf2_glyph_data_size(
-        archip_font_psf2_header_t *header ///< [in] Font header.
+archip_font_psf2_header_t
+archip_font_psf2_header(
+        archip_font_psf2_t font ///< [in] Font.
 );
 
-#endif // _ARCHI_PLUGIN_SDL_FONT_FUN_H_
+#endif // _ARCHIP_FONT_PSF2_FUN_H_
 
