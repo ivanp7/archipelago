@@ -162,42 +162,43 @@ archi_exe_args_parse(
 A versatile, modular application using plugins configured by memory-mapped initialization files that define its specific behavior.\n\
 \v\
 \n\
-Built-in contexts (keys for the application context registry):\n\
+BUILT-IN CONTEXTS\n (keys for the application context registry):\n\
 \n\
- \"" ARCHI_EXE_REGISTRY_KEY_REGISTRY "\" \t: the context registry itself\n\
- \"" ARCHI_EXE_REGISTRY_KEY_INTERFACES "\" \t: the hashmap of built-in context interfaces\n\
- \"" ARCHI_EXE_REGISTRY_KEY_EXE_HANDLE "\" \t\t: the library handle of the executable itself\n\
- \"" ARCHI_EXE_REGISTRY_KEY_INPUT_FILE "\" \t: the current input file mapped to memory\n\
- \"" ARCHI_EXE_REGISTRY_KEY_INPUT_CONTENTS "\" \t: the current input file contents (parameter list)\n\
- \"" ARCHI_EXE_REGISTRY_KEY_SIGNAL "\" \t: the signal management context\n\
+ \t\"" ARCHI_EXE_REGISTRY_KEY_REGISTRY "\"\t: the context registry itself\n\
+ \t\"" ARCHI_EXE_REGISTRY_KEY_INTERFACES "\"\t: the hashmap of built-in context interfaces\n\
+ \t\"" ARCHI_EXE_REGISTRY_KEY_EXE_HANDLE "\"\t: the library handle of the executable itself\n\
+ \t\"" ARCHI_EXE_REGISTRY_KEY_INPUT_FILE "\"\t: the current input file context\n\
+ \t\"" ARCHI_EXE_REGISTRY_KEY_INPUT_CONTENTS "\"\t: the current input file contents (parameter list)\n\
+\n\
+ \t\"" ARCHI_EXE_REGISTRY_KEY_SIGNAL "\"\t: the signal management context\n\
 \n\
 \n\
-Built-in context interfaces (keys for the built-in hashmap of interfaces):\n\
+BUILT-IN CONTEXT INTERFACES\n (keys for the built-in hashmap of interfaces):\n\
 \n\
- \"parameters\" : list of named parameters that can be passed to init() or act()\n\
- \"pointer\"    : copied pointer with modified attributes\n\
+ \t\"parameters\" : parameter list for init() and act() context operations\n\
+ \t\"pointer\"    : copied pointer with modified attributes\n\
 \n\
- \"memory\"         : memory allocation context\n\
- \"memory_mapping\" : pointer to a mapped memory region\n\
+ \t\"memory\"         : memory allocation context\n\
+ \t\"memory_mapping\" : pointer to a mapped memory region\n\
 \n\
- \"hsp_state\"              : hierachical state processing state\n\
- \"hsp_transition\"         : hierachical state processing transition\n\
- \"hsp\"                    : hierachical state processing instance\n\
- \"hsp_frame\"              : hierachical state processing frame\n\
- \"hsp_branch_state_data\"  : data for hierachical state processing branch state\n\
+ \t\"hsp_state\"              : hierachical state processing state\n\
+ \t\"hsp_transition\"         : hierachical state processing transition\n\
+ \t\"hsp\"                    : hierachical state processing instance\n\
+ \t\"hsp_frame\"              : hierachical state processing frame\n\
+ \t\"hsp_branch_state_data\"  : data for HSP branch state\n\
 \n\
- \"ds_hashmap\" : hashmap\n\
- \"ds_lfqueue\" : lock-free queue\n\
+ \t\"ds_hashmap\" : hashmap\n\
+ \t\"ds_lfqueue\" : lock-free queue\n\
 \n\
- \"ipc_env\"            : environmental variable\n\
- \"ipc_signal_handler\" : signal handler\n\
+ \t\"ipc_env\"            : environmental variable\n\
+ \t\"ipc_signal_handler\" : signal handler\n\
 \n\
- \"res_file\"                       : opened and/or mapped file\n\
- \"res_library\"                    : loaded library handle\n\
- \"res_thread_group\"               : group of threads for concurrent processing\n\
- \"res_thread_group_work\"          : work task for a thread group\n\
- \"res_thread_group_callback\"      : callback for work completion notification\n\
- \"res_thread_group_dispatch_data\" : data for work dispatch HSP state\n\
+ \t\"res_file\"                       : opened and/or mapped file\n\
+ \t\"res_library\"                    : loaded library handle\n\
+ \t\"res_thread_group\"               : group of threads for concurrency\n\
+ \t\"res_thread_group_work\"          : work task for a thread group\n\
+ \t\"res_thread_group_callback\"      : callback for work completion notification\n\
+ \t\"res_thread_group_dispatch_data\" : data for work dispatch HSP state\n\
 "
     };
 
