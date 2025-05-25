@@ -24,13 +24,13 @@
 import ctypes as c
 
 ###############################################################################
-# Representation of generic memory-mapped files with pointer support
+# Representation of memory consisting of multiple blocks with pointer support
 ###############################################################################
 
 class CValue:
-    """Wrapper around a ctypes value plus a callback function to finalize writing to the mapped memory.
+    """Wrapper around a ctypes value with a callback function and optional attributes.
     """
-    def __init__(self, value: "c._CData", callback: "Callable[[c._CData]]" = None, **attributes):
+    def __init__(self, value: "c._CData", /, callback: "Callable[[c._CData]]" = None, **attributes):
         """Initialize a ctypes value wrapper.
         """
         import types
@@ -64,8 +64,8 @@ class CValue:
     def callback(self) -> "Callable[[c._CData]]":
         """Obtain the callback.
 
-        This callback function is called on the value copy written to the mapped memory,
-        after all file sections have been assigned addresses.
+        This callback function is called on the copy when the value is copied to the memory,
+        after all memory blocks have been assigned addresses.
         It is needed to write data structures containing pointers to other structures.
         """
         return self._callback
@@ -91,11 +91,11 @@ class CValue:
         return self._alignment
 
 
-class FileSection:
-    """Representation of a memory-mapped file section.
+class MemoryBlock:
+    """Representation of a continuous memory block.
     """
-    def __init__(self, value: "CValue"):
-        """Initialize a file section.
+    def __init__(self, value: "CValue", /):
+        """Initialize a memory block.
         """
         if not isinstance(value, CValue):
             raise TypeError("Value object must be of type CValue")
@@ -112,52 +112,57 @@ class FileSection:
         return self._value
 
     def size(self) -> "int":
-        """Obtain section size in bytes.
+        """Obtain block size in bytes.
         """
         return c.sizeof(self._value.object())
 
     def alignment(self) -> "int":
-        """Obtain section alignment requirement in bytes.
+        """Obtain block alignment requirement in bytes.
         """
         return c.alignment(self._value.object())
 
-    def owner(self) -> "File":
-        """Obtain file owning this section.
+    def owner(self) -> "Memory":
+        """Obtain memory object owning this block.
         """
         return self._owner
 
     def address(self) -> "int":
-        """Obtain actual section address in the mapped memory.
+        """Obtain actual block address in the memory.
         """
         return self._address
 
-
-class File:
-    """Representation of a memory-mapped file.
-    """
-    def __init__(self, header: "FileSection" = None, sections: "list[FileSection]" = []):
-        """Initialize a file.
+    def object(self) -> "c._CData":
+        """Obtain actual block object in the memory.
         """
-        self.set_header_section(header)
-        self.set_sections(sections)
+        return self._object
 
-    def header_section(self) -> "FileSection":
-        """Obtain the header section of the file.
+
+class Memory:
+    """Representation of memory consisting of relocatable memory blocks.
+    """
+    def __init__(self, header: "MemoryBlock" = None, blocks: "list[MemoryBlock]" = []):
+        """Initialize a memory object.
+        """
+        self.set_header_block(header)
+        self.set_blocks(blocks)
+
+    def header_block(self) -> "MemoryBlock":
+        """Obtain the header block of the memory.
         """
         return self._header
 
-    def set_header_section(self, header: "FileSection"):
-        """Set the header section of the file.
+    def set_header_block(self, header: "MemoryBlock"):
+        """Set the header block of the memory.
         """
         if header is self._header:
             return
 
-        if header is not None and not isinstance(header, FileSection):
-            raise TypeError("File header object must be of type FileSection")
+        if header is not None and not isinstance(header, MemoryBlock):
+            raise TypeError("Memory header object must be of type MemoryBlock")
         elif header is not None and header._owner is not None:
-            raise RuntimeError("File section is already owned by another file")
-        elif header in self._sections:
-            raise RuntimeError("Header section cannot be in the list of regular sections")
+            raise RuntimeError("Memory block is already owned by another Memory object")
+        elif header in self._blocks:
+            raise RuntimeError("Header block cannot be in the list of regular blocks")
 
         if self._header is not None:
             self._header._owner = None
@@ -165,60 +170,84 @@ class File:
         self._header = header
         self._header._owner = self
 
-        self._reset_size()
+        self._reset()
 
-    def sections(self) -> "list[FileSection]":
-        """Obtain the list of sections of the file.
+    def blocks(self) -> "list[MemoryBlock]":
+        """Obtain the list of blocks of the memory.
         """
-        return self._sections.copy()
+        return self._blocks.copy()
 
-    def set_sections(self, sections: "list[FileSection]"):
-        """Set the list of sections of the file.
+    def set_blocks(self, blocks: "list[MemoryBlock]"):
+        """Set the list of blocks of the memory.
         """
-        if not isinstance(sections, list) \
-                or not all(isinstance(section, FileSection) for section in sections):
-            raise TypeError("List of sections must be of type list[FileSection]")
-        elif not all(section._owner is None or section._owner is self for section in sections):
-            raise RuntimeError("Some of sections in the list are owned by another file")
-        elif self._header in sections:
-            raise RuntimeError("Header section cannot be in the list of regular sections")
-        elif len(sections) != len(set(sections)):
-            raise TypeError("List of sections cannot contain duplicate elements")
+        if not isinstance(blocks, list) \
+                or not all(isinstance(block, MemoryBlock) for block in blocks):
+            raise TypeError("List of blocks must be of type list[MemoryBlock]")
+        elif not all(block._owner is None or block._owner is self for block in blocks):
+            raise RuntimeError("Some of blocks in the list are owned by another Memory object")
+        elif self._header in blocks:
+            raise RuntimeError("Header block cannot be in the list of regular blocks")
+        elif len(blocks) != len(set(blocks)):
+            raise TypeError("List of blocks cannot contain duplicate elements")
 
-        for section in self._sections:
-            section._owner = None
+        for block in self._blocks:
+            block._owner = None
 
-        self._sections = sections.copy()
+        self._blocks = blocks.copy()
 
-        for section in self._sections:
-            section._owner = self
+        for block in self._blocks:
+            block._owner = self
 
-        self._reset_size()
+        self._reset()
+
+    def size(self) -> "int":
+        """Obtain the total size of the memory in bytes.
+        """
+        if self._size is None:
+            self._calculate()
+
+        return self._size
+
+    def padding(self) -> "int":
+        """Obtain the total number of padding bytes in the memory.
+        """
+        if self._padding is None:
+            self._calculate()
+
+        return self._padding
+
+    def alignment(self) -> "int":
+        """Obtain the alignment requirement the memory.
+        """
+        if self._alignment is None:
+            self._calculate()
+
+        return self._alignment
 
     def pack(self):
-        """Reorder the sections to decrease the file size.
+        """Reorder the blocks to decrease the memory size.
         """
         from functools import cmp_to_key
 
-        # Sort sections by descending alignment (for equal alignments, by descending size)
-        def compare(section1, section2):
-            return section2.alignment() - section1.alignment() \
-                    if section2.alignment() != section1.alignment() \
-                    else section2.size() - section1.size()
+        # Sort blocks by descending alignment (for equal alignments, by descending size)
+        def compare(block1, block2):
+            return block2.alignment() - block1.alignment() \
+                    if block2.alignment() != block1.alignment() \
+                    else block2.size() - block1.size()
 
-        self._sections.sort(key=cmp_to_key(compare))
+        self._blocks.sort(key=cmp_to_key(compare))
 
-        # Pack sorted list of sections
-        sections = {} # offset -> FileSection
+        # Pack sorted list of blocks
+        blocks = {} # offset -> MemoryBlock
 
         gaps = []
         end = self._header.size() if self._header is not None else 0
 
-        for section in self._sections:
-            alignment = section.alignment()
-            size = section.size()
+        for block in self._blocks:
+            alignment = block.alignment()
+            size = block.size()
 
-            # Try to fit the section into one of gaps
+            # Try to fit the block into one of gaps
             gap_used = None
             new_gaps = []
             for idx, gap in enumerate(gaps):
@@ -238,7 +267,7 @@ class File:
                     gap_used = idx
                     break
 
-            # Insert the section into the dictionary and update gaps
+            # Insert the block into the dictionary and update gaps
             if gap_used is None:
                 address = (end + (alignment - 1)) & ~(alignment - 1)
                 if address > end:
@@ -249,111 +278,84 @@ class File:
                 address = gap_addr_align
                 gaps[gap_used:gap_used+1] = new_gaps
 
-            sections[address] = section
+            blocks[address] = block
 
-        # Create the new list of sections
-        self._sections = [section for _, section in sorted(sections.items())]
-        self._reset_size()
+        # Create the new list of blocks
+        self._blocks = [block for _, block in sorted(blocks.items())]
 
-    def size(self) -> "int":
-        """Obtain the total size of the file in bytes.
+        self._reset()
+
+    def buffer(self, address: "int" = None) -> "bytearray":
+        """Serialize the memory to a new byte array.
         """
-        if self._size is None:
-            self._calculate_size()
+        if address is not None and not isinstance(address, int):
+            raise TypeError("Memory address must be an integer")
 
-        return self._size
+        if self.size() == 0:
+            return bytearray(0)
 
-    def padding(self) -> "int":
-        """Obtain the total number of padding bytes in the file.
-        """
-        if self._padding is None:
-            self._calculate_size()
+        # Create a byte array
+        buffer = bytearray(self.size())
+        buffer_address = c.addressof(c.c_char.from_buffer(buffer))
 
-        return self._padding
+        if address is None:
+            address = buffer_address
 
-    def write(self, pathname: "str", map_address: "int" = None):
-        """Write the file to file system.
-        """
-        import mmap
-        import os
+        blocks = [self._header] if self._header is not None else []
+        blocks += self._blocks
 
-        # Calculate the total size
-        size = self.size()
+        # Assign addresses to the blocks and copy their contents to the buffer
+        offset = 0
 
-        # Create a memory-mapped file
-        fd = os.open(pathname, os.O_CREAT | os.O_TRUNC | os.O_RDWR)
+        for block in blocks:
+            alignment = block.alignment()
+            offset = (offset + (alignment - 1)) & ~(alignment - 1)
 
-        try:
-            # Allocate space
-            os.write(fd, b'\x00' * size)
+            src_object = block.value().object()
+            dst_object = src_object.from_address(buffer_address + offset)
 
-            # Map the file to memory
-            mm = mmap.mmap(fd, size, mmap.MAP_SHARED, mmap.PROT_WRITE | mmap.PROT_READ)
+            c.memmove(dst_object, src_object, block.size())
 
-        finally:
-            os.close(fd)
+            block._address = address + offset
+            block._object = dst_object
 
-        try:
-            address = c.addressof(c.c_char.from_buffer(mm))
+            offset += block.size()
 
-            if map_address is None:
-                map_address = address
+        # Call the block callbacks
+        for block in blocks:
+            callback = block.value().callback()
 
-            sections = [self._header] if self._header is not None else []
-            sections += self._sections
+            if callback is not None:
+                callback(block._object)
 
-            # Assign addresses to the sections and copy their contents to the mapped memory
-            offset = 0
+        # Reset block addresses
+        for block in blocks:
+            block._address = None
+            block._object = None
 
-            for section in sections:
-                alignment = section.alignment()
-                offset = (offset + (alignment - 1)) & ~(alignment - 1)
+        return buffer
 
-                src_object = section.value().object()
-                dst_object = src_object.from_address(address + offset)
-
-                c.memmove(dst_object, src_object, section.size())
-
-                section._address = map_address + offset
-                section._object = dst_object
-
-                offset += section.size()
-
-            # Call the section callbacks
-            for section in sections:
-                callback = section.value().callback()
-
-                if callback is not None:
-                    callback(section._object)
-
-            # Reset section addresses
-            for section in sections:
-                section._address = None
-                section._object = None
-
-        finally:
-            # Unmap the file memory
-            mm.close()
-
-    def _reset_size(self):
+    def _reset(self):
         self._size = None
         self._padding = None
 
-    def _calculate_size(self):
+    def _calculate(self):
         size = self._header.size() if self._header is not None else 0
         padding = 0
+        max_alignment = self._header.alignment() if self._header is not None else 1
 
-        for section in self._sections:
-            alignment = section.alignment()
+        for block in self._blocks:
+            alignment = block.alignment()
+            max_alignment = max(alignment, max_alignment)
+
             padded_size = (size + (alignment - 1)) & ~(alignment - 1)
 
             padding += padded_size - size
-            size = padded_size
-
-            size += section.size()
+            size = padded_size + block.size()
 
         self._size = size
         self._padding = padding
+        self._alignment = max_alignment
 
 ###############################################################################
 # Archipelago application initialization file
@@ -660,13 +662,13 @@ class Application:
             self._type = NOOP
             _Instruction.__init__(key)
 
-        def alloc(self, app: "Application", ptr_instructions: "list[FileSection]", idx: "int"):
-            """Allocate all required sections.
+        def alloc(self, app: "Application", ptr_instructions: "list[MemoryBlock]", idx: "int"):
+            """Allocate all required blocks.
             """
             instr = archi_exe_registry_instr_base_t()
             instr.type = self._type
 
-            return FileSection(CValue(instr))
+            return MemoryBlock(CValue(instr))
 
     class _InstructionInitStatic(_Instruction):
         """Representation of an application initialization instruction:
@@ -685,8 +687,8 @@ class Application:
             self._interface_key = interface_key
             self._sparams = sparams
 
-        def alloc(self, app: "Application", ptr_instructions: "list[FileSection]", idx: "int"):
-            """Allocate all required sections.
+        def alloc(self, app: "Application", ptr_instructions: "list[MemoryBlock]", idx: "int"):
+            """Allocate all required blocks.
             """
             instr = archi_exe_registry_instr_init_t()
             instr.base.type = self._type
@@ -702,7 +704,7 @@ class Application:
                 instr.interface_key = ptr_interface_key.address()
                 instr.sparams = ptr_sparams.address()
 
-            return FileSection(CValue(instr, callback=init_instr))
+            return MemoryBlock(CValue(instr, callback=init_instr))
 
     class _InstructionInitDynamic(_Instruction):
         """Representation of an application initialization instruction:
@@ -721,8 +723,8 @@ class Application:
             self._interface_key = interface_key
             self._dparams_key = dparams_key
 
-        def alloc(self, app: "Application", ptr_instructions: "list[FileSection]", idx: "int"):
-            """Allocate all required sections.
+        def alloc(self, app: "Application", ptr_instructions: "list[MemoryBlock]", idx: "int"):
+            """Allocate all required blocks.
             """
             instr = archi_exe_registry_instr_init_t()
             instr.base.type = self._type
@@ -738,7 +740,7 @@ class Application:
                 instr.interface_key = ptr_interface_key.address()
                 instr.dparams_key = ptr_dparams_key.address()
 
-            return FileSection(CValue(instr, callback=init_instr))
+            return MemoryBlock(CValue(instr, callback=init_instr))
 
     class _InstructionFinal(_Instruction):
         """Representation of an application initialization instruction: finalize a context.
@@ -749,8 +751,8 @@ class Application:
             self._type = FINAL
             _Instruction.__init__(key)
 
-        def alloc(self, app: "Application", ptr_instructions: "list[FileSection]", idx: "int"):
-            """Allocate all required sections.
+        def alloc(self, app: "Application", ptr_instructions: "list[MemoryBlock]", idx: "int"):
+            """Allocate all required blocks.
             """
             instr = archi_exe_registry_instr_base_t()
             instr.type = self._type
@@ -760,7 +762,7 @@ class Application:
             def init_instr(instr: "archi_exe_registry_instr_base_t"):
                 instr.base.key = ptr_key.address()
 
-            return FileSection(CValue(instr, callback=init_instr))
+            return MemoryBlock(CValue(instr, callback=init_instr))
 
     class _InstructionSetValue(_Instruction):
         """Representation of an application initialization instruction:
@@ -788,8 +790,8 @@ class Application:
             if self._flags >= 1 << archi_pointer_t.NUM_FLAG_BITS:
                 raise ValueError(f"Flags must fit into {archi_pointer_t.NUM_FLAG_BITS} lowest bits")
 
-        def alloc(self, app: "Application", ptr_instructions: "list[FileSection]", idx: "int"):
-            """Allocate all required sections.
+        def alloc(self, app: "Application", ptr_instructions: "list[MemoryBlock]", idx: "int"):
+            """Allocate all required blocks.
             """
             instr = archi_exe_registry_instr_set_value_t()
             instr.base.type = self._type
@@ -812,7 +814,7 @@ class Application:
                 instr.slot.index = ptr_slot_indices.address()
                 instr.value.ptr = ptr_value.address()
 
-            return FileSection(CValue(instr, callback=init_instr))
+            return MemoryBlock(CValue(instr, callback=init_instr))
 
     class _InstructionSetContext(_Instruction):
         """Representation of an application initialization instruction:
@@ -836,8 +838,8 @@ class Application:
             self._slot_indices = slot_indices
             self._source_key = source_key
 
-        def alloc(self, app: "Application", ptr_instructions: "list[FileSection]", idx: "int"):
-            """Allocate all required sections.
+        def alloc(self, app: "Application", ptr_instructions: "list[MemoryBlock]", idx: "int"):
+            """Allocate all required blocks.
             """
             instr = archi_exe_registry_instr_set_context_t()
             instr.base.type = self._type
@@ -856,7 +858,7 @@ class Application:
                 instr.slot.index = ptr_slot_indices.address()
                 instr.source_key = ptr_source_key.address()
 
-            return FileSection(CValue(instr, callback=init_instr))
+            return MemoryBlock(CValue(instr, callback=init_instr))
 
     class _InstructionSetSlot(_Instruction):
         """Representation of an application initialization instruction:
@@ -887,8 +889,8 @@ class Application:
             self._source_slot_name = source_slot_name
             self._source_slot_indices = source_slot_indices
 
-        def alloc(self, app: "Application", ptr_instructions: "list[FileSection]", idx: "int"):
-            """Allocate all required sections.
+        def alloc(self, app: "Application", ptr_instructions: "list[MemoryBlock]", idx: "int"):
+            """Allocate all required blocks.
             """
             instr = archi_exe_registry_instr_set_slot_t()
             instr.base.type = self._type
@@ -912,7 +914,7 @@ class Application:
                 instr.source_slot.name = ptr_source_slot_name.address()
                 instr.source_slot.index = ptr_source_slot_indices.address()
 
-            return FileSection(CValue(instr, callback=init_instr))
+            return MemoryBlock(CValue(instr, callback=init_instr))
 
     class _InstructionActStatic(_Instruction):
         """Representation of an application initialization instruction:
@@ -936,8 +938,8 @@ class Application:
             self._action_indices = action_indices
             self._sparams = sparams
 
-        def alloc(self, app: "Application", ptr_instructions: "list[FileSection]", idx: "int"):
-            """Allocate all required sections.
+        def alloc(self, app: "Application", ptr_instructions: "list[MemoryBlock]", idx: "int"):
+            """Allocate all required blocks.
             """
             instr = archi_exe_registry_instr_act_t()
             instr.base.type = self._type
@@ -956,7 +958,7 @@ class Application:
                 instr.action.index = ptr_action_indices.address()
                 instr.sparams = ptr_sparams.address()
 
-            return FileSection(CValue(instr, callback=init_instr))
+            return MemoryBlock(CValue(instr, callback=init_instr))
 
     class _InstructionActDynamic(_Instruction):
         """Representation of an application initialization instruction:
@@ -980,8 +982,8 @@ class Application:
             self._action_indices = action_indices
             self._dparams_key = dparams_key
 
-        def alloc(self, app: "Application", ptr_instructions: "list[FileSection]", idx: "int"):
-            """Allocate all required sections.
+        def alloc(self, app: "Application", ptr_instructions: "list[MemoryBlock]", idx: "int"):
+            """Allocate all required blocks.
             """
             instr = archi_exe_registry_instr_act_t()
             instr.base.type = self._type
@@ -1000,7 +1002,7 @@ class Application:
                 instr.action.index = ptr_action_indices.address()
                 instr.dparams_key = ptr_dparams_key.address()
 
-            return FileSection(CValue(instr, callback=init_instr))
+            return MemoryBlock(CValue(instr, callback=init_instr))
 
     INSTRUCTIONS_KEY = 'archi.instructions'
 
@@ -1009,12 +1011,12 @@ class Application:
         """
         self._contents = {}
         self._instructions = []
-        self._sections = {} # CValue -> FileSection
+        self._blocks = {} # CValue -> MemoryBlock
 
-        self._ptr_sections = []
-        self._ptr_values = {}       # CValue -> FileSection
-        self._ptr_strings = {}      # str -> FileSection
-        self._ptr_index_arrays = {} # list[int] -> FileSection
+        self._ptr_blocks = []
+        self._ptr_values = {}       # CValue -> MemoryBlock
+        self._ptr_strings = {}      # str -> MemoryBlock
+        self._ptr_index_arrays = {} # list[int] -> MemoryBlock
 
     def __getitem__(self, key: "str") -> "Context":
         """Obtain a context from the registry.
@@ -1149,46 +1151,45 @@ class Application:
 
         self._contents = contents
 
-    def add_section(self, value: "CValue") -> "FileSection":
-        """Add a file section to the list of sections.
+    def add_block(self, value: "CValue") -> "MemoryBlock":
+        """Add a memory block to the list of blocks.
         """
-        section = FileSection(value)
-        self._sections[value] = section
-        return section
+        block = MemoryBlock(value)
+        self._blocks[value] = block
+        return block
 
     def reset(self):
         """Reset the list of instructions.
         """
         self._instructions = []
-        self._sections = {}
+        self._blocks = {}
 
     def address_of(self, entity) -> "int":
-        """Obtain actual address of an entity in the mapped memory.
-        This method is to be used in CValue callbacks while .file() is executing,
-        at other times it will return None.
+        """Obtain actual address of an entity in the memory.
+        This method is to be used in CValue callbacks to obtain addresses of known objects.
         """
         if isinstance(entity, CValue):
-            section = self._ptr_values.get(entity) or self._sections.get(entity)
+            block = self._ptr_values.get(entity) or self._blocks.get(entity)
         elif isinstance(entity, str):
-            section = self._ptr_strings.get(entity)
+            block = self._ptr_strings.get(entity)
         elif isinstance(entity, list):
-            section = self._ptr_index_arrays.get(tuple(entity))
+            block = self._ptr_index_arrays.get(tuple(entity))
         else:
             raise TypeError("Application only stores entities of type: CValue, str, list[int]")
 
-        return section.address() if section is not None else None
+        return block.address() if block is not None else None
 
-    def file(self) -> "File":
-        """Generate a File object from the application contents.
+    def memory(self) -> "Memory":
+        """Create a Memory object from the application file contents.
         """
-        # Initialize the list of sections
-        self._ptr_sections = list(self._sections.values())
+        # Initialize the list of blocks
+        self._ptr_blocks = list(self._blocks.values())
 
-        # Allocate all sections required for the instructions
+        # Allocate all blocks required for the instructions
         ptr_instructions = [None] * len(self._instructions)
         for idx, instruction in enumerate(self._instructions):
             ptr_instr = instruction.alloc(self, ptr_instructions, idx)
-            self._ptr_sections.append(ptr_instr)
+            self._ptr_blocks.append(ptr_instr)
 
             node = archi_exe_registry_instr_list_t()
 
@@ -1199,9 +1200,9 @@ class Application:
 
                 node.instruction = ptr_instr.address()
 
-            ptr_instructions[idx] = FileSection(CValue(node, callback=init_instructions_node))
+            ptr_instructions[idx] = MemoryBlock(CValue(node, callback=init_instructions_node))
 
-        self._ptr_sections += ptr_instructions
+        self._ptr_blocks += ptr_instructions
 
         # Allocate custom file contents
         ptr_contents = self._alloc_params(self._contents)
@@ -1225,82 +1226,82 @@ class Application:
                 node.name = ptr_key.address()
                 node.value.ptr = ptr_instructions.address()
 
-            ptr_contents = FileSection(CValue(node, callback=init_contents_node))
-            self._ptr_sections.append(ptr_contents)
+            ptr_contents = MemoryBlock(CValue(node, callback=init_contents_node))
+            self._ptr_blocks.append(ptr_contents)
 
-        # Initialize the file header and allocate the section
+        # Initialize the file header and allocate the block
         file_header = archi_exe_input_file_header_t()
         file_header.magic[:len(archi_exe_input_file_header_t.MAGIC)] = \
                 archi_exe_input_file_header_t.MAGIC.encode()
         file_header.magic[len(archi_exe_input_file_header_t.MAGIC)] = 0
 
-        file = None
+        memory = None
         ptr_header = None
 
         def init_header(file_header):
             file_header.header.addr = ptr_header.address()
-            file_header.header.end  = ptr_header.address() + file.size()
+            file_header.header.end  = ptr_header.address() + memory.size()
 
             file_header.contents = ptr_contents.address()
 
-        ptr_header = FileSection(CValue(file_header, callback=init_header))
+        ptr_header = MemoryBlock(CValue(file_header, callback=init_header))
 
-        # Initialize the file object
-        file = File(ptr_header, self._ptr_sections)
+        # Initialize the memory object
+        memory = Memory(ptr_header, self._ptr_blocks)
 
         # Reset auxiliary storage
-        self._ptr_sections = []
+        self._ptr_blocks = []
         self._ptr_values = {}
         self._ptr_strings = {}
         self._ptr_index_arrays = {}
 
-        return file
+        return memory
 
-    def _alloc_value(self, value) -> "FileSection":
+    def _alloc_value(self, value) -> "MemoryBlock":
         if not isinstance(value, CValue):
             raise TypeError("A value must be of type CValue")
 
         if value not in self._ptr_values:
-            section = FileSection(value)
+            block = MemoryBlock(value)
 
-            self._ptr_values[value] = section
-            self._ptr_sections.append(section)
+            self._ptr_values[value] = block
+            self._ptr_blocks.append(block)
         else:
-            section = self._ptr_values[value]
+            block = self._ptr_values[value]
 
-        return section
+        return block
 
-    def _alloc_string(self, string: "str") -> "FileSection":
+    def _alloc_string(self, string: "str") -> "MemoryBlock":
         if not isinstance(string, str):
             raise TypeError("A string must be of type str")
 
         if string not in self._ptr_strings:
-            section = FileSection(CValue(c.create_string_buffer(string.encode())))
+            block = MemoryBlock(CValue(c.create_string_buffer(string.encode())))
 
-            self._ptr_strings[string] = section
-            self._ptr_sections.append(section)
+            self._ptr_strings[string] = block
+            self._ptr_blocks.append(block)
         else:
-            section = self._ptr_strings[string]
+            block = self._ptr_strings[string]
 
-        return section
+        return block
 
-    def _alloc_index_array(self, index_array: "list[int]") -> "FileSection":
+    def _alloc_index_array(self, index_array: "list[int]") -> "MemoryBlock":
         if not isinstance(index_array, list):
             raise TypeError("An index array must be of type list")
 
         index_array = tuple(index_array)
 
         if index_array not in self._ptr_index_arrays:
-            section = FileSection(CValue((c.c_size_t * len(index_array))(*index_array)))
+            block = MemoryBlock(CValue((c.c_size_t * len(index_array))(*index_array)))
 
-            self._ptr_index_arrays[index_array] = section
-            self._ptr_sections.append(section)
+            self._ptr_index_arrays[index_array] = block
+            self._ptr_blocks.append(block)
         else:
-            section = self._ptr_index_arrays[index_array]
+            block = self._ptr_index_arrays[index_array]
 
-        return section
+        return block
 
-    def _alloc_params(self, params: "dict") -> "FileSection":
+    def _alloc_params(self, params: "dict") -> "MemoryBlock":
         if not isinstance(params, dict):
             raise TypeError("Parameter list must be of type dict")
 
@@ -1331,9 +1332,9 @@ class Application:
                 node.name = ptr_key.address()
                 node.value.ptr = ptr_value.address()
 
-            ptr_nodes[idx] = FileSection(CValue(node, callback=init_list_node))
+            ptr_nodes[idx] = MemoryBlock(CValue(node, callback=init_list_node))
 
-        self._ptr_sections += ptr_nodes
+        self._ptr_blocks += ptr_nodes
         return ptr_nodes[0] if ptr_nodes else None
 
 ###############################################################################
