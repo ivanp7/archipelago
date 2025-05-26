@@ -4,18 +4,18 @@
  */
 
 #pragma once
-#ifndef _ARCHIP_SDL_WINDOW_TYP_H_
-#define _ARCHIP_SDL_WINDOW_TYP_H_
+#ifndef _ARCHIP_SDL2_WINDOW_TYP_H_
+#define _ARCHIP_SDL2_WINDOW_TYP_H_
 
 #include <stdint.h> // for uint32_t
 
 /**
- * @brief Properties of a created SDL window.
+ * @brief Parameters for archip_sdl2_window_create().
  *
  * If window width is 0, it is substituted with texture width.
  * If window height is 0, it is substituted with texture height.
  */
-typedef struct archip_sdl_window_config {
+typedef struct archip_sdl2_window_params {
     struct {
         int width;  ///< Texture width in pixels.
         int height; ///< Texture height in pixels.
@@ -29,7 +29,7 @@ typedef struct archip_sdl_window_config {
 
         const char *title; ///< Window title.
     } window;
-} archip_sdl_window_config_t;
+} archip_sdl2_window_params_t;
 
-#endif // _ARCHIP_SDL_WINDOW_TYP_H_
+#endif // _ARCHIP_SDL2_WINDOW_TYP_H_
 

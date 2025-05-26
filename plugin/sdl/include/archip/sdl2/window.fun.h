@@ -4,15 +4,15 @@
  */
 
 #pragma once
-#ifndef _ARCHIP_SDL_WINDOW_FUN_H_
-#define _ARCHIP_SDL_WINDOW_FUN_H_
+#ifndef _ARCHIP_SDL2_WINDOW_FUN_H_
+#define _ARCHIP_SDL2_WINDOW_FUN_H_
 
-#include "archip/sdl/window.typ.h"
+#include "archip/sdl2/window.typ.h"
 #include "archi/util/status.typ.h"
 
 #include <stdbool.h>
 
-struct archip_sdl_window_context;
+struct archip_sdl2_window_context;
 struct SDL_Window;
 struct SDL_Renderer;
 struct SDL_Texture;
@@ -20,12 +20,12 @@ struct SDL_Texture;
 /**
  * @brief Pointer to SDL window context.
  */
-typedef struct archip_sdl_window_context *archip_sdl_window_context_t;
+typedef struct archip_sdl2_window_context *archip_sdl2_window_context_t;
 
 /**
  * @brief Texture pixel color.
  */
-typedef uint32_t archip_sdl_pixel_t;
+typedef uint32_t archip_sdl2_pixel_t;
 
 /**
  * @brief Create a SDL window with accompanying resources - a renderer and a texture.
@@ -39,9 +39,9 @@ typedef uint32_t archip_sdl_pixel_t;
  *
  * @return Window context.
  */
-archip_sdl_window_context_t
-archip_sdl_window_create(
-        archip_sdl_window_config_t config, ///< [in] Window configuration.
+archip_sdl2_window_context_t
+archip_sdl2_window_create(
+        archip_sdl2_window_params_t params, ///< [in] Window creation parameters.
 
         archi_status_t *code ///< [out] Status code.
 );
@@ -55,8 +55,8 @@ archip_sdl_window_create(
  * 3. SDL_DestroyWindow()
  */
 void
-archip_sdl_window_destroy(
-        archip_sdl_window_context_t context ///< [in] Window to destroy.
+archip_sdl2_window_destroy(
+        archip_sdl2_window_context_t context ///< [in] Window to destroy.
 );
 
 /**
@@ -65,8 +65,8 @@ archip_sdl_window_destroy(
  * @return Status code (0 on success, 1 if the SDL call failed).
  */
 archi_status_t
-archip_sdl_window_lock_whole_texture(
-        archip_sdl_window_context_t context ///< [in] Window context.
+archip_sdl2_window_lock_whole_texture(
+        archip_sdl2_window_context_t context ///< [in] Window context.
 );
 
 /**
@@ -75,8 +75,8 @@ archip_sdl_window_lock_whole_texture(
  * @return Status code (0 on success, 1 if the SDL call failed).
  */
 archi_status_t
-archip_sdl_window_lock_texture_area(
-        archip_sdl_window_context_t context, ///< [in] Window context.
+archip_sdl2_window_lock_texture_area(
+        archip_sdl2_window_context_t context, ///< [in] Window context.
 
         int x,     ///< [in] X coordinate of rectangle to lock.
         int y,     ///< [in] Y coordinate of rectangle to lock.
@@ -90,8 +90,8 @@ archip_sdl_window_lock_texture_area(
  * @return Status code (0 on success, 1 if the SDL call failed).
  */
 archi_status_t
-archip_sdl_window_unlock_texture_and_render(
-        archip_sdl_window_context_t context ///< [in] Window context.
+archip_sdl2_window_unlock_texture_and_render(
+        archip_sdl2_window_context_t context ///< [in] Window context.
 );
 
 /*****************************************************************************/
@@ -104,8 +104,8 @@ archip_sdl_window_unlock_texture_and_render(
  * @return True if texture has been modified, otherwise false.
  */
 bool
-archip_sdl_window_texture_draw_glyph(
-        archip_sdl_window_context_t context, ///< [in] Window context.
+archip_sdl2_window_texture_draw_glyph(
+        archip_sdl2_window_context_t context, ///< [in] Window context.
 
         int x, ///< [in] X coordinate of glyph's upper left corner.
         int y, ///< [in] Y coordinate of glyph's upper left corner.
@@ -119,8 +119,8 @@ archip_sdl_window_texture_draw_glyph(
         int glyph_num_cols, ///< [in] Number of glyph columns to draw.
         int glyph_num_rows, ///< [in] Number of glyph rows to draw.
 
-        archip_sdl_pixel_t fg, ///< [in] Foreground color of glyph.
-        archip_sdl_pixel_t bg, ///< [in] Background color of glyph.
+        archip_sdl2_pixel_t fg, ///< [in] Foreground color of glyph.
+        archip_sdl2_pixel_t bg, ///< [in] Background color of glyph.
 
         bool draw_fg, ///< [in] Whether to draw foreground pixels.
         bool draw_bg  ///< [in] Whether to draw background pixels.
@@ -134,8 +134,8 @@ archip_sdl_window_texture_draw_glyph(
  * @return SDL window handle.
  */
 struct SDL_Window*
-archip_sdl_window_get_handle(
-        archip_sdl_window_context_t context ///< [in] Window context.
+archip_sdl2_window_get_handle(
+        archip_sdl2_window_context_t context ///< [in] Window context.
 );
 
 /**
@@ -144,8 +144,8 @@ archip_sdl_window_get_handle(
  * @return SDL renderer handle.
  */
 struct SDL_Renderer*
-archip_sdl_window_get_renderer(
-        archip_sdl_window_context_t context ///< [in] Window context.
+archip_sdl2_window_get_renderer(
+        archip_sdl2_window_context_t context ///< [in] Window context.
 );
 
 /**
@@ -154,16 +154,16 @@ archip_sdl_window_get_renderer(
  * @return SDL texture handle.
  */
 struct SDL_Texture*
-archip_sdl_window_get_texture(
-        archip_sdl_window_context_t context ///< [in] Window context.
+archip_sdl2_window_get_texture(
+        archip_sdl2_window_context_t context ///< [in] Window context.
 );
 
 /**
  * @brief Get a texture size from a context.
  */
 void
-archip_sdl_window_get_texture_size(
-        archip_sdl_window_context_t context, ///< [in] Window context.
+archip_sdl2_window_get_texture_size(
+        archip_sdl2_window_context_t context, ///< [in] Window context.
 
         int *width, ///< [out] Texture width in pixels.
         int *height ///< [out] Texture height in pixels.
@@ -174,9 +174,9 @@ archip_sdl_window_get_texture_size(
  *
  * @return Pointer to locked pixels of the texture.
  */
-archip_sdl_pixel_t*
-archip_sdl_window_get_texture_lock(
-        archip_sdl_window_context_t context, ///< [in] Window context.
+archip_sdl2_pixel_t*
+archip_sdl2_window_get_texture_lock(
+        archip_sdl2_window_context_t context, ///< [in] Window context.
 
         int *pitch, ///< [out] Size of a full texture row in pixels.
 
@@ -186,5 +186,5 @@ archip_sdl_window_get_texture_lock(
         int *height ///< [out] Height of the locked rectangle.
 );
 
-#endif // _ARCHIP_SDL_WINDOW_FUN_H_
+#endif // _ARCHIP_SDL2_WINDOW_FUN_H_
 

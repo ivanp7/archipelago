@@ -40,7 +40,7 @@ ARCHI_LDIR  = os.environ.get('ARCHI_LDIR', "../../build/")  ### <<<<<<<<<<<<<<<<
 
 MODULES = [
         "font", # fonts
-        "sdl",  # SDL features
+        "sdl2", # SDL2 features
         ]
 
 # }}}
@@ -55,10 +55,12 @@ CFLAGS = ['-march=native', '-pipe', '-std=c17',
 LFLAGS = ['-fPIC', '-Wl,--no-gc-sections']
 
 CFLAGS += [f'-I{INCLUDE_DIR}', f'-I{ARCHI_IDIR}']
-LFLAGS += [f'-L{ARCHI_LDIR}', '-larchi-util']
+LFLAGS += [f'-L{ARCHI_LDIR}']
 
 CFLAGS += pkgconfig.cflags('sdl2').split(' ')
-LFLAGS += pkgconfig.libs('sdl2').split(' ')
+
+LIBS = ['-larchi-util']
+LIBS += pkgconfig.libs('sdl2').split(' ')
 
 ## }}}
 ## feature macros {{{
@@ -155,13 +157,14 @@ rule link_static
 
 LINKER_EXE = {LINKER_EXE}
 LINKER_EXE_FLAGS = {' '.join(LINKER_EXE_FLAGS + LFLAGS)}
+LINKER_EXE_FLAGS_LIBS = {' '.join(LIBS)}
 
 rule link_shared
-    command = $LINKER_EXE $LINKER_EXE_FLAGS $opts -o $out -Wl,--whole-archive $in -Wl,--no-whole-archive -shared -rdynamic
+    command = $LINKER_EXE $LINKER_EXE_FLAGS $opts -o $out -Wl,--whole-archive $in -Wl,--no-whole-archive $LINKER_EXE_FLAGS_LIBS -shared -rdynamic
     description = link(shared): $out
 
 rule link_exe
-    command = $LINKER_EXE $LINKER_EXE_FLAGS $opts -o $out -Wl,--whole-archive $in -Wl,--no-whole-archive
+    command = $LINKER_EXE $LINKER_EXE_FLAGS $opts -o $out -Wl,--whole-archive $in -Wl,--no-whole-archive $LINKER_EXE_FLAGS_LIBS
     description = link(executable): $out
 
 
