@@ -32,8 +32,9 @@
 ARCHI_CONTEXT_INIT_FUNC(archi_context_ds_lfqueue_init)
 {
     archi_lfqueue_alloc_params_t lfqueue_alloc_params = {0};
+    archi_lfqueue_alloc_params_t lfqueue_alloc_params_fields = {0};
 
-    bool param_struct_set = false;
+    bool param_params_set = false;
     bool param_capacity_log2_set = false;
     bool param_element_size_set = false;
     bool param_element_alignment_set = false;
@@ -42,9 +43,9 @@ ARCHI_CONTEXT_INIT_FUNC(archi_context_ds_lfqueue_init)
     {
         if (strcmp("params", params->name) == 0)
         {
-            if (param_struct_set)
+            if (param_params_set)
                 continue;
-            param_struct_set = true;
+            param_params_set = true;
 
             if ((params->value.flags & ARCHI_POINTER_FLAG_FUNCTION) ||
                     (params->value.ptr == NULL))
@@ -62,7 +63,7 @@ ARCHI_CONTEXT_INIT_FUNC(archi_context_ds_lfqueue_init)
                     (params->value.ptr == NULL))
                 return ARCHI_STATUS_EVALUE;
 
-            lfqueue_alloc_params.capacity_log2 = *(size_t*)params->value.ptr;
+            lfqueue_alloc_params_fields.capacity_log2 = *(size_t*)params->value.ptr;
         }
         else if (strcmp("element_size", params->name) == 0)
         {
@@ -74,7 +75,7 @@ ARCHI_CONTEXT_INIT_FUNC(archi_context_ds_lfqueue_init)
                     (params->value.ptr == NULL))
                 return ARCHI_STATUS_EVALUE;
 
-            lfqueue_alloc_params.element_size = *(size_t*)params->value.ptr;
+            lfqueue_alloc_params_fields.element_size = *(size_t*)params->value.ptr;
         }
         else if (strcmp("element_alignment", params->name) == 0)
         {
@@ -86,11 +87,20 @@ ARCHI_CONTEXT_INIT_FUNC(archi_context_ds_lfqueue_init)
                     (params->value.ptr == NULL))
                 return ARCHI_STATUS_EVALUE;
 
-            lfqueue_alloc_params.element_alignment = *(size_t*)params->value.ptr;
+            lfqueue_alloc_params_fields.element_alignment = *(size_t*)params->value.ptr;
         }
         else
             return ARCHI_STATUS_EKEY;
     }
+
+    if (param_capacity_log2_set)
+        lfqueue_alloc_params.capacity_log2 = lfqueue_alloc_params_fields.capacity_log2;
+
+    if (param_element_size_set)
+        lfqueue_alloc_params.element_size = lfqueue_alloc_params_fields.element_size;
+
+    if (param_element_alignment_set)
+        lfqueue_alloc_params.element_alignment = lfqueue_alloc_params_fields.element_alignment;
 
     archi_pointer_t *context_data = malloc(sizeof(*context_data));
     if (context_data == NULL)

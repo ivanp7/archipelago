@@ -32,17 +32,18 @@
 ARCHI_CONTEXT_INIT_FUNC(archi_context_ds_hashmap_init)
 {
     archi_hashmap_alloc_params_t hashmap_alloc_params = {0};
+    archi_hashmap_alloc_params_t hashmap_alloc_params_fields = {0};
 
-    bool param_struct_set = false;
+    bool param_params_set = false;
     bool param_capacity_set = false;
 
     for (; params != NULL; params = params->next)
     {
         if (strcmp("params", params->name) == 0)
         {
-            if (param_struct_set)
+            if (param_params_set)
                 continue;
-            param_struct_set = true;
+            param_params_set = true;
 
             if ((params->value.flags & ARCHI_POINTER_FLAG_FUNCTION) ||
                     (params->value.ptr == NULL))
@@ -60,11 +61,14 @@ ARCHI_CONTEXT_INIT_FUNC(archi_context_ds_hashmap_init)
                     (params->value.ptr == NULL))
                 return ARCHI_STATUS_EVALUE;
 
-            hashmap_alloc_params.capacity = *(size_t*)params->value.ptr;
+            hashmap_alloc_params_fields.capacity = *(size_t*)params->value.ptr;
         }
         else
             return ARCHI_STATUS_EKEY;
     }
+
+    if (param_capacity_set)
+        hashmap_alloc_params.capacity = hashmap_alloc_params_fields.capacity;
 
     archi_pointer_t *context_data = malloc(sizeof(*context_data));
     if (context_data == NULL)

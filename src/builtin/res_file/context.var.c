@@ -38,8 +38,9 @@ struct archi_context_res_file_data {
 ARCHI_CONTEXT_INIT_FUNC(archi_context_res_file_init)
 {
     archi_file_open_params_t file_open_params = {0};
+    archi_file_open_params_t file_open_params_fields = {0};
 
-    bool param_struct_set = false;
+    bool param_params_set = false;
     bool param_pathname_set = false;
     bool param_readable_set = false;
     bool param_writable_set = false;
@@ -50,9 +51,9 @@ ARCHI_CONTEXT_INIT_FUNC(archi_context_res_file_init)
     {
         if (strcmp("params", params->name) == 0)
         {
-            if (param_struct_set)
+            if (param_params_set)
                 continue;
-            param_struct_set = true;
+            param_params_set = true;
 
             if ((params->value.flags & ARCHI_POINTER_FLAG_FUNCTION) ||
                     (params->value.ptr == NULL))
@@ -70,7 +71,7 @@ ARCHI_CONTEXT_INIT_FUNC(archi_context_res_file_init)
                     (params->value.ptr == NULL))
                 return ARCHI_STATUS_EVALUE;
 
-            file_open_params.pathname = params->value.ptr;
+            file_open_params_fields.pathname = params->value.ptr;
         }
         else if (strcmp("readable", params->name) == 0)
         {
@@ -82,7 +83,7 @@ ARCHI_CONTEXT_INIT_FUNC(archi_context_res_file_init)
                     (params->value.ptr == NULL))
                 return ARCHI_STATUS_EVALUE;
 
-            file_open_params.readable = *(char*)params->value.ptr;
+            file_open_params_fields.readable = *(char*)params->value.ptr;
         }
         else if (strcmp("writable", params->name) == 0)
         {
@@ -94,7 +95,7 @@ ARCHI_CONTEXT_INIT_FUNC(archi_context_res_file_init)
                     (params->value.ptr == NULL))
                 return ARCHI_STATUS_EVALUE;
 
-            file_open_params.writable = *(char*)params->value.ptr;
+            file_open_params_fields.writable = *(char*)params->value.ptr;
         }
         else if (strcmp("nonblock", params->name) == 0)
         {
@@ -106,7 +107,7 @@ ARCHI_CONTEXT_INIT_FUNC(archi_context_res_file_init)
                     (params->value.ptr == NULL))
                 return ARCHI_STATUS_EVALUE;
 
-            file_open_params.nonblock = *(char*)params->value.ptr;
+            file_open_params_fields.nonblock = *(char*)params->value.ptr;
         }
         else if (strcmp("flags", params->name) == 0)
         {
@@ -118,11 +119,26 @@ ARCHI_CONTEXT_INIT_FUNC(archi_context_res_file_init)
                     (params->value.ptr == NULL))
                 return ARCHI_STATUS_EVALUE;
 
-            file_open_params.flags = *(int*)params->value.ptr;
+            file_open_params_fields.flags = *(int*)params->value.ptr;
         }
         else
             return ARCHI_STATUS_EKEY;
     }
+
+    if (param_pathname_set)
+        file_open_params.pathname = file_open_params_fields.pathname;
+
+    if (param_readable_set)
+        file_open_params.readable = file_open_params_fields.readable;
+
+    if (param_writable_set)
+        file_open_params.writable = file_open_params_fields.writable;
+
+    if (param_nonblock_set)
+        file_open_params.nonblock = file_open_params_fields.nonblock;
+
+    if (param_flags_set)
+        file_open_params.flags = file_open_params_fields.flags;
 
     struct archi_context_res_file_data *context_data = malloc(sizeof(*context_data));
     if (context_data == NULL)
@@ -201,7 +217,7 @@ ARCHI_CONTEXT_ACT_FUNC(archi_context_res_file_act)
         archi_file_map_params_t file_map_params = {0};
         bool close_fd = false;
 
-        bool param_struct_set = false;
+        bool param_params_set = false;
         bool param_size_set = false;
         bool param_offset_set = false;
         bool param_has_header_set = false;
@@ -215,9 +231,9 @@ ARCHI_CONTEXT_ACT_FUNC(archi_context_res_file_act)
         {
             if (strcmp("params", params->name) == 0)
             {
-                if (param_struct_set)
+                if (param_params_set)
                     continue;
-                param_struct_set = true;
+                param_params_set = true;
 
                 if ((params->value.flags & ARCHI_POINTER_FLAG_FUNCTION) ||
                         (params->value.ptr == NULL))

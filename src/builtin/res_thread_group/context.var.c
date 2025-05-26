@@ -39,17 +39,18 @@ struct archi_context_res_thread_group_data {
 ARCHI_CONTEXT_INIT_FUNC(archi_context_res_thread_group_init)
 {
     archi_thread_group_start_params_t thread_group_params = {0};
+    archi_thread_group_start_params_t thread_group_params_fields = {0};
 
-    bool param_struct_set = false;
+    bool param_params_set = false;
     bool param_num_threads_set = false;
 
     for (; params != NULL; params = params->next)
     {
         if (strcmp("params", params->name) == 0)
         {
-            if (param_struct_set)
+            if (param_params_set)
                 continue;
-            param_struct_set = true;
+            param_params_set = true;
 
             if ((params->value.flags & ARCHI_POINTER_FLAG_FUNCTION) ||
                     (params->value.ptr == NULL))
@@ -67,11 +68,14 @@ ARCHI_CONTEXT_INIT_FUNC(archi_context_res_thread_group_init)
                     (params->value.ptr == NULL))
                 return ARCHI_STATUS_EVALUE;
 
-            thread_group_params.num_threads = *(size_t*)params->value.ptr;
+            thread_group_params_fields.num_threads = *(size_t*)params->value.ptr;
         }
         else
             return ARCHI_STATUS_EKEY;
     }
+
+    if (param_num_threads_set)
+        thread_group_params.num_threads = thread_group_params_fields.num_threads;
 
     struct archi_context_res_thread_group_data *context_data = malloc(sizeof(*context_data));
     if (context_data == NULL)

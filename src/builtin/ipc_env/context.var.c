@@ -26,7 +26,7 @@
 #include "archi/builtin/ipc_env/context.var.h"
 #include "archi/ipc/env/api.fun.h"
 
-#include <stdlib.h> // for free()
+#include <stdlib.h> // for malloc(), free()
 #include <string.h> // for strcmp(), strlen()
 #include <stdbool.h>
 

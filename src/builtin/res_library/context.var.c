@@ -37,8 +37,9 @@ struct archi_context_res_library_data {
 ARCHI_CONTEXT_INIT_FUNC(archi_context_res_library_init)
 {
     archi_library_load_params_t library_load_params = {0};
+    archi_library_load_params_t library_load_params_fields = {0};
 
-    bool param_struct_set = false;
+    bool param_params_set = false;
     bool param_pathname_set = false;
     bool param_lazy_set = false;
     bool param_global_set = false;
@@ -48,9 +49,9 @@ ARCHI_CONTEXT_INIT_FUNC(archi_context_res_library_init)
     {
         if (strcmp("params", params->name) == 0)
         {
-            if (param_struct_set)
+            if (param_params_set)
                 continue;
-            param_struct_set = true;
+            param_params_set = true;
 
             if ((params->value.flags & ARCHI_POINTER_FLAG_FUNCTION) ||
                     (params->value.ptr == NULL))
@@ -67,7 +68,7 @@ ARCHI_CONTEXT_INIT_FUNC(archi_context_res_library_init)
             if (params->value.flags & ARCHI_POINTER_FLAG_FUNCTION)
                 return ARCHI_STATUS_EVALUE;
 
-            library_load_params.pathname = params->value.ptr;
+            library_load_params_fields.pathname = params->value.ptr;
         }
         else if (strcmp("lazy", params->name) == 0)
         {
@@ -79,7 +80,7 @@ ARCHI_CONTEXT_INIT_FUNC(archi_context_res_library_init)
                     (params->value.ptr == NULL))
                 return ARCHI_STATUS_EVALUE;
 
-            library_load_params.lazy = *(char*)params->value.ptr;
+            library_load_params_fields.lazy = *(char*)params->value.ptr;
         }
         else if (strcmp("global", params->name) == 0)
         {
@@ -91,7 +92,7 @@ ARCHI_CONTEXT_INIT_FUNC(archi_context_res_library_init)
                     (params->value.ptr == NULL))
                 return ARCHI_STATUS_EVALUE;
 
-            library_load_params.global = *(char*)params->value.ptr;
+            library_load_params_fields.global = *(char*)params->value.ptr;
         }
         else if (strcmp("flags", params->name) == 0)
         {
@@ -103,11 +104,23 @@ ARCHI_CONTEXT_INIT_FUNC(archi_context_res_library_init)
                     (params->value.ptr == NULL))
                 return ARCHI_STATUS_EVALUE;
 
-            library_load_params.flags = *(int*)params->value.ptr;
+            library_load_params_fields.flags = *(int*)params->value.ptr;
         }
         else
             return ARCHI_STATUS_EKEY;
     }
+
+    if (param_pathname_set)
+        library_load_params.pathname = library_load_params_fields.pathname;
+
+    if (param_lazy_set)
+        library_load_params.lazy = library_load_params_fields.lazy;
+
+    if (param_global_set)
+        library_load_params.global = library_load_params_fields.global;
+
+    if (param_flags_set)
+        library_load_params.flags = library_load_params_fields.flags;
 
     struct archi_context_res_library_data *context_data = malloc(sizeof(*context_data));
     if (context_data == NULL)
