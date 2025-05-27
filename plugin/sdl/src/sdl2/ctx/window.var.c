@@ -54,7 +54,7 @@ ARCHI_CONTEXT_INIT_FUNC(archip_context_sdl2_window_init)
 
             window_params = *(archip_sdl2_window_params_t*)params->value.ptr;
         }
-        else if (strcmp("texture.width", params->name) == 0)
+        else if (strcmp("texture_width", params->name) == 0)
         {
             if (param_texture_width_set)
                 continue;
@@ -66,7 +66,7 @@ ARCHI_CONTEXT_INIT_FUNC(archip_context_sdl2_window_init)
 
             window_params_fields.texture.width = *(int*)params->value.ptr;
         }
-        else if (strcmp("texture.height", params->name) == 0)
+        else if (strcmp("texture_height", params->name) == 0)
         {
             if (param_texture_height_set)
                 continue;
@@ -78,7 +78,7 @@ ARCHI_CONTEXT_INIT_FUNC(archip_context_sdl2_window_init)
 
             window_params_fields.texture.height = *(int*)params->value.ptr;
         }
-        else if (strcmp("window.width", params->name) == 0)
+        else if (strcmp("window_width", params->name) == 0)
         {
             if (param_window_width_set)
                 continue;
@@ -90,7 +90,7 @@ ARCHI_CONTEXT_INIT_FUNC(archip_context_sdl2_window_init)
 
             window_params_fields.window.width = *(int*)params->value.ptr;
         }
-        else if (strcmp("window.height", params->name) == 0)
+        else if (strcmp("window_height", params->name) == 0)
         {
             if (param_window_height_set)
                 continue;
@@ -102,7 +102,7 @@ ARCHI_CONTEXT_INIT_FUNC(archip_context_sdl2_window_init)
 
             window_params_fields.window.height = *(int*)params->value.ptr;
         }
-        else if (strcmp("window.flags", params->name) == 0)
+        else if (strcmp("window_flags", params->name) == 0)
         {
             if (param_window_flags_set)
                 continue;
@@ -114,7 +114,7 @@ ARCHI_CONTEXT_INIT_FUNC(archip_context_sdl2_window_init)
 
             window_params_fields.window.flags = *(uint32_t*)params->value.ptr;
         }
-        else if (strcmp("window.title", params->name) == 0)
+        else if (strcmp("window_title", params->name) == 0)
         {
             if (param_window_title_set)
                 continue;

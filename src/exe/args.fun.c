@@ -162,43 +162,13 @@ archi_exe_args_parse(
 A versatile, modular application using plugins configured by memory-mapped initialization files that define its specific behavior.\n\
 \v\
 \n\
-BUILT-IN CONTEXTS\n (keys for the application context registry):\n\
+BUILT-IN CONTEXTS\n (keys in the application context registry):\n\
 \n\
  \t\"" ARCHI_EXE_REGISTRY_KEY_REGISTRY "\"\t: the context registry itself\n\
- \t\"" ARCHI_EXE_REGISTRY_KEY_INTERFACES "\"\t: the hashmap of built-in context interfaces\n\
- \t\"" ARCHI_EXE_REGISTRY_KEY_EXE_HANDLE "\"\t: the library handle of the executable itself\n\
- \t\"" ARCHI_EXE_REGISTRY_KEY_INPUT_FILE "\"\t: the current input file context\n\
- \t\"" ARCHI_EXE_REGISTRY_KEY_INPUT_CONTENTS "\"\t: the current input file contents (parameter list)\n\
+ \t\"" ARCHI_EXE_REGISTRY_KEY_EXECUTABLE "\"\t: the library context of the executable itself\n\
+ \t\"" ARCHI_EXE_REGISTRY_KEY_INPUT_FILE "\"\t: the context of the current input file\n\
 \n\
  \t\"" ARCHI_EXE_REGISTRY_KEY_SIGNAL "\"\t: the signal management context\n\
-\n\
-\n\
-BUILT-IN CONTEXT INTERFACES\n (keys for the built-in hashmap of interfaces):\n\
-\n\
- \t\"parameters\" : parameter list for init() and act() context operations\n\
- \t\"pointer\"    : copied pointer with modified attributes\n\
-\n\
- \t\"memory\"         : memory allocation context\n\
- \t\"memory_mapping\" : pointer to a mapped memory region\n\
-\n\
- \t\"hsp_state\"              : hierachical state processing state\n\
- \t\"hsp_transition\"         : hierachical state processing transition\n\
- \t\"hsp\"                    : hierachical state processing instance\n\
- \t\"hsp_frame\"              : hierachical state processing frame\n\
- \t\"hsp_branch_state_data\"  : data for HSP branch state\n\
-\n\
- \t\"ds_hashmap\" : hashmap\n\
- \t\"ds_lfqueue\" : lock-free queue\n\
-\n\
- \t\"ipc_env\"            : environmental variable\n\
- \t\"ipc_signal_handler\" : signal handler\n\
-\n\
- \t\"res_file\"                       : opened and/or mapped file\n\
- \t\"res_library\"                    : loaded library handle\n\
- \t\"res_thread_group\"               : group of threads for concurrency\n\
- \t\"res_thread_group_work\"          : work task for a thread group\n\
- \t\"res_thread_group_callback\"      : callback for work completion notification\n\
- \t\"res_thread_group_dispatch_data\" : data for work dispatch HSP state\n\
 "
     };
 

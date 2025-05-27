@@ -72,7 +72,7 @@ CFLAGS += [f'-D{PROJECT_PREFIX.upper()}_{key}{'=' if value else ''}{value}' for 
 ## optimization/profiling {{{
 
 if 'DEBUG' in os.environ:                       ### <<<<<<<<<<<<<<<<<<<< INPUT ENVIRONMENT VARIABLE <<<<<<<<<<<<<<<<<<<<
-    CFLAGS += ['-O0', '-g3', '-ggdb']
+    CFLAGS += ['-O0', '-g3', '-ggdb3']
 else:
     CFLAGS += ['-O2', '-g0', '-U_FORTIFY_SOURCE', '-D_FORTIFY_SOURCE=2']
 

@@ -33,16 +33,18 @@
  * @brief Type of context registry instructions.
  */
 typedef enum archi_exe_registry_instr_type {
-    ARCHI_EXE_REGISTRY_INSTR_NOOP = 0,     ///< No operation.
+    ARCHI_EXE_REGISTRY_INSTR_NOOP = 0,          ///< No operation.
 
-    ARCHI_EXE_REGISTRY_INSTR_INIT,          ///< Initialize a new context.
-    ARCHI_EXE_REGISTRY_INSTR_FINAL,         ///< Finalize a context.
+    ARCHI_EXE_REGISTRY_INSTR_INIT_FROM_CONTEXT, ///< Initialize a new context using interface of a source context.
+    ARCHI_EXE_REGISTRY_INSTR_INIT_FROM_SLOT,    ///< Initialize a new context using interface from a context slot.
 
-    ARCHI_EXE_REGISTRY_INSTR_SET_VALUE,     ///< Set context slot to pointer to a value.
-    ARCHI_EXE_REGISTRY_INSTR_SET_CONTEXT,   ///< Set context slot to pointer to a source context.
-    ARCHI_EXE_REGISTRY_INSTR_SET_SLOT,      ///< Set context slot to a source context slot.
+    ARCHI_EXE_REGISTRY_INSTR_FINAL,             ///< Finalize a context.
 
-    ARCHI_EXE_REGISTRY_INSTR_ACT,           ///< Perform a context action.
+    ARCHI_EXE_REGISTRY_INSTR_SET_TO_VALUE,      ///< Set context slot to pointer to a value.
+    ARCHI_EXE_REGISTRY_INSTR_SET_TO_CONTEXT,    ///< Set context slot to pointer to a source context.
+    ARCHI_EXE_REGISTRY_INSTR_SET_TO_SLOT,       ///< Set context slot to a source context slot.
+
+    ARCHI_EXE_REGISTRY_INSTR_ACT,               ///< Perform a context action.
 } archi_exe_registry_instr_type_t;
 
 /**
@@ -67,53 +69,66 @@ typedef struct archi_exe_registry_instr_list {
 /*****************************************************************************/
 
 /**
- * @brief Context registry instruction: initialize a new context.
+ * @brief Context registry instruction: initialize a new context using interface of another context.
  *
- * `interface_key` may be NULL, which is the same as providing
+ * `source_key` may be NULL, which is the same as providing
  * a key referring to an instance of `archi_context_parameters_interface`.
  *
- * `interface_key` may be an empty string, which is the same as providing
+ * `source_key` may be an empty string, which is the same as providing
  * a key referring to an instance of `archi_context_pointer_interface`.
  */
-typedef struct archi_exe_registry_instr_init {
+typedef struct archi_exe_registry_instr_init_from_context {
     archi_exe_registry_instr_base_t base; ///< Instruction base.
 
-    const char *interface_key; ///< Key of the context interface.
+    const char *interface_source_key; ///< Key of the interface source context.
 
     const char *dparams_key; ///< Key of the dynamic parameter list.
     const archi_parameter_list_t *sparams; ///< Static parameter list.
-} archi_exe_registry_instr_init_t;
+} archi_exe_registry_instr_init_from_context_t;
+
+/**
+ * @brief Context registry instruction: initialize a new context using interface obtained from a context slot.
+ */
+typedef struct archi_exe_registry_instr_init_from_slot {
+    archi_exe_registry_instr_base_t base; ///< Instruction base.
+
+    const char *interface_source_key; ///< Key of the interface source context.
+    archi_context_op_designator_t interface_source_slot; ///< Interface source slot designator.
+
+    const char *dparams_key; ///< Key of the dynamic parameter list.
+    const archi_parameter_list_t *sparams; ///< Static parameter list.
+} archi_exe_registry_instr_init_from_slot_t;
 
 /**
  * @brief Context registry instruction: set context slot to pointer to a value.
  */
-typedef struct archi_exe_registry_instr_set_value {
+typedef struct archi_exe_registry_instr_set_to_value {
     archi_exe_registry_instr_base_t base; ///< Instruction base.
 
     archi_context_op_designator_t slot; ///< Slot designator.
     archi_pointer_t value; ///< Value to set.
-} archi_exe_registry_instr_set_value_t;
+} archi_exe_registry_instr_set_to_value_t;
 
 /**
  * @brief Context registry instruction: set context slot to pointer to a source context.
  */
-typedef struct archi_exe_registry_instr_set_context {
+typedef struct archi_exe_registry_instr_set_to_context {
     archi_exe_registry_instr_base_t base; ///< Instruction base.
 
     archi_context_op_designator_t slot; ///< Slot designator.
     const char *source_key; ///< Key of the source context.
-} archi_exe_registry_instr_set_context_t;
+} archi_exe_registry_instr_set_to_context_t;
 
 /**
  * @brief Context registry instruction: set context slot to a source context slot.
  */
-typedef struct archi_exe_registry_instr_set_slot {
+typedef struct archi_exe_registry_instr_set_to_slot {
     archi_exe_registry_instr_base_t base; ///< Instruction base.
 
     archi_context_op_designator_t slot; ///< Slot designator.
     const char *source_key; ///< Key of the source context.
     archi_context_op_designator_t source_slot; ///< Source slot designator.
-} archi_exe_registry_instr_set_slot_t;
+} archi_exe_registry_instr_set_to_slot_t;
 
 /**
  * @brief Context registry instruction: invoke context action.

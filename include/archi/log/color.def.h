@@ -71,5 +71,21 @@
 #define ARCHI_COLOR_FG_RGB(r, g, b) "\033[38;2;" #r ";" #g ";" #b "m" ///< Foreground color in RGB format.
 #define ARCHI_COLOR_BG_RGB(r, g, b) "\033[48;2;" #r ";" #g ";" #b "m" ///< Background color in RGB format.
 
+/*****************************************************************************/
+
+/**
+ * @defgroup ArchiLogColorConstants  Message Color Constants
+ * @brief ANSI color codes used to colorize log output per level.
+ * @{
+ */
+
+#define ARCHI_LOG_COLOR_ERROR       ARCHI_COLOR_FG_BRI_RED      ///< Color for error messages.
+#define ARCHI_LOG_COLOR_WARNING     ARCHI_COLOR_FG_BRI_YELLOW   ///< Color for warning messages.
+#define ARCHI_LOG_COLOR_NOTICE      ARCHI_COLOR_FG_BRI_BLUE     ///< Color for notice messages.
+#define ARCHI_LOG_COLOR_INFO        ARCHI_COLOR_FG_WHITE        ///< Color for info messages.
+#define ARCHI_LOG_COLOR_DEBUG       ARCHI_COLOR_FG_BRI_BLACK    ///< Color for debug messages.
+
+/** @} end of ArchiLogColorConstants */
+
 #endif // _ARCHI_LOG_COLOR_DEF_H_
 

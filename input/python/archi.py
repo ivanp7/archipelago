@@ -393,18 +393,18 @@ class Parameters:
 class ContextSpec:
     """Representation of a context interface bundled with context initialization parameters.
     """
-    def __init__(self, interface: "Context", params: "Parameters"):
+    def __init__(self, interface: "ContextInterface", params: "Parameters"):
         """Create a context specification instance.
         """
-        if not isinstance(interface, Context):
-            raise TypeError("Context interface object must be of type Context")
+        if not isinstance(interface, ContextInterface):
+            raise TypeError("Context interface object must be of type ContextInterface")
         elif not isinstance(params, Parameters):
             raise TypeError("Parameter list object must be of type Parameters")
 
         self._interface = interface
         self._params = params
 
-    def interface(self) -> "Context":
+    def interface(self) -> "ContextInterface":
         """Obtain the context interface from the specification.
         """
         return self._interface
@@ -414,6 +414,27 @@ class ContextSpec:
         """
         return self._params
 
+
+class ContextInterface:
+    """Representation of a context interface.
+    """
+    def __init__(self, source):
+        """Create a context interface instance.
+        """
+        if not isinstance(source, Context) and not isinstance(source, Context._Slot):
+            raise TypeError("Context interface can be created from Context and Context._Slot objects only")
+
+        self._source = source
+
+    def __call__(self, _: "Context" = None, /, **params) -> "ContextSpec":
+        """Create a context specification instance.
+        """
+        return ContextSpec(self, Parameters(_, **params))
+
+    def source(self):
+        """Obtain the context interface source.
+        """
+        return self._source
 
 class Context:
     """Representation of a context.
@@ -529,11 +550,6 @@ class Context:
 
         self._set('', [index], value)
 
-    def __call__(self, _: "Context" = None, /, **params) -> "ContextSpec":
-        """Create a context specification instance.
-        """
-        return ContextSpec(self, Parameters(_, **params))
-
     def _set(self, slot_name: "str", slot_indices: "list[int]", value):
         """Append a set() instruction to the list.
         """
@@ -544,26 +560,26 @@ class Context:
             raise TypeError("Slot indices must be a list of integers")
 
         if isinstance(value, CValue):
-            self._app._instructions.append(Application._InstructionSetValue(
+            self._app._instructions.append(Application._InstructionSetToValue(
                 key=self._key,
                 slot_name=slot_name, slot_indices=slot_indices,
                 value=value))
 
         elif isinstance(value, Context):
-            self._app._instructions.append(Application._InstructionSetContext(
+            self._app._instructions.append(Application._InstructionSetToContext(
                 key=self._key,
                 slot_name=slot_name, slot_indices=slot_indices,
                 source_key=value._key))
 
         elif isinstance(value, Context._Slot) or isinstance(value, Context._Action):
-            self._app._instructions.append(Application._InstructionSetSlot(
+            self._app._instructions.append(Application._InstructionSetToSlot(
                 key=self._key,
                 slot_name=slot_name, slot_indices=slot_indices,
                 source_key=value._context._key,
                 source_slot_name=value._name, source_slot_indices=value._indices))
 
         else:
-            self._app._instructions.append(Application._InstructionSetValue(
+            self._app._instructions.append(Application._InstructionSetToValue(
                 key=self._key,
                 slot_name=slot_name, slot_indices=slot_indices,
                 value=CValue(value)))
@@ -614,7 +630,8 @@ class Application:
     class _Instruction:
         """Representation of an abstract application initialization instruction.
         """
-        NOOP, INIT, FINAL, SET_VALUE, SET_CONTEXT, SET_SLOT, ACT = range(7)
+        NOOP, INIT_FROM_CONTEXT, INIT_FROM_SLOT, FINAL, \
+                SET_TO_VALUE, SET_TO_CONTEXT, SET_TO_SLOT, ACT = range(8)
 
         def __init__(self, key: "str"):
             """Initialize an instruction base.
@@ -641,35 +658,37 @@ class Application:
 
             return MemoryBlock(CValue(instr))
 
-    class _InstructionInit(_Instruction):
+    class _InstructionInitFromContext(_Instruction):
         """Representation of an application initialization instruction:
-        initialize a new context.
+        initialize a new context using interface of a source context.
         """
-        def __init__(self, key: "str", interface_key: "str", dparams_key: "str", sparams: "dict"):
+        def __init__(self, key: "str", interface_source_key: "str",
+                     dparams_key: "str", sparams: "dict"):
             """Initialize an instruction.
             """
-            if not isinstance(interface_key, str):
-                raise TypeError("Context interface key must be a string")
+            if not isinstance(interface_source_key, str):
+                raise TypeError("Interface source context key must be a string")
             elif dparams_key is not None and not isinstance(dparams_key, str):
                 raise TypeError("Dynamic parameter list key must be a string")
             elif not isinstance(sparams, dict):
                 raise TypeError("Static parameter list must be of type dict")
 
-            self._type = Application._Instruction.INIT
+            self._type = Application._Instruction.INIT_FROM_CONTEXT
             Application._Instruction.__init__(self, key)
-            self._interface_key = interface_key
+            self._interface_source_key = interface_source_key
             self._dparams_key = dparams_key
             self._sparams = sparams
 
         def alloc(self, app: "Application", ptr_instructions: "list[MemoryBlock]", idx: "int"):
             """Allocate all required blocks.
             """
-            instr = archi_exe_registry_instr_init_t()
+            instr = archi_exe_registry_instr_init_from_context_t()
             instr.base.type = self._type
 
             ptr_key = app._alloc_string(self._key)
 
-            ptr_interface_key = app._alloc_string(self._interface_key)
+            ptr_interface_source_key = app._alloc_string(self._interface_source_key) \
+                    if self._interface_source_key is not None else None
 
             ptr_dparams_key = app._alloc_string(self._dparams_key) \
                     if self._dparams_key is not None else None
@@ -678,7 +697,68 @@ class Application:
             def init_instr(instr: "archi_exe_registry_instr_init_t"):
                 instr.base.key = ptr_key.address()
 
-                instr.interface_key = ptr_interface_key.address()
+                if ptr_interface_source_key is not None:
+                    instr.interface_source_key = ptr_interface_source_key.address()
+
+                if ptr_dparams_key is not None:
+                    instr.dparams_key = ptr_dparams_key.address()
+                if ptr_sparams is not None:
+                    instr.sparams = c.cast(ptr_sparams.address(), type(instr.sparams))
+
+            return MemoryBlock(CValue(instr, callback=init_instr))
+
+    class _InstructionInitFromSlot(_Instruction):
+        """Representation of an application initialization instruction:
+        initialize a new context using interface from a context slot.
+        """
+        def __init__(self, key: "str", interface_source_key: "str",
+                     interface_source_slot_name: "str", interface_source_slot_indices: "list[int]",
+                     dparams_key: "str", sparams: "dict"):
+            """Initialize an instruction.
+            """
+            if not isinstance(interface_source_key, str):
+                raise TypeError("Interface source context key must be a string")
+            elif not isinstance(interface_source_slot_name, str):
+                raise TypeError("Slot name must be a string")
+            elif not isinstance(interface_source_slot_indices, list) \
+                    or not all(isinstance(index, int) for index in interface_source_slot_indices):
+                raise TypeError("Slot indices must be a list of integers")
+            elif dparams_key is not None and not isinstance(dparams_key, str):
+                raise TypeError("Dynamic parameter list key must be a string")
+            elif not isinstance(sparams, dict):
+                raise TypeError("Static parameter list must be of type dict")
+
+            self._type = Application._Instruction.INIT_FROM_SLOT
+            Application._Instruction.__init__(self, key)
+            self._interface_source_key = interface_source_key
+            self._interface_source_slot_name = interface_source_slot_name
+            self._interface_source_slot_indices = interface_source_slot_indices
+            self._dparams_key = dparams_key
+            self._sparams = sparams
+
+        def alloc(self, app: "Application", ptr_instructions: "list[MemoryBlock]", idx: "int"):
+            """Allocate all required blocks.
+            """
+            instr = archi_exe_registry_instr_init_from_slot_t()
+            instr.base.type = self._type
+
+            ptr_key = app._alloc_string(self._key)
+
+            ptr_interface_source_key = app._alloc_string(self._interface_source_key)
+            ptr_interface_source_slot_name = app._alloc_string(self._interface_source_slot_name)
+            ptr_interface_source_slot_indices = app._alloc_index_array(self._interface_source_slot_indices)
+
+            ptr_dparams_key = app._alloc_string(self._dparams_key) \
+                    if self._dparams_key is not None else None
+            ptr_sparams = app._alloc_params(self._sparams)
+
+            def init_instr(instr: "archi_exe_registry_instr_init_t"):
+                instr.base.key = ptr_key.address()
+
+                instr.interface_source_key = ptr_interface_source_key.address()
+                instr.interface_source_slot.name = ptr_interface_source_slot_name.address()
+                if ptr_interface_source_slot_indices is not None:
+                    instr.interface_source_slot.index = ptr_interface_source_slot_indices.address()
 
                 if ptr_dparams_key is not None:
                     instr.dparams_key = ptr_dparams_key.address()
@@ -709,7 +789,7 @@ class Application:
 
             return MemoryBlock(CValue(instr, callback=init_instr))
 
-    class _InstructionSetValue(_Instruction):
+    class _InstructionSetToValue(_Instruction):
         """Representation of an application initialization instruction:
         set a value to a context slot.
         """
@@ -725,7 +805,7 @@ class Application:
             elif not isinstance(value, CValue):
                 raise TypeError("Object assigned to a slot must be of type CValue")
 
-            self._type = Application._Instruction.SET_VALUE
+            self._type = Application._Instruction.SET_TO_VALUE
             Application._Instruction.__init__(self, key)
             self._slot_name = slot_name
             self._slot_indices = slot_indices
@@ -738,7 +818,7 @@ class Application:
         def alloc(self, app: "Application", ptr_instructions: "list[MemoryBlock]", idx: "int"):
             """Allocate all required blocks.
             """
-            instr = archi_exe_registry_instr_set_value_t()
+            instr = archi_exe_registry_instr_set_to_value_t()
             instr.base.type = self._type
             instr.slot.num_indices = len(self._slot_indices)
             instr.value.flags = self._flags
@@ -752,7 +832,7 @@ class Application:
             ptr_slot_indices = app._alloc_index_array(self._slot_indices)
             ptr_value = app._alloc_value(self._value)
 
-            def init_instr(instr: "archi_exe_registry_instr_set_value_t"):
+            def init_instr(instr: "archi_exe_registry_instr_set_to_value_t"):
                 instr.base.key = ptr_key.address()
 
                 instr.slot.name = ptr_slot_name.address()
@@ -764,7 +844,7 @@ class Application:
 
             return MemoryBlock(CValue(instr, callback=init_instr))
 
-    class _InstructionSetContext(_Instruction):
+    class _InstructionSetToContext(_Instruction):
         """Representation of an application initialization instruction:
         set a source context pointer to a context slot.
         """
@@ -780,7 +860,7 @@ class Application:
             elif not isinstance(source_key, str):
                 raise TypeError("Source context key must be a string")
 
-            self._type = Application._Instruction.SET_CONTEXT
+            self._type = Application._Instruction.SET_TO_CONTEXT
             Application._Instruction.__init__(self, key)
             self._slot_name = slot_name
             self._slot_indices = slot_indices
@@ -789,7 +869,7 @@ class Application:
         def alloc(self, app: "Application", ptr_instructions: "list[MemoryBlock]", idx: "int"):
             """Allocate all required blocks.
             """
-            instr = archi_exe_registry_instr_set_context_t()
+            instr = archi_exe_registry_instr_set_to_context_t()
             instr.base.type = self._type
             instr.slot.num_indices = len(self._slot_indices)
 
@@ -799,7 +879,7 @@ class Application:
             ptr_slot_indices = app._alloc_index_array(self._slot_indices)
             ptr_source_key = app._alloc_string(self._source_key)
 
-            def init_instr(instr: "archi_exe_registry_instr_set_context_t"):
+            def init_instr(instr: "archi_exe_registry_instr_set_to_context_t"):
                 instr.base.key = ptr_key.address()
 
                 instr.slot.name = ptr_slot_name.address()
@@ -809,7 +889,7 @@ class Application:
 
             return MemoryBlock(CValue(instr, callback=init_instr))
 
-    class _InstructionSetSlot(_Instruction):
+    class _InstructionSetToSlot(_Instruction):
         """Representation of an application initialization instruction:
         set a source context slot to a context slot.
         """
@@ -830,7 +910,7 @@ class Application:
                     or not all(isinstance(index, int) for index in source_slot_indices):
                 raise TypeError("Slot indices must be a list of integers")
 
-            self._type = Application._Instruction.SET_SLOT
+            self._type = Application._Instruction.SET_TO_SLOT
             Application._Instruction.__init__(self, key)
             self._slot_name = slot_name
             self._slot_indices = slot_indices
@@ -841,7 +921,7 @@ class Application:
         def alloc(self, app: "Application", ptr_instructions: "list[MemoryBlock]", idx: "int"):
             """Allocate all required blocks.
             """
-            instr = archi_exe_registry_instr_set_slot_t()
+            instr = archi_exe_registry_instr_set_to_slot_t()
             instr.base.type = self._type
             instr.slot.num_indices = len(self._slot_indices)
             instr.source_slot.num_indices = len(self._source_slot_indices)
@@ -854,7 +934,7 @@ class Application:
             ptr_source_slot_name = app._alloc_string(self._source_slot_name)
             ptr_source_slot_indices = app._alloc_index_array(self._source_slot_indices)
 
-            def init_instr(instr: "archi_exe_registry_instr_set_slot_t"):
+            def init_instr(instr: "archi_exe_registry_instr_set_to_slot_t"):
                 instr.base.key = ptr_key.address()
 
                 instr.slot.name = ptr_slot_name.address()
@@ -925,12 +1005,11 @@ class Application:
     CONTENTS_KEY_INSTRUCTIONS = 'archi.instructions'
     CONTENTS_KEY_SIGNALS      = 'archi.signals'
 
-    KEY_REGISTRY       = 'archi.registry'
-    KEY_INTERFACES     = 'archi.interfaces'
-    KEY_EXE_HANDLE     = 'archi.executable'
-    KEY_INPUT_FILE     = 'archi.input.file'
-    KEY_INPUT_CONTENTS = 'archi.input.contents'
-    KEY_SIGNAL         = 'archi.signal'
+    KEY_REGISTRY    = 'archi.registry'
+    KEY_EXECUTABLE  = 'archi.executable'
+    KEY_INPUT_FILE  = 'archi.input_file'
+
+    KEY_SIGNAL = 'archi.signal'
 
     def __init__(self):
         """Initialize a file.
@@ -958,55 +1037,69 @@ class Application:
         if not isinstance(key, str):
             raise TypeError("Key must be a string")
 
-        if isinstance(entity, Parameters) or isinstance(entity, ContextSpec):
-            interface_key = entity.interface()._key \
-                    if isinstance(entity, ContextSpec) \
-                    else None
+        if isinstance(entity, Parameters):
+            dparams_key = entity.dynamic_list()._key \
+                    if entity.dynamic_list() is not None else None
 
-            params = entity.parameters() \
-                    if isinstance(entity, ContextSpec) \
-                    else entity
-
-            self._instructions.append(Application._InstructionInit(
+            self._instructions.append(Application._InstructionInitFromContext(
                 key=key,
-                interface_key=interface_key,
-                dparams_key=params.dynamic_list()._key \
-                        if params.dynamic_list() is not None else None,
-                sparams=params.static_list()))
+                interface_source_key=None,
+                dparams_key=dparams_key, sparams=entity.static_list()))
+
+        elif isinstance(entity, ContextSpec):
+            source = entity.interface().source()
+
+            if isinstance(source, Context):
+                dparams_key = entity.parameters().dynamic_list()._key \
+                        if entity.parameters().dynamic_list() is not None else None
+
+                self._instructions.append(Application._InstructionInitFromContext(
+                    key=key,
+                    interface_source_key=source._key,
+                    dparams_key=dparams_key, sparams=entity.parameters().static_list()))
+            elif isinstance(source, Context._Slot):
+                dparams_key = entity.parameters().dynamic_list()._key \
+                        if entity.parameters().dynamic_list() is not None else None
+
+                self._instructions.append(Application._InstructionInitFromSlot(
+                    key=key,
+                    interface_source_key=source._context._key,
+                    interface_source_slot_name=source._name, interface_source_slot_indices=source._indices,
+                    dparams_key=dparams_key, sparams=entity.parameters().static_list()))
 
         elif isinstance(entity, CValue):
-            self._instructions.append(Application._InstructionInit(
+            self._instructions.append(Application._InstructionInitFromContext(
                 key=key,
-                interface_key='',
+                interface_source_key='',
                 dparams_key=None, sparams={'value': entity}))
 
         elif isinstance(entity, Context):
-            self._instructions.append(Application._InstructionInit(
+            self._instructions.append(Application._InstructionInitFromContext(
                 key=key,
-                interface_key='',
+                interface_source_key='',
                 dparams_key=None, sparams={}))
 
-            self._instructions.append(Application._InstructionSetContext(
+            self._instructions.append(Application._InstructionSetToContext(
                 key=key,
                 slot_name='value', slot_indices=[],
                 source_key=entity._key))
 
         elif isinstance(entity, Context._Slot) or isinstance(entity, Context._Action):
-            self._instructions.append(Application._InstructionInit(
+            self._instructions.append(Application._InstructionInitFromContext(
                 key=key,
-                interface_key='',
+                interface_source_key='',
                 dparams_key=None, sparams={}))
 
-            self._instructions.append(Application._InstructionSetSlot(
+            self._instructions.append(Application._InstructionSetToSlot(
                 key=key,
                 slot_name='value', slot_indices=[],
                 source_key=entity._context._key,
                 source_slot_name=entity._name, source_slot_indices=entity._indices))
 
         else:
-            self._instructions.append(Application._InstructionInit(
+            self._instructions.append(Application._InstructionInitFromContext(
                 key=key,
-                interface_key='',
+                interface_source_key='',
                 dparams_key=None, sparams={'value': CValue(entity)}))
 
     def __delitem__(self, key: "str"):
@@ -1306,16 +1399,26 @@ class archi_exe_input_file_header_t(c.Structure):
 
 ###############################################################################
 
-class archi_exe_registry_instr_init_t(c.Structure):
-    """Context registry instruction: initialize a new context.
+class archi_exe_registry_instr_init_from_context_t(c.Structure):
+    """Context registry instruction: initialize a new context using interface of a source context.
     """
     _fields_ = [('base', archi_exe_registry_instr_base_t),
-                ('interface_key', c.c_char_p),
+                ('interface_source_key', c.c_char_p),
                 ('dparams_key', c.c_char_p),
                 ('sparams', c.POINTER(archi_parameter_list_t))]
 
 
-class archi_exe_registry_instr_set_value_t(c.Structure):
+class archi_exe_registry_instr_init_from_slot_t(c.Structure):
+    """Context registry instruction: initialize a new context using interface from a context slot.
+    """
+    _fields_ = [('base', archi_exe_registry_instr_base_t),
+                ('interface_source_key', c.c_char_p),
+                ('interface_source_slot', archi_context_op_designator_t),
+                ('dparams_key', c.c_char_p),
+                ('sparams', c.POINTER(archi_parameter_list_t))]
+
+
+class archi_exe_registry_instr_set_to_value_t(c.Structure):
     """Context registry instruction: set context slot to pointer to a value.
     """
     _fields_ = [('base', archi_exe_registry_instr_base_t),
@@ -1323,7 +1426,7 @@ class archi_exe_registry_instr_set_value_t(c.Structure):
                 ('value', archi_pointer_t)]
 
 
-class archi_exe_registry_instr_set_context_t(c.Structure):
+class archi_exe_registry_instr_set_to_context_t(c.Structure):
     """Context registry instruction: set context slot to pointer to a source context.
     """
     _fields_ = [('base', archi_exe_registry_instr_base_t),
@@ -1331,7 +1434,7 @@ class archi_exe_registry_instr_set_context_t(c.Structure):
                 ('source_key', c.c_char_p)]
 
 
-class archi_exe_registry_instr_set_slot_t(c.Structure):
+class archi_exe_registry_instr_set_to_slot_t(c.Structure):
     """Context registry instruction: set context slot to a source context slot.
     """
     _fields_ = [('base', archi_exe_registry_instr_base_t),

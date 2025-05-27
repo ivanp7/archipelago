@@ -30,6 +30,7 @@
 #include "archi/ctx/interface/pointer.var.h"
 #include "archi/log/print.fun.h"
 #include "archi/log/print.def.h"
+#include "archi/log/color.def.h"
 #include "archi/log/context.fun.h"
 #include "archi/util/size.def.h"
 
@@ -53,17 +54,20 @@ archi_exe_registry_instr_sizeof(
 
     switch (instruction->type)
     {
-        case ARCHI_EXE_REGISTRY_INSTR_INIT:
-            return sizeof(archi_exe_registry_instr_init_t);
+        case ARCHI_EXE_REGISTRY_INSTR_INIT_FROM_CONTEXT:
+            return sizeof(archi_exe_registry_instr_init_from_context_t);
 
-        case ARCHI_EXE_REGISTRY_INSTR_SET_VALUE:
-            return sizeof(archi_exe_registry_instr_set_value_t);
+        case ARCHI_EXE_REGISTRY_INSTR_INIT_FROM_SLOT:
+            return sizeof(archi_exe_registry_instr_init_from_slot_t);
 
-        case ARCHI_EXE_REGISTRY_INSTR_SET_CONTEXT:
-            return sizeof(archi_exe_registry_instr_set_context_t);
+        case ARCHI_EXE_REGISTRY_INSTR_SET_TO_VALUE:
+            return sizeof(archi_exe_registry_instr_set_to_value_t);
 
-        case ARCHI_EXE_REGISTRY_INSTR_SET_SLOT:
-            return sizeof(archi_exe_registry_instr_set_slot_t);
+        case ARCHI_EXE_REGISTRY_INSTR_SET_TO_CONTEXT:
+            return sizeof(archi_exe_registry_instr_set_to_context_t);
+
+        case ARCHI_EXE_REGISTRY_INSTR_SET_TO_SLOT:
+            return sizeof(archi_exe_registry_instr_set_to_slot_t);
 
         case ARCHI_EXE_REGISTRY_INSTR_ACT:
             return sizeof(archi_exe_registry_instr_act_t);
@@ -233,7 +237,7 @@ archi_exe_registry_instr_params_free(
 {
     archi_parameter_list_t *node = params;
 
-    while (params != dparams)
+    while (node != dparams)
     {
         archi_parameter_list_t *next = node->next;
         free(node);
@@ -274,9 +278,9 @@ archi_exe_registry_instr_params_alloc(
 
 static
 archi_status_t
-archi_exe_registry_instr_execute_init(
+archi_exe_registry_instr_execute_init_from_context(
         archi_context_t registry,
-        const archi_exe_registry_instr_init_t *instr_init,
+        const archi_exe_registry_instr_init_from_context_t *instr_init_from_context,
         archi_reference_count_t ref_count,
         bool dry_run)
 {
@@ -284,50 +288,49 @@ archi_exe_registry_instr_execute_init(
     if (archi_log_verbosity() >= ARCHI_LOG_VERBOSITY_DEBUG)
     {
         {
-            PRINT(ARCHI_LOG_INDENT "interface_key = ");
+            PRINT(ARCHI_LOG_INDENT "    interface_source_key = ");
 
-            if (instr_init->interface_key == NULL)
+            if (instr_init_from_context->interface_source_key == NULL)
                 PRINT("<parameter list>\n");
-            else if (instr_init->interface_key[0] == '\0')
+            else if (instr_init_from_context->interface_source_key[0] == '\0')
                 PRINT("<copied pointer>\n");
             else
-                PRINT("\"%s\"\n", instr_init->interface_key);
+                PRINT("\"%s\"\n", instr_init_from_context->interface_source_key);
         }
 
         {
-            PRINT(ARCHI_LOG_INDENT "dparams_key = ");
+            PRINT(ARCHI_LOG_INDENT "    dparams_key = ");
 
-            if (instr_init->dparams_key != NULL)
-                PRINT("\"%s\"\n", instr_init->dparams_key);
+            if (instr_init_from_context->dparams_key != NULL)
+                PRINT("\"%s\"\n", instr_init_from_context->dparams_key);
             else
                 PRINT("NULL\n");
         }
 
         {
-            PRINT(ARCHI_LOG_INDENT "sparams:\n");
+            PRINT(ARCHI_LOG_INDENT "    sparams:\n");
 
-            for (const archi_parameter_list_t *params = instr_init->sparams;
+            for (const archi_parameter_list_t *params = instr_init_from_context->sparams;
                     params != NULL; params = params->next)
             {
-                PRINT(ARCHI_LOG_INDENT "  %s = ", params->name);
-                archi_print_value(ARCHI_LOG_INDENT "    ", params->value);
+                PRINT(ARCHI_LOG_INDENT "      \"%s\" = ", params->name);
+                archi_print_value(ARCHI_LOG_INDENT "        ", params->value);
             }
         }
     }
 
-    archi_print_unlock(ARCHI_LOG_VERBOSITY_DEBUG);
-
     if (dry_run)
         return 0;
 
-    if ((instr_init->base.key == NULL) || (instr_init->base.key[0] == '\0'))
+    if ((instr_init_from_context->base.key == NULL) ||
+            (instr_init_from_context->base.key[0] == '\0'))
         return ARCHI_STATUS_EMISUSE;
 
     archi_status_t code;
 
     // Check early if the context key exists already
     archi_context_get_slot(registry,
-            (archi_context_op_designator_t){.name = instr_init->base.key}, &code);
+            (archi_context_op_designator_t){.name = instr_init_from_context->base.key}, &code);
 
     if (code != 1)
     {
@@ -342,14 +345,14 @@ archi_exe_registry_instr_execute_init(
     // Obtain the context interface
     archi_pointer_t interface_value;
 
-    if (instr_init->interface_key == NULL) // parameter list
+    if (instr_init_from_context->interface_source_key == NULL) // parameter list
         interface_value = (archi_pointer_t){
             .ptr = (void*)&archi_context_parameters_interface,
             .element = {
                 .num_of = 1,
             },
         };
-    else if (instr_init->interface_key[0] == '\0') // pointer copy
+    else if (instr_init_from_context->interface_source_key[0] == '\0') // pointer copy
         interface_value = (archi_pointer_t){
             .ptr = (void*)&archi_context_pointer_interface,
             .element = {
@@ -358,30 +361,34 @@ archi_exe_registry_instr_execute_init(
         };
     else
     {
-        interface_value = archi_context_get_slot(registry,
-            (archi_context_op_designator_t){.name = instr_init->interface_key}, &code);
+        // Obtain the source context from the registry
+        archi_pointer_t src_context_value = archi_context_get_slot(registry,
+                (archi_context_op_designator_t){.name = instr_init_from_context->interface_source_key}, &code);
 
         if (code != 0)
         {
             if (code < 0)
                 return code;
             else if (code == 1)
-                return 1; // the interface is not found
+                return 1; // the context is not found
             else
                 return ARCHI_STATUS_EFAILURE;
         }
-        else if ((interface_value.flags & ARCHI_POINTER_FLAG_FUNCTION) ||
-                (interface_value.ptr == NULL))
+        else if ((src_context_value.flags & ARCHI_POINTER_FLAG_FUNCTION) ||
+                (src_context_value.ptr == NULL))
             return ARCHI_STATUS_EVALUE;
+
+        // Get context interface from the source context
+        interface_value = archi_context_interface(src_context_value.ptr);
     }
 
     // Prepare the context initialization parameter list
     archi_parameter_list_t *dparams = NULL;
-    if (instr_init->dparams_key != NULL)
+    if (instr_init_from_context->dparams_key != NULL)
     {
         // Get dynamic parameter list
         archi_pointer_t dparams_value = archi_context_get_slot(registry,
-                (archi_context_op_designator_t){.name = instr_init->dparams_key}, &code);
+                (archi_context_op_designator_t){.name = instr_init_from_context->dparams_key}, &code);
 
         if (code != 0)
         {
@@ -399,8 +406,9 @@ archi_exe_registry_instr_execute_init(
         dparams = dparams_value.ptr;
     }
 
-    archi_parameter_list_t *params = archi_exe_registry_instr_params_alloc(dparams, instr_init->sparams, ref_count);
-    if (params == NULL)
+    archi_parameter_list_t *params = archi_exe_registry_instr_params_alloc(
+            dparams, instr_init_from_context->sparams, ref_count);
+    if ((params == NULL) && ((dparams != NULL) || (instr_init_from_context->sparams != NULL)))
         return ARCHI_STATUS_ENOMEMORY;
 
     // Initialize the context
@@ -421,7 +429,180 @@ archi_exe_registry_instr_execute_init(
 
     // Insert the context to the registry, which also increments the reference count
     code = archi_context_set_slot(registry,
-            (archi_context_op_designator_t){.name = instr_init->base.key}, context_value);
+            (archi_context_op_designator_t){.name = instr_init_from_context->base.key}, context_value);
+
+    if (code != 0)
+    {
+        archi_context_finalize(context);
+        return ARCHI_STATUS_TO_ERROR(code);
+    }
+
+    // Decrement the reference count back to 1, making
+    archi_reference_count_decrement(context_value.ref_count);
+
+    return 0;
+}
+
+static
+archi_status_t
+archi_exe_registry_instr_execute_init_from_slot(
+        archi_context_t registry,
+        const archi_exe_registry_instr_init_from_slot_t *instr_init_from_slot,
+        archi_reference_count_t ref_count,
+        bool dry_run)
+{
+    // Print the instruction details
+    if (archi_log_verbosity() >= ARCHI_LOG_VERBOSITY_DEBUG)
+    {
+        {
+            PRINT(ARCHI_LOG_INDENT "    interface_source_key = ");
+
+            if (instr_init_from_slot->interface_source_key != NULL)
+                PRINT("\"%s\"\n", instr_init_from_slot->interface_source_key);
+            else
+                PRINT("NULL\n");
+        }
+
+        {
+            PRINT(ARCHI_LOG_INDENT "    interface_source_slot.name = ");
+
+            if (instr_init_from_slot->interface_source_slot.name != NULL)
+                PRINT("\"%s\"\n", instr_init_from_slot->interface_source_slot.name);
+            else
+                PRINT("NULL\n");
+        }
+
+        if (instr_init_from_slot->interface_source_slot.num_indices > 0)
+        {
+            PRINT(ARCHI_LOG_INDENT "    interface_source_slot.indices[%zu] =",
+                    instr_init_from_slot->interface_source_slot.num_indices);
+
+            for (size_t i = 0; i < instr_init_from_slot->interface_source_slot.num_indices; i++)
+                PRINT(" %zu", instr_init_from_slot->interface_source_slot.index[i]);
+
+            PRINT("\n");
+        }
+
+        {
+            PRINT(ARCHI_LOG_INDENT "    dparams_key = ");
+
+            if (instr_init_from_slot->dparams_key != NULL)
+                PRINT("\"%s\"\n", instr_init_from_slot->dparams_key);
+            else
+                PRINT("NULL\n");
+        }
+
+        {
+            PRINT(ARCHI_LOG_INDENT "    sparams:\n");
+
+            for (const archi_parameter_list_t *params = instr_init_from_slot->sparams;
+                    params != NULL; params = params->next)
+            {
+                PRINT(ARCHI_LOG_INDENT "      \"%s\" = ", params->name);
+                archi_print_value(ARCHI_LOG_INDENT "        ", params->value);
+            }
+        }
+    }
+
+    if (dry_run)
+        return 0;
+
+    if ((instr_init_from_slot->base.key == NULL) ||
+            (instr_init_from_slot->base.key[0] == '\0'))
+        return ARCHI_STATUS_EMISUSE;
+
+    archi_status_t code;
+
+    // Check early if the context key exists already
+    archi_context_get_slot(registry,
+            (archi_context_op_designator_t){.name = instr_init_from_slot->base.key}, &code);
+
+    if (code != 1)
+    {
+        if (code < 0)
+            return code;
+        else if (code == 0)
+            return 2; // the context key exists already
+        else
+            return ARCHI_STATUS_EFAILURE;
+    }
+
+    // Obtain the context interface
+    archi_pointer_t interface_value;
+    {
+        // Obtain the source context from the registry
+        archi_pointer_t src_context_value = archi_context_get_slot(registry,
+                (archi_context_op_designator_t){.name = instr_init_from_slot->interface_source_key}, &code);
+
+        if (code != 0)
+        {
+            if (code < 0)
+                return code;
+            else if (code == 1)
+                return 1; // the context is not found
+            else
+                return ARCHI_STATUS_EFAILURE;
+        }
+        else if ((src_context_value.flags & ARCHI_POINTER_FLAG_FUNCTION) ||
+                (src_context_value.ptr == NULL))
+            return ARCHI_STATUS_EVALUE;
+
+        // Get context interface from the source context slot
+        interface_value = archi_context_get_slot(src_context_value.ptr,
+                instr_init_from_slot->interface_source_slot, &code);
+
+        if (code != 0)
+            return ARCHI_STATUS_TO_ERROR(code);
+    }
+
+    // Prepare the context initialization parameter list
+    archi_parameter_list_t *dparams = NULL;
+    if (instr_init_from_slot->dparams_key != NULL)
+    {
+        // Get dynamic parameter list
+        archi_pointer_t dparams_value = archi_context_get_slot(registry,
+                (archi_context_op_designator_t){.name = instr_init_from_slot->dparams_key}, &code);
+
+        if (code != 0)
+        {
+            if (code < 0)
+                return code;
+            else if (code == 1)
+                return 1; // the parameter list is not found
+            else
+                return ARCHI_STATUS_EFAILURE;
+        }
+
+        if (dparams_value.flags & ARCHI_POINTER_FLAG_FUNCTION)
+            return ARCHI_STATUS_EVALUE;
+
+        dparams = dparams_value.ptr;
+    }
+
+    archi_parameter_list_t *params = archi_exe_registry_instr_params_alloc(
+            dparams, instr_init_from_slot->sparams, ref_count);
+    if ((params == NULL) && ((dparams != NULL) || (instr_init_from_slot->sparams != NULL)))
+        return ARCHI_STATUS_ENOMEMORY;
+
+    // Initialize the context
+    archi_context_t context = archi_context_initialize(interface_value, params, &code);
+
+    archi_exe_registry_instr_params_free(params, dparams);
+
+    if (context == NULL)
+        return ARCHI_STATUS_TO_ERROR(code);
+
+    archi_pointer_t context_value = {
+        .ptr = context,
+        .ref_count = archi_context_data(context).ref_count, // the reference count is 1 at this point
+        .element = {
+            .num_of = 1,
+        },
+    };
+
+    // Insert the context to the registry, which also increments the reference count
+    code = archi_context_set_slot(registry,
+            (archi_context_op_designator_t){.name = instr_init_from_slot->base.key}, context_value);
 
     if (code != 0)
     {
@@ -444,8 +625,6 @@ archi_exe_registry_instr_execute_final(
         bool dry_run)
 {
     (void) ref_count;
-
-    archi_print_unlock(ARCHI_LOG_VERBOSITY_DEBUG);
 
     if (dry_run)
         return 0;
@@ -472,9 +651,9 @@ archi_exe_registry_instr_execute_final(
 
 static
 archi_status_t
-archi_exe_registry_instr_execute_set_value(
+archi_exe_registry_instr_execute_set_to_value(
         archi_context_t registry,
-        const archi_exe_registry_instr_set_value_t *instr_set_value,
+        const archi_exe_registry_instr_set_to_value_t *instr_set_to_value,
         archi_reference_count_t ref_count,
         bool dry_run)
 {
@@ -482,43 +661,41 @@ archi_exe_registry_instr_execute_set_value(
     if (archi_log_verbosity() >= ARCHI_LOG_VERBOSITY_DEBUG)
     {
         {
-            PRINT(ARCHI_LOG_INDENT "slot.name = ");
+            PRINT(ARCHI_LOG_INDENT "    slot.name = ");
 
-            if (instr_set_value->slot.name != NULL)
-                PRINT("\"%s\"\n", instr_set_value->slot.name);
+            if (instr_set_to_value->slot.name != NULL)
+                PRINT("\"%s\"\n", instr_set_to_value->slot.name);
             else
                 PRINT("NULL\n");
         }
 
-        if (instr_set_value->slot.num_indices > 0)
+        if (instr_set_to_value->slot.num_indices > 0)
         {
-            PRINT(ARCHI_LOG_INDENT "slot.indices[%zu] =", instr_set_value->slot.num_indices);
+            PRINT(ARCHI_LOG_INDENT "    slot.indices[%zu] =", instr_set_to_value->slot.num_indices);
 
-            for (size_t i = 0; i < instr_set_value->slot.num_indices; i++)
-                PRINT(" %zu", instr_set_value->slot.index[i]);
+            for (size_t i = 0; i < instr_set_to_value->slot.num_indices; i++)
+                PRINT(" %zu", instr_set_to_value->slot.index[i]);
 
             PRINT("\n");
         }
 
         {
-            PRINT(ARCHI_LOG_INDENT "value = ");
-            archi_print_value(ARCHI_LOG_INDENT "  ", instr_set_value->value);
+            PRINT(ARCHI_LOG_INDENT "    value = ");
+            archi_print_value(ARCHI_LOG_INDENT "      ", instr_set_to_value->value);
         }
     }
-
-    archi_print_unlock(ARCHI_LOG_VERBOSITY_DEBUG);
 
     if (dry_run)
         return 0;
 
-    if ((instr_set_value->base.key == NULL) || (instr_set_value->base.key[0] == '\0'))
+    if ((instr_set_to_value->base.key == NULL) || (instr_set_to_value->base.key[0] == '\0'))
         return ARCHI_STATUS_EMISUSE;
 
     archi_status_t code;
 
     // Obtain the context from the registry
     archi_pointer_t context_value = archi_context_get_slot(registry,
-            (archi_context_op_designator_t){.name = instr_set_value->base.key}, &code);
+            (archi_context_op_designator_t){.name = instr_set_to_value->base.key}, &code);
 
     if (code != 0)
     {
@@ -534,10 +711,10 @@ archi_exe_registry_instr_execute_set_value(
         return ARCHI_STATUS_EVALUE;
 
     // Set the context value
-    archi_pointer_t value = instr_set_value->value;
+    archi_pointer_t value = instr_set_to_value->value;
     value.ref_count = ref_count;
 
-    code = archi_context_set_slot(context_value.ptr, instr_set_value->slot, value);
+    code = archi_context_set_slot(context_value.ptr, instr_set_to_value->slot, value);
 
     if (code != 0)
         return ARCHI_STATUS_TO_ERROR(code);
@@ -547,9 +724,9 @@ archi_exe_registry_instr_execute_set_value(
 
 static
 archi_status_t
-archi_exe_registry_instr_execute_set_context(
+archi_exe_registry_instr_execute_set_to_context(
         archi_context_t registry,
-        const archi_exe_registry_instr_set_context_t *instr_set_context,
+        const archi_exe_registry_instr_set_to_context_t *instr_set_to_context,
         archi_reference_count_t ref_count,
         bool dry_run)
 {
@@ -559,49 +736,47 @@ archi_exe_registry_instr_execute_set_context(
     if (archi_log_verbosity() >= ARCHI_LOG_VERBOSITY_DEBUG)
     {
         {
-            PRINT(ARCHI_LOG_INDENT "slot.name = ");
+            PRINT(ARCHI_LOG_INDENT "    slot.name = ");
 
-            if (instr_set_context->slot.name != NULL)
-                PRINT("\"%s\"\n", instr_set_context->slot.name);
+            if (instr_set_to_context->slot.name != NULL)
+                PRINT("\"%s\"\n", instr_set_to_context->slot.name);
             else
                 PRINT("NULL\n");
         }
 
-        if (instr_set_context->slot.num_indices > 0)
+        if (instr_set_to_context->slot.num_indices > 0)
         {
-            PRINT(ARCHI_LOG_INDENT "slot.indices[%zu] =", instr_set_context->slot.num_indices);
+            PRINT(ARCHI_LOG_INDENT "    slot.indices[%zu] =", instr_set_to_context->slot.num_indices);
 
-            for (size_t i = 0; i < instr_set_context->slot.num_indices; i++)
-                PRINT(" %zu", instr_set_context->slot.index[i]);
+            for (size_t i = 0; i < instr_set_to_context->slot.num_indices; i++)
+                PRINT(" %zu", instr_set_to_context->slot.index[i]);
 
             PRINT("\n");
         }
 
         {
-            PRINT(ARCHI_LOG_INDENT "source_key = ");
+            PRINT(ARCHI_LOG_INDENT "    source_key = ");
 
-            if (instr_set_context->source_key != NULL)
-                PRINT("\"%s\"\n", instr_set_context->source_key);
+            if (instr_set_to_context->source_key != NULL)
+                PRINT("\"%s\"\n", instr_set_to_context->source_key);
             else
                 PRINT("NULL\n");
         }
     }
 
-    archi_print_unlock(ARCHI_LOG_VERBOSITY_DEBUG);
-
     if (dry_run)
         return 0;
 
-    if ((instr_set_context->base.key == NULL) || (instr_set_context->base.key[0] == '\0'))
+    if ((instr_set_to_context->base.key == NULL) || (instr_set_to_context->base.key[0] == '\0'))
         return ARCHI_STATUS_EMISUSE;
-    else if ((instr_set_context->source_key == NULL) || (instr_set_context->source_key[0] == '\0'))
+    else if ((instr_set_to_context->source_key == NULL) || (instr_set_to_context->source_key[0] == '\0'))
         return ARCHI_STATUS_EMISUSE;
 
     archi_status_t code;
 
     // Obtain the context from the registry
     archi_pointer_t context_value = archi_context_get_slot(registry,
-            (archi_context_op_designator_t){.name = instr_set_context->base.key}, &code);
+            (archi_context_op_designator_t){.name = instr_set_to_context->base.key}, &code);
 
     if (code != 0)
     {
@@ -618,7 +793,7 @@ archi_exe_registry_instr_execute_set_context(
 
     // Obtain the source context from the registry
     archi_pointer_t src_context_value = archi_context_get_slot(registry,
-            (archi_context_op_designator_t){.name = instr_set_context->source_key}, &code);
+            (archi_context_op_designator_t){.name = instr_set_to_context->source_key}, &code);
 
     if (code != 0)
     {
@@ -634,7 +809,7 @@ archi_exe_registry_instr_execute_set_context(
         return ARCHI_STATUS_EVALUE;
 
     // Set the context value
-    code = archi_context_set_slot(context_value.ptr, instr_set_context->slot,
+    code = archi_context_set_slot(context_value.ptr, instr_set_to_context->slot,
             archi_context_data(src_context_value.ptr));
 
     if (code != 0)
@@ -645,9 +820,9 @@ archi_exe_registry_instr_execute_set_context(
 
 static
 archi_status_t
-archi_exe_registry_instr_execute_set_slot(
+archi_exe_registry_instr_execute_set_to_slot(
         archi_context_t registry,
-        const archi_exe_registry_instr_set_slot_t *instr_set_slot,
+        const archi_exe_registry_instr_set_to_slot_t *instr_set_to_slot,
         archi_reference_count_t ref_count,
         bool dry_run)
 {
@@ -657,69 +832,67 @@ archi_exe_registry_instr_execute_set_slot(
     if (archi_log_verbosity() >= ARCHI_LOG_VERBOSITY_DEBUG)
     {
         {
-            PRINT(ARCHI_LOG_INDENT "slot.name = ");
+            PRINT(ARCHI_LOG_INDENT "    slot.name = ");
 
-            if (instr_set_slot->slot.name != NULL)
-                PRINT("\"%s\"\n", instr_set_slot->slot.name);
+            if (instr_set_to_slot->slot.name != NULL)
+                PRINT("\"%s\"\n", instr_set_to_slot->slot.name);
             else
                 PRINT("NULL\n");
         }
 
-        if (instr_set_slot->slot.num_indices > 0)
+        if (instr_set_to_slot->slot.num_indices > 0)
         {
-            PRINT(ARCHI_LOG_INDENT "slot.indices[%zu] =", instr_set_slot->slot.num_indices);
+            PRINT(ARCHI_LOG_INDENT "    slot.indices[%zu] =", instr_set_to_slot->slot.num_indices);
 
-            for (size_t i = 0; i < instr_set_slot->slot.num_indices; i++)
-                PRINT(" %zu", instr_set_slot->slot.index[i]);
+            for (size_t i = 0; i < instr_set_to_slot->slot.num_indices; i++)
+                PRINT(" %zu", instr_set_to_slot->slot.index[i]);
 
             PRINT("\n");
         }
 
         {
-            PRINT(ARCHI_LOG_INDENT "source_key = ");
+            PRINT(ARCHI_LOG_INDENT "    source_key = ");
 
-            if (instr_set_slot->source_key != NULL)
-                PRINT("\"%s\"\n", instr_set_slot->source_key);
+            if (instr_set_to_slot->source_key != NULL)
+                PRINT("\"%s\"\n", instr_set_to_slot->source_key);
             else
                 PRINT("NULL\n");
         }
 
         {
-            PRINT(ARCHI_LOG_INDENT "source_slot.name = ");
+            PRINT(ARCHI_LOG_INDENT "    source_slot.name = ");
 
-            if (instr_set_slot->source_slot.name != NULL)
-                PRINT("\"%s\"\n", instr_set_slot->source_slot.name);
+            if (instr_set_to_slot->source_slot.name != NULL)
+                PRINT("\"%s\"\n", instr_set_to_slot->source_slot.name);
             else
                 PRINT("NULL\n");
         }
 
-        if (instr_set_slot->source_slot.num_indices > 0)
+        if (instr_set_to_slot->source_slot.num_indices > 0)
         {
-            PRINT(ARCHI_LOG_INDENT "source_slot.indices[%zu] =",
-                    instr_set_slot->source_slot.num_indices);
+            PRINT(ARCHI_LOG_INDENT "    source_slot.indices[%zu] =",
+                    instr_set_to_slot->source_slot.num_indices);
 
-            for (size_t i = 0; i < instr_set_slot->source_slot.num_indices; i++)
-                PRINT(" %zu", instr_set_slot->source_slot.index[i]);
+            for (size_t i = 0; i < instr_set_to_slot->source_slot.num_indices; i++)
+                PRINT(" %zu", instr_set_to_slot->source_slot.index[i]);
 
             PRINT("\n");
         }
     }
 
-    archi_print_unlock(ARCHI_LOG_VERBOSITY_DEBUG);
-
     if (dry_run)
         return 0;
 
-    if ((instr_set_slot->base.key == NULL) || (instr_set_slot->base.key[0] == '\0'))
+    if ((instr_set_to_slot->base.key == NULL) || (instr_set_to_slot->base.key[0] == '\0'))
         return ARCHI_STATUS_EMISUSE;
-    else if ((instr_set_slot->source_key == NULL) || (instr_set_slot->source_key[0] == '\0'))
+    else if ((instr_set_to_slot->source_key == NULL) || (instr_set_to_slot->source_key[0] == '\0'))
         return ARCHI_STATUS_EMISUSE;
 
     archi_status_t code;
 
     // Obtain the context from the registry
     archi_pointer_t context_value = archi_context_get_slot(registry,
-            (archi_context_op_designator_t){.name = instr_set_slot->base.key}, &code);
+            (archi_context_op_designator_t){.name = instr_set_to_slot->base.key}, &code);
 
     if (code != 0)
     {
@@ -736,7 +909,7 @@ archi_exe_registry_instr_execute_set_slot(
 
     // Obtain the source context from the registry
     archi_pointer_t src_context_value = archi_context_get_slot(registry,
-            (archi_context_op_designator_t){.name = instr_set_slot->source_key}, &code);
+            (archi_context_op_designator_t){.name = instr_set_to_slot->source_key}, &code);
 
     if (code != 0)
     {
@@ -752,8 +925,8 @@ archi_exe_registry_instr_execute_set_slot(
         return ARCHI_STATUS_EVALUE;
 
     // Set the context value
-    code = archi_context_copy_slot(context_value.ptr, instr_set_slot->slot,
-            src_context_value.ptr, instr_set_slot->source_slot);
+    code = archi_context_copy_slot(context_value.ptr, instr_set_to_slot->slot,
+            src_context_value.ptr, instr_set_to_slot->source_slot);
 
     if (code != 0)
         return ARCHI_STATUS_TO_ERROR(code);
@@ -773,7 +946,7 @@ archi_exe_registry_instr_execute_act(
     if (archi_log_verbosity() >= ARCHI_LOG_VERBOSITY_DEBUG)
     {
         {
-            PRINT(ARCHI_LOG_INDENT "action.name = ");
+            PRINT(ARCHI_LOG_INDENT "    action.name = ");
 
             if (instr_act->action.name != NULL)
                 PRINT("\"%s\"\n", instr_act->action.name);
@@ -783,7 +956,7 @@ archi_exe_registry_instr_execute_act(
 
         if (instr_act->action.num_indices > 0)
         {
-            PRINT(ARCHI_LOG_INDENT "action.indices[%zu] =", instr_act->action.num_indices);
+            PRINT(ARCHI_LOG_INDENT "    action.indices[%zu] =", instr_act->action.num_indices);
 
             for (size_t i = 0; i < instr_act->action.num_indices; i++)
                 PRINT(" %zu", instr_act->action.index[i]);
@@ -792,7 +965,7 @@ archi_exe_registry_instr_execute_act(
         }
 
         {
-            PRINT(ARCHI_LOG_INDENT "dparams_key = ");
+            PRINT(ARCHI_LOG_INDENT "    dparams_key = ");
 
             if (instr_act->dparams_key != NULL)
                 PRINT("\"%s\"\n", instr_act->dparams_key);
@@ -801,18 +974,16 @@ archi_exe_registry_instr_execute_act(
         }
 
         {
-            PRINT(ARCHI_LOG_INDENT "sparams:\n");
+            PRINT(ARCHI_LOG_INDENT "    sparams:\n");
 
             for (const archi_parameter_list_t *params = instr_act->sparams;
                     params != NULL; params = params->next)
             {
-                PRINT(ARCHI_LOG_INDENT "  %s = ", params->name);
-                archi_print_value(ARCHI_LOG_INDENT "    ", params->value);
+                PRINT(ARCHI_LOG_INDENT "      \"%s\" = ", params->name);
+                archi_print_value(ARCHI_LOG_INDENT "        ", params->value);
             }
         }
     }
-
-    archi_print_unlock(ARCHI_LOG_VERBOSITY_DEBUG);
 
     if (dry_run)
         return 0;
@@ -863,7 +1034,7 @@ archi_exe_registry_instr_execute_act(
     }
 
     archi_parameter_list_t *params = archi_exe_registry_instr_params_alloc(dparams, instr_act->sparams, ref_count);
-    if (params == NULL)
+    if ((params == NULL) && ((dparams != NULL) || (instr_act->sparams != NULL)))
         return ARCHI_STATUS_ENOMEMORY;
 
     // Invoke the context action
@@ -888,10 +1059,15 @@ archi_exe_registry_instr_execute(
         return ARCHI_STATUS_EMISUSE;
 
     archi_print_lock(ARCHI_LOG_VERBOSITY_DEBUG);
+    PRINT(ARCHI_LOG_COLOR_DEBUG);
 
     if ((instruction == NULL) || (instruction->type == ARCHI_EXE_REGISTRY_INSTR_NOOP))
     {
         PRINT(ARCHI_LOG_INDENT "instruction(NOOP)\n");
+
+        PRINT(ARCHI_COLOR_RESET);
+        archi_print_unlock(ARCHI_LOG_VERBOSITY_DEBUG);
+
         return 0;
     }
 
@@ -903,50 +1079,70 @@ archi_exe_registry_instr_execute(
             PRINT("NULL\n");                                        \
     } while (0)
 
+    archi_status_t code;
+
     switch (instruction->type)
     {
-        case ARCHI_EXE_REGISTRY_INSTR_INIT:
-            PRINT_INSTRUCTION_BASE(INIT);
+        case ARCHI_EXE_REGISTRY_INSTR_INIT_FROM_CONTEXT:
+            PRINT_INSTRUCTION_BASE(INIT_FROM_CONTEXT);
 
-            return archi_exe_registry_instr_execute_init(registry,
-                    (const archi_exe_registry_instr_init_t*)instruction, ref_count, dry_run);
+            code = archi_exe_registry_instr_execute_init_from_context(registry,
+                    (const archi_exe_registry_instr_init_from_context_t*)instruction, ref_count, dry_run);
+            break;
+
+        case ARCHI_EXE_REGISTRY_INSTR_INIT_FROM_SLOT:
+            PRINT_INSTRUCTION_BASE(INIT_FROM_SLOT);
+
+            code = archi_exe_registry_instr_execute_init_from_slot(registry,
+                    (const archi_exe_registry_instr_init_from_slot_t*)instruction, ref_count, dry_run);
+            break;
 
         case ARCHI_EXE_REGISTRY_INSTR_FINAL:
             PRINT_INSTRUCTION_BASE(FINAL);
 
-            return archi_exe_registry_instr_execute_final(registry,
+            code = archi_exe_registry_instr_execute_final(registry,
                     instruction, ref_count, dry_run);
+            break;
 
-        case ARCHI_EXE_REGISTRY_INSTR_SET_VALUE:
-            PRINT_INSTRUCTION_BASE(SET_VALUE);
+        case ARCHI_EXE_REGISTRY_INSTR_SET_TO_VALUE:
+            PRINT_INSTRUCTION_BASE(SET_TO_VALUE);
 
-            return archi_exe_registry_instr_execute_set_value(registry,
-                    (const archi_exe_registry_instr_set_value_t*)instruction, ref_count, dry_run);
+            code = archi_exe_registry_instr_execute_set_to_value(registry,
+                    (const archi_exe_registry_instr_set_to_value_t*)instruction, ref_count, dry_run);
+            break;
 
-        case ARCHI_EXE_REGISTRY_INSTR_SET_CONTEXT:
-            PRINT_INSTRUCTION_BASE(SET_CONTEXT);
+        case ARCHI_EXE_REGISTRY_INSTR_SET_TO_CONTEXT:
+            PRINT_INSTRUCTION_BASE(SET_TO_CONTEXT);
 
-            return archi_exe_registry_instr_execute_set_context(registry,
-                    (const archi_exe_registry_instr_set_context_t*)instruction, ref_count, dry_run);
+            code = archi_exe_registry_instr_execute_set_to_context(registry,
+                    (const archi_exe_registry_instr_set_to_context_t*)instruction, ref_count, dry_run);
+            break;
 
-        case ARCHI_EXE_REGISTRY_INSTR_SET_SLOT:
-            PRINT_INSTRUCTION_BASE(SET_SLOT);
+        case ARCHI_EXE_REGISTRY_INSTR_SET_TO_SLOT:
+            PRINT_INSTRUCTION_BASE(SET_TO_SLOT);
 
-            return archi_exe_registry_instr_execute_set_slot(registry,
-                    (const archi_exe_registry_instr_set_slot_t*)instruction, ref_count, dry_run);
+            code = archi_exe_registry_instr_execute_set_to_slot(registry,
+                    (const archi_exe_registry_instr_set_to_slot_t*)instruction, ref_count, dry_run);
+            break;
 
         case ARCHI_EXE_REGISTRY_INSTR_ACT:
             PRINT_INSTRUCTION_BASE(ACT);
 
-            return archi_exe_registry_instr_execute_act(registry,
+            code = archi_exe_registry_instr_execute_act(registry,
                     (const archi_exe_registry_instr_act_t*)instruction, ref_count, dry_run);
+            break;
 
         default:
             PRINT_INSTRUCTION_BASE(<unknown>);
 
-            return !dry_run ? ARCHI_STATUS_EMISUSE : 0;
+            code = !dry_run ? ARCHI_STATUS_EMISUSE : 0;
     }
 
 #undef PRINT_INSTRUCTION_BASE
+
+    PRINT(ARCHI_COLOR_RESET);
+    archi_print_unlock(ARCHI_LOG_VERBOSITY_DEBUG);
+
+    return code;
 }
 

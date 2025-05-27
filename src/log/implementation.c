@@ -197,36 +197,6 @@ archi_log(
 
 /*****************************************************************************/
 
-/**
- * @defgroup ArchiLogColorConstants  Message Color Constants
- * @brief ANSI color codes used to colorize log output per level.
- * @{
- */
-
-#define ARCHI_LOG_COLOR_ERROR       ARCHI_COLOR_FG_BRI_RED      ///< Color for error messages.
-#define ARCHI_LOG_COLOR_WARNING     ARCHI_COLOR_FG_BRI_YELLOW   ///< Color for warning messages.
-#define ARCHI_LOG_COLOR_NOTICE      ARCHI_COLOR_FG_BRI_BLUE     ///< Color for notice messages.
-#define ARCHI_LOG_COLOR_INFO        "" /* default color */      ///< Color for info messages.
-#define ARCHI_LOG_COLOR_DEBUG       ARCHI_COLOR_FG_BRI_BLACK    ///< Color for debug messages.
-
-/** @} end of ArchiLogColorConstants */
-
-/**
- * @defgroup ArchiLogLevelNameConstants  Message Level Name Constants
- * @brief Short identifiers prepended to each log line to denote severity.
- * @{
- */
-
-#define ARCHI_LOG_LEVEL_NAME_ERROR      "ERR"   ///< Severity level name for error messages.
-#define ARCHI_LOG_LEVEL_NAME_WARNING    "WRN"   ///< Severity level name for warning messages.
-#define ARCHI_LOG_LEVEL_NAME_NOTICE     "NTC"   ///< Severity level name for notice messages.
-#define ARCHI_LOG_LEVEL_NAME_INFO       "INF"   ///< Severity level name for info messages.
-#define ARCHI_LOG_LEVEL_NAME_DEBUG      "DBG"   ///< Severity level name for debug messages.
-
-/** @} end of ArchiLogLevelNameConstants */
-
-/*****************************************************************************/
-
 void
 archi_log_error(
         const char *module,
@@ -239,7 +209,7 @@ archi_log_error(
     va_list args;
     va_start(args, format);
 
-    archi_log(ARCHI_LOG_LEVEL_NAME_ERROR, ARCHI_LOG_COLOR_ERROR, module, format, args);
+    archi_log("ERR", ARCHI_LOG_COLOR_ERROR, module, format, args);
 
     va_end(args);
 }
@@ -256,7 +226,7 @@ archi_log_warning(
     va_list args;
     va_start(args, format);
 
-    archi_log(ARCHI_LOG_LEVEL_NAME_WARNING, ARCHI_LOG_COLOR_WARNING, module, format, args);
+    archi_log("WRN", ARCHI_LOG_COLOR_WARNING, module, format, args);
 
     va_end(args);
 }
@@ -273,7 +243,7 @@ archi_log_notice(
     va_list args;
     va_start(args, format);
 
-    archi_log(ARCHI_LOG_LEVEL_NAME_NOTICE, ARCHI_LOG_COLOR_NOTICE, module, format, args);
+    archi_log("NTC", ARCHI_LOG_COLOR_NOTICE, module, format, args);
 
     va_end(args);
 }
@@ -290,7 +260,7 @@ archi_log_info(
     va_list args;
     va_start(args, format);
 
-    archi_log(ARCHI_LOG_LEVEL_NAME_INFO, ARCHI_LOG_COLOR_INFO, module, format, args);
+    archi_log("INF", ARCHI_LOG_COLOR_INFO, module, format, args);
 
     va_end(args);
 }
@@ -307,7 +277,7 @@ archi_log_debug(
     va_list args;
     va_start(args, format);
 
-    archi_log(ARCHI_LOG_LEVEL_NAME_DEBUG, ARCHI_LOG_COLOR_DEBUG, module, format, args);
+    archi_log("DBG", ARCHI_LOG_COLOR_DEBUG, module, format, args);
 
     va_end(args);
 }

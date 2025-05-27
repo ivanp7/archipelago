@@ -132,10 +132,22 @@ ARCHI_CONTEXT_INIT_FUNC(archi_context_pointer_init)
     if (param_element_alignment_set)
         value.element.alignment = layout_fields.alignment;
 
-    if (value.element.num_of == 0)
-        return ARCHI_STATUS_EVALUE;
-    else if ((value.element.alignment & (value.element.alignment - 1)) != 0)
-        return ARCHI_STATUS_EVALUE;
+    if ((value.flags & ARCHI_POINTER_FLAG_FUNCTION) == 0)
+    {
+        if ((value.ptr == NULL) && (value.element.num_of != 0))
+            return ARCHI_STATUS_EVALUE;
+        else if ((value.ptr != NULL) && (value.element.num_of == 0))
+            return ARCHI_STATUS_EVALUE;
+        else if ((value.element.alignment & (value.element.alignment - 1)) != 0)
+            return ARCHI_STATUS_EVALUE;
+    }
+    else
+    {
+        if ((value.fptr == NULL) && (value.element.num_of != 0))
+            return ARCHI_STATUS_EVALUE;
+        else if ((value.fptr != NULL) && (value.element.num_of == 0))
+            return ARCHI_STATUS_EVALUE;
+    }
 
     archi_pointer_t *context_data = malloc(sizeof(*context_data));
     if (context_data == NULL)

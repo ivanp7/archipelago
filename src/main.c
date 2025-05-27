@@ -31,6 +31,13 @@
 #include "archi/exe/registry.def.h"
 #include "archi/exe/instruction.fun.h"
 #include "archi/exe/instruction.typ.h"
+#include "archi/builtin/ds_hashmap/context.var.h"
+#include "archi/builtin/res_file/context.var.h"
+#include "archi/builtin/res_library/context.var.h"
+
+// Signal management
+#include "archi/ipc/signal/api.fun.h"
+#include "archi/builtin/ipc_signal/context.var.h"
 
 // Logging
 #include "archi/exe/logging.fun.h"
@@ -38,22 +45,6 @@
 #include "archi/log/print.fun.h"
 #include "archi/log/print.def.h"
 #include "archi/log/color.def.h"
-
-// Built-in context interfaces
-#include "archi/ctx/interface/parameters.var.h"
-#include "archi/ctx/interface/pointer.var.h"
-#include "archi/builtin/ds_hashmap/context.var.h"
-#include "archi/builtin/ds_lfqueue/context.var.h"
-#include "archi/builtin/hsp/context.var.h"
-#include "archi/builtin/ipc_env/context.var.h"
-#include "archi/builtin/ipc_signal/context.var.h"
-#include "archi/builtin/mem/context.var.h"
-#include "archi/builtin/res_file/context.var.h"
-#include "archi/builtin/res_library/context.var.h"
-#include "archi/builtin/res_thread_group/context.var.h"
-
-// Signal management
-#include "archi/ipc/signal/api.fun.h"
 
 #include <stdlib.h>
 #include <string.h> // for strcmp(), strncmp()
@@ -67,9 +58,7 @@ struct {
     archi_exe_args_t args; ///< Command line arguments.
 
     archi_context_t registry;   ///< The context registry.
-    archi_context_t interfaces; ///< The hashmap of built-in context interfaces.
     archi_context_t exe_handle; ///< The library handle of the executable itself.
-
     archi_context_t *input_file; ///< Array of the input file contexts.
 
     archi_context_t signal; ///< The signal management context.
@@ -98,10 +87,6 @@ create_context_registry(void);
 static
 void
 destroy_context_registry(void);
-
-static
-void
-create_hashmap_of_interfaces(void);
 
 static
 void
@@ -212,9 +197,6 @@ main(
     // Create the context registry
     create_context_registry();
 
-    // Create the hashmap of built-in context interfaces
-    create_hashmap_of_interfaces();
-
     // Obtain handle of the executable
     obtain_handle_of_executable();
 
@@ -257,14 +239,14 @@ exit_cleanup(void) // is called on exit() or if main() returns
 
     archi_log_info(M, "Finalizing the application...");
 
-    // Decrement reference count of the signal management context
-    decrement_refcount_of_signal_management();
+    // Destroy the context registry
+    destroy_context_registry();
 
     // Decrement reference counts of input file contexts
     decrement_refcount_of_input_files();
 
-    // Destroy the context registry
-    destroy_context_registry();
+    // Decrement reference count of the signal management context
+    decrement_refcount_of_signal_management();
 
     // Finalization is done
     archi_log_info(M, "The application has exited successfully.");
@@ -398,119 +380,18 @@ destroy_context_registry(void)
 
     if (archi_process.registry != NULL)
     {
+        archi_log_debug(M, "Removing the context registry from itself...");
+
+        archi_context_set_slot(archi_process.registry,
+                (archi_context_op_designator_t){.name = ARCHI_EXE_REGISTRY_KEY_REGISTRY},
+                (archi_pointer_t){0});
+
         archi_log_debug(M, "Destroying the context registry...");
 
         archi_context_finalize(archi_process.registry);
 
         archi_process.registry = NULL;
     }
-
-#undef M
-}
-
-void
-create_hashmap_of_interfaces(void)
-{
-#define M "main@create_hashmap_of_interfaces()"
-
-    archi_log_debug(M, "Creating the hashmap of built-in context interfaces...");
-
-    if (archi_process.args.dry_run)
-        return;
-
-    size_t hashmap_capacity = 1024;
-
-    archi_parameter_list_t params[] = {
-        {
-            .name = "capacity",
-            .value.ptr = &hashmap_capacity,
-        },
-    };
-
-    archi_status_t code;
-
-    archi_process.interfaces = archi_context_initialize(
-            (archi_pointer_t){.ptr = (void*)&archi_context_ds_hashmap_interface},
-            params, &code);
-
-    if (archi_process.interfaces == NULL)
-    {
-        archi_log_error(M, "Couldn't create the hashmap of built-in context interfaces (error %i).", code);
-        exit(EXIT_FAILURE);
-    }
-
-    archi_log_debug(M, "Inserting the hashmap of interfaces into the registry...");
-
-    // Insert the context into the registry, which also increments the reference count
-    code = archi_context_set_slot(archi_process.registry,
-            (archi_context_op_designator_t){.name = ARCHI_EXE_REGISTRY_KEY_INTERFACES},
-            (archi_pointer_t){
-                .ptr = archi_process.interfaces,
-                .ref_count = archi_context_data(archi_process.interfaces).ref_count,
-                .element.num_of = 1,
-            });
-
-    // Decrement the reference count back to 1
-    archi_reference_count_decrement(archi_context_data(archi_process.interfaces).ref_count);
-
-    // Reset the separate context pointer as it isn't needed anymore
-    archi_process.interfaces = NULL;
-
-    if (code != 0)
-    {
-        archi_log_error(M, "Couldn't insert the hashmap of interfaces into the registry (error %i).", code);
-        exit(EXIT_FAILURE);
-    }
-
-    archi_log_debug(M, "Inserting built-in context interfaces into the hashmap...");
-
-#define BUILTIN_INTERFACE(iface)  do {                                  \
-    archi_log_debug(M, " + archi_context_" #iface "_interface");        \
-    \
-    code = archi_context_set_slot(archi_process.interfaces,             \
-            (archi_context_op_designator_t){.name = #iface},            \
-            (archi_pointer_t){                                          \
-                .ptr = (void*)&archi_context_##iface##_interface,       \
-                .element = {                                            \
-                    .num_of = 1,                                        \
-                    .size = sizeof(archi_context_interface_t),          \
-                    .alignment = alignof(archi_context_interface_t),    \
-                }});                                                    \
-    \
-    if (code != 0) {                                                    \
-        archi_log_error(M, "Couldn't insert archi_context_" #iface      \
-                "_interface into the hashmap of interfaces (error %i).", code); \
-        exit(EXIT_FAILURE);                                             \
-    } } while (0)
-
-    // After modifying this list, don't forget to update the help message in `exe/args.c`
-
-    BUILTIN_INTERFACE(parameters);
-    BUILTIN_INTERFACE(pointer);
-
-    BUILTIN_INTERFACE(memory);
-    BUILTIN_INTERFACE(memory_mapping);
-
-    BUILTIN_INTERFACE(hsp_state);
-    BUILTIN_INTERFACE(hsp_transition);
-    BUILTIN_INTERFACE(hsp);
-    BUILTIN_INTERFACE(hsp_frame);
-    BUILTIN_INTERFACE(hsp_branch_state_data);
-
-    BUILTIN_INTERFACE(ds_hashmap);
-    BUILTIN_INTERFACE(ds_lfqueue);
-
-    BUILTIN_INTERFACE(ipc_env);
-    BUILTIN_INTERFACE(ipc_signal_handler);
-
-    BUILTIN_INTERFACE(res_file);
-    BUILTIN_INTERFACE(res_library);
-    BUILTIN_INTERFACE(res_thread_group);
-    BUILTIN_INTERFACE(res_thread_group_work);
-    BUILTIN_INTERFACE(res_thread_group_callback);
-    BUILTIN_INTERFACE(res_thread_group_dispatch_data);
-
-#undef BUILTIN_INTERFACE
 
 #undef M
 }
@@ -525,18 +406,11 @@ obtain_handle_of_executable(void)
     if (archi_process.args.dry_run)
         return;
 
-    archi_parameter_list_t params[] = {
-        {
-            .name = "pathname",
-            // value.ptr is NULL
-        },
-    };
-
     archi_status_t code;
 
     archi_process.exe_handle = archi_context_initialize(
             (archi_pointer_t){.ptr = (void*)&archi_context_res_library_interface},
-            params, &code);
+            NULL, &code);
 
     if (archi_process.exe_handle == NULL)
     {
@@ -548,7 +422,7 @@ obtain_handle_of_executable(void)
 
     // Insert the context into the registry, which also increments the reference count
     code = archi_context_set_slot(archi_process.registry,
-            (archi_context_op_designator_t){.name = ARCHI_EXE_REGISTRY_KEY_EXE_HANDLE},
+            (archi_context_op_designator_t){.name = ARCHI_EXE_REGISTRY_KEY_EXECUTABLE},
             (archi_pointer_t){
                 .ptr = archi_process.exe_handle,
                 .ref_count = archi_context_data(archi_process.exe_handle).ref_count,
@@ -558,14 +432,14 @@ obtain_handle_of_executable(void)
     // Decrement the reference count back to 1
     archi_reference_count_decrement(archi_context_data(archi_process.exe_handle).ref_count);
 
-    // Reset the separate context pointer as it isn't needed anymore
-    archi_process.exe_handle = NULL;
-
     if (code != 0)
     {
         archi_log_error(M, "Couldn't insert handle of the executable into the registry (error %i).", code);
         exit(EXIT_FAILURE);
     }
+
+    // Reset the separate context pointer as it isn't needed anymore
+    archi_process.exe_handle = NULL;
 
 #undef M
 }
@@ -700,9 +574,10 @@ preliminary_pass_of_input_files(void)
 
                 {
                     archi_print_lock(ARCHI_LOG_VERBOSITY_DEBUG);
-                    archi_print(ARCHI_LOG_VERBOSITY_DEBUG, ARCHI_LOG_INDENT "  signals =");
+                    archi_print(ARCHI_LOG_VERBOSITY_DEBUG, ARCHI_LOG_COLOR_DEBUG
+                            ARCHI_LOG_INDENT "  signals =");
                     print_signal_watch_set(ARCHI_LOG_VERBOSITY_DEBUG, signal_watch_set);
-                    archi_print(ARCHI_LOG_VERBOSITY_DEBUG, "\n");
+                    archi_print(ARCHI_LOG_VERBOSITY_DEBUG, ARCHI_COLOR_RESET "\n");
                     archi_print_unlock(ARCHI_LOG_VERBOSITY_DEBUG);
                 }
             }
@@ -725,16 +600,19 @@ decrement_refcount_of_input_files(void)
 {
 #define M "exit@decrement_refcount_of_input_files()"
 
-    archi_log_debug(M, "Decrementing reference counts of input file contexts...");
-
-    for (size_t i = 0; i < archi_process.args.num_inputs; i++)
+    if (archi_process.input_file != NULL)
     {
-        if (archi_process.input_file[i] != NULL)
-            archi_reference_count_decrement(archi_context_data(archi_process.input_file[i]).ref_count);
-    }
+        archi_log_debug(M, "Decrementing reference counts of input file contexts...");
 
-    free(archi_process.input_file);
-    archi_process.input_file = NULL;
+        for (size_t i = 0; i < archi_process.args.num_inputs; i++)
+        {
+            if (archi_process.input_file[i] != NULL)
+                archi_reference_count_decrement(archi_context_data(archi_process.input_file[i]).ref_count);
+        }
+
+        free(archi_process.input_file);
+        archi_process.input_file = NULL;
+    }
 
 #undef M
 }
@@ -775,9 +653,10 @@ start_signal_management(void)
 
         {
             archi_print_lock(ARCHI_LOG_VERBOSITY_DEBUG);
-            archi_print(ARCHI_LOG_VERBOSITY_DEBUG, ARCHI_LOG_INDENT "  signals =");
+            archi_print(ARCHI_LOG_VERBOSITY_DEBUG, ARCHI_LOG_COLOR_DEBUG
+                    ARCHI_LOG_INDENT "  signals =");
             print_signal_watch_set(ARCHI_LOG_VERBOSITY_DEBUG, archi_process.signal_watch_set);
-            archi_print(ARCHI_LOG_VERBOSITY_DEBUG, "\n");
+            archi_print(ARCHI_LOG_VERBOSITY_DEBUG, ARCHI_COLOR_RESET "\n");
             archi_print_unlock(ARCHI_LOG_VERBOSITY_DEBUG);
         }
 
@@ -840,9 +719,9 @@ decrement_refcount_of_signal_management(void)
         archi_log_debug(M, "Decrementing reference count of the signal management context...");
 
         archi_reference_count_decrement(archi_context_data(archi_process.signal).ref_count);
+        archi_process.signal = NULL;
     }
 
-    archi_process.signal = NULL;
     archi_process.signal_interface = (archi_context_interface_t){0};
 
 #undef M
@@ -863,8 +742,14 @@ execute_instructions(void)
         archi_log_debug(M, " * inserting mapped memory of file #%zu into the registry...", i);
         {
             // Insert the context into the registry, which also increments the reference count
+            size_t slot_index = 1; // allow updating value for the existing key in the hashmap
+
             archi_status_t code = archi_context_set_slot(archi_process.registry,
-                    (archi_context_op_designator_t){.name = ARCHI_EXE_REGISTRY_KEY_INPUT_FILE},
+                    (archi_context_op_designator_t){
+                        .name = ARCHI_EXE_REGISTRY_KEY_INPUT_FILE,
+                        .index = &slot_index,
+                        .num_indices = 1,
+                    },
                     (archi_pointer_t){
                         .ptr = archi_process.input_file[i],
                         .ref_count = file.ref_count,
@@ -876,28 +761,6 @@ execute_instructions(void)
             if (code != 0)
             {
                 archi_log_error(M, "Couldn't insert mapped memory of file #%zu into the registry (error %i).", i, code);
-                exit(EXIT_FAILURE);
-            }
-        }
-
-        archi_log_debug(M, " * inserting contents of file #%zu into the registry...", i);
-        {
-            archi_exe_registry_instr_init_t instruction = {
-                .base = {
-                    .type = ARCHI_EXE_REGISTRY_INSTR_INIT,
-                    .key = ARCHI_EXE_REGISTRY_KEY_INPUT_CONTENTS,
-                },
-                .sparams = input->contents,
-            };
-
-            archi_status_t code = archi_exe_registry_instr_execute(archi_process.registry,
-                    (archi_exe_registry_instr_base_t*)&instruction, file.ref_count, archi_process.args.dry_run);
-
-            if (code > 0)
-                archi_log_warning(M, "Got non-zero instruction execution status %i, attempting to continue...", code);
-            else if (code < 0)
-            {
-                archi_log_error(M, "Couldn't execute the instruction (error %i).", code);
                 exit(EXIT_FAILURE);
             }
         }
@@ -919,25 +782,6 @@ execute_instructions(void)
         {
             archi_status_t code = archi_exe_registry_instr_execute(archi_process.registry,
                     instr_list->instruction, file.ref_count, archi_process.args.dry_run);
-
-            if (code > 0)
-                archi_log_warning(M, "Got non-zero instruction execution status %i, attempting to continue...", code);
-            else if (code < 0)
-            {
-                archi_log_error(M, "Couldn't execute the instruction (error %i).", code);
-                exit(EXIT_FAILURE);
-            }
-        }
-
-        archi_log_debug(M, " * removing contents of file #%zu from the registry...", i);
-        {
-            archi_exe_registry_instr_base_t instruction = {
-                .type = ARCHI_EXE_REGISTRY_INSTR_FINAL,
-                .key = ARCHI_EXE_REGISTRY_KEY_INPUT_CONTENTS,
-            };
-
-            archi_status_t code = archi_exe_registry_instr_execute(archi_process.registry,
-                    &instruction, file.ref_count, archi_process.args.dry_run);
 
             if (code > 0)
                 archi_log_warning(M, "Got non-zero instruction execution status %i, attempting to continue...", code);
