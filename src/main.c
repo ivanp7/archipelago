@@ -231,7 +231,7 @@ main(
 void
 exit_cleanup(void) // is called on exit() or if main() returns
 {
-#define M "exit_cleanup()"
+#define M "exit()"
 
     ////////////////////////
     // Finalization phase //
@@ -257,7 +257,7 @@ exit_cleanup(void) // is called on exit() or if main() returns
 void
 exit_quick(void) // is called on quick_exit()
 {
-#define M "exit_quick()"
+#define M "exit()"
 
     archi_log_info(M, "The application has exited without finalizing contexts and releasing resources.");
 
@@ -318,7 +318,7 @@ print_logo(void)
         archi_print(0, "\n");
     }
 
-    archi_print(0, "\n\n");
+    archi_print(0, "\n");
 
     archi_print_unlock(0);
 
@@ -329,7 +329,7 @@ print_logo(void)
 void
 create_context_registry(void)
 {
-#define M "main@create_context_registry()"
+#define M "main()"
 
     archi_log_debug(M, "Creating the context registry...");
 
@@ -376,7 +376,7 @@ create_context_registry(void)
 void
 destroy_context_registry(void)
 {
-#define M "exit@destroy_context_registry()"
+#define M "exit()"
 
     if (archi_process.registry != NULL)
     {
@@ -399,7 +399,7 @@ destroy_context_registry(void)
 void
 obtain_handle_of_executable(void)
 {
-#define M "main@obtain_handle_of_executable()"
+#define M "main()"
 
     archi_log_debug(M, "Obtaining library handle of the executable itself...");
 
@@ -447,7 +447,7 @@ obtain_handle_of_executable(void)
 void
 open_and_map_input_files(void)
 {
-#define M "main@open_and_map_input_files()"
+#define M "main()"
 
     archi_log_debug(M, "Allocating the array of input file contexts...");
 
@@ -549,7 +549,7 @@ open_and_map_input_files(void)
 void
 preliminary_pass_of_input_files(void)
 {
-#define M "main@preliminary_pass_of_input_files()"
+#define M "main()"
 
     archi_log_debug(M, "Passing lists of contents of input files...");
 
@@ -598,7 +598,7 @@ preliminary_pass_of_input_files(void)
 void
 decrement_refcount_of_input_files(void)
 {
-#define M "exit@decrement_refcount_of_input_files()"
+#define M "exit()"
 
     if (archi_process.input_file != NULL)
     {
@@ -620,7 +620,7 @@ decrement_refcount_of_input_files(void)
 void
 prepare_signal_management(void)
 {
-#define M "main@prepare_signal_management()"
+#define M "main()"
 
     archi_process.signal_interface = (archi_context_interface_t){
         .init_fn = archi_context_ipc_signal_management_init,
@@ -645,7 +645,7 @@ prepare_signal_management(void)
 void
 start_signal_management(void)
 {
-#define M "main@start_signal_management()"
+#define M "main()"
 
     if (archi_signal_watch_set_not_empty(archi_process.signal_watch_set))
     {
@@ -712,7 +712,7 @@ start_signal_management(void)
 void
 decrement_refcount_of_signal_management(void)
 {
-#define M "exit@decrement_refcount_of_signal_management()"
+#define M "exit()"
 
     if (archi_process.signal != NULL)
     {
@@ -730,7 +730,7 @@ decrement_refcount_of_signal_management(void)
 void
 execute_instructions(void)
 {
-#define M "main@execute_instructions()"
+#define M "main()"
 
     archi_log_debug(M, "Executing instructions in input files...");
 
