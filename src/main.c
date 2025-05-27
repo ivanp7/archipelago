@@ -572,14 +572,19 @@ preliminary_pass_of_input_files(void)
                 archi_signal_watch_set_t *signal_watch_set = contents->value.ptr;
                 archi_signal_watch_set_join(archi_process.signal_watch_set, signal_watch_set);
 
+                archi_print_lock(ARCHI_LOG_VERBOSITY_DEBUG);
                 {
-                    archi_print_lock(ARCHI_LOG_VERBOSITY_DEBUG);
-                    archi_print(ARCHI_LOG_VERBOSITY_DEBUG, ARCHI_LOG_COLOR_DEBUG
-                            ARCHI_LOG_INDENT "  signals =");
+                    if (archi_log_colorful())
+                        archi_print(ARCHI_LOG_VERBOSITY_DEBUG, ARCHI_LOG_COLOR_DEBUG);
+
+                    archi_print(ARCHI_LOG_VERBOSITY_DEBUG, ARCHI_LOG_INDENT "  signals =");
                     print_signal_watch_set(ARCHI_LOG_VERBOSITY_DEBUG, signal_watch_set);
-                    archi_print(ARCHI_LOG_VERBOSITY_DEBUG, ARCHI_COLOR_RESET "\n");
-                    archi_print_unlock(ARCHI_LOG_VERBOSITY_DEBUG);
+                    archi_print(ARCHI_LOG_VERBOSITY_DEBUG, "\n");
+
+                    if (archi_log_colorful())
+                        archi_print(ARCHI_LOG_VERBOSITY_DEBUG, ARCHI_COLOR_RESET);
                 }
+                archi_print_unlock(ARCHI_LOG_VERBOSITY_DEBUG);
             }
             else if (strcmp(ARCHI_EXE_INPUT_FILE_CONTENTS_KEY_INSTRUCTIONS, contents->name) == 0)
             {
@@ -651,14 +656,19 @@ start_signal_management(void)
     {
         archi_log_debug(M, "Creating the signal management context...");
 
+        archi_print_lock(ARCHI_LOG_VERBOSITY_DEBUG);
         {
-            archi_print_lock(ARCHI_LOG_VERBOSITY_DEBUG);
-            archi_print(ARCHI_LOG_VERBOSITY_DEBUG, ARCHI_LOG_COLOR_DEBUG
-                    ARCHI_LOG_INDENT "  signals =");
+            if (archi_log_colorful())
+                archi_print(ARCHI_LOG_VERBOSITY_DEBUG, ARCHI_LOG_COLOR_DEBUG);
+
+            archi_print(ARCHI_LOG_VERBOSITY_DEBUG, ARCHI_LOG_INDENT "  signals =");
             print_signal_watch_set(ARCHI_LOG_VERBOSITY_DEBUG, archi_process.signal_watch_set);
-            archi_print(ARCHI_LOG_VERBOSITY_DEBUG, ARCHI_COLOR_RESET "\n");
-            archi_print_unlock(ARCHI_LOG_VERBOSITY_DEBUG);
+            archi_print(ARCHI_LOG_VERBOSITY_DEBUG, "\n");
+
+            if (archi_log_colorful())
+                archi_print(ARCHI_LOG_VERBOSITY_DEBUG, ARCHI_COLOR_RESET);
         }
+        archi_print_unlock(ARCHI_LOG_VERBOSITY_DEBUG);
 
         if (archi_process.args.dry_run)
             return;

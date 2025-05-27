@@ -1108,7 +1108,9 @@ archi_exe_registry_instr_execute(
         return ARCHI_STATUS_EMISUSE;
 
     archi_print_lock(ARCHI_LOG_VERBOSITY_DEBUG);
-    PRINT(ARCHI_LOG_COLOR_DEBUG);
+
+    if (archi_log_colorful())
+        PRINT(ARCHI_LOG_COLOR_DEBUG);
 
     if ((instruction == NULL) || (instruction->type == ARCHI_EXE_REGISTRY_INSTR_NOOP))
     {
@@ -1179,7 +1181,9 @@ archi_exe_registry_instr_execute(
             code = !dry_run ? ARCHI_STATUS_EMISUSE : 0;
     }
 
-    PRINT(ARCHI_COLOR_RESET);
+    if (archi_log_colorful())
+        PRINT(ARCHI_COLOR_RESET);
+
     archi_print_unlock(ARCHI_LOG_VERBOSITY_DEBUG);
 
     return code;
