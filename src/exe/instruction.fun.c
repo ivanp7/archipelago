@@ -42,8 +42,16 @@
     archi_print(ARCHI_LOG_VERBOSITY_DEBUG, __VA_ARGS__); \
 } while (0)
 
-#define MAX_ELEMENTS    8
-#define MAX_BYTES       16
+#define MAX_BYTES       32
+
+#define MAX_CHARS       (MAX_BYTES / sizeof(char))
+#define MAX_SHORTS      (MAX_BYTES / sizeof(short))
+#define MAX_INTS        (MAX_BYTES / sizeof(int))
+#define MAX_LONGS       (MAX_BYTES / sizeof(long))
+#define MAX_LONGLONGS   (MAX_BYTES / sizeof(long long))
+#define MAX_FLOATS      (MAX_BYTES / sizeof(float))
+#define MAX_DOUBLES     (MAX_BYTES / sizeof(double))
+#define MAX_LONGDOUBLES (MAX_BYTES / sizeof(long double))
 
 size_t
 archi_exe_registry_instr_sizeof(
@@ -88,9 +96,7 @@ archi_print_value(
 {
     // Print attributes and flags
     {
-        if (value.flags & ARCHI_POINTER_FLAG_FUNCTION)
-            PRINT("FUNCTION");
-        else
+        if ((value.flags & ARCHI_POINTER_FLAG_FUNCTION) == 0)
         {
             if (value.flags & ARCHI_POINTER_FLAG_WRITABLE)
                 PRINT("WRITABLE_DATA");
@@ -98,24 +104,28 @@ archi_print_value(
                 PRINT("READ_ONLY_DATA");
         }
 
+        else
+            PRINT("FUNCTION");
+
         if ((value.flags & ARCHI_POINTER_USER_FLAGS_MASK) != 0)
             PRINT(" | 0x%X", value.flags & ARCHI_POINTER_USER_FLAGS_MASK);
 
         if (value.ref_count != NULL)
-            PRINT("    (ref_count)\n");
+            PRINT(" (ref_count)\n");
 
-        PRINT("\n");
-    }
+        {
+            PRINT(" (");
 
-    // Print array layout
-    {
-        PRINT("%snum_of = %zu", indent, value.element.num_of);
+            PRINT("num = %zu", value.element.num_of);
 
-        if (value.element.size != 0)
-            PRINT(", size = %zu", value.element.size);
+            if (value.element.size != 0)
+                PRINT(", size = %zu", value.element.size);
 
-        if (value.element.alignment != 0)
-            PRINT(", alignment = %zu", value.element.alignment);
+            if (value.element.alignment != 0)
+                PRINT(", align = %zu", value.element.alignment);
+
+            PRINT(")");
+        }
 
         PRINT("\n");
     }
@@ -123,111 +133,95 @@ archi_print_value(
     // Print memory contents
     if (((value.flags & ARCHI_POINTER_FLAG_FUNCTION) == 0) && (value.element.size != 0))
     {
-        for (size_t i = 0; i < MAX_ELEMENTS; i++)
+        size_t alignment = (value.element.alignment != 0) ? value.element.alignment : 1;
+        size_t size_padded = ARCHI_SIZE_PADDED(value.element.size, alignment);
+
         {
-            if (i >= value.element.num_of)
-                break;
+            PRINT("%s  bytes:", indent);
 
-            PRINT("%s  [%zu]:", indent, i);
-
-            size_t alignment = (value.element.alignment != 0) ? value.element.alignment : 1;
-            size_t size_padded = ARCHI_SIZE_PADDED(value.element.size, alignment);
-
-            // Print as integer
-            if (value.element.size == sizeof(char))
+            for (size_t i = 0; i < MAX_BYTES; i++)
             {
-                unsigned char uval;
-                signed char sval;
-
-                memcpy(&uval, (char*)value.ptr + i * size_padded, sizeof(char));
-                memcpy(&sval, (char*)value.ptr + i * size_padded, sizeof(char));
-
-                if (uval >= 32)
-                    PRINT(" '%c' x(%hhx) u(%hhu) i(%hhi)", (int)uval, uval, uval, sval);
-                else
-                    PRINT("     x(%hhx) u(%hhu) i(%hhi)", uval, uval, sval);
-            }
-            else if (value.element.size == sizeof(short))
-            {
-                unsigned short uval;
-                signed short sval;
-
-                memcpy(&uval, (char*)value.ptr + i * size_padded, sizeof(short));
-                memcpy(&sval, (char*)value.ptr + i * size_padded, sizeof(short));
-
-                PRINT(" x(%hx), u(%hu), i(%hi)", uval, uval, sval);
-            }
-            else if (value.element.size == sizeof(int))
-            {
-                unsigned int uval;
-                signed int sval;
-
-                memcpy(&uval, (char*)value.ptr + i * size_padded, sizeof(int));
-                memcpy(&sval, (char*)value.ptr + i * size_padded, sizeof(int));
-
-                PRINT(" x(%x), u(%u), i(%i)", uval, uval, sval);
-            }
-            else if (value.element.size == sizeof(long))
-            {
-                unsigned long uval;
-                signed long sval;
-
-                memcpy(&uval, (char*)value.ptr + i * size_padded, sizeof(long));
-                memcpy(&sval, (char*)value.ptr + i * size_padded, sizeof(long));
-
-                PRINT(" x(%lx), u(%lu), i(%li)", uval, uval, sval);
-            }
-            else if (value.element.size == sizeof(long long))
-            {
-                unsigned long long uval;
-                signed long long sval;
-
-                memcpy(&uval, (char*)value.ptr + i * size_padded, sizeof(long long));
-                memcpy(&sval, (char*)value.ptr + i * size_padded, sizeof(long long));
-
-                PRINT(" x(%llx), u(%llu), i(%lli)", uval, uval, sval);
-            }
-
-            // Print as floating-point number
-            if (value.element.size == sizeof(float))
-            {
-                float val;
-
-                memcpy(&val, (char*)value.ptr + i * size_padded, sizeof(float));
-
-                PRINT(" f(%e)", (double)val);
-            }
-            else if (value.element.size == sizeof(double))
-            {
-                double val;
-
-                memcpy(&val, (char*)value.ptr + i * size_padded, sizeof(double));
-
-                PRINT(" f(%e)", val);
-            }
-            else if (value.element.size == sizeof(long double))
-            {
-                long double val;
-
-                memcpy(&val, (char*)value.ptr + i * size_padded, sizeof(long double));
-
-                PRINT(" f(%Le)", val);
-            }
-
-            PRINT("\n%s   ", indent);
-
-            for (size_t j = 0; j < MAX_BYTES; j++)
-            {
-                if (j >= value.element.size)
+                if (i >= value.element.num_of * value.element.size)
                     break;
 
-                unsigned char uval;
-                memcpy(&uval, (char*)value.ptr + i * size_padded + j, sizeof(char));
+                unsigned char val;
+                memcpy(&val, (char*)value.ptr + i, sizeof(char));
 
-                PRINT(" %02x", (int)uval);
+                PRINT(" %02x", (int)val);
             }
 
             PRINT("\n");
+        }
+
+#define PRINT_ELEMENTS(max_elements, type, name, format) do {   \
+            PRINT("%s  " name ":", indent);                 \
+            for (size_t i = 0; i < (max_elements); i++)     \
+            {                                               \
+                if (i >= value.element.num_of)              \
+                    break;                                  \
+                                                            \
+                type val;                                   \
+                memcpy(&val, (char*)value.ptr +             \
+                        i * size_padded, sizeof(type));     \
+                                                            \
+                PRINT(" " format, val);                     \
+            }                                               \
+            PRINT("\n");                                    \
+        } while (0)
+
+        if (value.element.size == sizeof(char))
+        {
+            PRINT("%s  string: ", indent);
+            for (size_t i = 0; i < MAX_CHARS; i++)
+            {
+                if (i >= value.element.num_of)
+                    break;
+
+                unsigned char val;
+                memcpy(&val, (char*)value.ptr + i * size_padded, sizeof(char));
+
+                if (val >= 32)
+                    PRINT("%c", (int)val);
+                else
+                    PRINT(".");
+            }
+            PRINT("\n");
+
+            PRINT_ELEMENTS(MAX_CHARS, unsigned char, "uchar", "%hhu");
+            PRINT_ELEMENTS(MAX_CHARS, signed char, "schar", "%hhi");
+        }
+        else if (value.element.size == sizeof(short))
+        {
+            PRINT_ELEMENTS(MAX_SHORTS, unsigned short, "ushort", "%hu");
+            PRINT_ELEMENTS(MAX_SHORTS, signed char, "sshort", "%hi");
+        }
+        else if (value.element.size == sizeof(int))
+        {
+            PRINT_ELEMENTS(MAX_INTS, unsigned int, "uint", "%u");
+            PRINT_ELEMENTS(MAX_INTS, signed int, "sint", "%i");
+        }
+        else if (value.element.size == sizeof(long))
+        {
+            PRINT_ELEMENTS(MAX_LONGS, unsigned long, "ulong", "%lu");
+            PRINT_ELEMENTS(MAX_LONGS, signed long, "slong", "%li");
+        }
+        else if (value.element.size == sizeof(long long))
+        {
+            PRINT_ELEMENTS(MAX_LONGLONGS, unsigned long long, "ulonglong", "%llu");
+            PRINT_ELEMENTS(MAX_LONGLONGS, signed long long, "slonglong", "%lli");
+        }
+
+        if (value.element.size == sizeof(float))
+        {
+            PRINT_ELEMENTS(MAX_FLOATS, float, "float", "%e");
+        }
+        else if (value.element.size == sizeof(double))
+        {
+            PRINT_ELEMENTS(MAX_DOUBLES, double, "double", "%e");
+        }
+        else if (value.element.size == sizeof(long double))
+        {
+            PRINT_ELEMENTS(MAX_LONGDOUBLES, long double, "longdouble", "%Le");
         }
     }
 }
@@ -320,7 +314,7 @@ archi_exe_registry_instr_execute_init_from_context(
             for (const archi_parameter_list_t *params = instr_init_from_context->sparams;
                     params != NULL; params = params->next)
             {
-                PRINT(ARCHI_LOG_INDENT "      \"%s\" = ", params->name);
+                PRINT(ARCHI_LOG_INDENT "      \"%s\": ", params->name);
                 archi_print_value(ARCHI_LOG_INDENT "        ", params->value);
             }
         }
@@ -509,7 +503,7 @@ archi_exe_registry_instr_execute_init_from_slot(
             for (const archi_parameter_list_t *params = instr_init_from_slot->sparams;
                     params != NULL; params = params->next)
             {
-                PRINT(ARCHI_LOG_INDENT "      \"%s\" = ", params->name);
+                PRINT(ARCHI_LOG_INDENT "      \"%s\": ", params->name);
                 archi_print_value(ARCHI_LOG_INDENT "        ", params->value);
             }
         }
@@ -1034,7 +1028,7 @@ archi_exe_registry_instr_execute_act(
             for (const archi_parameter_list_t *params = instr_act->sparams;
                     params != NULL; params = params->next)
             {
-                PRINT(ARCHI_LOG_INDENT "      \"%s\" = ", params->name);
+                PRINT(ARCHI_LOG_INDENT "      \"%s\": ", params->name);
                 archi_print_value(ARCHI_LOG_INDENT "        ", params->value);
             }
         }
