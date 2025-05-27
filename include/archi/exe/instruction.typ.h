@@ -52,7 +52,6 @@ typedef enum archi_exe_registry_instr_type {
  */
 typedef struct archi_exe_registry_instr_base {
     archi_exe_registry_instr_type_t type; ///< Instruction type.
-    const char *key; ///< Key of the context.
 } archi_exe_registry_instr_base_t;
 
 struct archi_exe_registry_instr_list;
@@ -80,6 +79,8 @@ typedef struct archi_exe_registry_instr_list {
 typedef struct archi_exe_registry_instr_init_from_context {
     archi_exe_registry_instr_base_t base; ///< Instruction base.
 
+    const char *key; ///< Key of the new context.
+
     const char *interface_source_key; ///< Key of the interface source context.
 
     const char *dparams_key; ///< Key of the dynamic parameter list.
@@ -92,6 +93,8 @@ typedef struct archi_exe_registry_instr_init_from_context {
 typedef struct archi_exe_registry_instr_init_from_slot {
     archi_exe_registry_instr_base_t base; ///< Instruction base.
 
+    const char *key; ///< Key of the new context.
+
     const char *interface_source_key; ///< Key of the interface source context.
     archi_context_op_designator_t interface_source_slot; ///< Interface source slot designator.
 
@@ -100,10 +103,21 @@ typedef struct archi_exe_registry_instr_init_from_slot {
 } archi_exe_registry_instr_init_from_slot_t;
 
 /**
+ * @brief Context registry instruction: finalize a context.
+ */
+typedef struct archi_exe_registry_instr_final {
+    archi_exe_registry_instr_base_t base; ///< Instruction base.
+
+    const char *key; ///< Key of the context.
+} archi_exe_registry_instr_final_t;
+
+/**
  * @brief Context registry instruction: set context slot to pointer to a value.
  */
 typedef struct archi_exe_registry_instr_set_to_value {
     archi_exe_registry_instr_base_t base; ///< Instruction base.
+
+    const char *key; ///< Key of the context.
 
     archi_context_op_designator_t slot; ///< Slot designator.
     archi_pointer_t value; ///< Value to set.
@@ -115,6 +129,8 @@ typedef struct archi_exe_registry_instr_set_to_value {
 typedef struct archi_exe_registry_instr_set_to_context {
     archi_exe_registry_instr_base_t base; ///< Instruction base.
 
+    const char *key; ///< Key of the context.
+
     archi_context_op_designator_t slot; ///< Slot designator.
     const char *source_key; ///< Key of the source context.
 } archi_exe_registry_instr_set_to_context_t;
@@ -124,6 +140,8 @@ typedef struct archi_exe_registry_instr_set_to_context {
  */
 typedef struct archi_exe_registry_instr_set_to_slot {
     archi_exe_registry_instr_base_t base; ///< Instruction base.
+
+    const char *key; ///< Key of the context.
 
     archi_context_op_designator_t slot; ///< Slot designator.
     const char *source_key; ///< Key of the source context.
@@ -135,6 +153,8 @@ typedef struct archi_exe_registry_instr_set_to_slot {
  */
 typedef struct archi_exe_registry_instr_act {
     archi_exe_registry_instr_base_t base; ///< Instruction base.
+
+    const char *key; ///< Key of the context.
 
     archi_context_op_designator_t action; ///< Action designator.
 
