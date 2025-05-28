@@ -72,11 +72,11 @@ archi_exe_registry_instr_sizeof(
         case ARCHI_EXE_REGISTRY_INSTR_SET_TO_VALUE:
             return sizeof(archi_exe_registry_instr_set_to_value_t);
 
-        case ARCHI_EXE_REGISTRY_INSTR_SET_TO_CONTEXT:
-            return sizeof(archi_exe_registry_instr_set_to_context_t);
+        case ARCHI_EXE_REGISTRY_INSTR_SET_TO_CONTEXT_DATA:
+            return sizeof(archi_exe_registry_instr_set_to_context_data_t);
 
-        case ARCHI_EXE_REGISTRY_INSTR_SET_TO_SLOT:
-            return sizeof(archi_exe_registry_instr_set_to_slot_t);
+        case ARCHI_EXE_REGISTRY_INSTR_SET_TO_CONTEXT_SLOT:
+            return sizeof(archi_exe_registry_instr_set_to_context_slot_t);
 
         case ARCHI_EXE_REGISTRY_INSTR_ACT:
             return sizeof(archi_exe_registry_instr_act_t);
@@ -821,9 +821,9 @@ archi_exe_registry_instr_execute_set_to_value(
 
 static
 archi_status_t
-archi_exe_registry_instr_execute_set_to_context(
+archi_exe_registry_instr_execute_set_to_context_data(
         archi_context_t registry,
-        const archi_exe_registry_instr_set_to_context_t *instr_set_to_context,
+        const archi_exe_registry_instr_set_to_context_data_t *instr_set_to_context_data,
         archi_reference_count_t ref_count,
         bool dry_run,
         bool logging)
@@ -836,8 +836,8 @@ archi_exe_registry_instr_execute_set_to_context(
         {
             archi_print(ARCHI_LOG_INDENT "    key = ");
 
-            if (instr_set_to_context->key != NULL)
-                archi_print("\"%s\"\n", instr_set_to_context->key);
+            if (instr_set_to_context_data->key != NULL)
+                archi_print("\"%s\"\n", instr_set_to_context_data->key);
             else
                 archi_print("NULL\n");
         }
@@ -845,18 +845,18 @@ archi_exe_registry_instr_execute_set_to_context(
         {
             archi_print(ARCHI_LOG_INDENT "    slot.name = ");
 
-            if (instr_set_to_context->slot.name != NULL)
-                archi_print("\"%s\"\n", instr_set_to_context->slot.name);
+            if (instr_set_to_context_data->slot.name != NULL)
+                archi_print("\"%s\"\n", instr_set_to_context_data->slot.name);
             else
                 archi_print("NULL\n");
         }
 
-        if (instr_set_to_context->slot.num_indices > 0)
+        if (instr_set_to_context_data->slot.num_indices > 0)
         {
-            archi_print(ARCHI_LOG_INDENT "    slot.indices[%zu] =", instr_set_to_context->slot.num_indices);
+            archi_print(ARCHI_LOG_INDENT "    slot.indices[%zu] =", instr_set_to_context_data->slot.num_indices);
 
-            for (size_t i = 0; i < instr_set_to_context->slot.num_indices; i++)
-                archi_print(" %tu", instr_set_to_context->slot.index[i]);
+            for (size_t i = 0; i < instr_set_to_context_data->slot.num_indices; i++)
+                archi_print(" %tu", instr_set_to_context_data->slot.index[i]);
 
             archi_print("\n");
         }
@@ -864,8 +864,8 @@ archi_exe_registry_instr_execute_set_to_context(
         {
             archi_print(ARCHI_LOG_INDENT "    source_key = ");
 
-            if (instr_set_to_context->source_key != NULL)
-                archi_print("\"%s\"\n", instr_set_to_context->source_key);
+            if (instr_set_to_context_data->source_key != NULL)
+                archi_print("\"%s\"\n", instr_set_to_context_data->source_key);
             else
                 archi_print("NULL\n");
         }
@@ -874,16 +874,16 @@ archi_exe_registry_instr_execute_set_to_context(
     if (dry_run)
         return 0;
 
-    if ((instr_set_to_context->key == NULL) || (instr_set_to_context->key[0] == '\0'))
+    if ((instr_set_to_context_data->key == NULL) || (instr_set_to_context_data->key[0] == '\0'))
         return ARCHI_STATUS_EMISUSE;
-    else if ((instr_set_to_context->source_key == NULL) || (instr_set_to_context->source_key[0] == '\0'))
+    else if ((instr_set_to_context_data->source_key == NULL) || (instr_set_to_context_data->source_key[0] == '\0'))
         return ARCHI_STATUS_EMISUSE;
 
     archi_status_t code;
 
     // Obtain the context from the registry
     archi_pointer_t context_value = archi_context_get_slot(registry,
-            (archi_context_op_designator_t){.name = instr_set_to_context->key}, &code);
+            (archi_context_op_designator_t){.name = instr_set_to_context_data->key}, &code);
 
     if (code != 0)
     {
@@ -900,7 +900,7 @@ archi_exe_registry_instr_execute_set_to_context(
 
     // Obtain the source context from the registry
     archi_pointer_t src_context_value = archi_context_get_slot(registry,
-            (archi_context_op_designator_t){.name = instr_set_to_context->source_key}, &code);
+            (archi_context_op_designator_t){.name = instr_set_to_context_data->source_key}, &code);
 
     if (code != 0)
     {
@@ -916,7 +916,7 @@ archi_exe_registry_instr_execute_set_to_context(
         return ARCHI_STATUS_EVALUE;
 
     // Set the context value
-    code = archi_context_set_slot(context_value.ptr, instr_set_to_context->slot,
+    code = archi_context_set_slot(context_value.ptr, instr_set_to_context_data->slot,
             archi_context_data(src_context_value.ptr));
 
     if (code != 0)
@@ -927,9 +927,9 @@ archi_exe_registry_instr_execute_set_to_context(
 
 static
 archi_status_t
-archi_exe_registry_instr_execute_set_to_slot(
+archi_exe_registry_instr_execute_set_to_context_slot(
         archi_context_t registry,
-        const archi_exe_registry_instr_set_to_slot_t *instr_set_to_slot,
+        const archi_exe_registry_instr_set_to_context_slot_t *instr_set_to_context_slot,
         archi_reference_count_t ref_count,
         bool dry_run,
         bool logging)
@@ -942,8 +942,8 @@ archi_exe_registry_instr_execute_set_to_slot(
         {
             archi_print(ARCHI_LOG_INDENT "    key = ");
 
-            if (instr_set_to_slot->key != NULL)
-                archi_print("\"%s\"\n", instr_set_to_slot->key);
+            if (instr_set_to_context_slot->key != NULL)
+                archi_print("\"%s\"\n", instr_set_to_context_slot->key);
             else
                 archi_print("NULL\n");
         }
@@ -951,18 +951,18 @@ archi_exe_registry_instr_execute_set_to_slot(
         {
             archi_print(ARCHI_LOG_INDENT "    slot.name = ");
 
-            if (instr_set_to_slot->slot.name != NULL)
-                archi_print("\"%s\"\n", instr_set_to_slot->slot.name);
+            if (instr_set_to_context_slot->slot.name != NULL)
+                archi_print("\"%s\"\n", instr_set_to_context_slot->slot.name);
             else
                 archi_print("NULL\n");
         }
 
-        if (instr_set_to_slot->slot.num_indices > 0)
+        if (instr_set_to_context_slot->slot.num_indices > 0)
         {
-            archi_print(ARCHI_LOG_INDENT "    slot.indices[%zu] =", instr_set_to_slot->slot.num_indices);
+            archi_print(ARCHI_LOG_INDENT "    slot.indices[%zu] =", instr_set_to_context_slot->slot.num_indices);
 
-            for (size_t i = 0; i < instr_set_to_slot->slot.num_indices; i++)
-                archi_print(" %tu", instr_set_to_slot->slot.index[i]);
+            for (size_t i = 0; i < instr_set_to_context_slot->slot.num_indices; i++)
+                archi_print(" %tu", instr_set_to_context_slot->slot.index[i]);
 
             archi_print("\n");
         }
@@ -970,8 +970,8 @@ archi_exe_registry_instr_execute_set_to_slot(
         {
             archi_print(ARCHI_LOG_INDENT "    source_key = ");
 
-            if (instr_set_to_slot->source_key != NULL)
-                archi_print("\"%s\"\n", instr_set_to_slot->source_key);
+            if (instr_set_to_context_slot->source_key != NULL)
+                archi_print("\"%s\"\n", instr_set_to_context_slot->source_key);
             else
                 archi_print("NULL\n");
         }
@@ -979,19 +979,19 @@ archi_exe_registry_instr_execute_set_to_slot(
         {
             archi_print(ARCHI_LOG_INDENT "    source_slot.name = ");
 
-            if (instr_set_to_slot->source_slot.name != NULL)
-                archi_print("\"%s\"\n", instr_set_to_slot->source_slot.name);
+            if (instr_set_to_context_slot->source_slot.name != NULL)
+                archi_print("\"%s\"\n", instr_set_to_context_slot->source_slot.name);
             else
                 archi_print("NULL\n");
         }
 
-        if (instr_set_to_slot->source_slot.num_indices > 0)
+        if (instr_set_to_context_slot->source_slot.num_indices > 0)
         {
             archi_print(ARCHI_LOG_INDENT "    source_slot.indices[%zu] =",
-                    instr_set_to_slot->source_slot.num_indices);
+                    instr_set_to_context_slot->source_slot.num_indices);
 
-            for (size_t i = 0; i < instr_set_to_slot->source_slot.num_indices; i++)
-                archi_print(" %tu", instr_set_to_slot->source_slot.index[i]);
+            for (size_t i = 0; i < instr_set_to_context_slot->source_slot.num_indices; i++)
+                archi_print(" %tu", instr_set_to_context_slot->source_slot.index[i]);
 
             archi_print("\n");
         }
@@ -1000,16 +1000,16 @@ archi_exe_registry_instr_execute_set_to_slot(
     if (dry_run)
         return 0;
 
-    if ((instr_set_to_slot->key == NULL) || (instr_set_to_slot->key[0] == '\0'))
+    if ((instr_set_to_context_slot->key == NULL) || (instr_set_to_context_slot->key[0] == '\0'))
         return ARCHI_STATUS_EMISUSE;
-    else if ((instr_set_to_slot->source_key == NULL) || (instr_set_to_slot->source_key[0] == '\0'))
+    else if ((instr_set_to_context_slot->source_key == NULL) || (instr_set_to_context_slot->source_key[0] == '\0'))
         return ARCHI_STATUS_EMISUSE;
 
     archi_status_t code;
 
     // Obtain the context from the registry
     archi_pointer_t context_value = archi_context_get_slot(registry,
-            (archi_context_op_designator_t){.name = instr_set_to_slot->key}, &code);
+            (archi_context_op_designator_t){.name = instr_set_to_context_slot->key}, &code);
 
     if (code != 0)
     {
@@ -1026,7 +1026,7 @@ archi_exe_registry_instr_execute_set_to_slot(
 
     // Obtain the source context from the registry
     archi_pointer_t src_context_value = archi_context_get_slot(registry,
-            (archi_context_op_designator_t){.name = instr_set_to_slot->source_key}, &code);
+            (archi_context_op_designator_t){.name = instr_set_to_context_slot->source_key}, &code);
 
     if (code != 0)
     {
@@ -1042,8 +1042,8 @@ archi_exe_registry_instr_execute_set_to_slot(
         return ARCHI_STATUS_EVALUE;
 
     // Set the context value
-    code = archi_context_copy_slot(context_value.ptr, instr_set_to_slot->slot,
-            src_context_value.ptr, instr_set_to_slot->source_slot);
+    code = archi_context_copy_slot(context_value.ptr, instr_set_to_context_slot->slot,
+            src_context_value.ptr, instr_set_to_context_slot->source_slot);
 
     if (code != 0)
         return ARCHI_STATUS_TO_ERROR(code);
@@ -1217,8 +1217,8 @@ archi_exe_registry_instr_execute(
         INSTRUCTION(COPY, copy);
         INSTRUCTION(FINAL, final);
         INSTRUCTION(SET_TO_VALUE, set_to_value);
-        INSTRUCTION(SET_TO_CONTEXT, set_to_context);
-        INSTRUCTION(SET_TO_SLOT, set_to_slot);
+        INSTRUCTION(SET_TO_CONTEXT_DATA, set_to_context_data);
+        INSTRUCTION(SET_TO_CONTEXT_SLOT, set_to_context_slot);
         INSTRUCTION(ACT, act);
 
         default:

@@ -632,7 +632,7 @@ class Application:
         """Representation of an abstract application initialization instruction.
         """
         NOOP, INIT_FROM_CONTEXT, INIT_FROM_SLOT, COPY, FINAL, \
-                SET_TO_VALUE, SET_TO_CONTEXT, SET_TO_SLOT, ACT = range(9)
+                SET_TO_VALUE, SET_TO_CONTEXT_DATA, SET_TO_CONTEXT_SLOT, ACT = range(9)
 
     class _InstructionNoop(_Instruction):
         """Representation of an application initialization instruction: no-op.
@@ -896,7 +896,7 @@ class Application:
             elif not isinstance(source_key, str):
                 raise TypeError("Source context key must be a string")
 
-            self._type = Application._Instruction.SET_TO_CONTEXT
+            self._type = Application._Instruction.SET_TO_CONTEXT_DATA
             self._key = key
             self._slot_name = slot_name
             self._slot_indices = slot_indices
@@ -905,7 +905,7 @@ class Application:
         def alloc(self, app: "Application", ptr_instructions: "list[MemoryBlock]", idx: "int"):
             """Allocate all required blocks.
             """
-            instr = archi_exe_registry_instr_set_to_context_t()
+            instr = archi_exe_registry_instr_set_to_context_data_t()
             instr.base.type = self._type
             instr.slot.num_indices = len(self._slot_indices)
 
@@ -915,7 +915,7 @@ class Application:
             ptr_slot_indices = app._alloc_index_array(self._slot_indices)
             ptr_source_key = app._alloc_string(self._source_key)
 
-            def init_instr(instr: "archi_exe_registry_instr_set_to_context_t"):
+            def init_instr(instr: "archi_exe_registry_instr_set_to_context_data_t"):
                 instr.key = ptr_key.address()
 
                 instr.slot.name = ptr_slot_name.address()
@@ -948,7 +948,7 @@ class Application:
                     or not all(isinstance(index, int) for index in source_slot_indices):
                 raise TypeError("Slot indices must be a list of integers")
 
-            self._type = Application._Instruction.SET_TO_SLOT
+            self._type = Application._Instruction.SET_TO_CONTEXT_SLOT
             self._key = key
             self._slot_name = slot_name
             self._slot_indices = slot_indices
@@ -959,7 +959,7 @@ class Application:
         def alloc(self, app: "Application", ptr_instructions: "list[MemoryBlock]", idx: "int"):
             """Allocate all required blocks.
             """
-            instr = archi_exe_registry_instr_set_to_slot_t()
+            instr = archi_exe_registry_instr_set_to_context_slot_t()
             instr.base.type = self._type
             instr.slot.num_indices = len(self._slot_indices)
             instr.source_slot.num_indices = len(self._source_slot_indices)
@@ -972,7 +972,7 @@ class Application:
             ptr_source_slot_name = app._alloc_string(self._source_slot_name)
             ptr_source_slot_indices = app._alloc_index_array(self._source_slot_indices)
 
-            def init_instr(instr: "archi_exe_registry_instr_set_to_slot_t"):
+            def init_instr(instr: "archi_exe_registry_instr_set_to_context_slot_t"):
                 instr.key = ptr_key.address()
 
                 instr.slot.name = ptr_slot_name.address()
@@ -1473,7 +1473,7 @@ class archi_exe_registry_instr_set_to_value_t(c.Structure):
                 ('value', archi_pointer_t)]
 
 
-class archi_exe_registry_instr_set_to_context_t(c.Structure):
+class archi_exe_registry_instr_set_to_context_data_t(c.Structure):
     """Context registry instruction: set context slot to pointer to a source context.
     """
     _fields_ = [('base', archi_exe_registry_instr_base_t),
@@ -1482,7 +1482,7 @@ class archi_exe_registry_instr_set_to_context_t(c.Structure):
                 ('source_key', c.c_char_p)]
 
 
-class archi_exe_registry_instr_set_to_slot_t(c.Structure):
+class archi_exe_registry_instr_set_to_context_slot_t(c.Structure):
     """Context registry instruction: set context slot to a source context slot.
     """
     _fields_ = [('base', archi_exe_registry_instr_base_t),

@@ -31,8 +31,8 @@ Initialization files may contain different instruction types:
 - `COPY`: Create a context alias.
 - `FINAL`: Finalize/remove specified context from registry.
 - `SET_TO_VALUE`: Set value/data pointer in given slot of specified context.
-- `SET_TO_CONTEXT`: Set context reference pointer in given slot of specified context.
-- `SET_TO_SLOT`: Copy pointer across slots between two contexts as instructed.
+- `SET_TO_CONTEXT_DATA`: Set context data pointer in given slot of specified context.
+- `SET_TO_CONTEXT_SLOT`: Copy pointer across slots between two contexts as instructed.
 - `ACT`: Trigger named action on target context.
 
 For comprehensive descriptions see [docs/instructions.md](docs/instructions.md).
