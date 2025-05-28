@@ -40,10 +40,10 @@ For comprehensive descriptions see [docs/instructions.md](docs/instructions.md).
 ## Built-in Contexts
 
 Several built-in contexts exist at startup:
-  - The registry itself (allowing introspection/manipulation)
-  - Library handle of the executable (for access to built-ins)
-  - Currently processed input file (memory-mapped contents)
-  - Signal management context (access signal flags/install handlers)
+  - `"archi.registry"`: The registry itself (allowing introspection/manipulation).
+  - `"archi.executable"`: Library handle of the executable (for access to built-ins).
+  - `"archi.input_file"`: Currently processed input file (memory-mapped contents).
+  - `"archi.signal"`: Signal management context (access signal flags/install handlers).
 
 For comprehensive descriptions see [docs/builtins.md](docs/builtins.md).
 
