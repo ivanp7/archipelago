@@ -226,6 +226,77 @@ archi_print_value(
 
 static
 void
+archi_print_key(
+        const char *name,
+        const char *value)
+{
+    archi_print(ARCHI_LOG_INDENT "    %s = ", name);
+
+    if (value != NULL)
+        archi_print("\"%s\"\n", value);
+    else
+        archi_print("NULL\n");
+}
+
+static
+void
+archi_print_key_interface(
+        const char *name,
+        const char *value)
+{
+    archi_print(ARCHI_LOG_INDENT "    %s = ", name);
+
+    if (value == NULL)
+        archi_print("<parameter list>\n");
+    else if (value[0] == '\0')
+        archi_print("<copied pointer>\n");
+    else
+        archi_print("\"%s\"\n", value);
+}
+
+static
+void
+archi_print_slot(
+        const char *name,
+        archi_context_op_designator_t slot)
+{
+    archi_print(ARCHI_LOG_INDENT "    %s.name = ", name);
+
+    if (slot.name != NULL)
+        archi_print("\"%s\"\n", slot.name);
+    else
+        archi_print("NULL\n");
+
+    archi_print(ARCHI_LOG_INDENT "    %s.indices[%zu] =", name, slot.num_indices);
+
+    for (size_t i = 0; i < slot.num_indices; i++)
+        archi_print(" %tu", slot.index[i]);
+
+    archi_print("\n");
+}
+
+static
+void
+archi_print_params(
+        const char *name,
+        const archi_parameter_list_t *params)
+{
+    if (params != NULL)
+    {
+        archi_print(ARCHI_LOG_INDENT "    %s:\n", name);
+
+        for (; params != NULL; params = params->next)
+        {
+            archi_print(ARCHI_LOG_INDENT "      \"%s\": ", params->name);
+            archi_print_value(ARCHI_LOG_INDENT "        ", params->value);
+        }
+    }
+    else
+        archi_print(ARCHI_LOG_INDENT "    %s: <none>\n", name);
+}
+
+static
+void
 archi_exe_registry_instr_params_free(
         archi_parameter_list_t *params,
         const archi_parameter_list_t *dparams)
@@ -275,7 +346,7 @@ static
 archi_status_t
 archi_exe_registry_instr_execute_init_from_context(
         archi_context_t registry,
-        const archi_exe_registry_instr_init_from_context_t *instr_init_from_context,
+        const archi_exe_registry_instr_init_from_context_t *instruction,
         archi_reference_count_t ref_count,
         bool dry_run,
         bool logging)
@@ -283,53 +354,23 @@ archi_exe_registry_instr_execute_init_from_context(
     // Print the instruction details
     if (logging)
     {
-        {
-            archi_print(ARCHI_LOG_INDENT "    key = ");
-
-            if (instr_init_from_context->key != NULL)
-                archi_print("\"%s\"\n", instr_init_from_context->key);
-            else
-                archi_print("NULL\n");
-        }
-
-        {
-            archi_print(ARCHI_LOG_INDENT "    interface_source_key = ");
-
-            if (instr_init_from_context->interface_source_key == NULL)
-                archi_print("<parameter list>\n");
-            else if (instr_init_from_context->interface_source_key[0] == '\0')
-                archi_print("<copied pointer>\n");
-            else
-                archi_print("\"%s\"\n", instr_init_from_context->interface_source_key);
-        }
-
-        if (instr_init_from_context->dparams_key != NULL)
-            archi_print(ARCHI_LOG_INDENT "    dparams_key = \"%s\"\n", instr_init_from_context->dparams_key);
-
-        if (instr_init_from_context->sparams != NULL)
-        {
-            archi_print(ARCHI_LOG_INDENT "    sparams:\n");
-
-            for (const archi_parameter_list_t *params = instr_init_from_context->sparams;
-                    params != NULL; params = params->next)
-            {
-                archi_print(ARCHI_LOG_INDENT "      \"%s\": ", params->name);
-                archi_print_value(ARCHI_LOG_INDENT "        ", params->value);
-            }
-        }
+        archi_print_key("key", instruction->key);
+        archi_print_key_interface("interface_source_key", instruction->interface_source_key);
+        archi_print_key("dparams_key", instruction->dparams_key);
+        archi_print_params("sparams", instruction->sparams);
     }
 
     if (dry_run)
         return 0;
 
-    if ((instr_init_from_context->key == NULL) || (instr_init_from_context->key[0] == '\0'))
+    if ((instruction->key == NULL) || (instruction->key[0] == '\0'))
         return ARCHI_STATUS_EMISUSE;
 
     archi_status_t code;
 
     // Check early if the context key exists already
     archi_context_get_slot(registry,
-            (archi_context_op_designator_t){.name = instr_init_from_context->key}, &code);
+            (archi_context_op_designator_t){.name = instruction->key}, &code);
 
     if (code != 1)
     {
@@ -344,14 +385,14 @@ archi_exe_registry_instr_execute_init_from_context(
     // Obtain the context interface
     archi_pointer_t interface_value;
 
-    if (instr_init_from_context->interface_source_key == NULL) // parameter list
+    if (instruction->interface_source_key == NULL) // parameter list
         interface_value = (archi_pointer_t){
             .ptr = (void*)&archi_context_parameters_interface,
             .element = {
                 .num_of = 1,
             },
         };
-    else if (instr_init_from_context->interface_source_key[0] == '\0') // pointer copy
+    else if (instruction->interface_source_key[0] == '\0') // pointer copy
         interface_value = (archi_pointer_t){
             .ptr = (void*)&archi_context_pointer_interface,
             .element = {
@@ -362,7 +403,7 @@ archi_exe_registry_instr_execute_init_from_context(
     {
         // Obtain the source context from the registry
         archi_pointer_t src_context_value = archi_context_get_slot(registry,
-                (archi_context_op_designator_t){.name = instr_init_from_context->interface_source_key}, &code);
+                (archi_context_op_designator_t){.name = instruction->interface_source_key}, &code);
 
         if (code != 0)
         {
@@ -383,11 +424,11 @@ archi_exe_registry_instr_execute_init_from_context(
 
     // Prepare the context initialization parameter list
     archi_parameter_list_t *dparams = NULL;
-    if (instr_init_from_context->dparams_key != NULL)
+    if (instruction->dparams_key != NULL)
     {
         // Get dynamic parameter list
         archi_pointer_t dparams_value = archi_context_get_slot(registry,
-                (archi_context_op_designator_t){.name = instr_init_from_context->dparams_key}, &code);
+                (archi_context_op_designator_t){.name = instruction->dparams_key}, &code);
 
         if (code != 0)
         {
@@ -406,8 +447,8 @@ archi_exe_registry_instr_execute_init_from_context(
     }
 
     archi_parameter_list_t *params = archi_exe_registry_instr_params_alloc(
-            dparams, instr_init_from_context->sparams, ref_count);
-    if ((params == NULL) && ((dparams != NULL) || (instr_init_from_context->sparams != NULL)))
+            dparams, instruction->sparams, ref_count);
+    if ((params == NULL) && ((dparams != NULL) || (instruction->sparams != NULL)))
         return ARCHI_STATUS_ENOMEMORY;
 
     // Initialize the context
@@ -428,7 +469,7 @@ archi_exe_registry_instr_execute_init_from_context(
 
     // Insert the context to the registry, which also increments the reference count
     code = archi_context_set_slot(registry,
-            (archi_context_op_designator_t){.name = instr_init_from_context->key}, context_value);
+            (archi_context_op_designator_t){.name = instruction->key}, context_value);
 
     if (code != 0)
     {
@@ -446,7 +487,7 @@ static
 archi_status_t
 archi_exe_registry_instr_execute_init_from_slot(
         archi_context_t registry,
-        const archi_exe_registry_instr_init_from_slot_t *instr_init_from_slot,
+        const archi_exe_registry_instr_init_from_slot_t *instruction,
         archi_reference_count_t ref_count,
         bool dry_run,
         bool logging)
@@ -454,71 +495,24 @@ archi_exe_registry_instr_execute_init_from_slot(
     // Print the instruction details
     if (logging)
     {
-        {
-            archi_print(ARCHI_LOG_INDENT "    key = ");
-
-            if (instr_init_from_slot->key != NULL)
-                archi_print("\"%s\"\n", instr_init_from_slot->key);
-            else
-                archi_print("NULL\n");
-        }
-
-        {
-            archi_print(ARCHI_LOG_INDENT "    interface_source_key = ");
-
-            if (instr_init_from_slot->interface_source_key != NULL)
-                archi_print("\"%s\"\n", instr_init_from_slot->interface_source_key);
-            else
-                archi_print("NULL\n");
-        }
-
-        {
-            archi_print(ARCHI_LOG_INDENT "    interface_source_slot.name = ");
-
-            if (instr_init_from_slot->interface_source_slot.name != NULL)
-                archi_print("\"%s\"\n", instr_init_from_slot->interface_source_slot.name);
-            else
-                archi_print("NULL\n");
-        }
-
-        if (instr_init_from_slot->interface_source_slot.num_indices > 0)
-        {
-            archi_print(ARCHI_LOG_INDENT "    interface_source_slot.indices[%zu] =",
-                    instr_init_from_slot->interface_source_slot.num_indices);
-
-            for (size_t i = 0; i < instr_init_from_slot->interface_source_slot.num_indices; i++)
-                archi_print(" %tu", instr_init_from_slot->interface_source_slot.index[i]);
-
-            archi_print("\n");
-        }
-
-        if (instr_init_from_slot->dparams_key != NULL)
-            archi_print(ARCHI_LOG_INDENT "    dparams_key = \"%s\"\n", instr_init_from_slot->dparams_key);
-
-        if (instr_init_from_slot->sparams != NULL)
-        {
-            archi_print(ARCHI_LOG_INDENT "    sparams:\n");
-
-            for (const archi_parameter_list_t *params = instr_init_from_slot->sparams;
-                    params != NULL; params = params->next)
-            {
-                archi_print(ARCHI_LOG_INDENT "      \"%s\": ", params->name);
-                archi_print_value(ARCHI_LOG_INDENT "        ", params->value);
-            }
-        }
+        archi_print_key("key", instruction->key);
+        archi_print_key("interface_source_key", instruction->interface_source_key);
+        archi_print_slot("interface_source_slot", instruction->interface_source_slot);
+        archi_print_key("dparams_key", instruction->dparams_key);
+        archi_print_params("sparams", instruction->sparams);
     }
 
     if (dry_run)
         return 0;
 
-    if ((instr_init_from_slot->key == NULL) || (instr_init_from_slot->key[0] == '\0'))
+    if ((instruction->key == NULL) || (instruction->key[0] == '\0'))
         return ARCHI_STATUS_EMISUSE;
 
     archi_status_t code;
 
     // Check early if the context key exists already
     archi_context_get_slot(registry,
-            (archi_context_op_designator_t){.name = instr_init_from_slot->key}, &code);
+            (archi_context_op_designator_t){.name = instruction->key}, &code);
 
     if (code != 1)
     {
@@ -535,7 +529,7 @@ archi_exe_registry_instr_execute_init_from_slot(
     {
         // Obtain the source context from the registry
         archi_pointer_t src_context_value = archi_context_get_slot(registry,
-                (archi_context_op_designator_t){.name = instr_init_from_slot->interface_source_key}, &code);
+                (archi_context_op_designator_t){.name = instruction->interface_source_key}, &code);
 
         if (code != 0)
         {
@@ -552,7 +546,7 @@ archi_exe_registry_instr_execute_init_from_slot(
 
         // Get context interface from the source context slot
         interface_value = archi_context_get_slot(src_context_value.ptr,
-                instr_init_from_slot->interface_source_slot, &code);
+                instruction->interface_source_slot, &code);
 
         if (code != 0)
             return ARCHI_STATUS_TO_ERROR(code);
@@ -560,11 +554,11 @@ archi_exe_registry_instr_execute_init_from_slot(
 
     // Prepare the context initialization parameter list
     archi_parameter_list_t *dparams = NULL;
-    if (instr_init_from_slot->dparams_key != NULL)
+    if (instruction->dparams_key != NULL)
     {
         // Get dynamic parameter list
         archi_pointer_t dparams_value = archi_context_get_slot(registry,
-                (archi_context_op_designator_t){.name = instr_init_from_slot->dparams_key}, &code);
+                (archi_context_op_designator_t){.name = instruction->dparams_key}, &code);
 
         if (code != 0)
         {
@@ -583,8 +577,8 @@ archi_exe_registry_instr_execute_init_from_slot(
     }
 
     archi_parameter_list_t *params = archi_exe_registry_instr_params_alloc(
-            dparams, instr_init_from_slot->sparams, ref_count);
-    if ((params == NULL) && ((dparams != NULL) || (instr_init_from_slot->sparams != NULL)))
+            dparams, instruction->sparams, ref_count);
+    if ((params == NULL) && ((dparams != NULL) || (instruction->sparams != NULL)))
         return ARCHI_STATUS_ENOMEMORY;
 
     // Initialize the context
@@ -605,7 +599,7 @@ archi_exe_registry_instr_execute_init_from_slot(
 
     // Insert the context to the registry, which also increments the reference count
     code = archi_context_set_slot(registry,
-            (archi_context_op_designator_t){.name = instr_init_from_slot->key}, context_value);
+            (archi_context_op_designator_t){.name = instruction->key}, context_value);
 
     if (code != 0)
     {
@@ -623,7 +617,7 @@ static
 archi_status_t
 archi_exe_registry_instr_execute_copy(
         archi_context_t registry,
-        const archi_exe_registry_instr_copy_t *instr_copy,
+        const archi_exe_registry_instr_copy_t *instruction,
         archi_reference_count_t ref_count,
         bool dry_run,
         bool logging)
@@ -633,38 +627,23 @@ archi_exe_registry_instr_execute_copy(
     // Print the instruction details
     if (logging)
     {
-        {
-            archi_print(ARCHI_LOG_INDENT "    key = ");
-
-            if (instr_copy->key != NULL)
-                archi_print("\"%s\"\n", instr_copy->key);
-            else
-                archi_print("NULL\n");
-        }
-
-        {
-            archi_print(ARCHI_LOG_INDENT "    original_key = ");
-
-            if (instr_copy->original_key != NULL)
-                archi_print("\"%s\"\n", instr_copy->original_key);
-            else
-                archi_print("NULL\n");
-        }
+        archi_print_key("key", instruction->key);
+        archi_print_key("original_key", instruction->original_key);
     }
 
     if (dry_run)
         return 0;
 
-    if ((instr_copy->key == NULL) || (instr_copy->key[0] == '\0'))
+    if ((instruction->key == NULL) || (instruction->key[0] == '\0'))
         return ARCHI_STATUS_EMISUSE;
-    else if ((instr_copy->original_key == NULL) || (instr_copy->original_key[0] == '\0'))
+    else if ((instruction->original_key == NULL) || (instruction->original_key[0] == '\0'))
         return ARCHI_STATUS_EMISUSE;
 
     archi_status_t code;
 
     // Obtain the context from the registry
     archi_pointer_t context_value = archi_context_get_slot(registry,
-            (archi_context_op_designator_t){.name = instr_copy->original_key}, &code);
+            (archi_context_op_designator_t){.name = instruction->original_key}, &code);
 
     if (code != 0)
     {
@@ -681,7 +660,7 @@ archi_exe_registry_instr_execute_copy(
 
     // Insert the context to the registry, which also increments the reference count
     code = archi_context_set_slot(registry,
-            (archi_context_op_designator_t){.name = instr_copy->key}, context_value);
+            (archi_context_op_designator_t){.name = instruction->key}, context_value);
 
     if (code != 0)
         return ARCHI_STATUS_TO_ERROR(code);
@@ -693,7 +672,7 @@ static
 archi_status_t
 archi_exe_registry_instr_execute_final(
         archi_context_t registry,
-        const archi_exe_registry_instr_final_t *instr_final,
+        const archi_exe_registry_instr_final_t *instruction,
         archi_reference_count_t ref_count,
         bool dry_run,
         bool logging)
@@ -703,25 +682,18 @@ archi_exe_registry_instr_execute_final(
     // Print the instruction details
     if (logging)
     {
-        {
-            archi_print(ARCHI_LOG_INDENT "    key = ");
-
-            if (instr_final->key != NULL)
-                archi_print("\"%s\"\n", instr_final->key);
-            else
-                archi_print("NULL\n");
-        }
+        archi_print_key("key", instruction->key);
     }
 
     if (dry_run)
         return 0;
 
-    if ((instr_final->key == NULL) || (instr_final->key[0] == '\0'))
+    if ((instruction->key == NULL) || (instruction->key[0] == '\0'))
         return ARCHI_STATUS_EMISUSE;
 
     // Remove the context from the registry, which also decrements the reference count
     archi_status_t code = archi_context_set_slot(registry,
-            (archi_context_op_designator_t){.name = instr_final->key}, (archi_pointer_t){0});
+            (archi_context_op_designator_t){.name = instruction->key}, (archi_pointer_t){0});
 
     if (code != 0)
     {
@@ -740,7 +712,7 @@ static
 archi_status_t
 archi_exe_registry_instr_execute_set_to_value(
         archi_context_t registry,
-        const archi_exe_registry_instr_set_to_value_t *instr_set_to_value,
+        const archi_exe_registry_instr_set_to_value_t *instruction,
         archi_reference_count_t ref_count,
         bool dry_run,
         bool logging)
@@ -748,51 +720,25 @@ archi_exe_registry_instr_execute_set_to_value(
     // Print the instruction details
     if (logging)
     {
-        {
-            archi_print(ARCHI_LOG_INDENT "    key = ");
-
-            if (instr_set_to_value->key != NULL)
-                archi_print("\"%s\"\n", instr_set_to_value->key);
-            else
-                archi_print("NULL\n");
-        }
-
-        {
-            archi_print(ARCHI_LOG_INDENT "    slot.name = ");
-
-            if (instr_set_to_value->slot.name != NULL)
-                archi_print("\"%s\"\n", instr_set_to_value->slot.name);
-            else
-                archi_print("NULL\n");
-        }
-
-        if (instr_set_to_value->slot.num_indices > 0)
-        {
-            archi_print(ARCHI_LOG_INDENT "    slot.indices[%zu] =", instr_set_to_value->slot.num_indices);
-
-            for (size_t i = 0; i < instr_set_to_value->slot.num_indices; i++)
-                archi_print(" %tu", instr_set_to_value->slot.index[i]);
-
-            archi_print("\n");
-        }
-
+        archi_print_key("key", instruction->key);
+        archi_print_slot("slot", instruction->slot);
         {
             archi_print(ARCHI_LOG_INDENT "    value = ");
-            archi_print_value(ARCHI_LOG_INDENT "      ", instr_set_to_value->value);
+            archi_print_value(ARCHI_LOG_INDENT "      ", instruction->value);
         }
     }
 
     if (dry_run)
         return 0;
 
-    if ((instr_set_to_value->key == NULL) || (instr_set_to_value->key[0] == '\0'))
+    if ((instruction->key == NULL) || (instruction->key[0] == '\0'))
         return ARCHI_STATUS_EMISUSE;
 
     archi_status_t code;
 
     // Obtain the context from the registry
     archi_pointer_t context_value = archi_context_get_slot(registry,
-            (archi_context_op_designator_t){.name = instr_set_to_value->key}, &code);
+            (archi_context_op_designator_t){.name = instruction->key}, &code);
 
     if (code != 0)
     {
@@ -808,10 +754,10 @@ archi_exe_registry_instr_execute_set_to_value(
         return ARCHI_STATUS_EVALUE;
 
     // Set the context value
-    archi_pointer_t value = instr_set_to_value->value;
+    archi_pointer_t value = instruction->value;
     value.ref_count = ref_count;
 
-    code = archi_context_set_slot(context_value.ptr, instr_set_to_value->slot, value);
+    code = archi_context_set_slot(context_value.ptr, instruction->slot, value);
 
     if (code != 0)
         return ARCHI_STATUS_TO_ERROR(code);
@@ -823,7 +769,7 @@ static
 archi_status_t
 archi_exe_registry_instr_execute_set_to_context_data(
         archi_context_t registry,
-        const archi_exe_registry_instr_set_to_context_data_t *instr_set_to_context_data,
+        const archi_exe_registry_instr_set_to_context_data_t *instruction,
         archi_reference_count_t ref_count,
         bool dry_run,
         bool logging)
@@ -833,57 +779,24 @@ archi_exe_registry_instr_execute_set_to_context_data(
     // Print the instruction details
     if (logging)
     {
-        {
-            archi_print(ARCHI_LOG_INDENT "    key = ");
-
-            if (instr_set_to_context_data->key != NULL)
-                archi_print("\"%s\"\n", instr_set_to_context_data->key);
-            else
-                archi_print("NULL\n");
-        }
-
-        {
-            archi_print(ARCHI_LOG_INDENT "    slot.name = ");
-
-            if (instr_set_to_context_data->slot.name != NULL)
-                archi_print("\"%s\"\n", instr_set_to_context_data->slot.name);
-            else
-                archi_print("NULL\n");
-        }
-
-        if (instr_set_to_context_data->slot.num_indices > 0)
-        {
-            archi_print(ARCHI_LOG_INDENT "    slot.indices[%zu] =", instr_set_to_context_data->slot.num_indices);
-
-            for (size_t i = 0; i < instr_set_to_context_data->slot.num_indices; i++)
-                archi_print(" %tu", instr_set_to_context_data->slot.index[i]);
-
-            archi_print("\n");
-        }
-
-        {
-            archi_print(ARCHI_LOG_INDENT "    source_key = ");
-
-            if (instr_set_to_context_data->source_key != NULL)
-                archi_print("\"%s\"\n", instr_set_to_context_data->source_key);
-            else
-                archi_print("NULL\n");
-        }
+        archi_print_key("key", instruction->key);
+        archi_print_slot("slot", instruction->slot);
+        archi_print_key("source_key", instruction->source_key);
     }
 
     if (dry_run)
         return 0;
 
-    if ((instr_set_to_context_data->key == NULL) || (instr_set_to_context_data->key[0] == '\0'))
+    if ((instruction->key == NULL) || (instruction->key[0] == '\0'))
         return ARCHI_STATUS_EMISUSE;
-    else if ((instr_set_to_context_data->source_key == NULL) || (instr_set_to_context_data->source_key[0] == '\0'))
+    else if ((instruction->source_key == NULL) || (instruction->source_key[0] == '\0'))
         return ARCHI_STATUS_EMISUSE;
 
     archi_status_t code;
 
     // Obtain the context from the registry
     archi_pointer_t context_value = archi_context_get_slot(registry,
-            (archi_context_op_designator_t){.name = instr_set_to_context_data->key}, &code);
+            (archi_context_op_designator_t){.name = instruction->key}, &code);
 
     if (code != 0)
     {
@@ -900,7 +813,7 @@ archi_exe_registry_instr_execute_set_to_context_data(
 
     // Obtain the source context from the registry
     archi_pointer_t src_context_value = archi_context_get_slot(registry,
-            (archi_context_op_designator_t){.name = instr_set_to_context_data->source_key}, &code);
+            (archi_context_op_designator_t){.name = instruction->source_key}, &code);
 
     if (code != 0)
     {
@@ -916,7 +829,7 @@ archi_exe_registry_instr_execute_set_to_context_data(
         return ARCHI_STATUS_EVALUE;
 
     // Set the context value
-    code = archi_context_set_slot(context_value.ptr, instr_set_to_context_data->slot,
+    code = archi_context_set_slot(context_value.ptr, instruction->slot,
             archi_context_data(src_context_value.ptr));
 
     if (code != 0)
@@ -929,7 +842,7 @@ static
 archi_status_t
 archi_exe_registry_instr_execute_set_to_context_slot(
         archi_context_t registry,
-        const archi_exe_registry_instr_set_to_context_slot_t *instr_set_to_context_slot,
+        const archi_exe_registry_instr_set_to_context_slot_t *instruction,
         archi_reference_count_t ref_count,
         bool dry_run,
         bool logging)
@@ -939,77 +852,25 @@ archi_exe_registry_instr_execute_set_to_context_slot(
     // Print the instruction details
     if (logging)
     {
-        {
-            archi_print(ARCHI_LOG_INDENT "    key = ");
-
-            if (instr_set_to_context_slot->key != NULL)
-                archi_print("\"%s\"\n", instr_set_to_context_slot->key);
-            else
-                archi_print("NULL\n");
-        }
-
-        {
-            archi_print(ARCHI_LOG_INDENT "    slot.name = ");
-
-            if (instr_set_to_context_slot->slot.name != NULL)
-                archi_print("\"%s\"\n", instr_set_to_context_slot->slot.name);
-            else
-                archi_print("NULL\n");
-        }
-
-        if (instr_set_to_context_slot->slot.num_indices > 0)
-        {
-            archi_print(ARCHI_LOG_INDENT "    slot.indices[%zu] =", instr_set_to_context_slot->slot.num_indices);
-
-            for (size_t i = 0; i < instr_set_to_context_slot->slot.num_indices; i++)
-                archi_print(" %tu", instr_set_to_context_slot->slot.index[i]);
-
-            archi_print("\n");
-        }
-
-        {
-            archi_print(ARCHI_LOG_INDENT "    source_key = ");
-
-            if (instr_set_to_context_slot->source_key != NULL)
-                archi_print("\"%s\"\n", instr_set_to_context_slot->source_key);
-            else
-                archi_print("NULL\n");
-        }
-
-        {
-            archi_print(ARCHI_LOG_INDENT "    source_slot.name = ");
-
-            if (instr_set_to_context_slot->source_slot.name != NULL)
-                archi_print("\"%s\"\n", instr_set_to_context_slot->source_slot.name);
-            else
-                archi_print("NULL\n");
-        }
-
-        if (instr_set_to_context_slot->source_slot.num_indices > 0)
-        {
-            archi_print(ARCHI_LOG_INDENT "    source_slot.indices[%zu] =",
-                    instr_set_to_context_slot->source_slot.num_indices);
-
-            for (size_t i = 0; i < instr_set_to_context_slot->source_slot.num_indices; i++)
-                archi_print(" %tu", instr_set_to_context_slot->source_slot.index[i]);
-
-            archi_print("\n");
-        }
+        archi_print_key("key", instruction->key);
+        archi_print_slot("slot", instruction->slot);
+        archi_print_key("source_key", instruction->source_key);
+        archi_print_slot("source_slot", instruction->source_slot);
     }
 
     if (dry_run)
         return 0;
 
-    if ((instr_set_to_context_slot->key == NULL) || (instr_set_to_context_slot->key[0] == '\0'))
+    if ((instruction->key == NULL) || (instruction->key[0] == '\0'))
         return ARCHI_STATUS_EMISUSE;
-    else if ((instr_set_to_context_slot->source_key == NULL) || (instr_set_to_context_slot->source_key[0] == '\0'))
+    else if ((instruction->source_key == NULL) || (instruction->source_key[0] == '\0'))
         return ARCHI_STATUS_EMISUSE;
 
     archi_status_t code;
 
     // Obtain the context from the registry
     archi_pointer_t context_value = archi_context_get_slot(registry,
-            (archi_context_op_designator_t){.name = instr_set_to_context_slot->key}, &code);
+            (archi_context_op_designator_t){.name = instruction->key}, &code);
 
     if (code != 0)
     {
@@ -1026,7 +887,7 @@ archi_exe_registry_instr_execute_set_to_context_slot(
 
     // Obtain the source context from the registry
     archi_pointer_t src_context_value = archi_context_get_slot(registry,
-            (archi_context_op_designator_t){.name = instr_set_to_context_slot->source_key}, &code);
+            (archi_context_op_designator_t){.name = instruction->source_key}, &code);
 
     if (code != 0)
     {
@@ -1042,8 +903,8 @@ archi_exe_registry_instr_execute_set_to_context_slot(
         return ARCHI_STATUS_EVALUE;
 
     // Set the context value
-    code = archi_context_copy_slot(context_value.ptr, instr_set_to_context_slot->slot,
-            src_context_value.ptr, instr_set_to_context_slot->source_slot);
+    code = archi_context_copy_slot(context_value.ptr, instruction->slot,
+            src_context_value.ptr, instruction->source_slot);
 
     if (code != 0)
         return ARCHI_STATUS_TO_ERROR(code);
@@ -1055,7 +916,7 @@ static
 archi_status_t
 archi_exe_registry_instr_execute_act(
         archi_context_t registry,
-        const archi_exe_registry_instr_act_t *instr_act,
+        const archi_exe_registry_instr_act_t *instruction,
         archi_reference_count_t ref_count,
         bool dry_run,
         bool logging)
@@ -1063,61 +924,23 @@ archi_exe_registry_instr_execute_act(
     // Print the instruction details
     if (logging)
     {
-        {
-            archi_print(ARCHI_LOG_INDENT "    key = ");
-
-            if (instr_act->key != NULL)
-                archi_print("\"%s\"\n", instr_act->key);
-            else
-                archi_print("NULL\n");
-        }
-
-        {
-            archi_print(ARCHI_LOG_INDENT "    action.name = ");
-
-            if (instr_act->action.name != NULL)
-                archi_print("\"%s\"\n", instr_act->action.name);
-            else
-                archi_print("NULL\n");
-        }
-
-        if (instr_act->action.num_indices > 0)
-        {
-            archi_print(ARCHI_LOG_INDENT "    action.indices[%zu] =", instr_act->action.num_indices);
-
-            for (size_t i = 0; i < instr_act->action.num_indices; i++)
-                archi_print(" %tu", instr_act->action.index[i]);
-
-            archi_print("\n");
-        }
-
-        if (instr_act->dparams_key != NULL)
-            archi_print(ARCHI_LOG_INDENT "    dparams_key = \"%s\"\n", instr_act->dparams_key);
-
-        if (instr_act->sparams != NULL)
-        {
-            archi_print(ARCHI_LOG_INDENT "    sparams:\n");
-
-            for (const archi_parameter_list_t *params = instr_act->sparams;
-                    params != NULL; params = params->next)
-            {
-                archi_print(ARCHI_LOG_INDENT "      \"%s\": ", params->name);
-                archi_print_value(ARCHI_LOG_INDENT "        ", params->value);
-            }
-        }
+        archi_print_key("key", instruction->key);
+        archi_print_slot("action", instruction->action);
+        archi_print_key("dparams_key", instruction->dparams_key);
+        archi_print_params("sparams", instruction->sparams);
     }
 
     if (dry_run)
         return 0;
 
-    if ((instr_act->key == NULL) || (instr_act->key[0] == '\0'))
+    if ((instruction->key == NULL) || (instruction->key[0] == '\0'))
         return ARCHI_STATUS_EMISUSE;
 
     archi_status_t code;
 
     // Obtain the context from the registry
     archi_pointer_t context_value = archi_context_get_slot(registry,
-            (archi_context_op_designator_t){.name = instr_act->key}, &code);
+            (archi_context_op_designator_t){.name = instruction->key}, &code);
 
     if (code != 0)
     {
@@ -1134,10 +957,10 @@ archi_exe_registry_instr_execute_act(
 
     // Obtain the context action parameters
     archi_parameter_list_t *dparams = NULL;
-    if (instr_act->dparams_key != NULL)
+    if (instruction->dparams_key != NULL)
     {
         archi_pointer_t dparams_value = archi_context_get_slot(registry,
-                (archi_context_op_designator_t){.name = instr_act->dparams_key}, &code);
+                (archi_context_op_designator_t){.name = instruction->dparams_key}, &code);
 
         if (code != 0)
         {
@@ -1155,12 +978,12 @@ archi_exe_registry_instr_execute_act(
         dparams = dparams_value.ptr;
     }
 
-    archi_parameter_list_t *params = archi_exe_registry_instr_params_alloc(dparams, instr_act->sparams, ref_count);
-    if ((params == NULL) && ((dparams != NULL) || (instr_act->sparams != NULL)))
+    archi_parameter_list_t *params = archi_exe_registry_instr_params_alloc(dparams, instruction->sparams, ref_count);
+    if ((params == NULL) && ((dparams != NULL) || (instruction->sparams != NULL)))
         return ARCHI_STATUS_ENOMEMORY;
 
     // Invoke the context action
-    code = archi_context_act(context_value.ptr, instr_act->action, params);
+    code = archi_context_act(context_value.ptr, instruction->action, params);
 
     archi_exe_registry_instr_params_free(params, dparams);
 
