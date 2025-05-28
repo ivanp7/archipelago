@@ -33,8 +33,6 @@
  * @brief Print formatted text to the log stream using a printf-style format string.
  *
  * If @p format is NULL, the function returns immediately without printing.
- * The message won't be printed if the print lock verbosity level
- * is greater than the logging verbosity level.
  *
  * @param[in] format
  *     A null-terminated printf-style format string. May be NULL,
@@ -50,11 +48,28 @@ archi_print(
 );
 
 /**
+ * @brief Print string to the log stream only if use of color is enabled.
+ *
+ * If @p color is NULL, the function returns immediately without printing.
+ * The string won't be printed if color use is disabled.
+ *
+ * @param[in] color
+ *     A null-terminated string. May be NULL, in which case no output is generated.
+ */
+void
+archi_print_color(
+        const char *color
+);
+
+/**
  * @brief Lock an internal spinlock to protect a composite printing operation.
  *
  * Internally, this routine uses an atomic spinlock (when C11 atomics
  * are available) to serialize concurrent calls and prevent interleaved
  * output from multiple threads.
+ *
+ * @note The user code must not use archi_print() and archi_print_color()
+ * outside of a lock-protected section.
  *
  * @param[in] verbosity
  *     Minimum verbosity level at which the spinlock is acquired.

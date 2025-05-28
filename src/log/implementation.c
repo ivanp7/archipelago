@@ -114,6 +114,20 @@ archi_print(
     va_end(args);
 }
 
+void
+archi_print_color(
+        const char *color)
+{
+    if (archi_logger == NULL)
+        return;
+    else if (!archi_log_colorful())
+        return;
+    else if (color == NULL)
+        return;
+
+    fprintf(archi_logger->stream, "%s", color);
+}
+
 bool
 archi_print_lock(
         int verbosity)
@@ -156,12 +170,12 @@ archi_log(
 #endif
 
     if (archi_logger->colorful)
-        fprintf(archi_logger->stream, ARCHI_COLOR_RESET);
+        fprintf(archi_logger->stream, "%s", ARCHI_COLOR_RESET);
 
     fprintf(archi_logger->stream, "\r");
 
     if (archi_logger->colorful)
-        fprintf(archi_logger->stream, message_color);
+        fprintf(archi_logger->stream, "%s", message_color);
 
     // Set the color, print date/time and message type character
     fprintf(archi_logger->stream, " %li:%02li:%02li.%03li,%03li [%s] ",
@@ -182,7 +196,7 @@ archi_log(
 
     // Finally, reset the color
     if (archi_logger->colorful)
-        fprintf(archi_logger->stream, ARCHI_COLOR_RESET);
+        fprintf(archi_logger->stream, "%s", ARCHI_COLOR_RESET);
 
     fprintf(archi_logger->stream, "\n");
 

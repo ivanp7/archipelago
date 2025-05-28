@@ -294,9 +294,7 @@ print_logo(void)
 
     archi_print_lock(0);
 
-    if (!archi_process.args.no_color)
-        archi_print(ARCHI_COLOR_RESET);
-
+    archi_print_color(ARCHI_COLOR_RESET);
     archi_print("\n");
 
     for (int i = 0; i < LINES; i++)
@@ -311,9 +309,7 @@ print_logo(void)
             archi_print("%s%s", space, logo[i][j]);
         }
 
-        if (!archi_process.args.no_color)
-            archi_print(ARCHI_COLOR_RESET);
-
+        archi_print_color(ARCHI_COLOR_RESET);
         archi_print("\n");
     }
 
@@ -573,15 +569,13 @@ preliminary_pass_of_input_files(void)
 
                 if (archi_print_lock(ARCHI_LOG_VERBOSITY_DEBUG))
                 {
-                    if (archi_log_colorful())
-                        archi_print(ARCHI_LOG_COLOR_DEBUG);
+                    archi_print_color(ARCHI_LOG_COLOR_DEBUG);
 
                     archi_print(ARCHI_LOG_INDENT "  signals =");
                     print_signal_watch_set(signal_watch_set);
                     archi_print("\n");
 
-                    if (archi_log_colorful())
-                        archi_print(ARCHI_COLOR_RESET);
+                    archi_print_color(ARCHI_COLOR_RESET);
 
                     archi_print_unlock();
                 }
@@ -658,15 +652,13 @@ start_signal_management(void)
 
         if (archi_print_lock(ARCHI_LOG_VERBOSITY_DEBUG))
         {
-            if (archi_log_colorful())
-                archi_print(ARCHI_LOG_COLOR_DEBUG);
+            archi_print_color(ARCHI_LOG_COLOR_DEBUG);
 
             archi_print(ARCHI_LOG_INDENT "  signals =");
             print_signal_watch_set(archi_process.signal_watch_set);
             archi_print("\n");
 
-            if (archi_log_colorful())
-                archi_print(ARCHI_COLOR_RESET);
+            archi_print_color(ARCHI_COLOR_RESET);
 
             archi_print_unlock();
         }

@@ -31,7 +31,6 @@
 #include "archi/log/print.fun.h"
 #include "archi/log/print.def.h"
 #include "archi/log/color.def.h"
-#include "archi/log/context.fun.h"
 #include "archi/util/size.def.h"
 
 #include <stdlib.h> // for malloc(), free()
@@ -1113,10 +1112,7 @@ archi_exe_registry_instr_execute(
     bool logging = archi_print_lock(ARCHI_LOG_VERBOSITY_DEBUG);
 
     if (logging)
-    {
-        if (archi_log_colorful())
-            archi_print(ARCHI_LOG_COLOR_DEBUG);
-    }
+        archi_print_color(ARCHI_LOG_COLOR_DEBUG);
 
     if ((instruction == NULL) || (instruction->type == ARCHI_EXE_REGISTRY_INSTR_NOOP))
     {
@@ -1124,7 +1120,7 @@ archi_exe_registry_instr_execute(
         {
             archi_print(ARCHI_LOG_INDENT "instruction(NOOP)\n");
 
-            archi_print(ARCHI_COLOR_RESET);
+            archi_print_color(ARCHI_COLOR_RESET);
             archi_print_unlock();
         }
 
@@ -1207,9 +1203,7 @@ archi_exe_registry_instr_execute(
 
     if (logging)
     {
-        if (archi_log_colorful())
-            archi_print(ARCHI_COLOR_RESET);
-
+        archi_print_color(ARCHI_COLOR_RESET);
         archi_print_unlock();
     }
 
