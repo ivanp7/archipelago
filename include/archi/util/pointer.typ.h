@@ -61,17 +61,16 @@ typedef void (*archi_function_t)(void);
  * to determine which union field is used.
  * Other bits are available for user.
  *
- * Regardless of which union field is used,
- * `element.num_of` stores the number of elements in the array.
- * It must not be 0 unless the pointer is NULL.
+ * If pointer to function is stored, `element` field has no specified meaning.
+ *
+ * `element.num_of` stores the number of elements in the data array.
+ * It must not be 0 unless the pointer is NULL, otherwise it must be 0.
  *
  * `element.size` stores the size in bytes of a data array element,
  * or 0 if it is unspecified or unknown.
- * If function is stored, this field has no specified meaning.
  *
  * `element.alignment` stores the alignment requirement in bytes of a data array element,
  * or 0 if it is unspecified or unknown. If it is not 0, it must be a power of two.
- * If function is stored, this field has no specified meaning.
  *
  * `ref_count` may point to the reference counter associated with the resource.
  * Resource consumers must increment the counter if they rely on the value,
@@ -84,7 +83,7 @@ typedef struct archi_pointer {
     };
     archi_reference_count_t ref_count; ///< Reference count for the resource.
     uint64_t flags; ///< Flags describing pointer attributes.
-    archi_array_layout_t element; ///< Layout of the array.
+    archi_array_layout_t element; ///< Layout of the data array.
 } archi_pointer_t;
 
 /**
