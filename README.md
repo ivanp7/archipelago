@@ -28,6 +28,7 @@ Initialization files may contain different instruction types:
 - `NOOP`: No operation.
 - `INIT_FROM_CONTEXT`: Initialize new context using the interface of another existing one; insert into registry.
 - `INIT_FROM_SLOT`: Get interface from another's slot; initialize new context; insert into registry.
+- `COPY`: Create a context alias.
 - `FINAL`: Finalize/remove specified context from registry.
 - `SET_TO_VALUE`: Set value/data pointer in given slot of specified context.
 - `SET_TO_CONTEXT`: Set context reference pointer in given slot of specified context.

@@ -631,8 +631,8 @@ class Application:
     class _Instruction:
         """Representation of an abstract application initialization instruction.
         """
-        NOOP, INIT_FROM_CONTEXT, INIT_FROM_SLOT, FINAL, \
-                SET_TO_VALUE, SET_TO_CONTEXT, SET_TO_SLOT, ACT = range(8)
+        NOOP, INIT_FROM_CONTEXT, INIT_FROM_SLOT, COPY, FINAL, \
+                SET_TO_VALUE, SET_TO_CONTEXT, SET_TO_SLOT, ACT = range(9)
 
     class _InstructionNoop(_Instruction):
         """Representation of an application initialization instruction: no-op.
@@ -658,7 +658,9 @@ class Application:
                      dparams_key: "str", sparams: "dict"):
             """Initialize an instruction.
             """
-            if not isinstance(interface_source_key, str):
+            if not isinstance(key, str):
+                raise TypeError("Context key must be a string")
+            elif not isinstance(interface_source_key, str):
                 raise TypeError("Interface source context key must be a string")
             elif dparams_key is not None and not isinstance(dparams_key, str):
                 raise TypeError("Dynamic parameter list key must be a string")
@@ -708,7 +710,9 @@ class Application:
                      dparams_key: "str", sparams: "dict"):
             """Initialize an instruction.
             """
-            if not isinstance(interface_source_key, str):
+            if not isinstance(key, str):
+                raise TypeError("Context key must be a string")
+            elif not isinstance(interface_source_key, str):
                 raise TypeError("Interface source context key must be a string")
             elif not isinstance(interface_source_slot_name, str):
                 raise TypeError("Slot name must be a string")
@@ -759,12 +763,48 @@ class Application:
 
             return MemoryBlock(CValue(instr, callback=init_instr))
 
+    class _InstructionCopy(_Instruction):
+        """Representation of an application initialization instruction:
+        create a context alias.
+        """
+        def __init__(self, key: "str", original_key: "str"):
+            """Initialize an instruction.
+            """
+            if not isinstance(key, str):
+                raise TypeError("Context key must be a string")
+            elif not isinstance(original_key, str):
+                raise TypeError("Original context key must be a string")
+
+            self._type = Application._Instruction.COPY
+            self._key = key
+            self._original_key = original_key
+
+        def alloc(self, app: "Application", ptr_instructions: "list[MemoryBlock]", idx: "int"):
+            """Allocate all required blocks.
+            """
+            instr = archi_exe_registry_instr_copy_t()
+            instr.base.type = self._type
+
+            ptr_key = app._alloc_string(self._key)
+
+            ptr_original_key = app._alloc_string(self._original_key)
+
+            def init_instr(instr: "archi_exe_registry_instr_init_from_slot_t"):
+                instr.key = ptr_key.address()
+
+                instr.original_key = ptr_original_key.address()
+
+            return MemoryBlock(CValue(instr, callback=init_instr))
+
     class _InstructionFinal(_Instruction):
         """Representation of an application initialization instruction: finalize a context.
         """
         def __init__(self, key: "str"):
             """Initialize an instruction.
             """
+            if not isinstance(key, str):
+                raise TypeError("Context key must be a string")
+
             self._type = Application._Instruction.FINAL
             self._key = key
 
@@ -789,7 +829,9 @@ class Application:
                      value: "CValue"):
             """Initialize an instruction.
             """
-            if not isinstance(slot_name, str):
+            if not isinstance(key, str):
+                raise TypeError("Context key must be a string")
+            elif not isinstance(slot_name, str):
                 raise TypeError("Slot name must be a string")
             elif not isinstance(slot_indices, list) \
                     or not all(isinstance(index, int) for index in slot_indices):
@@ -844,7 +886,9 @@ class Application:
                      source_key: "str"):
             """Initialize an instruction.
             """
-            if not isinstance(slot_name, str):
+            if not isinstance(key, str):
+                raise TypeError("Context key must be a string")
+            elif not isinstance(slot_name, str):
                 raise TypeError("Slot name must be a string")
             elif not isinstance(slot_indices, list) \
                     or not all(isinstance(index, int) for index in slot_indices):
@@ -889,7 +933,9 @@ class Application:
                      source_key: "str", source_slot_name: "str", source_slot_indices: "list[int]"):
             """Initialize an instruction.
             """
-            if not isinstance(slot_name, str):
+            if not isinstance(key, str):
+                raise TypeError("Context key must be a string")
+            elif not isinstance(slot_name, str):
                 raise TypeError("Slot name must be a string")
             elif not isinstance(slot_indices, list) \
                     or not all(isinstance(index, int) for index in slot_indices):
@@ -947,7 +993,9 @@ class Application:
                      action_name: "str", action_indices: "list[int]", dparams_key: "str", sparams: "dict"):
             """Initialize an instruction.
             """
-            if not isinstance(action_name, str):
+            if not isinstance(key, str):
+                raise TypeError("Context key must be a string")
+            elif not isinstance(action_name, str):
                 raise TypeError("Action name must be a string")
             elif not isinstance(action_indices, list) \
                     or not all(isinstance(index, int) for index in action_indices):
@@ -1048,6 +1096,7 @@ class Application:
                     key=key,
                     interface_source_key=source._key,
                     dparams_key=dparams_key, sparams=entity.parameters().static_list()))
+
             elif isinstance(source, Context._Slot):
                 dparams_key = entity.parameters().dynamic_list()._key \
                         if entity.parameters().dynamic_list() is not None else None
@@ -1065,15 +1114,9 @@ class Application:
                 dparams_key=None, sparams={'value': entity}))
 
         elif isinstance(entity, Context):
-            self._instructions.append(Application._InstructionInitFromContext(
+            self._instructions.append(Application._InstructionCopy(
                 key=key,
-                interface_source_key='',
-                dparams_key=None, sparams={}))
-
-            self._instructions.append(Application._InstructionSetToContext(
-                key=key,
-                slot_name='value', slot_indices=[],
-                source_key=entity._key))
+                original_key=entity._key))
 
         elif isinstance(entity, Context._Slot) or isinstance(entity, Context._Action):
             self._instructions.append(Application._InstructionInitFromContext(
@@ -1404,6 +1447,14 @@ class archi_exe_registry_instr_init_from_slot_t(c.Structure):
                 ('interface_source_slot', archi_context_op_designator_t),
                 ('dparams_key', c.c_char_p),
                 ('sparams', c.POINTER(archi_parameter_list_t))]
+
+
+class archi_exe_registry_instr_copy_t(c.Structure):
+    """Context registry instruction: create a context alias.
+    """
+    _fields_ = [('base', archi_exe_registry_instr_base_t),
+                ('key', c.c_char_p),
+                ('original_key', c.c_char_p)]
 
 
 class archi_exe_registry_instr_final_t(c.Structure):

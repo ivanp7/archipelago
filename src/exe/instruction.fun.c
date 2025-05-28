@@ -63,6 +63,9 @@ archi_exe_registry_instr_sizeof(
         case ARCHI_EXE_REGISTRY_INSTR_INIT_FROM_SLOT:
             return sizeof(archi_exe_registry_instr_init_from_slot_t);
 
+        case ARCHI_EXE_REGISTRY_INSTR_COPY:
+            return sizeof(archi_exe_registry_instr_copy_t);
+
         case ARCHI_EXE_REGISTRY_INSTR_FINAL:
             return sizeof(archi_exe_registry_instr_final_t);
 
@@ -319,8 +322,7 @@ archi_exe_registry_instr_execute_init_from_context(
     if (dry_run)
         return 0;
 
-    if ((instr_init_from_context->key == NULL) ||
-            (instr_init_from_context->key[0] == '\0'))
+    if ((instr_init_from_context->key == NULL) || (instr_init_from_context->key[0] == '\0'))
         return ARCHI_STATUS_EMISUSE;
 
     archi_status_t code;
@@ -509,8 +511,7 @@ archi_exe_registry_instr_execute_init_from_slot(
     if (dry_run)
         return 0;
 
-    if ((instr_init_from_slot->key == NULL) ||
-            (instr_init_from_slot->key[0] == '\0'))
+    if ((instr_init_from_slot->key == NULL) || (instr_init_from_slot->key[0] == '\0'))
         return ARCHI_STATUS_EMISUSE;
 
     archi_status_t code;
@@ -614,6 +615,76 @@ archi_exe_registry_instr_execute_init_from_slot(
 
     // Decrement the reference count back to 1, making
     archi_reference_count_decrement(context_value.ref_count);
+
+    return 0;
+}
+
+static
+archi_status_t
+archi_exe_registry_instr_execute_copy(
+        archi_context_t registry,
+        const archi_exe_registry_instr_copy_t *instr_copy,
+        archi_reference_count_t ref_count,
+        bool dry_run,
+        bool logging)
+{
+    (void) ref_count;
+
+    // Print the instruction details
+    if (logging)
+    {
+        {
+            archi_print(ARCHI_LOG_INDENT "    key = ");
+
+            if (instr_copy->key != NULL)
+                archi_print("\"%s\"\n", instr_copy->key);
+            else
+                archi_print("NULL\n");
+        }
+
+        {
+            archi_print(ARCHI_LOG_INDENT "    original_key = ");
+
+            if (instr_copy->original_key != NULL)
+                archi_print("\"%s\"\n", instr_copy->original_key);
+            else
+                archi_print("NULL\n");
+        }
+    }
+
+    if (dry_run)
+        return 0;
+
+    if ((instr_copy->key == NULL) || (instr_copy->key[0] == '\0'))
+        return ARCHI_STATUS_EMISUSE;
+    else if ((instr_copy->original_key == NULL) || (instr_copy->original_key[0] == '\0'))
+        return ARCHI_STATUS_EMISUSE;
+
+    archi_status_t code;
+
+    // Obtain the context from the registry
+    archi_pointer_t context_value = archi_context_get_slot(registry,
+            (archi_context_op_designator_t){.name = instr_copy->original_key}, &code);
+
+    if (code != 0)
+    {
+        if (code < 0)
+            return code;
+        else if (code == 1)
+            return 1; // the context is not found
+        else
+            return ARCHI_STATUS_EFAILURE;
+    }
+    else if ((context_value.flags & ARCHI_POINTER_FLAG_FUNCTION) ||
+            (context_value.ptr == NULL))
+        return ARCHI_STATUS_EVALUE;
+
+    // Insert the context to the registry, which also increments the reference count
+    code = archi_context_set_slot(registry,
+            (archi_context_op_designator_t){.name = instr_copy->key}, context_value);
+
+    if (code != 0)
+        return ARCHI_STATUS_TO_ERROR(code);
 
     return 0;
 }
@@ -1129,70 +1200,26 @@ archi_exe_registry_instr_execute(
 
     archi_status_t code;
 
+#define INSTRUCTION(type, name)                                                 \
+        case ARCHI_EXE_REGISTRY_INSTR_##type:                                   \
+            if (logging)                                                        \
+                archi_print(ARCHI_LOG_INDENT "instruction(" #type ")\n");       \
+                                                                                \
+            code = archi_exe_registry_instr_execute_##name(registry,            \
+                    (const archi_exe_registry_instr_##name##_t*)instruction,    \
+                    ref_count, dry_run, logging);                               \
+            break
+
     switch (instruction->type)
     {
-        case ARCHI_EXE_REGISTRY_INSTR_INIT_FROM_CONTEXT:
-            if (logging)
-                archi_print(ARCHI_LOG_INDENT "instruction(INIT_FROM_CONTEXT)\n");
-
-            code = archi_exe_registry_instr_execute_init_from_context(registry,
-                    (const archi_exe_registry_instr_init_from_context_t*)instruction, ref_count,
-                    dry_run, logging);
-            break;
-
-        case ARCHI_EXE_REGISTRY_INSTR_INIT_FROM_SLOT:
-            if (logging)
-                archi_print(ARCHI_LOG_INDENT "instruction(INIT_FROM_SLOT)\n");
-
-            code = archi_exe_registry_instr_execute_init_from_slot(registry,
-                    (const archi_exe_registry_instr_init_from_slot_t*)instruction, ref_count,
-                    dry_run, logging);
-            break;
-
-        case ARCHI_EXE_REGISTRY_INSTR_FINAL:
-            if (logging)
-                archi_print(ARCHI_LOG_INDENT "instruction(FINAL)\n");
-
-            code = archi_exe_registry_instr_execute_final(registry,
-                    (const archi_exe_registry_instr_final_t*)instruction, ref_count,
-                    dry_run, logging);
-            break;
-
-        case ARCHI_EXE_REGISTRY_INSTR_SET_TO_VALUE:
-            if (logging)
-                archi_print(ARCHI_LOG_INDENT "instruction(SET_TO_VALUE)\n");
-
-            code = archi_exe_registry_instr_execute_set_to_value(registry,
-                    (const archi_exe_registry_instr_set_to_value_t*)instruction, ref_count,
-                    dry_run, logging);
-            break;
-
-        case ARCHI_EXE_REGISTRY_INSTR_SET_TO_CONTEXT:
-            if (logging)
-                archi_print(ARCHI_LOG_INDENT "instruction(SET_TO_CONTEXT)\n");
-
-            code = archi_exe_registry_instr_execute_set_to_context(registry,
-                    (const archi_exe_registry_instr_set_to_context_t*)instruction, ref_count,
-                    dry_run, logging);
-            break;
-
-        case ARCHI_EXE_REGISTRY_INSTR_SET_TO_SLOT:
-            if (logging)
-                archi_print(ARCHI_LOG_INDENT "instruction(SET_TO_SLOT)\n");
-
-            code = archi_exe_registry_instr_execute_set_to_slot(registry,
-                    (const archi_exe_registry_instr_set_to_slot_t*)instruction, ref_count,
-                    dry_run, logging);
-            break;
-
-        case ARCHI_EXE_REGISTRY_INSTR_ACT:
-            if (logging)
-                archi_print(ARCHI_LOG_INDENT "instruction(ACT)\n");
-
-            code = archi_exe_registry_instr_execute_act(registry,
-                    (const archi_exe_registry_instr_act_t*)instruction, ref_count,
-                    dry_run, logging);
-            break;
+        INSTRUCTION(INIT_FROM_CONTEXT, init_from_context);
+        INSTRUCTION(INIT_FROM_SLOT, init_from_slot);
+        INSTRUCTION(COPY, copy);
+        INSTRUCTION(FINAL, final);
+        INSTRUCTION(SET_TO_VALUE, set_to_value);
+        INSTRUCTION(SET_TO_CONTEXT, set_to_context);
+        INSTRUCTION(SET_TO_SLOT, set_to_slot);
+        INSTRUCTION(ACT, act);
 
         default:
             if (logging)
