@@ -98,14 +98,12 @@ archi_log_colorful(void)
 
 void
 archi_print(
-        int verbosity,
         const char *format,
         ...)
 {
-    if ((archi_logger == NULL) || (format == NULL))
+    if (archi_logger == NULL)
         return;
-
-    if (archi_log_verbosity() < verbosity)
+    else if (format == NULL)
         return;
 
     va_list args;
@@ -116,25 +114,23 @@ archi_print(
     va_end(args);
 }
 
-void
+bool
 archi_print_lock(
         int verbosity)
 {
     if (archi_log_verbosity() < verbosity)
-        return;
+        return false;
 
 #ifndef __STDC_NO_ATOMICS__
     while (atomic_flag_test_and_set_explicit(&archi_logger->spinlock, memory_order_relaxed));
 #endif
+
+    return true;
 }
 
 void
-archi_print_unlock(
-        int verbosity)
+archi_print_unlock(void)
 {
-    if (archi_log_verbosity() < verbosity)
-        return;
-
 #ifndef __STDC_NO_ATOMICS__
     atomic_flag_clear_explicit(&archi_logger->spinlock, memory_order_relaxed);
 #endif

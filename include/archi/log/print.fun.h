@@ -27,13 +27,14 @@
 #ifndef _ARCHI_LOG_PRINT_FUN_H_
 #define _ARCHI_LOG_PRINT_FUN_H_
 
+#include <stdbool.h>
+
 /**
  * @brief Print formatted text to the log stream using a printf-style format string.
  *
  * If @p format is NULL, the function returns immediately without printing.
- *
- * @param[in] verbosity
- *     Minimum verbosity level at which the message is printed.
+ * The message won't be printed if the print lock verbosity level
+ * is greater than the logging verbosity level.
  *
  * @param[in] format
  *     A null-terminated printf-style format string. May be NULL,
@@ -44,7 +45,6 @@
  */
 void
 archi_print(
-        int verbosity,
         const char *format,
         ...
 );
@@ -62,12 +62,14 @@ archi_print(
  * @note When C11 atomics are not available, this operation is a no-op:
  *       thread safety is not guaranteed (output may interleave in multithreaded scenarios).
  *
+ * @return True if the spinlock is acquired, false otherwise.
+ *
  * @warning This lock is not recursive.
  * Each archi_print_lock() must be followed by archi_print_unlock().
  * archi_log_*() functions must not be called within lock-unlock section,
  * as they use the same spinlock.
  */
-void
+bool
 archi_print_lock(
         int verbosity
 );
@@ -75,17 +77,12 @@ archi_print_lock(
 /**
  * @brief Unock an internal spinlock to protect a composite printing operation.
  *
- * @param[in] verbosity
- *     Minimum verbosity level at which the spinlock is released.
- *
  * @note When C11 atomics are not available, this operation is a no-op.
  *
  * @warning Each archi_print_unlock() must be preceded by archi_print_lock().
  */
 void
-archi_print_unlock(
-        int verbosity
-);
+archi_print_unlock(void);
 
 /*****************************************************************************/
 

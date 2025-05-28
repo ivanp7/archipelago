@@ -125,7 +125,6 @@ execute_instructions(void);
 static
 void
 print_signal_watch_set(
-        int verbosity,
         const archi_signal_watch_set_t *signal_watch_set
 );
 
@@ -155,16 +154,16 @@ main(
             break;
 
         case ARCHI_STATUS_EVALUE: // incorrect arguments
-            archi_print(0, "Error: incorrect command line arguments.\n");
+            archi_print("Error: incorrect command line arguments.\n");
             return 2;
 
         case ARCHI_STATUS_ENOMEMORY: // memory allocation error
-            archi_print(0, "Error: memory allocation failure while parsing command line arguments.\n");
+            archi_print("Error: memory allocation failure while parsing command line arguments.\n");
             return 3;
 
         case ARCHI_STATUS_EFAILURE:
         default: // unknown error
-            archi_print(0, "Error: unknown failure while parsing command line arguments.\n");
+            archi_print("Error: unknown failure while parsing command line arguments.\n");
             return 1;
     }
 
@@ -296,31 +295,31 @@ print_logo(void)
     archi_print_lock(0);
 
     if (!archi_process.args.no_color)
-        archi_print(0, ARCHI_COLOR_RESET);
+        archi_print(ARCHI_COLOR_RESET);
 
-    archi_print(0, "\n");
+    archi_print("\n");
 
     for (int i = 0; i < LINES; i++)
     {
-        archi_print(0, "  ");
+        archi_print("  ");
 
         for (int j = 0; j < LETTERS; j++)
         {
             if (!archi_process.args.no_color)
-                archi_print(0, "%s", colors[j]);
+                archi_print("%s", colors[j]);
 
-            archi_print(0, "%s%s", space, logo[i][j]);
+            archi_print("%s%s", space, logo[i][j]);
         }
 
         if (!archi_process.args.no_color)
-            archi_print(0, ARCHI_COLOR_RESET);
+            archi_print(ARCHI_COLOR_RESET);
 
-        archi_print(0, "\n");
+        archi_print("\n");
     }
 
-    archi_print(0, "\n");
+    archi_print("\n");
 
-    archi_print_unlock(0);
+    archi_print_unlock();
 
 #undef LINES
 #undef LETTERS
@@ -572,19 +571,20 @@ preliminary_pass_of_input_files(void)
                 archi_signal_watch_set_t *signal_watch_set = contents->value.ptr;
                 archi_signal_watch_set_join(archi_process.signal_watch_set, signal_watch_set);
 
-                archi_print_lock(ARCHI_LOG_VERBOSITY_DEBUG);
+                if (archi_print_lock(ARCHI_LOG_VERBOSITY_DEBUG))
                 {
                     if (archi_log_colorful())
-                        archi_print(ARCHI_LOG_VERBOSITY_DEBUG, ARCHI_LOG_COLOR_DEBUG);
+                        archi_print(ARCHI_LOG_COLOR_DEBUG);
 
-                    archi_print(ARCHI_LOG_VERBOSITY_DEBUG, ARCHI_LOG_INDENT "  signals =");
-                    print_signal_watch_set(ARCHI_LOG_VERBOSITY_DEBUG, signal_watch_set);
-                    archi_print(ARCHI_LOG_VERBOSITY_DEBUG, "\n");
+                    archi_print(ARCHI_LOG_INDENT "  signals =");
+                    print_signal_watch_set(signal_watch_set);
+                    archi_print("\n");
 
                     if (archi_log_colorful())
-                        archi_print(ARCHI_LOG_VERBOSITY_DEBUG, ARCHI_COLOR_RESET);
+                        archi_print(ARCHI_COLOR_RESET);
+
+                    archi_print_unlock();
                 }
-                archi_print_unlock(ARCHI_LOG_VERBOSITY_DEBUG);
             }
             else if (strcmp(ARCHI_EXE_INPUT_FILE_CONTENTS_KEY_INSTRUCTIONS, contents->name) == 0)
             {
@@ -656,19 +656,20 @@ start_signal_management(void)
     {
         archi_log_debug(M, "Creating the signal management context...");
 
-        archi_print_lock(ARCHI_LOG_VERBOSITY_DEBUG);
+        if (archi_print_lock(ARCHI_LOG_VERBOSITY_DEBUG))
         {
             if (archi_log_colorful())
-                archi_print(ARCHI_LOG_VERBOSITY_DEBUG, ARCHI_LOG_COLOR_DEBUG);
+                archi_print(ARCHI_LOG_COLOR_DEBUG);
 
-            archi_print(ARCHI_LOG_VERBOSITY_DEBUG, ARCHI_LOG_INDENT "  signals =");
-            print_signal_watch_set(ARCHI_LOG_VERBOSITY_DEBUG, archi_process.signal_watch_set);
-            archi_print(ARCHI_LOG_VERBOSITY_DEBUG, "\n");
+            archi_print(ARCHI_LOG_INDENT "  signals =");
+            print_signal_watch_set(archi_process.signal_watch_set);
+            archi_print("\n");
 
             if (archi_log_colorful())
-                archi_print(ARCHI_LOG_VERBOSITY_DEBUG, ARCHI_COLOR_RESET);
+                archi_print(ARCHI_COLOR_RESET);
+
+            archi_print_unlock();
         }
-        archi_print_unlock(ARCHI_LOG_VERBOSITY_DEBUG);
 
         if (archi_process.args.dry_run)
             return;
@@ -816,15 +817,11 @@ execute_instructions(void)
 
 void
 print_signal_watch_set(
-        int verbosity,
         const archi_signal_watch_set_t *signal_watch_set)
 {
-    if (archi_log_verbosity() < verbosity)
-        return;
-
-#define PRINT_SIGNAL(signal) do { \
+#define PRINT_SIGNAL(signal) do {         \
         if (signal_watch_set->f_##signal) \
-            archi_print(verbosity, " %s", #signal); \
+            archi_print(" %s", #signal);  \
     } while (0)
 
     PRINT_SIGNAL(SIGINT);
@@ -859,7 +856,7 @@ print_signal_watch_set(
     for (size_t i = 0; i < archi_signal_number_of_rt_signals(); i++)
     {
         if (signal_watch_set->f_SIGRTMIN[i])
-            archi_print(verbosity, " SIGRTMIN+%zu", i);
+            archi_print(" SIGRTMIN+%zu", i);
     }
 }
 
