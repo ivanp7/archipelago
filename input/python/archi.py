@@ -994,14 +994,13 @@ class Application:
 
             return MemoryBlock(CValue(instr, callback=init_instr))
 
-    CONTENTS_KEY_INSTRUCTIONS = 'archi.instructions'
-    CONTENTS_KEY_SIGNALS      = 'archi.signals'
-
     KEY_REGISTRY    = 'archi.registry'
     KEY_EXECUTABLE  = 'archi.executable'
     KEY_INPUT_FILE  = 'archi.input_file'
+    KEY_SIGNAL      = 'archi.signal'
 
-    KEY_SIGNAL = 'archi.signal'
+    CONTENT_INSTRUCTIONS = 'archi.instructions'
+    CONTENT_SIGNALS      = 'archi.signals'
 
     def __init__(self):
         """Initialize a file.
@@ -1103,21 +1102,16 @@ class Application:
         self._instructions.append(Application._InstructionFinal(
             key=key))
 
-    def contents(self) -> "dict":
-        """Obtain the application contents dictionary.
-        """
-        return self._contents
-
-    def set_contents(self, contents: "dict"):
-        """Set the application parameter list.
+    def add_contents(self, contents: "dict"):
+        """Add key-values to the dictionary of contents.
         """
         if not isinstance(contents, dict) \
                 or not all(isinstance(key, str) for key in contents.keys()):
             raise TypeError("Contents must be a dictionary with string keys")
-        elif Application.CONTENTS_KEY_INSTRUCTIONS in contents:
-            raise KeyError(f"Application contents list cannot contain key '{Application.CONTENTS_KEY_INSTRUCTIONS}'")
+        elif Application.CONTENT_INSTRUCTIONS in contents:
+            raise KeyError(f"Application contents list cannot contain key '{Application.CONTENT_INSTRUCTIONS}'")
 
-        self._contents = contents
+        self._contents.update(contents)
 
     def add_block(self, value: "CValue") -> "MemoryBlock":
         """Add a memory block to the list of blocks.
@@ -1127,8 +1121,9 @@ class Application:
         return block
 
     def reset(self):
-        """Reset the list of instructions.
+        """Reset the internal state.
         """
+        self._contents = {}
         self._instructions = []
         self._blocks = {}
 
@@ -1183,7 +1178,7 @@ class Application:
             node.value.element.size = c.sizeof(archi_exe_registry_instr_list_t)
             node.value.element.alignment = c.alignment(archi_exe_registry_instr_list_t)
 
-            ptr_key = self._alloc_string(Application.CONTENTS_KEY_INSTRUCTIONS)
+            ptr_key = self._alloc_string(Application.CONTENT_INSTRUCTIONS)
 
             def init_contents_node(node: "archi_parameter_list_t",
                                    ptr_contents=ptr_contents, ptr_key=ptr_key,
