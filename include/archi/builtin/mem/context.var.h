@@ -41,6 +41,7 @@ const archi_context_interface_t archi_context_memory_interface; ///< Memory cont
 ARCHI_CONTEXT_INIT_FUNC(archi_context_memory_mapping_init);   ///< Memory mapping context initialization function.
 ARCHI_CONTEXT_FINAL_FUNC(archi_context_memory_mapping_final); ///< Memory mapping context finalization function.
 ARCHI_CONTEXT_GET_FUNC(archi_context_memory_mapping_get);     ///< Memory mapping context getter function.
+ARCHI_CONTEXT_ACT_FUNC(archi_context_memory_mapping_act);     ///< Memory mapping context action function.
 
 extern
 const archi_context_interface_t archi_context_memory_mapping_interface; ///< Memory mapping context interface.
