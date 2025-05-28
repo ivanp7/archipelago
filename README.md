@@ -1,184 +1,219 @@
 # Archipelago
 
-A versatile, modular application configured by memory-mapped files and plugins that define its specific behavior.
+A versatile, modular application configured via memory-mapped files and plugins that define its specific behavior.
+
+## Usage Overview
+
+The `archi` executable accepts one or more memory-mapped initialization files containing instructions and supplementary data.
+It processes these input files sequentially to reach the desired state and perform specified actions.
+
+## Contexts
+
+The basic unit of operation is a **context**: any object or resource conforming to a generic interface supporting:
+
+- `init()`: Allocate/initialize context using provided parameters.
+- `final()`: Finalize/destroy the context.
+- `get()`: Retrieve a pointer from the context by slot (name + list of integer indices).
+- `set()`: Assign a pointer within the context by slot (name + indices).
+- `act()`: Invoke an action on the context by slot (name + indices).
+
+All contexts are registered in an internal registry -- a hashmap with string keys.
+
+For comprehensive descriptions see [docs/contexts.md](docs/contexts.md).
+
+## Instruction Types
+
+Initialization files may contain different instruction types:
+
+- `NOOP`: No operation.
+- `INIT_FROM_CONTEXT`: Initialize new context using the interface of another existing one; insert into registry.
+- `INIT_FROM_SLOT`: Get interface from another's slot; initialize new context; insert into registry.
+- `FINAL`: Finalize/remove specified context from registry.
+- `SET_TO_VALUE`: Set value/data pointer in given slot of specified context.
+- `SET_TO_CONTEXT`: Set context reference pointer in given slot of specified context.
+- `SET_TO_SLOT`: Copy pointer across slots between two contexts as instructed.
+- `ACT`: Trigger named action on target context.
+
+For comprehensive descriptions see [docs/instructions.md](docs/instructions.md).
+
+## Built-in Contexts
+
+Several built-in contexts exist at startup:
+  - The registry itself (allowing introspection/manipulation)
+  - Library handle of the executable (for access to built-ins)
+  - Currently processed input file (memory-mapped contents)
+  - Signal management context (access signal flags/install handlers)
+
+For comprehensive descriptions see [docs/builtins.md](docs/builtins.md).
+
+## Built-in Interfaces
+
+These are the exported context interface symbols built into the executable.
+They provide foundational mechanisms for configuration, memory management,
+processing, data structures, inter-process communication (IPC), resources access, and concurrency.
+
+- **Meta Features**
+  - `archi_context_parameters_interface`: Parameter list used for `init()` and `act()` context operations.
+  - `archi_context_pointer_interface`: Copied pointer with custom attributes.
+
+- **Memory Management**
+  - `archi_context_memory_interface`: Generic memory allocation context.
+  - `archi_context_memory_mapping_interface`: Pointer to a mapped region of memory.
+
+- **Hierarchical State Processing (HSP)**
+  - `archi_context_hsp_state_interface`: HSP state (function + data + metadata).
+  - `archi_context_hsp_transition_interface`: HSP transition (function + data).
+  - `archi_context_hsp_interface`: HSP instance (entry state + transition).
+  - `archi_context_hsp_frame_interface`: HSP frame (sequence of states).
+  - `archi_context_hsp_branch_state_data_interface`: Data for a HSP branch state.
+
+- **Data Structures**
+  - `archi_context_ds_hashmap_interface`: Hashmap.
+  - `archi_context_ds_lfqueue_interface`: Lock-free queue.
+
+- **Interprocess Communication & Signals**
+  - `archi_context_ipc_env_interface`: Value of an environmental variable.
+  - `archi_context_ipc_signal_handler_interface`: Signal handler (function + data).
+
+- **OS Resources**
+  - `archi_context_res_file_interface`: Open and/or mapped file.
+  - `archi_context_res_library_interface`: Loaded dynamic library handle.
+
+- **Thread Groups**
+  - `archi_context_res_thread_group_interface`: Thread group context.
+  - `archi_context_res_thread_group_work_interface`: Individual task assigned to thread groups.
+  - `archi_context_res_thread_group_callback_interface`: Callback invoked upon completion of thread group tasks.
+  - `archi_context_res_thread_group_dispatch_data_interface`: Data for a HSP state for thread group work dispatch.
+
+For comprehensive descriptions see [docs/builtins.md](docs/builtins.md).
+
+## External Plugins
+
+There are several external plugins provided in `/plugin` directory:
+
+  - `sdl` (SDL2 windows, PSFv2 font)
+  - `opencl` (parallel compute offload using OpenCL)
+
+## Python-based Generation of Initialization Files
+
+Initialization files for `archi` can be generated using the `archi` Python module.
+The typical workflow is as follows:
+
+1. Create an instance of the `Application` class.
+2. Manipulate its context registry as if operating directly on live contexts.
+3. Serialize ("fossilize") the internal state of your application instance into a byte array.
+4. Write this byte array to a file.
+
+You interact with contexts in the registry via dictionary-like access: `app[key]`,
+where `app` is your Application instance and `key` is a string identifier.
+
+- Assigning to `app[key]` initializes a new context and inserts it into the registry.
+- Deleting (`del app[key]`) finalizes and removes that context from the registry.
+
+To access slots within contexts:
+- Use attribute-style selectors: e.g., `app["foo"].bar`
+- Nested fields are supported (`comp1.comp2.comp3`)
+- Integer indices may also be used (`comp1.comp2[index1][index2]`)
+- Invoke actions on slots using function-call syntax; these accept keyword arguments or an optional parameter list context as positional argument—e.g.,  `app["foo"].bar(arg1=value1, arg2=value2)`, or `app["foo"].bar(app["baz"], arg1=value1, arg2=value2)`.
+
+To create new contexts:
+First declare their interface by instantiating a ``ContextInterface`` object (constructor accepts another context or slot).
+This provides its own callable operator accepting similar arguments; instead of executing immediately,
+it returns a ``ContextSpec`` which you assign to ``app[key]`` in order to initialize/register that new context.
+
+Here is an example script:
+
+```python
+import ctypes as c
+import sys
+
+import archi
 
 
+VALUE_TRUE = archi.CValue(c.c_bool(True)) # define a value like this to make it reusable in the file and save bytes
 
 
+app = archi.Application()
 
-Split an application into separate reusable modules, each doing its singular purpose,
-and connected at runtime using configuration in shared memory.
+# Add signals to the watch set
+def watch_signals():
+    signal_watch_set = archi.archi_signal_watch_set_t()
+    signal_watch_set.f_SIGINT = True
+    signal_watch_set.f_SIGQUIT = True
+    signal_watch_set.f_SIGTERM = True
+    signal_watch_set.f_SIGCONT = True
 
-During the initialization phase, the Archipelago application
-handles loading of plugins and execution of configuration steps,
-creating contexts of resources using producer interfaces,
-and providing the contexts to consumer interfaces.
+    app.add_contents({archi.Application.CONTENT_SIGNALS: signal_watch_set})
+watch_signals()
+del watch_signals
 
-![Application example](docs/app_example.png)
+# Load plugins and create contexts
+executable = app[archi.Application.KEY_EXECUTABLE] # handle of the executable itself
 
-During the execution phase, the Archipelago application runs the finite state machine.
-Each state of this FSM is a different function that does its piece of work and chooses the next state(s).
-A transition function that is called between state functions can also be specified.
+library_loader = archi.ContextInterface(executable) # the context interface for library handles
+app["plugin.sdl"] = library_loader(pathname="libarchip_sdl.so") # load SDL plugin
+del library_loader
 
-![Finite state machine example](docs/fsm_example.png)
+sdl_library_interface = archi.ContextInterface(
+        app["plugin.sdl"].archip_context_sdl2_library_interface) # SDL2 library interface (SDL_Init(), SDL_Quit())
+app["context.sdl_library"] = sdl_library_interface(
+        video=VALUE_TRUE, audio=VALUE_TRUE) # initialize SDL2 video and audio subsystems
+del sdl_library_interface
 
-This application was originally designed as a part of
-the [Rayway](https://github.com/ivanp7/rayway) engine to implement a command pipeline.
+sdl_window_interface = archi.ContextInterface(
+        app["plugin.sdl"].archip_context_sdl2_window_interface) # SDL2 window context interface
+app["context.window"] = sdl_window_interface(texture_width=c.c_int(512), texture_height=c.c_int(256),
+                                             window_title="Still Alive") # create a window
+del sdl_window_interface
 
-## The executable
+del app["plugin.sdl"] # unload SDL plugin
 
-1. obtains an application configuration from a list of memory-mapped files;
-2. loads shared libraries providing plugins as specified in the configuration;
-3. performs initialization instructions (creates contexts) as specified in the configuration;
-4. executes a finite state machine with the specified entry state and state transition;
-5. finalizes the application (destroys contexts).
+# Fossilize the application
+app_memory = app.memory() # get high-level memory description object
+app_memory.pack() # pack the memory to decrease size
+app_file_contents = app_memory.fossilize(0x7ffffff00000) # fossilize the memory
+                                                         # it is to be mapped at the specified address
 
-All contexts are initialized and provided to consumers according to the configuration during the initialization phase.
-After the initialization phase comes the execution phase, during which a finite state machine is run as described below.
-The entry state and state transition of the FSM are specified by the configuration in shared memory.
+# Write the file
+with open(sys.argv[1], mode='wb') as file:
+    file.write(app_file_contents)
 
-## Memory-mapped configuration files
+print(f"Wrote {app_memory.size()} bytes to '{sys.argv[1]}',")
+print(f"including {app_memory.padding()} padding bytes")
 
-Configuration files contain information about libraries to load, contexts to create, signals to watch, application data, etc.
+```
 
-The Archipelago executable loads and processes configuration files sequentially.
-Each configuration modifies the state left after the previous configuration.
+For comprehensive descriptions see [docs/python.md](docs/python.md).
 
-There is a Python module named `archi` in the `python/` subdirectory that
-[helps](https://github.com/ivanp7/still-alive/still-alive.py)
-in generation of configuration files.
+## binfmt\_misc
 
-## Important concepts
+Archipelago init files can be made directly executable on Linux systems.
 
-### Application context system
+To enable this feature, run `register-binfmt.sh` as root to register the file format with the kernel via `binfmt_misc`.
+This allows you to execute `.archi` files without explicitly calling the `archi` binary:
 
-#### Context
+```sh
+./file.archi
+```
 
-A context can really be anything. Internally, a context pointer has type `void*` and is never dereferenced.
+instead of:
 
-The Archipelago executable provides several built-in contexts:
-* `archi_app_fsm`: the finite state machine for the execution phase;
-* `archi_app_signal`: signal management related utilities (signal handler and flags).
+```sh
+archi ./file.archi
+```
 
-#### Context interface
+Ensure that `archi` is installed in your system path so the kernel can locate it when executing `.archi` files.
 
-Context interfaces serve as limited dynamic classes of context objects.
+# Doxygen ocumentation
 
-A context interface is a structure of pointers to the following functions:
-* `init(context_ptr, config) -> status`: creates and initializes a new context according to `config`, and stores the pointer in `*context_ptr`;
-* `final(context)`: finalizes and destroys `context` previously created by `init()`;
-* `set(context, slot, value) -> status`: accepts `value` for internal use by `context`, the meaning of which is specified by `slot`;
-* `get(context, slot, value) -> status`: retrieves data provided by `context` for `slot` to a location pointed to by `value`;
-* `act(context, action, params) -> status`: invokes an internal `action` for `context` with the specified `params`.
-
-The Archipelago executable provides several built-in context interfaces:
-* `files`: opening files and mapping them into memory;
-* `shared_libraries`: loading shared libraries;
-* `threads`: creating groups of threads for concurrent processing.
-
-A plugin library can provide multiple context interfaces.
-
-#### Application
-
-An application is a structure with:
-* a container of loaded libraries;
-* a container of pointers to context interfaces;
-* a container of pointers to contexts.
-
-Currently, the Archipelago executable uses linked lists as containers for applications.
-
-#### Configuration
-
-An application configuration is a list of instructions called "steps" that prepare an application for execution.
-There are several types of configuration steps:
-* `init`: create a context and add it to the application contexts;
-* `final`: destroy a context and remove it from the application contexts;
-* `set`: call a setter function on a context, providing it a value;
-* `assign`: call a setter function on a context, providing it another context or its getter function output value;
-* `act`: call an action function on a context.
-
-### Finite state machine
-
-The algorithm is as following:
-
-0. Push the entry state to the FSM stack.
-1. Call the transition function if it's provided, otherwise skip step 2.
-2. If the transition function returned a transitional state, use it as the next state and go to step 5.
-3. If the stack is empty, exit.
-4. Pop the next state from the stack.
-5. Call the state function [it can modify the stack].
-6. Go to step 1.
-
-#### State
-
-A state of a finite state machine is a triple of:
-1. a pointer to a state function;
-2. a `void*` pointer to state data (optional);
-3. a `void*` pointer to state metadata (optional).
-
-State functions return nothing and accept a pointer to a finite state machine context (`fsm`).
-State functions can access state data and metadata via the FSM context pointer.
-
-State function perform steps of application logic and can influence the successive states
-by manipulating the stack. State functions can use `fsm_proceed()` to push and pop frames
-(sequences of states) to or from the stack.
-
-`fsm_proceed()` accepts the following parameters:
-1. finite state machine context;
-2. number of frames to pop from the stack;
-3. frame to push to the stack;
-4. length of the pushed frame.
-
-`fsm_proceed()` works during FSM execution of a state only.
-Using it from transition function or outside of an FSM won't work.
-If called from nested function calls, `fsm_proceed()` unwinds the call stack
-up to the state function using `longjmp()`.
-
-#### Transition
-
-A transition of a finite state machine is a pair of:
-1. a pointer to a transition function;
-2. a `void*` pointer to transition data (optional).
-
-Transition functions return nothing and accept the following parameters:
-
-* previous state (`prev_state`, input passed by value);
-* next state (`next_state`, input passed by value);
-* transitional state (`trans_state`, output passed by pointer);
-* pointer to transition function data (`data`).
-
-Transition function is called:
-* every time FSM state changes,
-* before an entry state (`prev_state` is null),
-* after an exit state (`next_state` is null).
-
-Transition function can provide a transitional state, which would precede the state from the stack top.
-Transition cannot be changed during FSM execution and is completely opaque and hidden from state functions.
-
-# Public API
-
-The Archipelago public API consists the following parts:
-* `util`: auxiliary utilities (linked lists, logging, shared memory interface, shared libraries interface, signal management interface, etc);
-* `app`: application context system;
-* `fsm`: finite state machine implementation;
-* `exe`: general purpose executable configured via shared memory;
-* `plugin`: built-in plugins providing most used types of resources.
-
-# Example plugins and applications
-
-* `plugin/sdl/` -- a plugin providing SDL2 windows and .psf2 fonts;
-* [port](https://github.com/ivanp7/port) -- efficient computations on GPUs and CPUs using OpenCL;
-* [still-alive](https://github.com/ivanp7/still-alive) -- a demo application.
-
-# Documentation
-
-Doxygen documentation is available at `docs` subdirectory. To build it, run `make`.
+Doxygen documentation is available at `/doxygen` subdirectory. To build it, run `make`.
 
 # How to build
 
 0. go to the repository root directory;
-1. run `configure.py` (optionally optional environment variables) to generate `build.ninja`;
-2. run `ninja` to build the project.
+1. (optional) export environmental variables to control behavior of `configure.py` (see accepted environmental variables in the script);
+2. run `configure.py` to generate `build.ninja`;
+3. run `ninja` to build the project.
 
 # Build dependencies
 
