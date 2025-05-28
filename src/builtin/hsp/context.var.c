@@ -742,7 +742,7 @@ ARCHI_CONTEXT_GET_FUNC(archi_context_hsp_frame_get)
     {
         if (slot.num_indices != 1)
             return ARCHI_STATUS_EMISUSE;
-        else if (slot.index[0] >= hsp_frame->num_states)
+        else if ((slot.index[0] < 0) || ((size_t)slot.index[0] >= hsp_frame->num_states))
             return ARCHI_STATUS_EMISUSE;
 
         *value = context_data->frame_state[slot.index[0]];
@@ -824,7 +824,7 @@ ARCHI_CONTEXT_SET_FUNC(archi_context_hsp_frame_set)
     {
         if (slot.num_indices != 1)
             return ARCHI_STATUS_EMISUSE;
-        else if (slot.index[0] >= hsp_frame->num_states)
+        else if ((slot.index[0] < 0) || ((size_t)slot.index[0] >= hsp_frame->num_states))
             return ARCHI_STATUS_EMISUSE;
         else if (value.flags & ARCHI_POINTER_FLAG_FUNCTION)
             return ARCHI_STATUS_EVALUE;
@@ -1035,7 +1035,7 @@ ARCHI_CONTEXT_GET_FUNC(archi_context_hsp_branch_state_data_get)
     {
         if (slot.num_indices != 1)
             return ARCHI_STATUS_EMISUSE;
-        else if (slot.index[0] >= branch_state_data->num_branches)
+        else if ((slot.index[0] < 0) || ((size_t)slot.index[0] >= branch_state_data->num_branches))
             return ARCHI_STATUS_EMISUSE;
 
         *value = context_data->branch_frame[slot.index[0]];
@@ -1124,7 +1124,7 @@ ARCHI_CONTEXT_SET_FUNC(archi_context_hsp_branch_state_data_set)
     {
         if (slot.num_indices != 1)
             return ARCHI_STATUS_EMISUSE;
-        else if (slot.index[0] >= branch_state_data->num_branches)
+        else if ((slot.index[0] < 0) || ((size_t)slot.index[0] >= branch_state_data->num_branches))
             return ARCHI_STATUS_EMISUSE;
         else if (value.flags & ARCHI_POINTER_FLAG_FUNCTION)
             return ARCHI_STATUS_EVALUE;

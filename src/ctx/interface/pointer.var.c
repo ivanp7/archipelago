@@ -181,8 +181,8 @@ ARCHI_CONTEXT_GET_FUNC(archi_context_pointer_get)
                 if (context->element.size == 0)
                     return ARCHI_STATUS_EMISUSE;
 
-                size_t offset = slot.index[0];
-                if (offset >= context->element.num_of)
+                ptrdiff_t offset = slot.index[0];
+                if ((offset < 0) || ((size_t)offset >= context->element.num_of))
                     return ARCHI_STATUS_EMISUSE;
 
                 size_t padded_size = context->element.size;

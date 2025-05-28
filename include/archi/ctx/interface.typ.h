@@ -37,7 +37,7 @@
 typedef struct archi_context_op_designator {
     const char *name; ///< Name string.
 
-    const size_t *index; ///< Array of indices.
+    const ptrdiff_t *index; ///< Array of indices.
     size_t num_indices;  ///< Size of the array of indices.
 } archi_context_op_designator_t;
 

@@ -488,7 +488,7 @@ archi_exe_registry_instr_execute_init_from_slot(
                     instr_init_from_slot->interface_source_slot.num_indices);
 
             for (size_t i = 0; i < instr_init_from_slot->interface_source_slot.num_indices; i++)
-                PRINT(" %zu", instr_init_from_slot->interface_source_slot.index[i]);
+                PRINT(" %tu", instr_init_from_slot->interface_source_slot.index[i]);
 
             PRINT("\n");
         }
@@ -701,7 +701,7 @@ archi_exe_registry_instr_execute_set_to_value(
             PRINT(ARCHI_LOG_INDENT "    slot.indices[%zu] =", instr_set_to_value->slot.num_indices);
 
             for (size_t i = 0; i < instr_set_to_value->slot.num_indices; i++)
-                PRINT(" %zu", instr_set_to_value->slot.index[i]);
+                PRINT(" %tu", instr_set_to_value->slot.index[i]);
 
             PRINT("\n");
         }
@@ -785,7 +785,7 @@ archi_exe_registry_instr_execute_set_to_context(
             PRINT(ARCHI_LOG_INDENT "    slot.indices[%zu] =", instr_set_to_context->slot.num_indices);
 
             for (size_t i = 0; i < instr_set_to_context->slot.num_indices; i++)
-                PRINT(" %zu", instr_set_to_context->slot.index[i]);
+                PRINT(" %tu", instr_set_to_context->slot.index[i]);
 
             PRINT("\n");
         }
@@ -890,7 +890,7 @@ archi_exe_registry_instr_execute_set_to_slot(
             PRINT(ARCHI_LOG_INDENT "    slot.indices[%zu] =", instr_set_to_slot->slot.num_indices);
 
             for (size_t i = 0; i < instr_set_to_slot->slot.num_indices; i++)
-                PRINT(" %zu", instr_set_to_slot->slot.index[i]);
+                PRINT(" %tu", instr_set_to_slot->slot.index[i]);
 
             PRINT("\n");
         }
@@ -919,7 +919,7 @@ archi_exe_registry_instr_execute_set_to_slot(
                     instr_set_to_slot->source_slot.num_indices);
 
             for (size_t i = 0; i < instr_set_to_slot->source_slot.num_indices; i++)
-                PRINT(" %zu", instr_set_to_slot->source_slot.index[i]);
+                PRINT(" %tu", instr_set_to_slot->source_slot.index[i]);
 
             PRINT("\n");
         }
@@ -1013,7 +1013,7 @@ archi_exe_registry_instr_execute_act(
             PRINT(ARCHI_LOG_INDENT "    action.indices[%zu] =", instr_act->action.num_indices);
 
             for (size_t i = 0; i < instr_act->action.num_indices; i++)
-                PRINT(" %zu", instr_act->action.index[i]);
+                PRINT(" %tu", instr_act->action.index[i]);
 
             PRINT("\n");
         }

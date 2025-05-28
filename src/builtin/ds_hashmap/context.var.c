@@ -119,7 +119,7 @@ ARCHI_CONTEXT_SET_FUNC(archi_context_ds_hashmap_set)
 {
     if (slot.num_indices > 1)
         return ARCHI_STATUS_EMISUSE;
-    else if ((slot.num_indices > 0) && (slot.index[0] > 1))
+    else if ((slot.num_indices > 0) && ((slot.index[0] < 0) || (slot.index[0] > 1)))
         return ARCHI_STATUS_EMISUSE;
 
     if (value.ptr != NULL)

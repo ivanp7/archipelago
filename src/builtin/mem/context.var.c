@@ -366,8 +366,8 @@ ARCHI_CONTEXT_GET_FUNC(archi_context_memory_mapping_get)
 
         if (slot.num_indices > 0)
         {
-            size_t offset = slot.index[0];
-            if (offset >= context_data->mapping.element.num_of)
+            ptrdiff_t offset = slot.index[0];
+            if ((offset < 0) || ((size_t)offset >= context_data->mapping.element.num_of))
                 return ARCHI_STATUS_EMISUSE;
 
             size_t padded_size = (context_data->mapping.element.size +
@@ -449,8 +449,8 @@ ARCHI_CONTEXT_ACT_FUNC(archi_context_memory_mapping_act)
         if (action.num_indices > 1)
             return ARCHI_STATUS_EMISUSE;
 
-        size_t offset = (action.num_indices > 0) ? action.index[0] : 0;
-        if (offset >= context_data->mapping.element.num_of)
+        ptrdiff_t offset = (action.num_indices > 0) ? action.index[0] : 0;
+        if ((offset < 0) || ((size_t)offset >= context_data->mapping.element.num_of))
             return ARCHI_STATUS_EMISUSE;
 
         archi_pointer_t source = {0};
