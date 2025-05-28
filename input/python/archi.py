@@ -377,7 +377,8 @@ class Parameters:
             raise TypeError("Dynamic parameter list object must be of type Context or None")
 
         self._dparams = _
-        self._sparams = params
+        self._sparams = dict(reversed(params.items())) # archi reverses order when copies the list,
+                                                       # we must counter this here
 
     def dynamic_list(self) -> "Context":
         """Obtain the dynamic parameter list.
@@ -493,7 +494,9 @@ class Context:
             if _ is not None and not isinstance(_, Context):
                 raise TypeError("Dynamic parameter list object must be of type Context")
 
-            self._context._act(self._name, self._indices, dparams=_, sparams=params)
+            self._context._act(self._name, self._indices, dparams=_,
+                               sparams=dict(reversed(params.items()))) # archi reverses order when copies the list,
+                                                                       # we must counter this here
             return Context._Action(self._context, self._name, self._indices)
 
     class _Action:
