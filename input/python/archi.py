@@ -478,7 +478,7 @@ class Context:
         def __setattr__(self, name: "str", value):
             """Perform a slot setting operation.
             """
-            self._context._set(f'{self._name}.{name}', self._indices)
+            self._context._set(f'{self._name}.{name}', self._indices, value)
 
         def __setitem__(self, index: "int", value):
             """Perform a slot setting operation.
@@ -486,7 +486,7 @@ class Context:
             if not isinstance(index, int):
                 raise TypeError("Context slot index must be an integer")
 
-            self._context._set(self._name, self._indices + [index])
+            self._context._set(self._name, self._indices + [index], value)
 
         def __call__(self, _: "Context" = None, /, **params) -> "Context._Action":
             """Perform an action.
@@ -563,7 +563,7 @@ class Context:
                 or not all(isinstance(index, int) for index in slot_indices):
             raise TypeError("Slot indices must be a list of integers")
 
-        if isinstance(value, CValue):
+        if value is None or isinstance(value, CValue):
             self._app._instructions.append(Application._InstructionSetToValue(
                 key=self._key,
                 slot_name=slot_name, slot_indices=slot_indices,
@@ -634,8 +634,8 @@ class Application:
     class _Instruction:
         """Representation of an abstract application initialization instruction.
         """
-        NOOP, INIT_FROM_CONTEXT, INIT_FROM_SLOT, COPY, FINAL, \
-                SET_TO_VALUE, SET_TO_CONTEXT_DATA, SET_TO_CONTEXT_SLOT, ACT = range(9)
+        NOOP, INIT_FROM_CONTEXT, INIT_FROM_SLOT, INIT_POINTER, COPY, FINAL, \
+                SET_TO_VALUE, SET_TO_CONTEXT_DATA, SET_TO_CONTEXT_SLOT, ACT = range(10)
 
     class _InstructionNoop(_Instruction):
         """Representation of an application initialization instruction: no-op.
@@ -766,6 +766,52 @@ class Application:
 
             return MemoryBlock(CValue(instr, callback=init_instr))
 
+    class _InstructionInitPointer(_Instruction):
+        """Representation of an application initialization instruction:
+        initialize a new pointer context.
+        """
+        def __init__(self, key: "str", value: "CValue"):
+            """Initialize an instruction.
+            """
+            if not isinstance(key, str):
+                raise TypeError("Context key must be a string")
+            elif value is not None and not isinstance(value, CValue):
+                raise TypeError("Object assigned to a slot must be of type CValue")
+
+            self._type = Application._Instruction.INIT_POINTER
+            self._key = key
+            self._value = value
+
+            if value is not None:
+                self._flags = value.attributes().get('flags', 0)
+                if self._flags >= 1 << archi_pointer_t.NUM_FLAG_BITS:
+                    raise ValueError(f"Flags must fit into {archi_pointer_t.NUM_FLAG_BITS} lowest bits")
+            else:
+                self._flags = 0
+
+        def alloc(self, app: "Application", ptr_instructions: "list[MemoryBlock]", idx: "int"):
+            """Allocate all required blocks.
+            """
+            instr = archi_exe_registry_instr_init_pointer_t()
+            instr.base.type = self._type
+            if self._value is not None:
+                instr.value.flags = self._flags
+                instr.value.element.num_of = self._value.num_elements()
+                instr.value.element.size = self._value.element_size()
+                instr.value.element.alignment = self._value.element_alignment()
+
+            ptr_key = app._alloc_string(self._key)
+
+            ptr_value = app._alloc_value(self._value)
+
+            def init_instr(instr: "archi_exe_registry_instr_init_pointer_t"):
+                instr.key = ptr_key.address()
+
+                if ptr_value is not None:
+                    instr.value.ptr = ptr_value.address()
+
+            return MemoryBlock(CValue(instr, callback=init_instr))
+
     class _InstructionCopy(_Instruction):
         """Representation of an application initialization instruction:
         create a context alias.
@@ -792,7 +838,7 @@ class Application:
 
             ptr_original_key = app._alloc_string(self._original_key)
 
-            def init_instr(instr: "archi_exe_registry_instr_init_from_slot_t"):
+            def init_instr(instr: "archi_exe_registry_instr_copy_t"):
                 instr.key = ptr_key.address()
 
                 instr.original_key = ptr_original_key.address()
@@ -839,7 +885,7 @@ class Application:
             elif not isinstance(slot_indices, list) \
                     or not all(isinstance(index, int) for index in slot_indices):
                 raise TypeError("Slot indices must be a list of integers")
-            elif not isinstance(value, CValue):
+            elif value is not None and not isinstance(value, CValue):
                 raise TypeError("Object assigned to a slot must be of type CValue")
 
             self._type = Application._Instruction.SET_TO_VALUE
@@ -848,9 +894,10 @@ class Application:
             self._slot_indices = slot_indices
             self._value = value
 
-            self._flags = value.attributes().get('flags', 0)
-            if self._flags >= 1 << archi_pointer_t.NUM_FLAG_BITS:
-                raise ValueError(f"Flags must fit into {archi_pointer_t.NUM_FLAG_BITS} lowest bits")
+            if value is not None:
+                self._flags = value.attributes().get('flags', 0)
+                if self._flags >= 1 << archi_pointer_t.NUM_FLAG_BITS:
+                    raise ValueError(f"Flags must fit into {archi_pointer_t.NUM_FLAG_BITS} lowest bits")
 
         def alloc(self, app: "Application", ptr_instructions: "list[MemoryBlock]", idx: "int"):
             """Allocate all required blocks.
@@ -858,10 +905,11 @@ class Application:
             instr = archi_exe_registry_instr_set_to_value_t()
             instr.base.type = self._type
             instr.slot.num_indices = len(self._slot_indices)
-            instr.value.flags = self._flags
-            instr.value.element.num_of = self._value.num_elements()
-            instr.value.element.size = self._value.element_size()
-            instr.value.element.alignment = self._value.element_alignment()
+            if self._value is not None:
+                instr.value.flags = self._flags
+                instr.value.element.num_of = self._value.num_elements()
+                instr.value.element.size = self._value.element_size()
+                instr.value.element.alignment = self._value.element_alignment()
 
             ptr_key = app._alloc_string(self._key)
 
@@ -1110,22 +1158,15 @@ class Application:
                     interface_source_slot_name=source._name, interface_source_slot_indices=source._indices,
                     dparams_key=dparams_key, sparams=entity.parameters().static_list()))
 
-        elif isinstance(entity, CValue):
-            self._instructions.append(Application._InstructionInitFromContext(
-                key=key,
-                interface_source_key='',
-                dparams_key=None, sparams={'value': entity}))
-
         elif isinstance(entity, Context):
             self._instructions.append(Application._InstructionCopy(
                 key=key,
                 original_key=entity._key))
 
         elif isinstance(entity, Context._Slot) or isinstance(entity, Context._Action):
-            self._instructions.append(Application._InstructionInitFromContext(
+            self._instructions.append(Application._InstructionInitPointer(
                 key=key,
-                interface_source_key='',
-                dparams_key=None, sparams={}))
+                value=None))
 
             self._instructions.append(Application._InstructionSetToSlot(
                 key=key,
@@ -1133,11 +1174,15 @@ class Application:
                 source_key=entity._context._key,
                 source_slot_name=entity._name, source_slot_indices=entity._indices))
 
-        else:
-            self._instructions.append(Application._InstructionInitFromContext(
+        elif entity is None or isinstance(entity, CValue):
+            self._instructions.append(Application._InstructionInitPointer(
                 key=key,
-                interface_source_key='',
-                dparams_key=None, sparams={'value': CValue(entity)}))
+                value=entity))
+
+        else:
+            self._instructions.append(Application._InstructionInitPointer(
+                key=key,
+                value=CValue(entity)))
 
     def __delitem__(self, key: "str"):
         """Finalize a context and remove it from the registry.
@@ -1265,7 +1310,9 @@ class Application:
         return memory
 
     def _alloc_value(self, value) -> "MemoryBlock":
-        if not isinstance(value, CValue):
+        if value is None:
+            return None
+        elif not isinstance(value, CValue):
             raise TypeError("A value must be of type CValue")
 
         if value not in self._ptr_values:
@@ -1321,9 +1368,10 @@ class Application:
             if not isinstance(value, CValue):
                 value = CValue(value)
 
-            flags = value.attributes().get('flags', 0)
-            if flags >= 1 << archi_pointer_t.NUM_FLAG_BITS:
-                raise ValueError(f"Flags must fit into {archi_pointer_t.NUM_FLAG_BITS} lowest bits")
+            if value is not None:
+                flags = value.attributes().get('flags', 0)
+                if flags >= 1 << archi_pointer_t.NUM_FLAG_BITS:
+                    raise ValueError(f"Flags must fit into {archi_pointer_t.NUM_FLAG_BITS} lowest bits")
 
             node = archi_parameter_list_t()
             node.value.flags = flags
@@ -1340,7 +1388,8 @@ class Application:
                     node.next = c.cast(ptr_nodes[idx + 1].address(), type(node.next))
 
                 node.name = ptr_key.address()
-                node.value.ptr = ptr_value.address()
+                if ptr_value is not None:
+                    node.value.ptr = ptr_value.address()
 
             ptr_nodes[idx] = MemoryBlock(CValue(node, callback=init_list_node))
 
@@ -1450,6 +1499,14 @@ class archi_exe_registry_instr_init_from_slot_t(c.Structure):
                 ('interface_source_slot', archi_context_op_designator_t),
                 ('dparams_key', c.c_char_p),
                 ('sparams', c.POINTER(archi_parameter_list_t))]
+
+
+class archi_exe_registry_instr_init_pointer_t(c.Structure):
+    """Context registry instruction: initialize a new pointer context.
+    """
+    _fields_ = [('base', archi_exe_registry_instr_base_t),
+                ('key', c.c_char_p),
+                ('value', archi_pointer_t)]
 
 
 class archi_exe_registry_instr_copy_t(c.Structure):
