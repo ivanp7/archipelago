@@ -129,7 +129,7 @@ Here is an example script:
 import ctypes as c
 import sys
 
-import archi
+import archi.application as archi
 
 
 VALUE_TRUE = archi.CValue(c.c_bool(True)) # define a value like this to make it reusable in the file and save bytes
