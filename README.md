@@ -130,6 +130,7 @@ import ctypes as c
 import sys
 
 import archi.application as archi
+from archi.ctypes.extra import archi_signal_watch_set_t
 
 
 VALUE_TRUE = archi.CValue(c.c_bool(True)) # define a value like this to make it reusable in the file and save bytes
@@ -139,7 +140,7 @@ app = archi.Application()
 
 # Add signals to the watch set
 def watch_signals():
-    signal_watch_set = archi.archi_signal_watch_set_t()
+    signal_watch_set = archi_signal_watch_set_t()
     signal_watch_set.f_SIGINT = True
     signal_watch_set.f_SIGQUIT = True
     signal_watch_set.f_SIGTERM = True
@@ -182,7 +183,6 @@ with open(sys.argv[1], mode='wb') as file:
 
 print(f"Wrote {app_memory.size()} bytes to '{sys.argv[1]}',")
 print(f"including {app_memory.padding()} padding bytes")
-
 ```
 
 For comprehensive descriptions see [docs/python.md](docs/python.md).

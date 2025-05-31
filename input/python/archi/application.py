@@ -19,12 +19,11 @@
  #############################################################################
 
 # @file
-# @brief Python module: Archipelago application initialization file
+# @brief Representation of Archipelago application initialization files.
 
 import ctypes as c
 
 from .memory import CValue, MemoryBlock, Memory
-from .structures import *
 
 
 class Parameters:
@@ -230,13 +229,13 @@ class Context:
                 value=value))
 
         elif isinstance(value, Context):
-            self._app._instructions.append(Application._InstructionSetToContext(
+            self._app._instructions.append(Application._InstructionSetToContextData(
                 key=self._key,
                 slot_name=slot_name, slot_indices=slot_indices,
                 source_key=value._key))
 
         elif isinstance(value, Context._Slot) or isinstance(value, Context._Action):
-            self._app._instructions.append(Application._InstructionSetToSlot(
+            self._app._instructions.append(Application._InstructionSetToContextSlot(
                 key=self._key,
                 slot_name=slot_name, slot_indices=slot_indices,
                 source_key=value._context._key,
@@ -308,6 +307,8 @@ class Application:
         def alloc(self, app: "Application", ptr_instructions: "list[MemoryBlock]", idx: "int"):
             """Allocate all required blocks.
             """
+            from .ctypes.instructions import archi_exe_registry_instr_base_t
+
             instr = archi_exe_registry_instr_base_t()
             instr.type = self._type
 
@@ -339,6 +340,8 @@ class Application:
         def alloc(self, app: "Application", ptr_instructions: "list[MemoryBlock]", idx: "int"):
             """Allocate all required blocks.
             """
+            from .ctypes.instructions import archi_exe_registry_instr_init_from_context_t
+
             instr = archi_exe_registry_instr_init_from_context_t()
             instr.base.type = self._type
 
@@ -398,6 +401,8 @@ class Application:
         def alloc(self, app: "Application", ptr_instructions: "list[MemoryBlock]", idx: "int"):
             """Allocate all required blocks.
             """
+            from .ctypes.instructions import archi_exe_registry_instr_init_from_slot_t
+
             instr = archi_exe_registry_instr_init_from_slot_t()
             instr.base.type = self._type
 
@@ -433,6 +438,8 @@ class Application:
         def __init__(self, key: "str", value: "CValue"):
             """Initialize an instruction.
             """
+            from .ctypes.common import archi_pointer_t
+
             if not isinstance(key, str):
                 raise TypeError("Context key must be a string")
             elif value is not None and not isinstance(value, CValue):
@@ -452,6 +459,8 @@ class Application:
         def alloc(self, app: "Application", ptr_instructions: "list[MemoryBlock]", idx: "int"):
             """Allocate all required blocks.
             """
+            from .ctypes.instructions import archi_exe_registry_instr_init_pointer_t
+
             instr = archi_exe_registry_instr_init_pointer_t()
             instr.base.type = self._type
             if self._value is not None:
@@ -491,6 +500,8 @@ class Application:
         def alloc(self, app: "Application", ptr_instructions: "list[MemoryBlock]", idx: "int"):
             """Allocate all required blocks.
             """
+            from .ctypes.instructions import archi_exe_registry_instr_copy_t
+
             instr = archi_exe_registry_instr_copy_t()
             instr.base.type = self._type
 
@@ -520,6 +531,8 @@ class Application:
         def alloc(self, app: "Application", ptr_instructions: "list[MemoryBlock]", idx: "int"):
             """Allocate all required blocks.
             """
+            from .ctypes.instructions import archi_exe_registry_instr_final_t
+
             instr = archi_exe_registry_instr_final_t()
             instr.base.type = self._type
 
@@ -538,6 +551,8 @@ class Application:
                      value: "CValue"):
             """Initialize an instruction.
             """
+            from .ctypes.common import archi_pointer_t
+
             if not isinstance(key, str):
                 raise TypeError("Context key must be a string")
             elif not isinstance(slot_name, str):
@@ -562,6 +577,8 @@ class Application:
         def alloc(self, app: "Application", ptr_instructions: "list[MemoryBlock]", idx: "int"):
             """Allocate all required blocks.
             """
+            from .ctypes.instructions import archi_exe_registry_instr_set_to_value_t
+
             instr = archi_exe_registry_instr_set_to_value_t()
             instr.base.type = self._type
             instr.slot.num_indices = len(self._slot_indices)
@@ -589,7 +606,7 @@ class Application:
 
             return MemoryBlock(CValue(instr, callback=init_instr))
 
-    class _InstructionSetToContext(_Instruction):
+    class _InstructionSetToContextData(_Instruction):
         """Representation of an application initialization instruction:
         set a source context pointer to a context slot.
         """
@@ -616,6 +633,8 @@ class Application:
         def alloc(self, app: "Application", ptr_instructions: "list[MemoryBlock]", idx: "int"):
             """Allocate all required blocks.
             """
+            from .ctypes.instructions import archi_exe_registry_instr_set_to_context_data_t
+
             instr = archi_exe_registry_instr_set_to_context_data_t()
             instr.base.type = self._type
             instr.slot.num_indices = len(self._slot_indices)
@@ -636,7 +655,7 @@ class Application:
 
             return MemoryBlock(CValue(instr, callback=init_instr))
 
-    class _InstructionSetToSlot(_Instruction):
+    class _InstructionSetToContextSlot(_Instruction):
         """Representation of an application initialization instruction:
         set a source context slot to a context slot.
         """
@@ -670,6 +689,8 @@ class Application:
         def alloc(self, app: "Application", ptr_instructions: "list[MemoryBlock]", idx: "int"):
             """Allocate all required blocks.
             """
+            from .ctypes.instructions import archi_exe_registry_instr_set_to_context_slot_t
+
             instr = archi_exe_registry_instr_set_to_context_slot_t()
             instr.base.type = self._type
             instr.slot.num_indices = len(self._slot_indices)
@@ -726,6 +747,8 @@ class Application:
         def alloc(self, app: "Application", ptr_instructions: "list[MemoryBlock]", idx: "int"):
             """Allocate all required blocks.
             """
+            from .ctypes.instructions import archi_exe_registry_instr_act_t
+
             instr = archi_exe_registry_instr_act_t()
             instr.base.type = self._type
             instr.action.num_indices = len(self._action_indices)
@@ -828,7 +851,7 @@ class Application:
                 key=key,
                 value=None))
 
-            self._instructions.append(Application._InstructionSetToSlot(
+            self._instructions.append(Application._InstructionSetToContextSlot(
                 key=key,
                 slot_name='value', slot_indices=[],
                 source_key=entity._context._key,
@@ -896,6 +919,9 @@ class Application:
     def memory(self) -> "Memory":
         """Create a Memory object from the current application internal state.
         """
+        from .ctypes.common import archi_parameter_list_t, archi_exe_input_file_header_t
+        from .ctypes.instructions import archi_exe_registry_instr_list_t
+
         # Initialize the list of blocks
         self._ptr_blocks = list(self._blocks.values())
 
@@ -1019,6 +1045,8 @@ class Application:
         return block
 
     def _alloc_params(self, params: "dict") -> "MemoryBlock":
+        from .ctypes.common import archi_pointer_t, archi_parameter_list_t
+
         if not isinstance(params, dict):
             raise TypeError("Parameter list must be of type dict")
 
@@ -1028,16 +1056,17 @@ class Application:
             if not isinstance(value, CValue):
                 value = CValue(value)
 
+            node = archi_parameter_list_t()
+
             if value is not None:
                 flags = value.attributes().get('flags', 0)
                 if flags >= 1 << archi_pointer_t.NUM_FLAG_BITS:
                     raise ValueError(f"Flags must fit into {archi_pointer_t.NUM_FLAG_BITS} lowest bits")
 
-            node = archi_parameter_list_t()
-            node.value.flags = flags
-            node.value.element.num_of = value.num_elements()
-            node.value.element.size = value.element_size()
-            node.value.element.alignment = value.element_alignment()
+                node.value.flags = flags
+                node.value.element.num_of = value.num_elements()
+                node.value.element.size = value.element_size()
+                node.value.element.alignment = value.element_alignment()
 
             ptr_key = self._alloc_string(key)
             ptr_value = self._alloc_value(value)

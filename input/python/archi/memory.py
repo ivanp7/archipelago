@@ -19,7 +19,7 @@
  #############################################################################
 
 # @file
-# @brief Python module: Representation of memory consisting of multiple blocks with pointer support
+# @brief Representation of memory with pointer support consisting of multiple blocks.
 
 import ctypes as c
 
