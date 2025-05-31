@@ -352,7 +352,7 @@ create_context_registry(void)
     archi_log_debug(M, "Inserting the context registry into itself...");
 
     code = archi_context_set_slot(archi_process.registry,
-            (archi_context_op_designator_t){.name = ARCHI_EXE_REGISTRY_KEY_REGISTRY},
+            (archi_context_slot_t){.name = ARCHI_EXE_REGISTRY_KEY_REGISTRY},
             (archi_pointer_t){
                 .ptr = archi_process.registry,
                 .ref_count = archi_context_data(archi_process.registry).ref_count,
@@ -378,7 +378,7 @@ destroy_context_registry(void)
         archi_log_debug(M, "Removing the context registry from itself...");
 
         archi_context_set_slot(archi_process.registry,
-                (archi_context_op_designator_t){.name = ARCHI_EXE_REGISTRY_KEY_REGISTRY},
+                (archi_context_slot_t){.name = ARCHI_EXE_REGISTRY_KEY_REGISTRY},
                 (archi_pointer_t){0});
 
         archi_log_debug(M, "Destroying the context registry...");
@@ -417,7 +417,7 @@ obtain_handle_of_executable(void)
 
     // Insert the context into the registry, which also increments the reference count
     code = archi_context_set_slot(archi_process.registry,
-            (archi_context_op_designator_t){.name = ARCHI_EXE_REGISTRY_KEY_EXECUTABLE},
+            (archi_context_slot_t){.name = ARCHI_EXE_REGISTRY_KEY_EXECUTABLE},
             (archi_pointer_t){
                 .ptr = archi_process.exe_handle,
                 .ref_count = archi_context_data(archi_process.exe_handle).ref_count,
@@ -512,7 +512,7 @@ open_and_map_input_files(void)
             params[1].next = &params[2];
 
             archi_status_t code = archi_context_act(archi_process.input_file[i],
-                    (archi_context_op_designator_t){.name = "map"},
+                    (archi_context_slot_t){.name = "map"},
                     params);
 
             if (code != 0)
@@ -689,7 +689,7 @@ start_signal_management(void)
 
         // Insert the context into the registry, which also increments the reference count
         code = archi_context_set_slot(archi_process.registry,
-                (archi_context_op_designator_t){.name = ARCHI_EXE_REGISTRY_KEY_SIGNAL},
+                (archi_context_slot_t){.name = ARCHI_EXE_REGISTRY_KEY_SIGNAL},
                 (archi_pointer_t){
                     .ptr = archi_process.signal,
                     .ref_count = archi_context_data(archi_process.signal).ref_count,
@@ -748,7 +748,7 @@ execute_instructions(void)
             ptrdiff_t slot_index = 1; // allow updating value for the existing key in the hashmap
 
             archi_status_t code = archi_context_set_slot(archi_process.registry,
-                    (archi_context_op_designator_t){
+                    (archi_context_slot_t){
                         .name = ARCHI_EXE_REGISTRY_KEY_INPUT_FILE,
                         .index = &slot_index,
                         .num_indices = 1,

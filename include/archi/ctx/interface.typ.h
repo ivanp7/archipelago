@@ -32,14 +32,14 @@
 #include "archi/util/status.typ.h"
 
 /**
- * @brief Context operation designator.
+ * @brief Context slot designator.
  */
-typedef struct archi_context_op_designator {
+typedef struct archi_context_slot {
     const char *name; ///< Name string.
 
     const ptrdiff_t *index; ///< Array of indices.
     size_t num_indices;  ///< Size of the array of indices.
-} archi_context_op_designator_t;
+} archi_context_slot_t;
 
 /*****************************************************************************/
 
@@ -81,7 +81,7 @@ typedef ARCHI_CONTEXT_FINAL_FUNC((*archi_context_final_func_t));
  */
 #define ARCHI_CONTEXT_GET_FUNC(func_name) archi_status_t func_name( \
         archi_pointer_t *context, /* [in,out] Context data. */ \
-        const archi_context_op_designator_t slot, /* [in] Slot designator. */ \
+        const archi_context_slot_t slot, /* [in] Slot designator. */ \
         archi_pointer_t *value) /* [out] Place to store the gotten value. */
 
 /**
@@ -98,7 +98,7 @@ typedef ARCHI_CONTEXT_GET_FUNC((*archi_context_get_func_t));
  */
 #define ARCHI_CONTEXT_SET_FUNC(func_name) archi_status_t func_name( \
         archi_pointer_t *context, /* [in,out] Context data. */ \
-        const archi_context_op_designator_t slot, /* [in] Slot designator. */ \
+        const archi_context_slot_t slot, /* [in] Slot designator. */ \
         const archi_pointer_t value) /* [in] Value to set. */
 
 /**
@@ -115,7 +115,7 @@ typedef ARCHI_CONTEXT_SET_FUNC((*archi_context_set_func_t));
  */
 #define ARCHI_CONTEXT_ACT_FUNC(func_name) archi_status_t func_name( \
         archi_pointer_t *context, /* [in,out] Context data. */ \
-        const archi_context_op_designator_t action, /* [in] Action designator. */ \
+        const archi_context_slot_t action, /* [in] Action designator. */ \
         const archi_parameter_list_t *params) /* [in] Action parameters. */
 
 /**

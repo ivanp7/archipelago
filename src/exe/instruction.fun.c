@@ -245,7 +245,7 @@ static
 void
 archi_print_slot(
         const char *name,
-        archi_context_op_designator_t slot)
+        archi_context_slot_t slot)
 {
     archi_print(ARCHI_LOG_INDENT "    %s.name = ", name);
 
@@ -357,7 +357,7 @@ archi_exe_registry_instr_execute_init_from_context(
 
     // Check early if the context key exists already
     archi_context_get_slot(registry,
-            (archi_context_op_designator_t){.name = instruction->key}, &code);
+            (archi_context_slot_t){.name = instruction->key}, &code);
 
     if (code != 1)
     {
@@ -383,7 +383,7 @@ archi_exe_registry_instr_execute_init_from_context(
     {
         // Obtain the source context from the registry
         archi_pointer_t src_context_value = archi_context_get_slot(registry,
-                (archi_context_op_designator_t){.name = instruction->interface_source_key}, &code);
+                (archi_context_slot_t){.name = instruction->interface_source_key}, &code);
 
         if (code != 0)
         {
@@ -408,7 +408,7 @@ archi_exe_registry_instr_execute_init_from_context(
     {
         // Get dynamic parameter list
         archi_pointer_t dparams_value = archi_context_get_slot(registry,
-                (archi_context_op_designator_t){.name = instruction->dparams_key}, &code);
+                (archi_context_slot_t){.name = instruction->dparams_key}, &code);
 
         if (code != 0)
         {
@@ -449,7 +449,7 @@ archi_exe_registry_instr_execute_init_from_context(
 
     // Insert the context to the registry, which also increments the reference count
     code = archi_context_set_slot(registry,
-            (archi_context_op_designator_t){.name = instruction->key}, context_value);
+            (archi_context_slot_t){.name = instruction->key}, context_value);
 
     if (code != 0)
     {
@@ -492,7 +492,7 @@ archi_exe_registry_instr_execute_init_from_slot(
 
     // Check early if the context key exists already
     archi_context_get_slot(registry,
-            (archi_context_op_designator_t){.name = instruction->key}, &code);
+            (archi_context_slot_t){.name = instruction->key}, &code);
 
     if (code != 1)
     {
@@ -509,7 +509,7 @@ archi_exe_registry_instr_execute_init_from_slot(
     {
         // Obtain the source context from the registry
         archi_pointer_t src_context_value = archi_context_get_slot(registry,
-                (archi_context_op_designator_t){.name = instruction->interface_source_key}, &code);
+                (archi_context_slot_t){.name = instruction->interface_source_key}, &code);
 
         if (code != 0)
         {
@@ -538,7 +538,7 @@ archi_exe_registry_instr_execute_init_from_slot(
     {
         // Get dynamic parameter list
         archi_pointer_t dparams_value = archi_context_get_slot(registry,
-                (archi_context_op_designator_t){.name = instruction->dparams_key}, &code);
+                (archi_context_slot_t){.name = instruction->dparams_key}, &code);
 
         if (code != 0)
         {
@@ -579,7 +579,7 @@ archi_exe_registry_instr_execute_init_from_slot(
 
     // Insert the context to the registry, which also increments the reference count
     code = archi_context_set_slot(registry,
-            (archi_context_op_designator_t){.name = instruction->key}, context_value);
+            (archi_context_slot_t){.name = instruction->key}, context_value);
 
     if (code != 0)
     {
@@ -622,7 +622,7 @@ archi_exe_registry_instr_execute_init_pointer(
 
     // Check early if the context key exists already
     archi_context_get_slot(registry,
-            (archi_context_op_designator_t){.name = instruction->key}, &code);
+            (archi_context_slot_t){.name = instruction->key}, &code);
 
     if (code != 1)
     {
@@ -668,7 +668,7 @@ archi_exe_registry_instr_execute_init_pointer(
 
     // Insert the context to the registry, which also increments the reference count
     code = archi_context_set_slot(registry,
-            (archi_context_op_designator_t){.name = instruction->key}, context_value);
+            (archi_context_slot_t){.name = instruction->key}, context_value);
 
     if (code != 0)
     {
@@ -712,7 +712,7 @@ archi_exe_registry_instr_execute_copy(
 
     // Obtain the context from the registry
     archi_pointer_t context_value = archi_context_get_slot(registry,
-            (archi_context_op_designator_t){.name = instruction->original_key}, &code);
+            (archi_context_slot_t){.name = instruction->original_key}, &code);
 
     if (code != 0)
     {
@@ -729,7 +729,7 @@ archi_exe_registry_instr_execute_copy(
 
     // Insert the context to the registry, which also increments the reference count
     code = archi_context_set_slot(registry,
-            (archi_context_op_designator_t){.name = instruction->key}, context_value);
+            (archi_context_slot_t){.name = instruction->key}, context_value);
 
     if (code != 0)
         return ARCHI_STATUS_TO_ERROR(code);
@@ -762,7 +762,7 @@ archi_exe_registry_instr_execute_final(
 
     // Remove the context from the registry, which also decrements the reference count
     archi_status_t code = archi_context_set_slot(registry,
-            (archi_context_op_designator_t){.name = instruction->key}, (archi_pointer_t){0});
+            (archi_context_slot_t){.name = instruction->key}, (archi_pointer_t){0});
 
     if (code != 0)
     {
@@ -807,7 +807,7 @@ archi_exe_registry_instr_execute_set_to_value(
 
     // Obtain the context from the registry
     archi_pointer_t context_value = archi_context_get_slot(registry,
-            (archi_context_op_designator_t){.name = instruction->key}, &code);
+            (archi_context_slot_t){.name = instruction->key}, &code);
 
     if (code != 0)
     {
@@ -865,7 +865,7 @@ archi_exe_registry_instr_execute_set_to_context_data(
 
     // Obtain the context from the registry
     archi_pointer_t context_value = archi_context_get_slot(registry,
-            (archi_context_op_designator_t){.name = instruction->key}, &code);
+            (archi_context_slot_t){.name = instruction->key}, &code);
 
     if (code != 0)
     {
@@ -882,7 +882,7 @@ archi_exe_registry_instr_execute_set_to_context_data(
 
     // Obtain the source context from the registry
     archi_pointer_t src_context_value = archi_context_get_slot(registry,
-            (archi_context_op_designator_t){.name = instruction->source_key}, &code);
+            (archi_context_slot_t){.name = instruction->source_key}, &code);
 
     if (code != 0)
     {
@@ -939,7 +939,7 @@ archi_exe_registry_instr_execute_set_to_context_slot(
 
     // Obtain the context from the registry
     archi_pointer_t context_value = archi_context_get_slot(registry,
-            (archi_context_op_designator_t){.name = instruction->key}, &code);
+            (archi_context_slot_t){.name = instruction->key}, &code);
 
     if (code != 0)
     {
@@ -956,7 +956,7 @@ archi_exe_registry_instr_execute_set_to_context_slot(
 
     // Obtain the source context from the registry
     archi_pointer_t src_context_value = archi_context_get_slot(registry,
-            (archi_context_op_designator_t){.name = instruction->source_key}, &code);
+            (archi_context_slot_t){.name = instruction->source_key}, &code);
 
     if (code != 0)
     {
@@ -1009,7 +1009,7 @@ archi_exe_registry_instr_execute_act(
 
     // Obtain the context from the registry
     archi_pointer_t context_value = archi_context_get_slot(registry,
-            (archi_context_op_designator_t){.name = instruction->key}, &code);
+            (archi_context_slot_t){.name = instruction->key}, &code);
 
     if (code != 0)
     {
@@ -1029,7 +1029,7 @@ archi_exe_registry_instr_execute_act(
     if (instruction->dparams_key != NULL)
     {
         archi_pointer_t dparams_value = archi_context_get_slot(registry,
-                (archi_context_op_designator_t){.name = instruction->dparams_key}, &code);
+                (archi_context_slot_t){.name = instruction->dparams_key}, &code);
 
         if (code != 0)
         {

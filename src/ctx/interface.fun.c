@@ -178,7 +178,7 @@ archi_context_finalize(
 archi_pointer_t
 archi_context_get_slot(
         archi_context_t context,
-        archi_context_op_designator_t slot,
+        archi_context_slot_t slot,
         archi_status_t *code)
 {
     archi_status_t code_get;
@@ -214,7 +214,7 @@ finish:
 archi_status_t
 archi_context_set_slot(
         archi_context_t context,
-        archi_context_op_designator_t slot,
+        archi_context_slot_t slot,
         archi_pointer_t value)
 {
     if (context == NULL)
@@ -232,10 +232,10 @@ archi_context_set_slot(
 archi_status_t
 archi_context_copy_slot(
         archi_context_t context,
-        archi_context_op_designator_t slot,
+        archi_context_slot_t slot,
 
         archi_context_t src_context,
-        archi_context_op_designator_t src_slot)
+        archi_context_slot_t src_slot)
 {
     if ((context == NULL) || (src_context == NULL))
         return ARCHI_STATUS_EMISUSE;
@@ -263,7 +263,7 @@ archi_context_copy_slot(
 archi_status_t
 archi_context_act(
         archi_context_t context,
-        archi_context_op_designator_t action,
+        archi_context_slot_t action,
         const archi_parameter_list_t *params)
 {
     if (context == NULL)

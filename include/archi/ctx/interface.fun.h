@@ -90,7 +90,7 @@ archi_context_finalize(
 archi_pointer_t
 archi_context_get_slot(
         archi_context_t context, ///< [in] Context.
-        archi_context_op_designator_t slot, ///< [in] Slot designator.
+        archi_context_slot_t slot, ///< [in] Slot designator.
         archi_status_t *code ///< [out] Status code.
 );
 
@@ -102,7 +102,7 @@ archi_context_get_slot(
 archi_status_t
 archi_context_set_slot(
         archi_context_t context, ///< [in] Context.
-        archi_context_op_designator_t slot, ///< [in] Slot designator.
+        archi_context_slot_t slot, ///< [in] Slot designator.
         archi_pointer_t value ///< [in] Value to set.
 );
 
@@ -114,10 +114,10 @@ archi_context_set_slot(
 archi_status_t
 archi_context_copy_slot(
         archi_context_t context, ///< [in] Destination context.
-        archi_context_op_designator_t slot, ///< [in] Destination slot designator.
+        archi_context_slot_t slot, ///< [in] Destination slot designator.
 
         archi_context_t src_context, ///< [in] Source context.
-        archi_context_op_designator_t src_slot ///< [in] Source slot designator.
+        archi_context_slot_t src_slot ///< [in] Source slot designator.
 );
 
 /*****************************************************************************/
@@ -130,7 +130,7 @@ archi_context_copy_slot(
 archi_status_t
 archi_context_act(
         archi_context_t context, ///< [in] Initialized context.
-        archi_context_op_designator_t action, ///< [in] Action designator.
+        archi_context_slot_t action, ///< [in] Action designator.
         const archi_parameter_list_t *params ///< [in] Action parameters.
 );
 

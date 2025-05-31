@@ -98,7 +98,7 @@ typedef struct archi_exe_registry_instr_init_from_slot {
     const char *key; ///< Key of the new context.
 
     const char *interface_source_key; ///< Key of the interface source context.
-    archi_context_op_designator_t interface_source_slot; ///< Interface source slot designator.
+    archi_context_slot_t interface_source_slot; ///< Interface source slot designator.
 
     const char *dparams_key; ///< Key of the dynamic parameter list.
     const archi_parameter_list_t *sparams; ///< Static parameter list.
@@ -143,7 +143,7 @@ typedef struct archi_exe_registry_instr_set_to_value {
 
     const char *key; ///< Key of the context.
 
-    archi_context_op_designator_t slot; ///< Slot designator.
+    archi_context_slot_t slot; ///< Slot designator.
     archi_pointer_t value; ///< Value to set.
 } archi_exe_registry_instr_set_to_value_t;
 
@@ -155,7 +155,7 @@ typedef struct archi_exe_registry_instr_set_to_context_data {
 
     const char *key; ///< Key of the context.
 
-    archi_context_op_designator_t slot; ///< Slot designator.
+    archi_context_slot_t slot; ///< Slot designator.
     const char *source_key; ///< Key of the source context.
 } archi_exe_registry_instr_set_to_context_data_t;
 
@@ -167,9 +167,9 @@ typedef struct archi_exe_registry_instr_set_to_context_slot {
 
     const char *key; ///< Key of the context.
 
-    archi_context_op_designator_t slot; ///< Slot designator.
+    archi_context_slot_t slot; ///< Slot designator.
     const char *source_key; ///< Key of the source context.
-    archi_context_op_designator_t source_slot; ///< Source slot designator.
+    archi_context_slot_t source_slot; ///< Source slot designator.
 } archi_exe_registry_instr_set_to_context_slot_t;
 
 /**
@@ -180,7 +180,7 @@ typedef struct archi_exe_registry_instr_act {
 
     const char *key; ///< Key of the context.
 
-    archi_context_op_designator_t action; ///< Action designator.
+    archi_context_slot_t action; ///< Action designator.
 
     const char *dparams_key; ///< Key of the dynamic parameter list.
     const archi_parameter_list_t *sparams; ///< Static parameter list.
