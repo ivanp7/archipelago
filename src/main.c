@@ -535,6 +535,12 @@ open_and_map_input_files(void)
                 archi_log_error(M, "Input file #%zu is invalid (magic bytes are incorrect).", i);
                 exit(EXIT_FAILURE);
             }
+
+            {
+                ptrdiff_t size = (uintptr_t)input->header.end - (uintptr_t)input->header.addr;
+                archi_log_debug(M, "    address = %p, size = %tu B (%.2f KiB, %.2f MiB, %.2f GiB)",
+                        input->header.addr, size, size / 1024.0, size / (1024.0 * 1024.0), size / (1024.0 * 1024.0 * 1024.0));
+            }
         }
     }
 
