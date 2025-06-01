@@ -139,16 +139,15 @@ VALUE_TRUE = archi.CValue(c.c_bool(True)) # define a value like this to make it 
 app = archi.Application()
 
 # Add signals to the watch set
-def watch_signals():
-    signal_watch_set = archi_signal_watch_set_t()
-    signal_watch_set.f_SIGINT = True
-    signal_watch_set.f_SIGQUIT = True
-    signal_watch_set.f_SIGTERM = True
-    signal_watch_set.f_SIGCONT = True
+signal_watch_set = archi_signal_watch_set_t()
+signal_watch_set.f_SIGINT = True
+signal_watch_set.f_SIGQUIT = True
+signal_watch_set.f_SIGTERM = True
+signal_watch_set.f_SIGCONT = True
 
-    app.add_contents({archi.Application.CONTENT_SIGNALS: signal_watch_set})
-watch_signals()
-del watch_signals
+app.add_contents({archi.Application.CONTENT_SIGNALS: signal_watch_set})
+
+del signal_watch_set
 
 # Load plugins and create contexts
 executable = app[archi.Application.KEY_EXECUTABLE] # handle of the executable itself

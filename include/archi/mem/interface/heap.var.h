@@ -35,14 +35,12 @@
  * Allocates a block of memory from the heap.
  * If layout.alignment == 0, malloc() is used; otherwise,
  * aligned_alloc() is used with the specified alignment.
- * The @p alloc_data is ignored. The @p code is never set.
+ * @p alloc_data is ignored. @p code is never set.
  */
 ARCHI_MEMORY_ALLOC_FUNC(archi_memory_heap_alloc);
 
 /**
  * @brief Heap memory deallocation function.
- *
- * Frees a block of heap memory previously allocated by archi_memory_heap_alloc() using free().
  */
 ARCHI_MEMORY_FREE_FUNC(archi_memory_heap_free);
 
@@ -50,17 +48,12 @@ ARCHI_MEMORY_FREE_FUNC(archi_memory_heap_free);
  * @brief Heap memory mapping function.
  *
  * This function does nothing but calculating the pointer targeting the specified area.
- * The @p code is never set.
+ * @p code is never set.
  */
 ARCHI_MEMORY_MAP_FUNC(archi_memory_heap_map);
 
 /**
  * @brief Heap memory interface.
- *
- * Provides a heap memory interface backed by the C standard library:
- *   - alloc_fn = archi_memory_heap_alloc()
- *   - free_fn  = archi_memory_heap_free()
- *   - map_fn  = archi_memory_heap_map()
  */
 extern
 const archi_memory_interface_t archi_memory_heap_interface;
