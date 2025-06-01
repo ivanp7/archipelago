@@ -102,11 +102,6 @@ archi_print_unlock(void);
 /*****************************************************************************/
 
 /**
- * @brief An approximate indentation for custom messages aligning with log messages.
- */
-#define ARCHI_LOG_INDENT  "    "
-
-/**
  * @brief Log an error-level message.
  *
  * Each message is colorized, prefixed with an elapsed-time timestamp,

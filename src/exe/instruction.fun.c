@@ -48,6 +48,8 @@
 #define MAX_DOUBLES     (MAX_BYTES / sizeof(double))
 #define MAX_LONGDOUBLES (MAX_BYTES / sizeof(long double))
 
+#define LOG_INDENT "    "
+
 size_t
 archi_exe_registry_instr_sizeof(
         const archi_exe_registry_instr_base_t *instruction)
@@ -233,7 +235,7 @@ archi_print_key(
         const char *name,
         const char *value)
 {
-    archi_print(ARCHI_LOG_INDENT "    %s = ", name);
+    archi_print(LOG_INDENT "    %s = ", name);
 
     if (value != NULL)
         archi_print("\"%s\"\n", value);
@@ -247,14 +249,14 @@ archi_print_slot(
         const char *name,
         archi_context_slot_t slot)
 {
-    archi_print(ARCHI_LOG_INDENT "    %s.name = ", name);
+    archi_print(LOG_INDENT "    %s.name = ", name);
 
     if (slot.name != NULL)
         archi_print("\"%s\"\n", slot.name);
     else
         archi_print("NULL\n");
 
-    archi_print(ARCHI_LOG_INDENT "    %s.indices[%zu] =", name, slot.num_indices);
+    archi_print(LOG_INDENT "    %s.indices[%zu] =", name, slot.num_indices);
 
     for (size_t i = 0; i < slot.num_indices; i++)
         archi_print(" %tu", slot.index[i]);
@@ -270,16 +272,16 @@ archi_print_params(
 {
     if (params != NULL)
     {
-        archi_print(ARCHI_LOG_INDENT "    %s:\n", name);
+        archi_print(LOG_INDENT "    %s:\n", name);
 
         for (; params != NULL; params = params->next)
         {
-            archi_print(ARCHI_LOG_INDENT "      \"%s\": ", params->name);
-            archi_print_value(ARCHI_LOG_INDENT "        ", params->value);
+            archi_print(LOG_INDENT "      \"%s\": ", params->name);
+            archi_print_value(LOG_INDENT "        ", params->value);
         }
     }
     else
-        archi_print(ARCHI_LOG_INDENT "    %s: <none>\n", name);
+        archi_print(LOG_INDENT "    %s: <none>\n", name);
 }
 
 static
@@ -607,8 +609,8 @@ archi_exe_registry_instr_execute_init_pointer(
     {
         archi_print_key("key", instruction->key);
         {
-            archi_print(ARCHI_LOG_INDENT "    value = ");
-            archi_print_value(ARCHI_LOG_INDENT "      ", instruction->value);
+            archi_print(LOG_INDENT "    value = ");
+            archi_print_value(LOG_INDENT "      ", instruction->value);
         }
     }
 
@@ -792,8 +794,8 @@ archi_exe_registry_instr_execute_set_to_value(
         archi_print_key("key", instruction->key);
         archi_print_slot("slot", instruction->slot);
         {
-            archi_print(ARCHI_LOG_INDENT "    value = ");
-            archi_print_value(ARCHI_LOG_INDENT "      ", instruction->value);
+            archi_print(LOG_INDENT "    value = ");
+            archi_print_value(LOG_INDENT "      ", instruction->value);
         }
     }
 
@@ -1081,7 +1083,7 @@ archi_exe_registry_instr_execute(
     {
         if (logging)
         {
-            archi_print(ARCHI_LOG_INDENT "instruction(NOOP)\n");
+            archi_print("---> NOOP\n");
 
             archi_print_color(ARCHI_COLOR_RESET);
             archi_print_unlock();
@@ -1095,7 +1097,7 @@ archi_exe_registry_instr_execute(
 #define INSTRUCTION(type, name)                                                 \
         case ARCHI_EXE_REGISTRY_INSTR_##type:                                   \
             if (logging)                                                        \
-                archi_print(ARCHI_LOG_INDENT "instruction(" #type ")\n");       \
+                archi_print("---> " #type "\n");       \
                                                                                 \
             code = archi_exe_registry_instr_execute_##name(registry,            \
                     (const archi_exe_registry_instr_##name##_t*)instruction,    \
@@ -1116,7 +1118,7 @@ archi_exe_registry_instr_execute(
 
         default:
             if (logging)
-                archi_print(ARCHI_LOG_INDENT "instruction(<unknown>)\n");
+                archi_print("---> <unknown instruction type>\n");
 
             code = !dry_run ? ARCHI_STATUS_EMISUSE : 0;
     }

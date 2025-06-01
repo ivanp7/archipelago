@@ -577,7 +577,7 @@ preliminary_pass_of_input_files(void)
                 {
                     archi_print_color(ARCHI_LOG_COLOR_DEBUG);
 
-                    archi_print(ARCHI_LOG_INDENT "  signals =");
+                    archi_print("\tsignals =");
                     print_signal_watch_set(signal_watch_set);
                     archi_print("\n");
 
@@ -660,7 +660,7 @@ start_signal_management(void)
         {
             archi_print_color(ARCHI_LOG_COLOR_DEBUG);
 
-            archi_print(ARCHI_LOG_INDENT "  signals =");
+            archi_print("\tsignals =");
             print_signal_watch_set(archi_process.signal_watch_set);
             archi_print("\n");
 
