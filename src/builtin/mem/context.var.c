@@ -364,18 +364,16 @@ ARCHI_CONTEXT_GET_FUNC(archi_context_memory_mapping_get)
         if (slot.num_indices > 1)
             return ARCHI_STATUS_EMISUSE;
 
-        if (slot.num_indices > 0)
-        {
-            ptrdiff_t offset = slot.index[0];
-            if ((offset < 0) || ((size_t)offset >= context_data->mapping.element.num_of))
-                return ARCHI_STATUS_EMISUSE;
+        ptrdiff_t offset = slot.index[0];
+        if ((offset < 0) || ((size_t)offset >= context_data->mapping.element.num_of))
+            return ARCHI_STATUS_EMISUSE;
 
-            size_t padded_size = (context_data->mapping.element.size +
-                    (context_data->mapping.element.alignment - 1)) &
-                ~(context_data->mapping.element.alignment - 1);
+        size_t padded_size = (context_data->mapping.element.size +
+                (context_data->mapping.element.alignment - 1)) &
+            ~(context_data->mapping.element.alignment - 1);
 
-            *value = (archi_pointer_t){
-                .ptr = (char*)context_data->mapping.ptr + offset * padded_size,
+        *value = (archi_pointer_t){
+            .ptr = (char*)context_data->mapping.ptr + offset * padded_size,
                 .ref_count = context->ref_count,
                 .flags = context->flags,
                 .element = {
@@ -383,10 +381,7 @@ ARCHI_CONTEXT_GET_FUNC(archi_context_memory_mapping_get)
                     .size = context->element.size,
                     .alignment = context->element.alignment,
                 },
-            };
-        }
-        else
-            *value = context_data->mapping;
+        };
     }
     else if (strcmp("num_elements", slot.name) == 0)
     {

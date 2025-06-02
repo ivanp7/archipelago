@@ -213,6 +213,17 @@ class Context:
 
         self._set('', [index], value)
 
+    def __call__(self, _: "Context" = None, /, **params) -> "Context._Action":
+        """Perform an action.
+        """
+        if _ is not None and not isinstance(_, Context):
+            raise TypeError("Dynamic parameter list object must be of type Context")
+
+        self._act('', [], dparams=_,
+                  sparams=dict(reversed(params.items()))) # archi reverses order when copies the list,
+                                                          # we must counter this here
+        return Context._Action(self, '', [])
+
     def _set(self, slot_name: "str", slot_indices: "list[int]", value):
         """Append a set() instruction to the list.
         """

@@ -195,14 +195,22 @@ archi_context_get_slot(
         goto finish;
     }
 
-    const archi_context_interface_t *interface_ptr = context->interface.ptr;
-    if (interface_ptr->get_fn == NULL)
+    if ((slot.name[0] == '\0') && (slot.num_indices == 0))
     {
-        code_get = ARCHI_STATUS_EINTERFACE;
-        goto finish;
+        value = archi_context_data(context);
+        code_get = 0;
     }
+    else
+    {
+        const archi_context_interface_t *interface_ptr = context->interface.ptr;
+        if (interface_ptr->get_fn == NULL)
+        {
+            code_get = ARCHI_STATUS_EINTERFACE;
+            goto finish;
+        }
 
-    code_get = interface_ptr->get_fn(context->data, slot, &value);
+        code_get = interface_ptr->get_fn(context->data, slot, &value);
+    }
 
 finish:
     if (code != NULL)
@@ -220,6 +228,9 @@ archi_context_set_slot(
     if (context == NULL)
         return ARCHI_STATUS_EMISUSE;
     else if ((slot.name == NULL) || ((slot.num_indices > 0) && (slot.index == NULL)))
+        return ARCHI_STATUS_EMISUSE;
+
+    if ((slot.name[0] == '\0') && (slot.num_indices == 0))
         return ARCHI_STATUS_EMISUSE;
 
     const archi_context_interface_t *interface_ptr = context->interface.ptr;
