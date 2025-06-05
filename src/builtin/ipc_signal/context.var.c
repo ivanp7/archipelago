@@ -216,6 +216,7 @@ static
 ARCHI_HASHMAP_TRAV_KV_FUNC(archi_context_ipc_signal_management_hashmap_traverse)
 {
     (void) key;
+    (void) index;
 
     struct archi_context_ipc_signal_handler_args *args = data;
     archi_signal_handler_t *signal_handler = value.ptr;

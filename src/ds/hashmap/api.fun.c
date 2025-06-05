@@ -114,6 +114,7 @@ ARCHI_HASHMAP_TRAV_KV_FUNC(archi_hashmap_free_unset)
 {
     (void) key;
     (void) value;
+    (void) index;
     (void) data;
 
     return (archi_hashmap_trav_action_t){.type = ARCHI_HASHMAP_TRAV_UNSET};
@@ -374,12 +375,13 @@ archi_hashmap_traverse(
         return ARCHI_STATUS_EMISUSE;
 
     struct archi_hashmap_node *node = first_to_last ? hashmap->chrono_first : hashmap->chrono_last;
+    size_t index = 0;
 
     while (node != NULL)
     {
         struct archi_hashmap_node *following = first_to_last ? node->chrono_next : node->chrono_prev;
 
-        archi_hashmap_trav_action_t action = trav_fn(node->key, node->value, trav_fn_data);
+        archi_hashmap_trav_action_t action = trav_fn(node->key, node->value, index++, trav_fn_data);
         switch (action.type)
         {
             case ARCHI_HASHMAP_TRAV_KEEP:

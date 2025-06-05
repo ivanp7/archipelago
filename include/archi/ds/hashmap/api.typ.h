@@ -104,6 +104,7 @@ typedef struct archi_hashmap_trav_action {
 #define ARCHI_HASHMAP_TRAV_KV_FUNC(name) archi_hashmap_trav_action_t name( \
         const char *const key, /* Key. */ \
         const archi_pointer_t value, /* Value. */ \
+        size_t index, /* Number of the current key-value pair. */ \
         void *const data) /* Function data. */
 
 /**
