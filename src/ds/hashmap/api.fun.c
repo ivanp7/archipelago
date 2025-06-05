@@ -62,7 +62,8 @@ struct archi_hashmap_node {
 };
 
 struct archi_hashmap {
-    size_t capacity; ///< Number of elements in '.nodes' array
+    size_t capacity; ///< Size of '.nodes' array.
+    size_t size; ///< Total number of nodes.
 
     struct archi_hashmap_node *chrono_first; ///< The chronologically first inserted node.
     struct archi_hashmap_node *chrono_last;  ///< The chronologically last inserted node.
@@ -95,7 +96,10 @@ archi_hashmap_alloc(
     }
 
     hashmap->capacity = params.capacity;
+    hashmap->size = 0;
+
     hashmap->chrono_first = hashmap->chrono_last = NULL;
+
     for (size_t i = 0; i < params.capacity; i++)
         hashmap->nodes[i] = NULL;
 
@@ -253,6 +257,8 @@ archi_hashmap_set(
 
         hashmap->chrono_last = hashmap->nodes[hash] = node;
 
+        hashmap->size++;
+
         archi_reference_count_increment(value.ref_count);
     }
     else
@@ -301,6 +307,8 @@ archi_hashmap_remove_node(
         node->chrono_next->chrono_prev = node->chrono_prev;
     else
         hashmap->chrono_last = node->chrono_prev;
+
+    hashmap->size--;
 }
 
 archi_status_t
@@ -406,5 +414,15 @@ archi_hashmap_traverse(
     }
 
     return 0;
+}
+
+size_t
+archi_hashmap_size(
+        archi_hashmap_t hashmap)
+{
+    if (hashmap == NULL)
+        return 0;
+
+    return hashmap->size;
 }
 

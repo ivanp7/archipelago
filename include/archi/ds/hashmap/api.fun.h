@@ -140,5 +140,15 @@ archi_hashmap_traverse(
         void *trav_fn_data ///< [in] Traversal function data.
 );
 
+/**
+ * @brief Get number of elements in the hashmap.
+ *
+ * @return Number of elements in the hashmap.
+ */
+size_t
+archi_hashmap_size(
+        archi_hashmap_t hashmap ///< [in] Hashmap.
+);
+
 #endif // _ARCHI_DS_HASHMAP_API_FUN_H_
 
