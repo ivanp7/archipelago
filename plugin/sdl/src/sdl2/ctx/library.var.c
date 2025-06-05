@@ -36,7 +36,7 @@ ARCHI_CONTEXT_INIT_FUNC(archip_context_sdl2_library_init)
                     (params->value.ptr == NULL))
                 return ARCHI_STATUS_EVALUE;
 
-            if (*(bool*)params->value.ptr)
+            if (*(char*)params->value.ptr)
                 flags |= SDL_INIT_TIMER;
             else
                 flags &= ~SDL_INIT_TIMER;
@@ -51,7 +51,7 @@ ARCHI_CONTEXT_INIT_FUNC(archip_context_sdl2_library_init)
                     (params->value.ptr == NULL))
                 return ARCHI_STATUS_EVALUE;
 
-            if (*(bool*)params->value.ptr)
+            if (*(char*)params->value.ptr)
                 flags |= SDL_INIT_AUDIO;
             else
                 flags &= ~SDL_INIT_AUDIO;
@@ -66,7 +66,7 @@ ARCHI_CONTEXT_INIT_FUNC(archip_context_sdl2_library_init)
                     (params->value.ptr == NULL))
                 return ARCHI_STATUS_EVALUE;
 
-            if (*(bool*)params->value.ptr)
+            if (*(char*)params->value.ptr)
                 flags |= SDL_INIT_VIDEO;
             else
                 flags &= ~SDL_INIT_VIDEO;
@@ -81,7 +81,7 @@ ARCHI_CONTEXT_INIT_FUNC(archip_context_sdl2_library_init)
                     (params->value.ptr == NULL))
                 return ARCHI_STATUS_EVALUE;
 
-            if (*(bool*)params->value.ptr)
+            if (*(char*)params->value.ptr)
                 flags |= SDL_INIT_JOYSTICK;
             else
                 flags &= ~SDL_INIT_JOYSTICK;
@@ -96,7 +96,7 @@ ARCHI_CONTEXT_INIT_FUNC(archip_context_sdl2_library_init)
                     (params->value.ptr == NULL))
                 return ARCHI_STATUS_EVALUE;
 
-            if (*(bool*)params->value.ptr)
+            if (*(char*)params->value.ptr)
                 flags |= SDL_INIT_HAPTIC;
             else
                 flags &= ~SDL_INIT_HAPTIC;
@@ -111,7 +111,7 @@ ARCHI_CONTEXT_INIT_FUNC(archip_context_sdl2_library_init)
                     (params->value.ptr == NULL))
                 return ARCHI_STATUS_EVALUE;
 
-            if (*(bool*)params->value.ptr)
+            if (*(char*)params->value.ptr)
                 flags |= SDL_INIT_GAMECONTROLLER;
             else
                 flags &= ~SDL_INIT_GAMECONTROLLER;
@@ -126,7 +126,7 @@ ARCHI_CONTEXT_INIT_FUNC(archip_context_sdl2_library_init)
                     (params->value.ptr == NULL))
                 return ARCHI_STATUS_EVALUE;
 
-            if (*(bool*)params->value.ptr)
+            if (*(char*)params->value.ptr)
                 flags |= SDL_INIT_EVENTS;
             else
                 flags &= ~SDL_INIT_EVENTS;
@@ -141,7 +141,7 @@ ARCHI_CONTEXT_INIT_FUNC(archip_context_sdl2_library_init)
                     (params->value.ptr == NULL))
                 return ARCHI_STATUS_EVALUE;
 
-            if (*(bool*)params->value.ptr)
+            if (*(char*)params->value.ptr)
                 flags |= SDL_INIT_SENSOR;
             else
                 flags &= ~SDL_INIT_SENSOR;
@@ -156,7 +156,7 @@ ARCHI_CONTEXT_INIT_FUNC(archip_context_sdl2_library_init)
                     (params->value.ptr == NULL))
                 return ARCHI_STATUS_EVALUE;
 
-            if (*(bool*)params->value.ptr)
+            if (*(char*)params->value.ptr)
                 flags |= SDL_INIT_EVERYTHING;
             else
                 flags &= ~SDL_INIT_EVERYTHING;
