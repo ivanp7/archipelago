@@ -60,6 +60,7 @@ ARCHI_CONTEXT_GET_FUNC(archi_context_pointer_get);
  *
  * Accepts the following slots:
  * - "value" : pointer to store
+ * - "" [offset] : copy contents to stored pointer + (offset) * (data element size)
  */
 ARCHI_CONTEXT_SET_FUNC(archi_context_pointer_set);
 

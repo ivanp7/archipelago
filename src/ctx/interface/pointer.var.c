@@ -27,7 +27,7 @@
 #include "archi/util/size.def.h"
 
 #include <stdlib.h> // for malloc(), free()
-#include <string.h> // for strcmp()
+#include <string.h> // for strcmp(), memmove()
 #include <stdalign.h> // for alignof()
 
 ARCHI_CONTEXT_INIT_FUNC(archi_context_pointer_init)
@@ -208,6 +208,33 @@ ARCHI_CONTEXT_SET_FUNC(archi_context_pointer_set)
         archi_reference_count_decrement(context->ref_count);
 
         *context = value;
+    }
+    else if (strcmp("", slot.name) == 0)
+    {
+        if (slot.num_indices != 1)
+            return ARCHI_STATUS_EMISUSE;
+        else if (context->flags & ARCHI_POINTER_FLAG_FUNCTION)
+            return ARCHI_STATUS_EMISUSE;
+        else if ((context->flags & ARCHI_POINTER_FLAG_WRITABLE) == 0)
+            return ARCHI_STATUS_EMISUSE;
+        else if (context->element.size == 0)
+            return ARCHI_STATUS_EMISUSE;
+        else if (value.flags & ARCHI_POINTER_FLAG_FUNCTION)
+            return ARCHI_STATUS_EMISUSE;
+        else if (value.ptr == NULL)
+            return ARCHI_STATUS_EMISUSE;
+        else if (value.element.size != context->element.size)
+            return ARCHI_STATUS_EMISUSE;
+
+        ptrdiff_t offset = slot.index[0];
+        if ((offset < 0) || ((size_t)offset >= context->element.num_of))
+            return ARCHI_STATUS_EMISUSE;
+
+        size_t padded_size = context->element.size;
+        if (context->element.alignment != 0)
+            padded_size = ARCHI_SIZE_PADDED(padded_size, context->element.alignment);
+
+        memmove((char*)context->ptr + offset * padded_size, value.ptr, value.element.size);
     }
     else
         return ARCHI_STATUS_EKEY;
