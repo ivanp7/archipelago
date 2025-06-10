@@ -51,11 +51,7 @@ ARCHI_CONTEXT_FINAL_FUNC(archi_context_pointer_final);
  * @brief Pointer getter function.
  *
  * Provides the following slots:
- * - "value" : stored pointer
  * - "" [offset] : stored pointer + (offset) * (data element size)
- * - "num_elements" : number of elements
- * - "element_size" : element size
- * - "element_alignment" : element alignment requirement
  */
 ARCHI_CONTEXT_GET_FUNC(archi_context_pointer_get);
 
@@ -66,6 +62,21 @@ ARCHI_CONTEXT_GET_FUNC(archi_context_pointer_get);
  * - "value" : pointer to store
  */
 ARCHI_CONTEXT_SET_FUNC(archi_context_pointer_set);
+
+/**
+ * @brief Pointer action function.
+ *
+ * Implements the following actions:
+ * - "update" : update the stored pointer
+ *      parameters:
+ *        - "value"        : pointer to store
+ *        - "flags"        : new pointer flags
+ *        - "layout"       : new array layout
+ *        - "num_elements" : new number of elements
+ *        - "element_size" : new element size
+ *        - "element_alignment" : new element alignment requirement
+ */
+ARCHI_CONTEXT_ACT_FUNC(archi_context_pointer_act);
 
 /**
  * @brief Pointer interface.
