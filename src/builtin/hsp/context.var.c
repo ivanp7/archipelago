@@ -27,8 +27,9 @@
 #include "archi/hsp/exec.fun.h"
 #include "archi/hsp/instance.typ.h"
 #include "archi/hsp/state/branch.typ.h"
+#include "archi/util/alloc.fun.h"
 
-#include <stdlib.h> // for malloc(), realloc(), free()
+#include <stdlib.h> // for malloc(), free()
 #include <string.h> // for strcmp()
 #include <stdalign.h> // for alignof()
 #include <stdbool.h>
@@ -652,20 +653,6 @@ ARCHI_CONTEXT_INIT_FUNC(archi_context_hsp_frame_init)
         .metadata = hsp_frame_metadata.ptr,
     };
 
-    if (num_states > 0)
-    {
-        hsp_frame->state = malloc(sizeof(*hsp_frame->state) * num_states);
-        if (hsp_frame->state == NULL)
-        {
-            free(hsp_frame);
-            free(context_data);
-            return ARCHI_STATUS_ENOMEMORY;
-        }
-
-        for (size_t i = 0; i < num_states; i++)
-            hsp_frame->state[i] = (archi_hsp_state_t){0};
-    }
-
     *context_data = (struct archi_context_hsp_frame_data){
         .frame = {
             .ptr = hsp_frame,
@@ -678,19 +665,27 @@ ARCHI_CONTEXT_INIT_FUNC(archi_context_hsp_frame_init)
         .frame_metadata = hsp_frame_metadata,
     };
 
-    if (num_states > 0)
     {
-        context_data->frame_state = malloc(sizeof(*context_data->frame_state) * num_states);
-        if (context_data->frame_state == NULL)
+        archi_pointer_t state_array = {
+            .ptr = hsp_frame->state,
+            .element = {
+                .size = sizeof(*hsp_frame->state),
+                .alignment = alignof(archi_hsp_state_t),
+            },
+        };
+
+        archi_hsp_state_t null_state = {0};
+
+        archi_status_t code = archi_resize_array(&state_array,
+                &context_data->frame_state, num_states, &null_state);
+        if (code != 0)
         {
-            free(hsp_frame->state);
             free(hsp_frame);
             free(context_data);
-            return ARCHI_STATUS_ENOMEMORY;
+            return code;
         }
 
-        for (size_t i = 0; i < num_states; i++)
-            context_data->frame_state[i] = (archi_pointer_t){0};
+        hsp_frame->state = state_array.ptr;
     }
 
     archi_reference_count_increment(hsp_frame_metadata.ref_count);
@@ -706,13 +701,18 @@ ARCHI_CONTEXT_FINAL_FUNC(archi_context_hsp_frame_final)
 
     archi_hsp_frame_t *hsp_frame = context_data->frame.ptr;
 
-    for (size_t i = 0; i < hsp_frame->num_states; i++)
-        archi_reference_count_decrement(context_data->frame_state[i].ref_count);
+    archi_pointer_t state_array = {
+        .ptr = hsp_frame->state,
+        .element = {
+            .num_of = hsp_frame->num_states,
+            .size = sizeof(*hsp_frame->state),
+            .alignment = alignof(archi_hsp_state_t),
+        },
+    };
 
     archi_reference_count_decrement(context_data->frame_metadata.ref_count);
-    free(hsp_frame->state);
+    archi_resize_array(&state_array, &context_data->frame_state, 0, NULL);
     free(hsp_frame);
-    free(context_data->frame_state);
     free(context_data);
 }
 
@@ -776,48 +776,23 @@ ARCHI_CONTEXT_SET_FUNC(archi_context_hsp_frame_set)
 
         size_t new_num_states = *(size_t*)value.ptr;
 
-        // Reallocate the array of states
-        if (new_num_states > 0)
-        {
-            archi_hsp_state_t *new_states =
-                realloc(hsp_frame->state, sizeof(*new_states) * new_num_states);
-            if (new_states == NULL)
-                return ARCHI_STATUS_ENOMEMORY;
+        archi_pointer_t state_array = {
+            .ptr = hsp_frame->state,
+            .element = {
+                .num_of = hsp_frame->num_states,
+                .size = sizeof(*hsp_frame->state),
+                .alignment = alignof(archi_hsp_state_t),
+            },
+        };
 
-            hsp_frame->state = new_states;
+        archi_hsp_state_t null_state = {0};
 
-            for (size_t i = hsp_frame->num_states; i < new_num_states; i++)
-                hsp_frame->state[i] = (archi_hsp_state_t){0};
-        }
-        else
-        {
-            free(hsp_frame->state);
-            hsp_frame->state = NULL;
-        }
+        archi_status_t code = archi_resize_array(&state_array,
+                &context_data->frame_state, new_num_states, &null_state);
+        if (code != 0)
+            return code;
 
-        // Reallocate the array of references
-        for (size_t i = new_num_states; i < hsp_frame->num_states; i++)
-            archi_reference_count_decrement(context_data->frame_state[i].ref_count);
-
-        if (new_num_states > 0)
-        {
-            archi_pointer_t *new_states =
-                realloc(context_data->frame_state, sizeof(*new_states) * new_num_states);
-            if (new_states == NULL)
-                return ARCHI_STATUS_ENOMEMORY;
-
-            context_data->frame_state = new_states;
-
-            for (size_t i = hsp_frame->num_states; i < new_num_states; i++)
-                context_data->frame_state[i] = (archi_pointer_t){0};
-        }
-        else
-        {
-            free(context_data->frame_state);
-            context_data->frame_state = NULL;
-        }
-
-        // Update the sizes of arrays
+        hsp_frame->state = state_array.ptr;
         hsp_frame->num_states = new_num_states;
     }
     else if (strcmp("state", slot.name) == 0)
@@ -942,20 +917,6 @@ ARCHI_CONTEXT_INIT_FUNC(archi_context_hsp_branch_state_data_init)
         .selector_data = selector_data.ptr,
     };
 
-    if (num_branches > 0)
-    {
-        branch_state_data->branch = malloc(sizeof(*branch_state_data->branch) * num_branches);
-        if (branch_state_data->branch == NULL)
-        {
-            free(branch_state_data);
-            free(context_data);
-            return ARCHI_STATUS_ENOMEMORY;
-        }
-
-        for (size_t i = 0; i < num_branches; i++)
-            branch_state_data->branch[i] = (archi_hsp_frame_t){0};
-    }
-
     *context_data = (struct archi_context_hsp_branch_state_data_data){
         .state_data = {
             .ptr = branch_state_data,
@@ -969,19 +930,27 @@ ARCHI_CONTEXT_INIT_FUNC(archi_context_hsp_branch_state_data_init)
         .branch_selector_data = selector_data,
     };
 
-    if (num_branches > 0)
     {
-        context_data->branch_frame = malloc(sizeof(*context_data->branch_frame) * num_branches);
-        if (context_data->branch_frame == NULL)
+        archi_pointer_t frame_array = {
+            .ptr = branch_state_data->branch,
+            .element = {
+                .size = sizeof(*branch_state_data->branch),
+                .alignment = alignof(archi_hsp_frame_t),
+            },
+        };
+
+        archi_hsp_frame_t null_frame = {0};
+
+        archi_status_t code = archi_resize_array(&frame_array,
+                &context_data->branch_frame, num_branches, &null_frame);
+        if (code != 0)
         {
-            free(branch_state_data->branch);
             free(branch_state_data);
             free(context_data);
-            return ARCHI_STATUS_ENOMEMORY;
+            return code;
         }
 
-        for (size_t i = 0; i < num_branches; i++)
-            context_data->branch_frame[i] = (archi_pointer_t){0};
+        branch_state_data->branch = frame_array.ptr;
     }
 
     archi_reference_count_increment(selector_fn.ref_count);
@@ -998,14 +967,19 @@ ARCHI_CONTEXT_FINAL_FUNC(archi_context_hsp_branch_state_data_final)
 
     archi_hsp_branch_state_data_t *branch_state_data = context_data->state_data.ptr;
 
-    for (size_t i = 0; i < branch_state_data->num_branches; i++)
-        archi_reference_count_decrement(context_data->branch_frame[i].ref_count);
+    archi_pointer_t frame_array = {
+        .ptr = branch_state_data->branch,
+        .element = {
+            .num_of = branch_state_data->num_branches,
+            .size = sizeof(*branch_state_data->branch),
+            .alignment = alignof(archi_hsp_frame_t),
+        },
+    };
 
     archi_reference_count_decrement(context_data->branch_selector_fn.ref_count);
     archi_reference_count_decrement(context_data->branch_selector_data.ref_count);
-    free(branch_state_data->branch);
+    archi_resize_array(&frame_array, &context_data->branch_frame, 0, NULL);
     free(branch_state_data);
-    free(context_data->branch_frame);
     free(context_data);
 }
 
@@ -1076,48 +1050,23 @@ ARCHI_CONTEXT_SET_FUNC(archi_context_hsp_branch_state_data_set)
 
         size_t new_num_branches = *(size_t*)value.ptr;
 
-        // Reallocate the array of states
-        if (new_num_branches > 0)
-        {
-            archi_hsp_frame_t *new_branches =
-                realloc(branch_state_data->branch, sizeof(*new_branches) * new_num_branches);
-            if (new_branches == NULL)
-                return ARCHI_STATUS_ENOMEMORY;
+        archi_pointer_t frame_array = {
+            .ptr = branch_state_data->branch,
+            .element = {
+                .num_of = branch_state_data->num_branches,
+                .size = sizeof(*branch_state_data->branch),
+                .alignment = alignof(archi_hsp_frame_t),
+            },
+        };
 
-            branch_state_data->branch = new_branches;
+        archi_hsp_frame_t null_frame = {0};
 
-            for (size_t i = branch_state_data->num_branches; i < new_num_branches; i++)
-                branch_state_data->branch[i] = (archi_hsp_frame_t){0};
-        }
-        else
-        {
-            free(branch_state_data->branch);
-            branch_state_data->branch = NULL;
-        }
+        archi_status_t code = archi_resize_array(&frame_array,
+                &context_data->branch_frame, new_num_branches, &null_frame);
+        if (code != 0)
+            return code;
 
-        // Reallocate the array of references
-        for (size_t i = new_num_branches; i < branch_state_data->num_branches; i++)
-            archi_reference_count_decrement(context_data->branch_frame[i].ref_count);
-
-        if (new_num_branches > 0)
-        {
-            archi_pointer_t *new_branches =
-                realloc(context_data->branch_frame, sizeof(*new_branches) * new_num_branches);
-            if (new_branches == NULL)
-                return ARCHI_STATUS_ENOMEMORY;
-
-            context_data->branch_frame = new_branches;
-
-            for (size_t i = branch_state_data->num_branches; i < new_num_branches; i++)
-                context_data->branch_frame[i] = (archi_pointer_t){0};
-        }
-        else
-        {
-            free(context_data->branch_frame);
-            context_data->branch_frame = NULL;
-        }
-
-        // Update the sizes of arrays
+        branch_state_data->branch = frame_array.ptr;
         branch_state_data->num_branches = new_num_branches;
     }
     else if (strcmp("branch", slot.name) == 0)
