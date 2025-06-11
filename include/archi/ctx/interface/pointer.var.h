@@ -52,6 +52,11 @@ ARCHI_CONTEXT_FINAL_FUNC(archi_context_pointer_final);
  *
  * Provides the following slots:
  * - "" [offset] : stored pointer + (offset) * (data element size)
+ * - "flags"        : pointer flags
+ * - "layout"       : array layout
+ * - "num_elements" : number of elements
+ * - "element_size" : element size
+ * - "element_alignment" : element alignment requirement
  */
 ARCHI_CONTEXT_GET_FUNC(archi_context_pointer_get);
 

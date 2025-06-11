@@ -191,6 +191,81 @@ ARCHI_CONTEXT_GET_FUNC(archi_context_pointer_get)
                 },
         };
     }
+    else if (strcmp("flags", slot.name) == 0)
+    {
+        if (slot.num_indices != 0)
+            return ARCHI_STATUS_EMISUSE;
+
+        *value = (archi_pointer_t){
+            .ptr = &context->flags,
+            .ref_count = context->ref_count,
+            .element = {
+                .num_of = 1,
+                .size = sizeof(context->flags),
+                .alignment = alignof(uint64_t),
+            },
+        };
+    }
+    else if (strcmp("layout", slot.name) == 0)
+    {
+        if (slot.num_indices != 0)
+            return ARCHI_STATUS_EMISUSE;
+
+        *value = (archi_pointer_t){
+            .ptr = &context->element,
+            .ref_count = context->ref_count,
+            .element = {
+                .num_of = 1,
+                .size = sizeof(context->element),
+                .alignment = alignof(archi_array_layout_t),
+            },
+        };
+    }
+    else if (strcmp("num_elements", slot.name) == 0)
+    {
+        if (slot.num_indices != 0)
+            return ARCHI_STATUS_EMISUSE;
+
+        *value = (archi_pointer_t){
+            .ptr = &context->element.num_of,
+            .ref_count = context->ref_count,
+            .element = {
+                .num_of = 1,
+                .size = sizeof(context->element.num_of),
+                .alignment = alignof(size_t),
+            },
+        };
+    }
+    else if (strcmp("element_size", slot.name) == 0)
+    {
+        if (slot.num_indices != 0)
+            return ARCHI_STATUS_EMISUSE;
+
+        *value = (archi_pointer_t){
+            .ptr = &context->element.size,
+            .ref_count = context->ref_count,
+            .element = {
+                .num_of = 1,
+                .size = sizeof(context->element.size),
+                .alignment = alignof(size_t),
+            },
+        };
+    }
+    else if (strcmp("element_alignment", slot.name) == 0)
+    {
+        if (slot.num_indices != 0)
+            return ARCHI_STATUS_EMISUSE;
+
+        *value = (archi_pointer_t){
+            .ptr = &context->element.alignment,
+            .ref_count = context->ref_count,
+            .element = {
+                .num_of = 1,
+                .size = sizeof(context->element.alignment),
+                .alignment = alignof(size_t),
+            },
+        };
+    }
     else
         return ARCHI_STATUS_EKEY;
 
