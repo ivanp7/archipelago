@@ -38,7 +38,7 @@ struct archi_context_array_data {
 
 ARCHI_CONTEXT_INIT_FUNC(archi_context_array_init)
 {
-    uint64_t flags = 0;
+    archi_pointer_flags_t flags = 0;
     size_t num_elements = 0;
     bool func_ptrs = false;
 
@@ -58,7 +58,7 @@ ARCHI_CONTEXT_INIT_FUNC(archi_context_array_init)
                     (params->value.ptr == NULL))
                 return ARCHI_STATUS_EVALUE;
 
-            flags = *(uint64_t*)params->value.ptr;
+            flags = *(archi_pointer_flags_t*)params->value.ptr;
         }
         else if (strcmp("num_elements", params->name) == 0)
         {

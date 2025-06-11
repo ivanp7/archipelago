@@ -33,7 +33,7 @@
 ARCHI_CONTEXT_INIT_FUNC(archi_context_pointer_init)
 {
     archi_pointer_t value = {0};
-    uint64_t flags = 0;
+    archi_pointer_flags_t flags = 0;
     archi_array_layout_t layout = {0};
     archi_array_layout_t layout_fields = {0};
 
@@ -64,7 +64,7 @@ ARCHI_CONTEXT_INIT_FUNC(archi_context_pointer_init)
                     (params->value.ptr == NULL))
                 return ARCHI_STATUS_EVALUE;
 
-            flags = *(uint64_t*)params->value.ptr;
+            flags = *(archi_pointer_flags_t*)params->value.ptr;
         }
         else if (strcmp("layout", params->name) == 0)
         {
@@ -202,7 +202,7 @@ ARCHI_CONTEXT_GET_FUNC(archi_context_pointer_get)
             .element = {
                 .num_of = 1,
                 .size = sizeof(context->flags),
-                .alignment = alignof(uint64_t),
+                .alignment = alignof(archi_pointer_flags_t),
             },
         };
     }
@@ -325,7 +325,7 @@ ARCHI_CONTEXT_ACT_FUNC(archi_context_pointer_act)
             return ARCHI_STATUS_EMISUSE;
 
         archi_pointer_t value = *context;
-        uint64_t flags = 0;
+        archi_pointer_flags_t flags = 0;
         archi_array_layout_t layout = {0};
         archi_array_layout_t layout_fields = {0};
 
@@ -356,7 +356,7 @@ ARCHI_CONTEXT_ACT_FUNC(archi_context_pointer_act)
                         (params->value.ptr == NULL))
                     return ARCHI_STATUS_EVALUE;
 
-                flags = *(uint64_t*)params->value.ptr;
+                flags = *(archi_pointer_flags_t*)params->value.ptr;
             }
             else if (strcmp("layout", params->name) == 0)
             {
