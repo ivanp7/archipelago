@@ -49,23 +49,23 @@ archi_memory_interface(
 );
 
 /**
- * @brief Extract memory layout.
+ * @brief Extract raw memory allocation.
  *
- * @return Memory layout.
+ * @return Pointer wrapper to the raw memory allocation.
  */
-archi_array_layout_t
-archi_memory_layout(
-        archi_memory_t memory ///< [in] Context.
+archi_pointer_t
+archi_memory_allocation(
+        archi_memory_t memory ///< [in] Memory.
 );
 
 /**
- * @brief Extract mapped memory area.
+ * @brief Extract mapped memory region.
  *
- * @return Pointer wrapper to the mapped memory area.
+ * @return Pointer wrapper to the mapped memory region.
  */
 archi_pointer_t
-archi_memory_data(
-        archi_memory_t memory ///< [in] Context.
+archi_memory_mapping(
+        archi_memory_t memory ///< [in] Memory.
 );
 
 /*****************************************************************************/

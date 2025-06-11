@@ -47,18 +47,18 @@ archi_memory_interface(
     return memory->interface;
 }
 
-archi_array_layout_t
-archi_memory_layout(
+archi_pointer_t
+archi_memory_allocation(
         archi_memory_t memory)
 {
     if (memory == NULL)
-        return (archi_array_layout_t){0};
+        return (archi_pointer_t){0};
 
-    return memory->allocation.element;
+    return memory->allocation;
 }
 
 archi_pointer_t
-archi_memory_data(
+archi_memory_mapping(
         archi_memory_t memory)
 {
     if (memory == NULL)
