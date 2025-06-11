@@ -5,6 +5,7 @@
 
 #include "archip/opencl/ctx/program.var.h"
 #include "archip/opencl/program.fun.h"
+#include "archi/log/print.fun.h"
 
 #include <stdlib.h> // for malloc(), free()
 #include <string.h> // for strcmp(), memcpy()
@@ -437,6 +438,8 @@ ARCHI_CONTEXT_INIT_FUNC(archip_context_opencl_kernel_init_new)
     cl_kernel kernel = clCreateKernel(program.ptr, kernel_name, &ret);
     if (ret != CL_SUCCESS)
     {
+        archi_log_error("archip_context_opencl_kernel_init_new", "clCreateKernel('%s') failed with error %i",
+                kernel_name, ret);
         free(context_data);
         return ARCHI_STATUS_ERESOURCE;
     }
@@ -455,6 +458,7 @@ ARCHI_CONTEXT_INIT_FUNC(archip_context_opencl_kernel_init_new)
             sizeof(context_data->num_arguments), &context_data->num_arguments, NULL);
     if (ret != CL_SUCCESS)
     {
+        archi_log_error("archip_context_opencl_kernel_init_new", "clGetKernelInfo(CL_KERNEL_NUM_ARGS) failed with error %i", ret);
         clReleaseKernel(kernel);
         free(context_data);
         return ARCHI_STATUS_ERESOURCE;
@@ -498,6 +502,7 @@ ARCHI_CONTEXT_INIT_FUNC(archip_context_opencl_kernel_init_copy)
     cl_kernel kernel = clCloneKernel(source_kernel.ptr, &ret);
     if (ret != CL_SUCCESS)
     {
+        archi_log_error("archip_context_opencl_kernel_init_copy", "clCloneKernel() failed with error %i", ret);
         free(context_data);
         return ARCHI_STATUS_ERESOURCE;
     }
@@ -531,6 +536,7 @@ ARCHI_CONTEXT_INIT_FUNC(archip_context_opencl_kernel_init_copy)
             sizeof(context_data->num_arguments), &context_data->num_arguments, NULL);
     if (ret != CL_SUCCESS)
     {
+        archi_log_error("archip_context_opencl_kernel_init_copy", "clGetKernelInfo(CL_KERNEL_NUM_ARGS) failed with error %i", ret);
         clReleaseKernel(kernel);
         free(context_data);
         return ARCHI_STATUS_ERESOURCE;
@@ -601,7 +607,10 @@ ARCHI_CONTEXT_SET_FUNC(archip_context_opencl_kernel_set)
 
         cl_int ret = clSetKernelArg(context_data->kernel.ptr, arg_index, arg_size, value.ptr);
         if (ret != CL_SUCCESS)
+        {
+            archi_log_error("archip_context_opencl_kernel_set", "clSetKernelArg(%ti) failed with error %i", arg_index, ret);
             return ARCHI_STATUS_ERESOURCE;
+        }
     }
     else if (strcmp("arg.svm_ptr", slot.name) == 0)
     {
@@ -618,7 +627,10 @@ ARCHI_CONTEXT_SET_FUNC(archip_context_opencl_kernel_set)
 
         cl_int ret = clSetKernelArgSVMPointer(context_data->kernel.ptr, arg_index, value.ptr);
         if (ret != CL_SUCCESS)
+        {
+            archi_log_error("archip_context_opencl_kernel_set", "clSetKernelArgSVMPointer(%ti) failed with error %i", arg_index, ret);
             return ARCHI_STATUS_ERESOURCE;
+        }
     }
     else if (strcmp("exec_info.svm_ptrs", slot.name) == 0)
     {
@@ -632,7 +644,10 @@ ARCHI_CONTEXT_SET_FUNC(archip_context_opencl_kernel_set)
         cl_int ret = clSetKernelExecInfo(context_data->kernel.ptr, CL_KERNEL_EXEC_INFO_SVM_PTRS,
                 sizeof(void*) * value.element.num_of, value.ptr);
         if (ret != CL_SUCCESS)
+        {
+            archi_log_error("archip_context_opencl_kernel_set", "clSetKernelExecInfo(CL_KERNEL_EXEC_INFO_SVM_PTRS) failed with error %i", ret);
             return ARCHI_STATUS_ERESOURCE;
+        }
     }
     else
         return ARCHI_STATUS_EKEY;

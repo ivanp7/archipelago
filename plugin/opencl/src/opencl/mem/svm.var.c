@@ -5,6 +5,7 @@
 
 #include "archip/opencl/mem/svm.var.h"
 #include "archip/opencl/mem/svm.typ.h"
+#include "archi/log/print.fun.h"
 
 #include <stdlib.h> // for malloc(), free()
 
@@ -87,6 +88,8 @@ ARCHI_MEMORY_MAP_FUNC(archip_opencl_svm_map)
 
     if (ret != CL_SUCCESS)
     {
+        archi_log_error("archip_opencl_svm_map", "clEnqueueSVMMap() failed with error %i", ret);
+
         if (code != NULL)
             *code = ARCHI_STATUS_ERESOURCE;
 
@@ -111,6 +114,8 @@ ARCHI_MEMORY_UNMAP_FUNC(archip_opencl_svm_unmap)
 
     if (ret == CL_SUCCESS)
         clWaitForEvents(1, &event);
+    else
+        archi_log_error("archip_opencl_svm_unmap", "clEnqueueSVMUnmap() failed with error %i", ret);
 
     svm_allocation->command_queue = NULL;
 }

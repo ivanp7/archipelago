@@ -5,6 +5,7 @@
 
 #include "archip/opencl/ctx/device.var.h"
 #include "archip/opencl/device.fun.h"
+#include "archi/log/print.fun.h"
 
 #include <stdlib.h> // for malloc(), free()
 #include <string.h> // for strcmp()
@@ -80,9 +81,10 @@ ARCHI_CONTEXT_INIT_FUNC(archip_context_opencl_context_init)
     cl_int ret;
     cl_context opencl_context = clCreateContext(properties,
             num_devices, context_data->ids->device_id, NULL, NULL, &ret);
-
     if (ret != CL_SUCCESS)
     {
+        archi_log_error("archip_context_opencl_context_init", "clCreateContext(<platform #%u>) failed with error %i",
+                platform_idx, ret);
         free(context_data);
         return ARCHI_STATUS_ERESOURCE;
     }
@@ -308,6 +310,7 @@ ARCHI_CONTEXT_INIT_FUNC(archip_context_opencl_command_queue_init)
 
     if (ret != CL_SUCCESS)
     {
+        archi_log_error("archip_context_opencl_command_queue_init", "clCreateCommandQueueWithProperties() failed with error %i", ret);
         free(context_data);
         return ARCHI_STATUS_ERESOURCE;
     }
