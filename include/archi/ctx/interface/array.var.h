@@ -48,6 +48,7 @@ ARCHI_CONTEXT_FINAL_FUNC(archi_context_array_final);
  *
  * Provides the following slots:
  * - "" [index] : element #index
+ * - "elements"  : array of references to separate elements of the array
  */
 ARCHI_CONTEXT_GET_FUNC(archi_context_array_get);
 

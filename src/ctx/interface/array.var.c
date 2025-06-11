@@ -150,6 +150,20 @@ ARCHI_CONTEXT_GET_FUNC(archi_context_array_get)
 
         *value = context_data->element[slot.index[0]];
     }
+    else if (strcmp("elements", slot.name) == 0)
+    {
+        if (slot.num_indices != 0)
+            return ARCHI_STATUS_EMISUSE;
+
+        *value = (archi_pointer_t){
+            .ptr = context_data->element,
+            .element = {
+                .num_of = context_data->array.element.num_of,
+                .size = sizeof(*context_data->element),
+                .alignment = alignof(archi_pointer_t),
+            },
+        };
+    }
     else
         return ARCHI_STATUS_EKEY;
 
