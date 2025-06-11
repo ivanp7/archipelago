@@ -23,7 +23,8 @@
 
 import ctypes as c
 
-from .common import archi_pointer_t, archi_parameter_list_t, archi_context_slot_t
+from .common import archi_pointer_flags_t, archi_pointer_t, \
+        archi_parameter_list_t, archi_context_slot_t
 
 
 class archi_exe_registry_instr_base_t(c.Structure):
@@ -70,6 +71,15 @@ class archi_exe_registry_instr_init_pointer_t(c.Structure):
     _fields_ = [('base', archi_exe_registry_instr_base_t),
                 ('key', c.c_char_p),
                 ('value', archi_pointer_t)]
+
+
+class archi_exe_registry_instr_init_array_t(c.Structure):
+    """Context registry instruction: initialize a new array context.
+    """
+    _fields_ = [('base', archi_exe_registry_instr_base_t),
+                ('key', c.c_char_p),
+                ('num_elements', c.c_size_t),
+                ('flags', archi_pointer_flags_t)]
 
 
 class archi_exe_registry_instr_copy_t(c.Structure):

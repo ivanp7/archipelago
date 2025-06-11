@@ -38,6 +38,8 @@ typedef enum archi_exe_registry_instr_type {
     ARCHI_EXE_REGISTRY_INSTR_INIT_FROM_CONTEXT,     ///< Initialize a new context using interface of a source context.
     ARCHI_EXE_REGISTRY_INSTR_INIT_FROM_SLOT,        ///< Initialize a new context using interface from a context slot.
     ARCHI_EXE_REGISTRY_INSTR_INIT_POINTER,          ///< Initialize a new pointer context.
+    ARCHI_EXE_REGISTRY_INSTR_INIT_DATA_ARRAY,       ///< Initialize a new data pointer array context.
+    ARCHI_EXE_REGISTRY_INSTR_INIT_FUNC_ARRAY,       ///< Initialize a new function pointer array context.
     ARCHI_EXE_REGISTRY_INSTR_COPY,                  ///< Create a context alias.
 
     ARCHI_EXE_REGISTRY_INSTR_FINAL,                 ///< Finalize a context.
@@ -114,6 +116,18 @@ typedef struct archi_exe_registry_instr_init_pointer {
 
     archi_pointer_t value; ///< Value of the pointer.
 } archi_exe_registry_instr_init_pointer_t;
+
+/**
+ * @brief Context registry instruction: initialize a new array context.
+ */
+typedef struct archi_exe_registry_instr_init_array {
+    archi_exe_registry_instr_base_t base; ///< Instruction base.
+
+    const char *key; ///< Key of the new context.
+
+    size_t num_elements; ///< Number of elements in the array.
+    archi_pointer_flags_t flags; ///< Array flags.
+} archi_exe_registry_instr_init_array_t;
 
 /**
  * @brief Context registry instruction: create a context alias.

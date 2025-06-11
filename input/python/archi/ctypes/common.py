@@ -32,6 +32,9 @@ class archi_array_layout_t(c.Structure):
                 ('alignment', c.c_size_t)]
 
 
+archi_pointer_flags_t = c.c_uint64
+
+
 class archi_pointer_t(c.Structure):
     """Generic wrapper for data or function pointers with metadata.
     """
@@ -46,7 +49,7 @@ class archi_pointer_t(c.Structure):
     _anonymous_ = ['as']
     _fields_ = [('as', union),
                 ('ref_count', c.c_void_p),
-                ('flags', c.c_uint64),
+                ('flags', archi_pointer_flags_t),
                 ('element', archi_array_layout_t)]
 
 

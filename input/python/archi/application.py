@@ -304,8 +304,9 @@ class Application:
     class _Instruction:
         """Representation of an abstract application initialization instruction.
         """
-        NOOP, INIT_FROM_CONTEXT, INIT_FROM_SLOT, INIT_POINTER, COPY, FINAL, \
-                SET_TO_VALUE, SET_TO_CONTEXT_DATA, SET_TO_CONTEXT_SLOT, ACT = range(10)
+        NOOP, INIT_FROM_CONTEXT, INIT_FROM_SLOT, \
+                INIT_POINTER, INIT_DATA_ARRAY, INIT_FUNC_ARRAY, COPY, FINAL, \
+                SET_TO_VALUE, SET_TO_CONTEXT_DATA, SET_TO_CONTEXT_SLOT, ACT = range(12)
 
     class _InstructionNoop(_Instruction):
         """Representation of an application initialization instruction: no-op.
@@ -491,6 +492,55 @@ class Application:
                     instr.value.ptr = ptr_value.address()
 
             return MemoryBlock(CValue(instr, callback=init_instr))
+
+    class _InstructionInitDataArray(_Instruction):
+        """Representation of an application initialization instruction:
+        initialize a new array context.
+        """
+        def __init__(self, key: "str", num_elements: "int", flags: "int"):
+            """Initialize an instruction.
+            """
+            from .ctypes.common import archi_pointer_t
+
+            if not isinstance(key, str):
+                raise TypeError("Context key must be a string")
+            elif not isinstance(num_elements, int):
+                raise TypeError("Number of array elements must be a non-negative integer")
+            elif num_elements < 0:
+                raise ValueError("Number of array elements must be a non-negative integer")
+            elif flags is not None and not isinstance(flags, int):
+                raise TypeError("Flags must be a non-negative integer")
+            elif flags is not None and flags < 0:
+                raise ValueError("Flags must be a non-negative integer")
+            elif flags is not None and flags >= (1 << archi_pointer_t.NUM_FLAG_BITS):
+                raise ValueError(f"Flags must fit into {archi_pointer_t.NUM_FLAG_BITS} lowest bits")
+
+            self._type = Application._Instruction.INIT_DATA_ARRAY
+            self._key = key
+            self._num_elements = num_elements
+            self._value = value
+            self._flags = flags
+
+        def alloc(self, app: "Application", ptr_instructions: "list[MemoryBlock]", idx: "int"):
+            """Allocate all required blocks.
+            """
+            from .ctypes.instructions import archi_exe_registry_instr_init_array_t
+
+            instr = archi_exe_registry_instr_init_array_t()
+            instr.base.type = self._type
+
+            instr.num_elements = self._num_elements
+            if self._flags is not None:
+                instr.flags = self._flags
+
+            ptr_key = app._alloc_string(self._key)
+
+            def init_instr(instr: "archi_exe_registry_instr_init_array_t"):
+                instr.key = ptr_key.address()
+
+            return MemoryBlock(CValue(instr, callback=init_instr))
+
+    # class _InstructionInitFuncArray is not implemented yet
 
     class _InstructionCopy(_Instruction):
         """Representation of an application initialization instruction:
@@ -856,6 +906,38 @@ class Application:
             self._instructions.append(Application._InstructionCopy(
                 key=key,
                 original_key=entity._key))
+
+        elif isinstance(entity, list):
+            self._instructions.append(Application._InstructionInitDataArray(
+                key=key,
+                num_elements=len(entity),
+                flags=None))
+
+            for index, element in enumerate(entity):
+                if isinstance(element, Context):
+                    self._instructions.append(Application._InstructionSetToContextData(
+                        key=key,
+                        slot_name='', slot_indices=[index],
+                        source_key=element._key))
+
+                elif isinstance(element, Context._Slot) or isinstance(element, Context._Action):
+                    self._instructions.append(Application._InstructionSetToContextSlot(
+                        key=key,
+                        slot_name='', slot_indices=[index],
+                        source_key=element._context._key,
+                        source_slot_name=element._name, source_slot_indices=element._indices))
+
+                elif element is None or isinstance(element, CValue):
+                    self._instructions.append(Application._InstructionSetToValue(
+                        key=key,
+                        slot_name='', slot_indices=[index],
+                        value=element))
+
+                else:
+                    self._instructions.append(Application._InstructionSetToValue(
+                        key=key,
+                        slot_name='', slot_indices=[index],
+                        value=CValue(element)))
 
         elif isinstance(entity, Context._Slot) or isinstance(entity, Context._Action):
             self._instructions.append(Application._InstructionInitPointer(

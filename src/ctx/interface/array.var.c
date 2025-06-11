@@ -48,19 +48,7 @@ ARCHI_CONTEXT_INIT_FUNC(archi_context_array_init)
 
     for (; params != NULL; params = params->next)
     {
-        if (strcmp("flags", params->name) == 0)
-        {
-            if (param_flags_set)
-                continue;
-            param_flags_set = true;
-
-            if ((params->value.flags & ARCHI_POINTER_FLAG_FUNCTION) ||
-                    (params->value.ptr == NULL))
-                return ARCHI_STATUS_EVALUE;
-
-            flags = *(archi_pointer_flags_t*)params->value.ptr;
-        }
-        else if (strcmp("num_elements", params->name) == 0)
+        if (strcmp("num_elements", params->name) == 0)
         {
             if (param_num_elements_set)
                 continue;
@@ -71,6 +59,18 @@ ARCHI_CONTEXT_INIT_FUNC(archi_context_array_init)
                 return ARCHI_STATUS_EVALUE;
 
             num_elements = *(size_t*)params->value.ptr;
+        }
+        else if (strcmp("flags", params->name) == 0)
+        {
+            if (param_flags_set)
+                continue;
+            param_flags_set = true;
+
+            if ((params->value.flags & ARCHI_POINTER_FLAG_FUNCTION) ||
+                    (params->value.ptr == NULL))
+                return ARCHI_STATUS_EVALUE;
+
+            flags = *(archi_pointer_flags_t*)params->value.ptr;
         }
         else if (strcmp("func_ptrs", params->name) == 0)
         {

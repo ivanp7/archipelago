@@ -33,8 +33,9 @@
  * @brief Array initialization function.
  *
  * Accepts the following parameters:
- * - "flags"        : array flags
  * - "num_elements" : number of elements
+ * - "flags"        : array flags
+ * - "func_ptrs"    : whether pointers to functions are stored
  */
 ARCHI_CONTEXT_INIT_FUNC(archi_context_array_init);
 

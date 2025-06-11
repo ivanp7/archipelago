@@ -28,6 +28,7 @@
 #include "archi/ctx/interface.fun.h"
 #include "archi/ctx/interface/parameters.var.h"
 #include "archi/ctx/interface/pointer.var.h"
+#include "archi/ctx/interface/array.var.h"
 #include "archi/log/print.fun.h"
 #include "archi/log/print.def.h"
 #include "archi/log/color.def.h"
@@ -67,6 +68,12 @@ archi_exe_registry_instr_sizeof(
 
         case ARCHI_EXE_REGISTRY_INSTR_INIT_POINTER:
             return sizeof(archi_exe_registry_instr_init_pointer_t);
+
+        case ARCHI_EXE_REGISTRY_INSTR_INIT_DATA_ARRAY:
+            return sizeof(archi_exe_registry_instr_init_array_t);
+
+        case ARCHI_EXE_REGISTRY_INSTR_INIT_FUNC_ARRAY:
+            return sizeof(archi_exe_registry_instr_init_array_t);
 
         case ARCHI_EXE_REGISTRY_INSTR_COPY:
             return sizeof(archi_exe_registry_instr_copy_t);
@@ -686,6 +693,109 @@ archi_exe_registry_instr_execute_init_pointer(
 
 static
 archi_status_t
+archi_exe_registry_instr_execute_init_array(
+        archi_context_t registry,
+        const archi_exe_registry_instr_init_array_t *instruction,
+        archi_reference_count_t ref_count,
+        bool dry_run,
+        bool logging)
+{
+    (void) ref_count;
+
+    // Print the instruction details
+    if (logging)
+    {
+        archi_print_key("key", instruction->key);
+        {
+            archi_print(LOG_INDENT "    num_elements = %zu\n", instruction->num_elements);
+            archi_print(LOG_INDENT "    flags = %llX\n", (unsigned long long)instruction->flags);
+            archi_print(LOG_INDENT "    func_ptrs = %s\n",
+                    (instruction->base.type == ARCHI_EXE_REGISTRY_INSTR_INIT_FUNC_ARRAY) ? "true" : "false");
+        }
+    }
+
+    if (dry_run)
+        return 0;
+
+    if ((instruction->key == NULL) || (instruction->key[0] == '\0'))
+        return ARCHI_STATUS_EMISUSE;
+
+    archi_status_t code;
+
+    // Check early if the context key exists already
+    archi_context_get_slot(registry,
+            (archi_context_slot_t){.name = instruction->key}, &code);
+
+    if (code != 1)
+    {
+        if (code < 0)
+            return code;
+        else if (code == 0)
+            return 2; // the context key exists already
+        else
+            return ARCHI_STATUS_EFAILURE;
+    }
+
+    // Prepare the context interface
+    archi_pointer_t interface_value = (archi_pointer_t){
+        .ptr = (void*)&archi_context_array_interface,
+        .element = {
+            .num_of = 1,
+        },
+    };
+
+    // Prepare the context initialization parameter list
+    char func_ptrs = (instruction->base.type == ARCHI_EXE_REGISTRY_INSTR_INIT_FUNC_ARRAY) ? 1 : 0;
+
+    archi_parameter_list_t params[] = {
+        {
+            .name = "num_elements",
+            .value = (archi_pointer_t){.ptr = (void*)&instruction->num_elements},
+        },
+        {
+            .name = "flags",
+            .value = (archi_pointer_t){.ptr = (void*)&instruction->flags},
+        },
+        {
+            .name = "func_ptrs",
+            .value = (archi_pointer_t){.ptr = (void*)&func_ptrs},
+        },
+    };
+    params[0].next = &params[1];
+    params[1].next = &params[2];
+
+    // Initialize the context
+    archi_context_t context = archi_context_initialize(interface_value, params, &code);
+
+    if (context == NULL)
+        return ARCHI_STATUS_TO_ERROR(code);
+
+    archi_pointer_t context_value = {
+        .ptr = context,
+        .ref_count = archi_context_data(context).ref_count, // the reference count is 1 at this point
+        .element = {
+            .num_of = 1,
+        },
+    };
+
+    // Insert the context to the registry, which also increments the reference count
+    code = archi_context_set_slot(registry,
+            (archi_context_slot_t){.name = instruction->key}, context_value);
+
+    if (code != 0)
+    {
+        archi_context_finalize(context);
+        return ARCHI_STATUS_TO_ERROR(code);
+    }
+
+    // Decrement the reference count back to 1, making
+    archi_reference_count_decrement(context_value.ref_count);
+
+    return 0;
+}
+
+static
+archi_status_t
 archi_exe_registry_instr_execute_copy(
         archi_context_t registry,
         const archi_exe_registry_instr_copy_t *instruction,
@@ -1109,6 +1219,8 @@ archi_exe_registry_instr_execute(
         INSTRUCTION(INIT_FROM_CONTEXT, init_from_context);
         INSTRUCTION(INIT_FROM_SLOT, init_from_slot);
         INSTRUCTION(INIT_POINTER, init_pointer);
+        INSTRUCTION(INIT_DATA_ARRAY, init_array);
+        INSTRUCTION(INIT_FUNC_ARRAY, init_array);
         INSTRUCTION(COPY, copy);
         INSTRUCTION(FINAL, final);
         INSTRUCTION(SET_TO_VALUE, set_to_value);
