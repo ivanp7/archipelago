@@ -434,7 +434,8 @@ class Application:
                 instr.interface_source_key = ptr_interface_source_key.address()
                 instr.interface_source_slot.name = ptr_interface_source_slot_name.address()
                 if ptr_interface_source_slot_indices is not None:
-                    instr.interface_source_slot.index = ptr_interface_source_slot_indices.address()
+                    instr.interface_source_slot.index = c.cast(ptr_interface_source_slot_indices.address(),
+                                                               type(instr.interface_source_slot.index))
 
                 if ptr_dparams_key is not None:
                     instr.dparams_key = ptr_dparams_key.address()
@@ -518,7 +519,6 @@ class Application:
             self._type = Application._Instruction.INIT_DATA_ARRAY
             self._key = key
             self._num_elements = num_elements
-            self._value = value
             self._flags = flags
 
         def alloc(self, app: "Application", ptr_instructions: "list[MemoryBlock]", idx: "int"):
@@ -660,7 +660,7 @@ class Application:
 
                 instr.slot.name = ptr_slot_name.address()
                 if ptr_slot_indices is not None:
-                    instr.slot.index = ptr_slot_indices.address()
+                    instr.slot.index = c.cast(ptr_slot_indices.address(), type(instr.slot.index))
 
                 if ptr_value is not None:
                     instr.value.ptr = ptr_value.address()
@@ -711,7 +711,7 @@ class Application:
 
                 instr.slot.name = ptr_slot_name.address()
                 if ptr_slot_indices is not None:
-                    instr.slot.index = ptr_slot_indices.address()
+                    instr.slot.index = c.cast(ptr_slot_indices.address(), type(instr.slot.index))
                 instr.source_key = ptr_source_key.address()
 
             return MemoryBlock(CValue(instr, callback=init_instr))
@@ -770,11 +770,11 @@ class Application:
 
                 instr.slot.name = ptr_slot_name.address()
                 if ptr_slot_indices is not None:
-                    instr.slot.index = ptr_slot_indices.address()
+                    instr.slot.index = c.cast(ptr_slot_indices.address(), type(instr.slot.index))
                 instr.source_key = ptr_source_key.address()
                 instr.source_slot.name = ptr_source_slot_name.address()
                 if ptr_source_slot_indices is not None:
-                    instr.source_slot.index = ptr_source_slot_indices.address()
+                    instr.source_slot.index = c.cast(ptr_source_slot_indices.address(), type(instr.source_slot.index))
 
             return MemoryBlock(CValue(instr, callback=init_instr))
 
@@ -828,7 +828,7 @@ class Application:
 
                 instr.action.name = ptr_action_name.address()
                 if ptr_action_indices is not None:
-                    instr.action.index = ptr_action_indices.address()
+                    instr.action.index = c.cast(ptr_action_indices.address(), type(instr.action.index))
 
                 if ptr_dparams_key is not None:
                     instr.dparams_key = ptr_dparams_key.address()
