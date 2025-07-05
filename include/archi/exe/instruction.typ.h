@@ -35,19 +35,26 @@
 typedef enum archi_exe_registry_instr_type {
     ARCHI_EXE_REGISTRY_INSTR_NOOP = 0,              ///< No operation.
 
+    /* Initialization of new contexts */
     ARCHI_EXE_REGISTRY_INSTR_INIT_FROM_CONTEXT,     ///< Initialize a new context using interface of a source context.
     ARCHI_EXE_REGISTRY_INSTR_INIT_FROM_SLOT,        ///< Initialize a new context using interface from a context slot.
+
+    /* Initialization of auxiliary contexts */
     ARCHI_EXE_REGISTRY_INSTR_INIT_POINTER,          ///< Initialize a new pointer context.
     ARCHI_EXE_REGISTRY_INSTR_INIT_DATA_ARRAY,       ///< Initialize a new data pointer array context.
     ARCHI_EXE_REGISTRY_INSTR_INIT_FUNC_ARRAY,       ///< Initialize a new function pointer array context.
+
     ARCHI_EXE_REGISTRY_INSTR_COPY,                  ///< Create a context alias.
 
+    /* Removing of contexts from registry */
     ARCHI_EXE_REGISTRY_INSTR_FINAL,                 ///< Finalize a context.
 
+    /* Calling contexts setters */
     ARCHI_EXE_REGISTRY_INSTR_SET_TO_VALUE,          ///< Set context slot to pointer to a value.
     ARCHI_EXE_REGISTRY_INSTR_SET_TO_CONTEXT_DATA,   ///< Set context slot to pointer to a source context.
     ARCHI_EXE_REGISTRY_INSTR_SET_TO_CONTEXT_SLOT,   ///< Set context slot to a source context slot.
 
+    /* Calling contexts actions */
     ARCHI_EXE_REGISTRY_INSTR_ACT,                   ///< Perform a context action.
 } archi_exe_registry_instr_type_t;
 

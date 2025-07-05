@@ -41,3 +41,45 @@ class archi_signal_watch_set_t(c.Structure):
     _fields_ = [(f'f_{signal}', c.c_bool) for signal in SIGNALS] \
             + [('f_SIGRTMIN', c.c_bool * NUM_RT_SIGNALS)]
 
+    def __init__(self, watch=set(), invert_normal=False, invert_realtime=False):
+        default_normal = True
+        default_realtime = True
+
+        if invert_normal:
+            default_normal = False
+            for signal in archi_signal_watch_set_t.SIGNALS:
+                setattr(self, f'f_{signal}', True)
+
+        if invert_realtime:
+            default_realtime = False
+            for idx in range(archi_signal_watch_set_t.NUM_RT_SIGNALS):
+                self.f_SIGRTMIN[idx] = True
+
+        for signal in watch:
+            if isinstance(signal, str):
+                if signal not in archi_signal_watch_set_t.SIGNALS:
+                    raise ValueError(f"Unknown signal '{signal}'")
+
+                setattr(self, f'f_{signal}', default_normal)
+
+            elif isinstance(signal, tuple) and len(signal) == 2 \
+                    and isinstance(signal[0], str) and isinstance(signal[1], int):
+                if signal[0] == 'SIGRTMIN':
+                    if signal[1] < 0 or signal[1] >= archi_signal_watch_set_t.NUM_RT_SIGNALS:
+                        raise ValueError("Real-time signal out of supported range")
+
+                    self.f_SIGRTMIN[signal[1]] = default_realtime
+
+                elif signal[0] == 'SIGRTMAX':
+                    if signal[1] > 0 or signal[1] <= -archi_signal_watch_set_t.NUM_RT_SIGNALS:
+                        raise ValueError("Real-time signal out of supported range")
+
+                    self.f_SIGRTMIN[(archi_signal_watch_set_t.NUM_RT_SIGNALS-1) \
+                            + signal[1]] = default_realtime
+
+                else:
+                    raise ValueError(f"Unknown signal '{signal[0]}'")
+
+            else:
+                raise ValueError("Unsupported signal signature")
+

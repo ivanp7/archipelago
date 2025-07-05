@@ -33,7 +33,7 @@ class CValue:
         import types
 
         if callback is not None and not isinstance(callback, types.FunctionType):
-            raise TypeError("Callback must be a function or None")
+            raise TypeError
 
         if isinstance(value, str):
             value = c.create_string_buffer(value.encode())
@@ -98,11 +98,10 @@ class MemoryBlock:
         """Initialize a memory block.
         """
         if not isinstance(value, CValue):
-            raise TypeError("Value object must be of type CValue")
+            raise TypeError
 
         self._value = value
 
-        self._owner = None
         self._address = None
         self._object = None
 
@@ -121,11 +120,6 @@ class MemoryBlock:
         """
         return c.alignment(self._value.object())
 
-    def owner(self) -> "Memory":
-        """Obtain memory object owning this block.
-        """
-        return self._owner
-
     def address(self) -> "int":
         """Obtain actual block address in the memory.
         """
@@ -135,6 +129,54 @@ class MemoryBlock:
         """Obtain actual block object in the memory.
         """
         return self._object
+
+
+class MemoryBlockSet:
+    """Representation of a set of memory blocks and ctype values.
+    """
+    def __init__(self):
+        """Initialize a memory block set.
+        """
+        self.reset()
+
+    def get(self, key: "CValue") -> "MemoryBlock":
+        """Extract a memory block by ctypes value.
+        """
+        if not isinstance(key, CValue):
+            raise TypeError
+
+        return self._values.get(key)
+
+    def add(self, value) -> "MemoryBlock":
+        """Insert a ctypes value or a memory block to the set
+        and return the corresponding memory block.
+        """
+        if isinstance(value, MemoryBlock):
+            if value not in self._values.values():
+                self._blocks.add(value)
+            return value
+
+        elif isinstance(value, CValue):
+            if value in self._values:
+                return self._values[value]
+            else:
+                block = MemoryBlock(value)
+                self._values[value] = block
+                return block
+
+        else:
+            raise TypeError
+
+    def reset(self):
+        """Reset the internal storage.
+        """
+        self._blocks = set()
+        self._values = {}
+
+    def blocks(self) -> "list[MemoryBlock]":
+        """Get the list of all memory blocks.
+        """
+        return list(self._blocks) + list(self._values.values())
 
 
 class Memory:
@@ -161,17 +203,11 @@ class Memory:
             return
 
         if header is not None and not isinstance(header, MemoryBlock):
-            raise TypeError("Memory header object must be of type MemoryBlock")
-        elif header is not None and header._owner is not None:
-            raise RuntimeError("Memory block is already owned by another Memory object")
+            raise TypeError
         elif header in self._blocks:
             raise RuntimeError("Header block cannot be in the list of regular blocks")
 
-        if self._header is not None:
-            self._header._owner = None
-
         self._header = header
-        self._header._owner = self
 
         self._reset()
 
@@ -185,21 +221,13 @@ class Memory:
         """
         if not isinstance(blocks, list) \
                 or not all(isinstance(block, MemoryBlock) for block in blocks):
-            raise TypeError("List of blocks must be of type list[MemoryBlock]")
-        elif not all(block._owner is None or block._owner is self for block in blocks):
-            raise RuntimeError("Some of blocks in the list are owned by another Memory object")
+            raise TypeError
         elif self._header in blocks:
-            raise RuntimeError("Header block cannot be in the list of regular blocks")
+            raise ValueError("Header block cannot be in the list of regular blocks")
         elif len(blocks) != len(set(blocks)):
-            raise TypeError("List of blocks cannot contain duplicate elements")
-
-        for block in self._blocks:
-            block._owner = None
+            raise ValueError("List of blocks cannot contain duplicate elements")
 
         self._blocks = blocks.copy()
-
-        for block in self._blocks:
-            block._owner = self
 
         self._reset()
 
@@ -207,7 +235,7 @@ class Memory:
         """Obtain the total size of the memory in bytes.
         """
         if self._size is None:
-            self._calculate()
+            self._recalculate()
 
         return self._size
 
@@ -215,7 +243,7 @@ class Memory:
         """Obtain the total number of padding bytes in the memory.
         """
         if self._padding is None:
-            self._calculate()
+            self._recalculate()
 
         return self._padding
 
@@ -223,7 +251,7 @@ class Memory:
         """Obtain the alignment requirement the memory.
         """
         if self._alignment is None:
-            self._calculate()
+            self._recalculate()
 
         return self._alignment
 
@@ -291,8 +319,11 @@ class Memory:
     def fossilize(self, address: "int" = None) -> "bytearray":
         """Serialize the memory to a new byte array.
         """
-        if address is not None and not isinstance(address, int):
-            raise TypeError("Memory address must be an integer")
+        if address is not None:
+            if not isinstance(address, int):
+                raise TypeError
+            elif address < 0:
+                raise ValueError
 
         if self.size() == 0:
             return bytearray(0)
@@ -341,8 +372,9 @@ class Memory:
     def _reset(self):
         self._size = None
         self._padding = None
+        self._alignment = None
 
-    def _calculate(self):
+    def _recalculate(self):
         size = self._header.size() if self._header is not None else 0
         padding = 0
         max_alignment = self._header.alignment() if self._header is not None else 1

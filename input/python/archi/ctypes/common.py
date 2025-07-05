@@ -89,3 +89,6 @@ class archi_exe_input_file_header_t(c.Structure):
                 ('magic', c.c_char * 8),
                 ('contents', c.POINTER(archi_parameter_list_t))]
 
+    def __init__(self):
+        self.magic = type(self).MAGIC.encode() + b'\x00'
+
