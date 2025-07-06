@@ -131,59 +131,67 @@ Here is an example script:
 import ctypes as c
 import sys
 
-import archi.application as archi
+from archi.memory import CValue
+from archi.registry import Registry, ContextInterface
+from archi.file import File
 from archi.ctypes.extra import archi_signal_watch_set_t
 
+###############################################################################
 
-VALUE_TRUE = archi.CValue(c.c_bool(True)) # define a value like this to make it reusable in the file and save bytes
+MAP_ADDRESS = 0x7f0000000000
 
+TEXTURE_WIDTH  = c.c_int(512)
+TEXTURE_HEIGHT = c.c_int(256)
 
-app = archi.Application()
+TRUE = CValue(c.c_bool(True))
 
-# Add signals to the watch set
-signal_watch_set = archi_signal_watch_set_t()
-signal_watch_set.f_SIGINT = True
-signal_watch_set.f_SIGQUIT = True
-signal_watch_set.f_SIGTERM = True
-signal_watch_set.f_SIGCONT = True
+###############################################################################
 
-app.add_contents({archi.Application.CONTENT_SIGNALS: signal_watch_set})
-
-del signal_watch_set
+# Form the list of instructions
+app = Registry()
 
 # Load plugins and create contexts
-executable = app[archi.Application.KEY_EXECUTABLE] # handle of the executable itself
+executable = app[Registry.KEY_EXECUTABLE] # handle of the executable itself
+library_loader = ContextInterface(executable) # the context interface for library handles
 
-library_loader = archi.ContextInterface(executable) # the context interface for library handles
-app["plugin.sdl"] = library_loader(pathname="libarchip_sdl.so") # load SDL plugin
-del library_loader
+app['plugin.sdl'] = library_loader(pathname="libarchip_sdl.so") # load SDL plugin
 
-sdl_library_interface = archi.ContextInterface(
-        app["plugin.sdl"].archip_context_sdl2_library_interface) # SDL2 library interface (SDL_Init(), SDL_Quit())
-app["context.sdl_library"] = sdl_library_interface(
-        video=VALUE_TRUE, audio=VALUE_TRUE) # initialize SDL2 video and audio subsystems
+sdl_library_interface = ContextInterface(
+        app['plugin.sdl'].archip_context_sdl2_library_interface) # SDL2 library interface (for SDL_Init(), SDL_Quit())
+app['context.sdl_library'] = sdl_library_interface(
+        video=TRUE, audio=TRUE) # initialize SDL2 video and audio subsystems
 del sdl_library_interface
 
-sdl_window_interface = archi.ContextInterface(
-        app["plugin.sdl"].archip_context_sdl2_window_interface) # SDL2 window context interface
-app["context.window"] = sdl_window_interface(texture_width=c.c_int(512), texture_height=c.c_int(256),
+sdl_window_interface = ContextInterface(
+        app['plugin.sdl'].archip_context_sdl2_window_interface) # SDL2 window context interface
+app['context.window'] = sdl_window_interface(texture_width=TEXTURE_WIDTH, texture_height=TEXTURE_HEIGHT,
                                              window_title="Still Alive") # create a window
 del sdl_window_interface
 
-del app["plugin.sdl"] # unload SDL plugin
+del app['plugin.sdl'] # unload SDL plugin
 
-# Fossilize the application
-app_memory = app.memory() # get high-level memory description object
-app_memory.pack() # pack the memory to decrease size
-app_file_contents = app_memory.fossilize(0x7ffffff00000) # fossilize the memory
-                                                         # it is to be mapped at the specified address
+###############################################################################
+
+# Prepare the input file representation
+file = File()
+
+file[File.KEY_REGISTRY] = app
+file[File.KEY_SIGNALS] = CValue(archi_signal_watch_set_t(watch=set(['SIGINT', 'SIGQUIT', 'SIGTERM', 'SIGCONT'])))
+
+###############################################################################
+
+# Fossilize the input file representation
+file_memory = file.memory() # get high-level memory description object
+file_memory.pack() # pack the memory to decrease total padding and size
+
+file_memory_buffer = file_memory.fossilize(MAP_ADDRESS) # fossilize the memory to be mapped at the specified address
 
 # Write the file
 with open(sys.argv[1], mode='wb') as file:
-    file.write(app_file_contents)
+    file.write(file_memory_buffer)
 
-print(f"Wrote {app_memory.size()} bytes to '{sys.argv[1]}',")
-print(f"including {app_memory.padding()} padding bytes")
+print(f"Wrote {file_memory.size()} bytes to '{sys.argv[1]}',")
+print(f"including {file_memory.padding()} padding bytes")
 ```
 
 For comprehensive descriptions see [docs/python.md](docs/python.md).
