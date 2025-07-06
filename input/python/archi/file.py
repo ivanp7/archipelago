@@ -95,7 +95,7 @@ class File:
         from .ctypes.common import archi_exe_input_file_header_t
 
         blocks = copy.copy(self._blocks)
-        block_contents = FileMarshaller(blocks).marshal(self._contents)
+        block_contents = FileMarshaller(blocks).marshal(self)
 
         block_header = None
         memory = None
@@ -225,12 +225,15 @@ class Marshaller:
 class FileMarshaller(Marshaller):
     """File marshaller implementation.
     """
-    def marshal(self, obj: "dict") -> "MemoryBlock":
+    def marshal(self, obj: "File") -> "MemoryBlock":
         """Marshal an object of type File.
         """
         from .registry import Registry
 
-        contents = obj.copy()
+        if not isinstance(obj, File):
+            raise TypeError
+
+        contents = obj._contents.copy()
 
         for key, value in contents.items():
             if isinstance(value, Registry):
