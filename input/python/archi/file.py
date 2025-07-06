@@ -134,6 +134,93 @@ class Marshaller:
         """
         raise NotImplementedError
 
+    def _marshal_value(self, value: "CValue") -> "MemoryBlock":
+        if value is None:
+            return None
+        elif not isinstance(value, CValue):
+            raise TypeError
+
+        return self._blocks.add(value)
+
+    def _marshal_string(self, string: "str") -> "MemoryBlock":
+        if string is None:
+            return None
+        elif not isinstance(string, str):
+            raise TypeError
+
+        if string in self._value_dict:
+            value = self._value_dict[string]
+        else:
+            value = CValue(string)
+            self._value_dict[string] = value
+
+        return self._marshal_value(value)
+
+    def _marshal_parameter_list(self, params: "dict[str, CValue]") -> "MemoryBlock":
+        from .ctypes.common import archi_parameter_list_t
+
+        if params is None:
+            return None
+        elif not isinstance(params, dict) \
+                or not all(isinstance(key, str) for key in params.keys()):
+            raise TypeError
+
+        block_nodes = [None] * len(params)
+
+        for idx, (key, value) in enumerate(params.items()):
+            node = archi_parameter_list_t()
+
+            block_key = self._marshal_string(key)
+
+            if value is not None:
+                if isinstance(value, MemoryBlock):
+                    block_value = value
+                    value = block_value.value()
+                else:
+                    if not isinstance(value, CValue):
+                        value = CValue(value)
+
+                    block_value = self._marshal_value(value)
+
+                node.value = Marshaller._init_pointer(value)
+            else:
+                block_value = None
+
+            def callback_node(node: "archi_parameter_list_t",
+                              idx=idx, block_key=block_key, block_value=block_value):
+                if idx < len(params) - 1:
+                    node.next = c.cast(block_nodes[idx + 1].address(), type(node.next))
+
+                node.name = block_key.address()
+                if block_value is not None:
+                    node.value.ptr = block_value.address()
+
+            block_node = MemoryBlock(CValue(node, callback=callback_node))
+            block_nodes[idx] = block_node
+
+            self._blocks.add(block_node)
+
+        return block_nodes[0] if block_nodes else None
+
+    @staticmethod
+    def _init_pointer(value: "CValue") -> "archi_pointer_t":
+        from .ctypes.common import archi_pointer_t
+
+        pointer = archi_pointer_t()
+
+        flags = value.attributes().get('flags', 0)
+        if not isinstance(flags, int):
+            raise TypeError
+        elif (flags < 0) or (flags >= 1 << archi_pointer_t.NUM_FLAG_BITS):
+            raise ValueError(f"Pointer flags must fit into {archi_pointer_t.NUM_FLAG_BITS} lowest bits")
+
+        pointer.flags = flags
+        pointer.element.num_of = value.num_elements()
+        pointer.element.size = value.element_size()
+        pointer.element.alignment = value.element_alignment()
+
+        return pointer
+
 
 class FileMarshaller(Marshaller):
     """File marshaller implementation.
@@ -142,74 +229,14 @@ class FileMarshaller(Marshaller):
         """Marshal an object of type File.
         """
         from .registry import Registry
-        from .ctypes.common import archi_pointer_t, archi_parameter_list_t
 
-        if not isinstance(obj, dict) \
-                or not all(isinstance(key, str) for key in obj.keys()):
-            raise TypeError
+        contents = obj.copy()
 
-        contents = {}
+        for key, value in contents.items():
+            if isinstance(value, Registry):
+                contents[key] = RegistryMarshaller(self._blocks, self._value_dict).marshal(value)
 
-        for key, value in obj.items():
-            if value is None:
-                contents[key] = None
-            else:
-                try:
-                    contents[key] = self._blocks.add(value)
-                except TypeError:
-                    if isinstance(value, Registry):
-                        marshaller = RegistryMarshaller(self._blocks, self._value_dict)
-                    else:
-                        raise TypeError("Unsupported content type")
-
-                    contents[key] = marshaller.marshal(value)
-
-        # Marshal the list of pointers to file contents
-        block_contents = [None] * len(contents)
-
-        for idx, (key, block_value) in enumerate(contents.items()):
-            # Set non-pointer fields of the contents list node
-            node = archi_parameter_list_t()
-
-            if block_value is not None:
-                value = block_value.value()
-
-                flags = value.attributes().get('flags', 0)
-                if not isinstance(flags, int):
-                    raise TypeError
-                elif (flags < 0) or (flags >= 1 << archi_pointer_t.NUM_FLAG_BITS):
-                    raise ValueError(f"Pointer flags must fit into {archi_pointer_t.NUM_FLAG_BITS} lowest bits")
-
-                node.value.flags = flags
-                node.value.element.num_of = value.num_elements()
-                node.value.element.size = value.element_size()
-                node.value.element.alignment = value.element_alignment()
-
-            # Prepare the node name block
-            if key in self._value_dict:
-                block_key = self._blocks.get(self._value_dict[key])
-            else:
-                value_key = CValue(key)
-                self._value_dict[key] = value_key
-                block_key = self._blocks.add(value_key)
-
-            # Define callback for setting pointer fields of the contents list node
-            def callback_node(node: "archi_parameter_list_t",
-                              idx=idx, block_key=block_key, block_value=block_value):
-                if idx < len(contents) - 1:
-                    node.next = c.cast(block_contents[idx + 1].address(), type(node.next))
-
-                node.name = block_key.address()
-                if block_value is not None:
-                    node.value.ptr = block_value.address()
-
-            # Create the contents list node block
-            block_node = MemoryBlock(CValue(node, callback=callback_node))
-            block_contents[idx] = block_node
-
-            self._blocks.add(block_node)
-
-        return block_contents[0] if block_contents else None
+        return self._marshal_parameter_list(contents)
 
 
 class RegistryMarshaller(Marshaller):
@@ -313,18 +340,7 @@ class RegistryMarshaller(Marshaller):
             instr = archi_exe_registry_instr_init_pointer_t()
             instr.base.type = instruction.type()
             if instruction['value'] is not None:
-                value = instruction['value']
-
-                flags = value.attributes().get('flags', 0)
-                if not isinstance(flags, int):
-                    raise TypeError
-                elif (flags < 0) or (flags >= 1 << archi_pointer_t.NUM_FLAG_BITS):
-                    raise ValueError(f"Pointer flags must fit into {archi_pointer_t.NUM_FLAG_BITS} lowest bits")
-
-                instr.value.flags = flags
-                instr.value.element.num_of = value.num_elements()
-                instr.value.element.size = value.element_size()
-                instr.value.element.alignment = value.element_alignment()
+                instr.value = Marshaller._init_pointer(instruction['value'])
 
             block_key = self._marshal_string(instruction['key'])
             block_value = self._marshal_value(instruction['value'])
@@ -372,18 +388,7 @@ class RegistryMarshaller(Marshaller):
             instr.base.type = instruction.type()
             instr.slot.num_indices = len(instruction['slot_indices'])
             if instruction['value'] is not None:
-                value = instruction['value']
-
-                flags = value.attributes().get('flags', 0)
-                if not isinstance(flags, int):
-                    raise TypeError
-                elif (flags < 0) or (flags >= 1 << archi_pointer_t.NUM_FLAG_BITS):
-                    raise ValueError(f"Pointer flags must fit into {archi_pointer_t.NUM_FLAG_BITS} lowest bits")
-
-                instr.value.flags = flags
-                instr.value.element.num_of = value.num_elements()
-                instr.value.element.size = value.element_size()
-                instr.value.element.alignment = value.element_alignment()
+                instr.value = Marshaller._init_pointer(instruction['value'])
 
             block_key = self._marshal_string(instruction['key'])
             block_slot_name = self._marshal_string(instruction['slot_name'])
@@ -467,28 +472,6 @@ class RegistryMarshaller(Marshaller):
 
         return block_instr
 
-    def _marshal_value(self, value: "CValue") -> "MemoryBlock":
-        if value is None:
-            return None
-        elif not isinstance(value, CValue):
-            raise TypeError
-
-        return self._blocks.add(value)
-
-    def _marshal_string(self, string: "str") -> "MemoryBlock":
-        if string is None:
-            return None
-        elif not isinstance(string, str):
-            raise TypeError
-
-        if string in self._value_dict:
-            value = self._value_dict[string]
-        else:
-            value = CValue(string)
-            self._value_dict[string] = value
-
-        return self._marshal_value(value)
-
     def _marshal_index_array(self, index_array: "list[int]") -> "MemoryBlock":
         if not index_array:
             return None
@@ -505,55 +488,4 @@ class RegistryMarshaller(Marshaller):
             self._value_dict[index_tuple] = value
 
         return self._marshal_value(value)
-
-    def _marshal_parameter_list(self, params: "dict[str, CValue]") -> "MemoryBlock":
-        from .ctypes.common import archi_pointer_t, archi_parameter_list_t
-
-        if params is None:
-            return None
-        elif not isinstance(params, dict) \
-                or not all(isinstance(key, str) for key in params.keys()):
-            raise TypeError
-
-        block_nodes = [None] * len(params)
-
-        for idx, (key, value) in enumerate(params.items()):
-            node = archi_parameter_list_t()
-
-            block_key = self._marshal_string(key)
-
-            if value is not None:
-                if not isinstance(value, CValue):
-                    value = CValue(value)
-
-                block_value = self._marshal_value(value)
-
-                flags = value.attributes().get('flags', 0)
-                if not isinstance(flags, int):
-                    raise TypeError
-                elif (flags < 0) or (flags >= 1 << archi_pointer_t.NUM_FLAG_BITS):
-                    raise ValueError(f"Pointer flags must fit into {archi_pointer_t.NUM_FLAG_BITS} lowest bits")
-
-                node.value.flags = flags
-                node.value.element.num_of = value.num_elements()
-                node.value.element.size = value.element_size()
-                node.value.element.alignment = value.element_alignment()
-            else:
-                block_value = None
-
-            def callback_node(node: "archi_parameter_list_t",
-                              idx=idx, block_key=block_key, block_value=block_value):
-                if idx < len(params) - 1:
-                    node.next = c.cast(block_nodes[idx + 1].address(), type(node.next))
-
-                node.name = block_key.address()
-                if block_value is not None:
-                    node.value.ptr = block_value.address()
-
-            block_node = MemoryBlock(CValue(node, callback=callback_node))
-            block_nodes[idx] = block_node
-
-            self._blocks.add(block_node)
-
-        return block_nodes[0] if block_nodes else None
 
