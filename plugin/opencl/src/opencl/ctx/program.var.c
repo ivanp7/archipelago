@@ -16,7 +16,7 @@
 struct archip_context_opencl_program_data {
     archi_pointer_t program;
     archi_pointer_t context;
-    archi_pointer_t device_id;
+    archip_opencl_program_binaries_t binaries;
 };
 
 ARCHI_CONTEXT_INIT_FUNC(archip_context_opencl_program_init_src)
@@ -127,36 +127,12 @@ ARCHI_CONTEXT_INIT_FUNC(archip_context_opencl_program_init_src)
     if (context_data == NULL)
         return ARCHI_STATUS_ENOMEMORY;
 
-    if (device_id.ptr != NULL)
-    {
-        size_t size = sizeof(cl_device_id) * device_id.element.num_of;
-
-        void *device_list = malloc(size);
-        if (device_list == NULL)
-        {
-            free(context_data);
-            return ARCHI_STATUS_ENOMEMORY;
-        }
-
-        memcpy(device_list, device_id.ptr, size);
-
-        device_id = (archi_pointer_t){
-            .ptr = device_list,
-            .element = {
-                .num_of = device_id.element.num_of,
-                .size = sizeof(cl_device_id),
-                .alignment = alignof(cl_device_id),
-            },
-        };
-    }
-
     archip_opencl_program_sources_t headers;
     {
         archi_status_t code;
         headers = archip_opencl_program_sources_from_hashmap(hashmap_headers.ptr, &code);
         if (code != 0)
         {
-            free(device_id.ptr);
             free(context_data);
             return code;
         }
@@ -169,7 +145,6 @@ ARCHI_CONTEXT_INIT_FUNC(archip_context_opencl_program_init_src)
         if (code != 0)
         {
             archip_opencl_program_sources_free(headers);
-            free(device_id.ptr);
             free(context_data);
             return code;
         }
@@ -186,10 +161,22 @@ ARCHI_CONTEXT_INIT_FUNC(archip_context_opencl_program_init_src)
 
     if (code != 0)
     {
-        free(device_id.ptr);
         free(context_data);
         return code;
     }
+
+    archip_opencl_program_binaries_t binaries =
+        archip_opencl_program_binaries_extract(program, &code);
+
+    if (code != 0)
+    {
+        clReleaseProgram(program);
+        free(context_data);
+        return code;
+    }
+
+    memcpy(binaries.ids->device_id, device_id.ptr,
+            sizeof(cl_device_id) * device_id.element.num_of);
 
     *context_data = (struct archip_context_opencl_program_data){
         .program = {
@@ -199,7 +186,7 @@ ARCHI_CONTEXT_INIT_FUNC(archip_context_opencl_program_init_src)
             },
         },
         .context = opencl_context,
-        .device_id = device_id,
+        .binaries = binaries,
     };
 
     archi_reference_count_increment(opencl_context.ref_count);
@@ -266,37 +253,13 @@ ARCHI_CONTEXT_INIT_FUNC(archip_context_opencl_program_init_bin)
     if (context_data == NULL)
         return ARCHI_STATUS_ENOMEMORY;
 
-    if (device_id.ptr != NULL)
-    {
-        size_t size = sizeof(cl_device_id) * device_id.element.num_of;
-
-        void *device_list = malloc(size);
-        if (device_list == NULL)
-        {
-            free(context_data);
-            return ARCHI_STATUS_ENOMEMORY;
-        }
-
-        memcpy(device_list, device_id.ptr, size);
-
-        device_id = (archi_pointer_t){
-            .ptr = device_list,
-            .element = {
-                .num_of = device_id.element.num_of,
-                .size = sizeof(cl_device_id),
-                .alignment = alignof(cl_device_id),
-            },
-        };
-    }
-
     archip_opencl_program_binaries_t binaries;
     {
         archi_status_t code;
-        binaries = archip_opencl_program_binaries_from_array(array_binaries.ptr,
-                array_binaries.element.num_of, &code);
+        binaries = archip_opencl_program_binaries_from_array(
+                array_binaries.ptr, array_binaries.element.num_of, &code);
         if (code != 0)
         {
-            free(device_id.ptr);
             free(context_data);
             return code;
         }
@@ -309,11 +272,9 @@ ARCHI_CONTEXT_INIT_FUNC(archip_context_opencl_program_init_bin)
     cl_program program = archip_opencl_program_create(
             opencl_context.ptr, binaries, true, &code);
 
-    archip_opencl_program_binaries_free(binaries);
-
     if (code != 0)
     {
-        free(device_id.ptr);
+        archip_opencl_program_binaries_free(binaries);
         free(context_data);
         return code;
     }
@@ -326,7 +287,7 @@ ARCHI_CONTEXT_INIT_FUNC(archip_context_opencl_program_init_bin)
             },
         },
         .context = opencl_context,
-        .device_id = device_id,
+        .binaries = binaries,
     };
 
     archi_reference_count_increment(opencl_context.ref_count);
@@ -341,8 +302,9 @@ ARCHI_CONTEXT_FINAL_FUNC(archip_context_opencl_program_final)
         (struct archip_context_opencl_program_data*)context;
 
     clReleaseProgram(context_data->program.ptr);
+
     archi_reference_count_decrement(context_data->context.ref_count);
-    free(context_data->device_id.ptr);
+    archip_opencl_program_binaries_free(context_data->binaries);
     free(context_data);
 }
 
@@ -360,10 +322,103 @@ ARCHI_CONTEXT_GET_FUNC(archip_context_opencl_program_get)
     }
     else if (strcmp("device_id", slot.name) == 0)
     {
-        if (slot.num_indices != 0)
+        if (slot.num_indices > 1)
             return ARCHI_STATUS_EMISUSE;
 
-        *value = context_data->device_id;
+        if (slot.num_indices == 0)
+        {
+            *value = (archi_pointer_t){
+                .ptr = (context_data->binaries.ids->num_devices > 0) ?
+                    context_data->binaries.ids->device_id : NULL,
+                .ref_count = context_data->program.ref_count,
+                .element = {
+                    .num_of = context_data->binaries.ids->num_devices,
+                    .size = sizeof(context_data->binaries.ids->device_id[0]),
+                    .alignment = alignof(cl_device_id),
+                },
+            };
+        }
+        else
+        {
+            if (slot.index[0] >= context_data->binaries.ids->num_devices)
+                return ARCHI_STATUS_EMISUSE;
+
+            *value = (archi_pointer_t){
+                .ptr = context_data->binaries.ids->device_id[slot.index[0]],
+                .ref_count = context_data->program.ref_count,
+                .element = {
+                    .num_of = 1,
+                    .size = sizeof(context_data->binaries.ids->device_id[0]),
+                    .alignment = alignof(cl_device_id),
+                },
+            };
+        }
+    }
+    else if (strcmp("binary_size", slot.name) == 0)
+    {
+        if (slot.num_indices > 1)
+            return ARCHI_STATUS_EMISUSE;
+
+        if (slot.num_indices == 0)
+        {
+            *value = (archi_pointer_t){
+                .ptr = context_data->binaries.sizes,
+                .ref_count = context_data->program.ref_count,
+                .element = {
+                    .num_of = context_data->binaries.ids->num_devices,
+                    .size = sizeof(context_data->binaries.sizes[0]),
+                    .alignment = alignof(size_t),
+                },
+            };
+        }
+        else
+        {
+            if (slot.index[0] >= context_data->binaries.ids->num_devices)
+                return ARCHI_STATUS_EMISUSE;
+
+            *value = (archi_pointer_t){
+                .ptr = &context_data->binaries.sizes[slot.index[0]],
+                .ref_count = context_data->program.ref_count,
+                .element = {
+                    .num_of = 1,
+                    .size = sizeof(context_data->binaries.sizes[0]),
+                    .alignment = alignof(size_t),
+                },
+            };
+        }
+    }
+    else if (strcmp("binary", slot.name) == 0)
+    {
+        if (slot.num_indices > 1)
+            return ARCHI_STATUS_EMISUSE;
+
+        if (slot.num_indices == 0)
+        {
+            *value = (archi_pointer_t){
+                .ptr = context_data->binaries.contents,
+                .ref_count = context_data->program.ref_count,
+                .element = {
+                    .num_of = context_data->binaries.ids->num_devices,
+                    .size = sizeof(context_data->binaries.contents[0]),
+                    .alignment = alignof(unsigned char*),
+                },
+            };
+        }
+        else
+        {
+            if (slot.index[0] >= context_data->binaries.ids->num_devices)
+                return ARCHI_STATUS_EMISUSE;
+
+            *value = (archi_pointer_t){
+                .ptr = context_data->binaries.contents[slot.index[0]],
+                .ref_count = context_data->program.ref_count,
+                .element = {
+                    .num_of = context_data->binaries.sizes[slot.index[0]],
+                    .size = sizeof(context_data->binaries.contents[0][0]),
+                    .alignment = alignof(unsigned char),
+                },
+            };
+        }
     }
     else
         return ARCHI_STATUS_EKEY;

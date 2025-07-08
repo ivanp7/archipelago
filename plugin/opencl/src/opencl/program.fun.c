@@ -489,7 +489,7 @@ archip_opencl_program_build_log(
                 continue;
             }
 
-            archi_log_debug(M, "[device #%u] build status: \n%s", i, build_log);
+            archi_log_debug(M, "[device #%u] build log: \n%s", i, build_log);
         }
     }
 
