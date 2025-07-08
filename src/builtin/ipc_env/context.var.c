@@ -33,8 +33,10 @@
 ARCHI_CONTEXT_INIT_FUNC(archi_context_ipc_env_init)
 {
     const char *name = NULL;
+    archi_pointer_t default_value = {0};
 
     bool param_name_set = false;
+    bool param_default_value_set = false;
 
     for (; params != NULL; params = params->next)
     {
@@ -50,6 +52,17 @@ ARCHI_CONTEXT_INIT_FUNC(archi_context_ipc_env_init)
 
             name = params->value.ptr;
         }
+        else if (strcmp("default_value", params->name) == 0)
+        {
+            if (param_default_value_set)
+                continue;
+            param_default_value_set = true;
+
+            if (params->value.flags & ARCHI_POINTER_FLAG_FUNCTION)
+                return ARCHI_STATUS_EVALUE;
+
+            default_value = params->value;
+        }
         else
             return ARCHI_STATUS_EKEY;
     }
@@ -61,20 +74,24 @@ ARCHI_CONTEXT_INIT_FUNC(archi_context_ipc_env_init)
     archi_status_t code;
     char *var = archi_env_get(name, &code);
 
-    if (var == NULL)
+    if (var != NULL)
+        *context_data = (archi_pointer_t){
+            .ptr = var,
+            .element = {
+                .num_of = strlen(var) + 1,
+                .size = 1,
+                .alignment = 1,
+            },
+        };
+    else if (code == 1)
+        *context_data = default_value;
+    else
     {
         free(context_data);
         return code;
     }
 
-    *context_data = (archi_pointer_t){
-        .ptr = var,
-        .element = {
-            .num_of = strlen(var) + 1,
-            .size = 1,
-            .alignment = 1,
-        },
-    };
+    archi_reference_count_increment(context_data->ref_count);
 
     *context = context_data;
     return 0;
@@ -82,6 +99,7 @@ ARCHI_CONTEXT_INIT_FUNC(archi_context_ipc_env_init)
 
 ARCHI_CONTEXT_FINAL_FUNC(archi_context_ipc_env_final)
 {
+    archi_reference_count_decrement(context->ref_count);
     free(context->ptr);
     free(context);
 }
