@@ -90,8 +90,8 @@ class archi_exe_registry_instr_copy_t(c.Structure):
                 ('original_key', c.c_char_p)]
 
 
-class archi_exe_registry_instr_final_t(c.Structure):
-    """Context registry instruction: finalize a context.
+class archi_exe_registry_instr_delete_t(c.Structure):
+    """Context registry instruction: delete a context from registry.
     """
     _fields_ = [('base', archi_exe_registry_instr_base_t),
                 ('key', c.c_char_p)]

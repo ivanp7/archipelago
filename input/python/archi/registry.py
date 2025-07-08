@@ -36,7 +36,7 @@ class InstructionType(enum.Enum):
     INIT_DATA_ARRAY = enum.auto()
     INIT_FUNC_ARRAY = enum.auto()
     COPY = enum.auto()
-    FINAL = enum.auto()
+    DELETE = enum.auto()
     SET_TO_VALUE = enum.auto()
     SET_TO_CONTEXT_DATA = enum.auto()
     SET_TO_CONTEXT_SLOT = enum.auto()
@@ -485,7 +485,7 @@ class Registry:
             raise TypeError
 
         self._instruct(
-                InstructionType.FINAL,
+                InstructionType.DELETE,
                 key=key)
 
     def reset(self):

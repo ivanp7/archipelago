@@ -47,7 +47,7 @@ typedef enum archi_exe_registry_instr_type {
     ARCHI_EXE_REGISTRY_INSTR_COPY,                  ///< Create a context alias.
 
     /* Removing of contexts from registry */
-    ARCHI_EXE_REGISTRY_INSTR_FINAL,                 ///< Finalize a context.
+    ARCHI_EXE_REGISTRY_INSTR_DELETE,                ///< Delete a context from registry.
 
     /* Calling contexts setters */
     ARCHI_EXE_REGISTRY_INSTR_SET_TO_VALUE,          ///< Set context slot to pointer to a value.
@@ -148,13 +148,13 @@ typedef struct archi_exe_registry_instr_copy {
 } archi_exe_registry_instr_copy_t;
 
 /**
- * @brief Context registry instruction: finalize a context.
+ * @brief Context registry instruction: delete a context from registry.
  */
-typedef struct archi_exe_registry_instr_final {
+typedef struct archi_exe_registry_instr_delete {
     archi_exe_registry_instr_base_t base; ///< Instruction base.
 
     const char *key; ///< Key of the context.
-} archi_exe_registry_instr_final_t;
+} archi_exe_registry_instr_delete_t;
 
 /**
  * @brief Context registry instruction: set context slot to pointer to a value.

@@ -284,7 +284,7 @@ class RegistryMarshaller(Marshaller):
                 archi_exe_registry_instr_init_pointer_t,
                 archi_exe_registry_instr_init_array_t,
                 archi_exe_registry_instr_copy_t,
-                archi_exe_registry_instr_final_t,
+                archi_exe_registry_instr_delete_t,
                 archi_exe_registry_instr_set_to_value_t,
                 archi_exe_registry_instr_set_to_context_data_t,
                 archi_exe_registry_instr_set_to_context_slot_t,
@@ -377,8 +377,8 @@ class RegistryMarshaller(Marshaller):
                 instr.key = block_key.address()
                 instr.original_key = block_original_key.address()
 
-        elif instruction.type() == InstructionType.FINAL.value:
-            instr = archi_exe_registry_instr_final_t()
+        elif instruction.type() == InstructionType.DELETE.value:
+            instr = archi_exe_registry_instr_delete_t()
             instr.base.type = instruction.type()
 
             block_key = self._marshal_string(instruction['key'])
