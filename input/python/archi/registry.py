@@ -54,8 +54,7 @@ class Parameters:
             raise TypeError
 
         self._dparams = _
-        self._sparams = dict(reversed(params.items())) # archi reverses order when copies the list,
-                                                       # we must counter this here
+        self._sparams = params
 
     def dynamic_list(self) -> "Context":
         """Obtain the dynamic parameter list.
@@ -171,9 +170,7 @@ class Context:
             if _ is not None and not isinstance(_, Context):
                 raise TypeError
 
-            self._context._act(self._name, self._indices, dparams=_,
-                               sparams=dict(reversed(params.items()))) # archi reverses order when copies the list,
-                                                                       # we must counter this here
+            self._context._act(self._name, self._indices, dparams=_, sparams=params)
             return Context._Action(self._context, self._name, self._indices)
 
     class _Action:
@@ -237,9 +234,7 @@ class Context:
         if _ is not None and not isinstance(_, Context):
             raise TypeError
 
-        self._act('', [], dparams=_,
-                  sparams=dict(reversed(params.items()))) # archi reverses order when copies the list,
-                                                          # we must counter this here
+        self._act('', [], dparams=_, sparams=params)
         return Context._Action(self, '', [])
 
     def _set(self, slot_name: "str", slot_indices: "list[int]", value):

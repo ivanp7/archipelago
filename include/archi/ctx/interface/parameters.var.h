@@ -32,8 +32,7 @@
 /**
  * @brief Parameter list initialization function.
  *
- * Accepts the following parameters:
- * - "base" : parameter list to use as the base on top of which new parameters will be added
+ * Accepts any parameters, all of them are added to the list.
  */
 ARCHI_CONTEXT_INIT_FUNC(archi_context_parameters_init);
 

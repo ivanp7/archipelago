@@ -28,67 +28,129 @@
 #include <stdlib.h> // for malloc(), free()
 #include <string.h> // for strcmp()
 #include <stdbool.h>
+#include <stdalign.h>
 
-struct archi_context_parameters_data {
-    archi_pointer_t list_top;
-    archi_pointer_t list_base;
-};
-
-ARCHI_CONTEXT_INIT_FUNC(archi_context_parameters_init)
+static
+char*
+archi_context_parameters_copy_name(
+        const char *name)
 {
-    archi_pointer_t base = {0};
+    if (name == NULL)
+        return NULL;
 
-    bool param_base_set = false;
+    size_t size = strlen(name) + 1;
+
+    char *name_copy = malloc(size);
+    if (name_copy == NULL)
+        return NULL;
+
+    memcpy(name_copy, name, size);
+
+    return name_copy;
+}
+
+static
+archi_status_t
+archi_context_parameters_copy(
+        archi_pointer_t *base,
+        const archi_parameter_list_t *params)
+{
+    archi_parameter_list_t *head = NULL, *tail = NULL;
 
     for (; params != NULL; params = params->next)
     {
-        if (strcmp("base", params->name) == 0)
-        {
-            if (param_base_set)
-                continue;
-            param_base_set = true;
+        archi_parameter_list_t *node = malloc(sizeof(*node));
+        if (node == NULL)
+            goto failure;
 
-            base = params->value;
+        char *name = archi_context_parameters_copy_name(params->name);
+        if (name == NULL)
+        {
+            free(node);
+            goto failure;
+        }
+
+        *node = (archi_parameter_list_t){
+            .name = name,
+            .value = params->value,
+        };
+
+        if (tail != NULL)
+        {
+            tail->next = node;
+            tail = node;
         }
         else
-            return ARCHI_STATUS_EKEY;
+            head = tail = node;
     }
 
-    struct archi_context_parameters_data *context_data = malloc(sizeof(*context_data));
+    for (params = head; params != NULL; params = params->next)
+    {
+        archi_reference_count_increment(params->value.ref_count);
+        base->flags++; // increment the counter of nodes
+    }
+
+    if (tail != NULL)
+        tail->next = base->ptr;
+    base->ptr = head;
+
+    return 0;
+
+failure:
+    while (head != NULL)
+    {
+        archi_parameter_list_t *next = head->next;
+
+        free((char*)head->name);
+        free(head);
+
+        head = next;
+    }
+
+    return ARCHI_STATUS_ENOMEMORY;
+}
+
+ARCHI_CONTEXT_INIT_FUNC(archi_context_parameters_init)
+{
+    archi_pointer_t *context_data = malloc(sizeof(*context_data));
     if (context_data == NULL)
         return ARCHI_STATUS_ENOMEMORY;
 
-    *context_data = (struct archi_context_parameters_data){
-        .list_top = base,
-        .list_base = base,
+    *context_data = (archi_pointer_t){
+        .element = {
+            .num_of = 1,
+            .size = sizeof(archi_parameter_list_t),
+            .alignment = alignof(archi_parameter_list_t),
+        },
     };
 
-    archi_reference_count_increment(base.ref_count);
+    archi_status_t code = archi_context_parameters_copy(context_data, params);
+    if (code != 0)
+    {
+        free(context_data);
+        return code;
+    }
 
-    *context = (archi_pointer_t*)context_data;
+    *context = context_data;
     return 0;
 }
 
 ARCHI_CONTEXT_FINAL_FUNC(archi_context_parameters_final)
 {
-    struct archi_context_parameters_data *context_data =
-        (struct archi_context_parameters_data*)context;
+    archi_parameter_list_t *node = context->ptr;
 
-    archi_parameter_list_t *node = context_data->list_top.ptr;
-    archi_parameter_list_t *base = context_data->list_base.ptr;
-
-    while (node != base) // don't deallocate the base list (which is borrowed)
+    while (node != NULL)
     {
         archi_parameter_list_t *next = node->next;
 
         archi_reference_count_decrement(node->value.ref_count);
+        free((char*)node->name);
         free(node);
 
         node = next;
     }
 
-    archi_reference_count_decrement(context_data->list_base.ref_count);
-    free(context_data);
+    free(context);
 }
 
 ARCHI_CONTEXT_GET_FUNC(archi_context_parameters_get)
@@ -96,10 +158,7 @@ ARCHI_CONTEXT_GET_FUNC(archi_context_parameters_get)
     if (slot.num_indices != 0)
         return ARCHI_STATUS_EMISUSE;
 
-    struct archi_context_parameters_data *context_data =
-        (struct archi_context_parameters_data*)context;
-
-    for (archi_parameter_list_t *node = context_data->list_top.ptr;
+    for (archi_parameter_list_t *node = context->ptr;
             node != NULL; node = node->next)
     {
         if (strcmp(node->name, slot.name) == 0)
@@ -117,54 +176,54 @@ ARCHI_CONTEXT_SET_FUNC(archi_context_parameters_set)
     if (slot.num_indices != 0)
         return ARCHI_STATUS_EMISUSE;
 
-    struct archi_context_parameters_data *context_data =
-        (struct archi_context_parameters_data*)context;
+    for (archi_parameter_list_t *node = context->ptr;
+            node != NULL; node = node->next)
+    {
+        if (strcmp(node->name, slot.name) == 0)
+        {
+            archi_reference_count_increment(value.ref_count);
+            archi_reference_count_decrement(node->value.ref_count);
+
+            node->value = value;
+            return 0;
+        }
+    }
 
     archi_parameter_list_t *node = malloc(sizeof(*node));
     if (node == NULL)
         return ARCHI_STATUS_ENOMEMORY;
 
-    *node = (archi_parameter_list_t){
-        .next = context_data->list_top.ptr,
-        .name = slot.name,
-        .value = value,
-    };
+    char *name = archi_context_parameters_copy_name(slot.name);
+    if (name == NULL)
+    {
+        free(node);
+        return ARCHI_STATUS_ENOMEMORY;
+    }
 
     archi_reference_count_increment(value.ref_count);
 
-    context_data->list_top.ptr = node;
-    context_data->list_top.flags++; // increment the counter of nodes
+    *node = (archi_parameter_list_t){
+        .next = context->ptr,
+        .name = name,
+        .value = value,
+    };
+
+    context->ptr = node;
+    context->flags++; // increment the counter of nodes
 
     return 0;
 }
 
 ARCHI_CONTEXT_ACT_FUNC(archi_context_parameters_act)
 {
-    struct archi_context_parameters_data *context_data =
-        (struct archi_context_parameters_data*)context;
-
     if (strcmp("_", action.name) == 0)
     {
         if (action.num_indices != 0)
             return ARCHI_STATUS_EMISUSE;
 
-        for (; params != NULL; params = params->next)
-        {
-            archi_parameter_list_t *node = malloc(sizeof(*node));
-            if (node == NULL)
-                return ARCHI_STATUS_ENOMEMORY;
-
-            *node = (archi_parameter_list_t){
-                .next = context_data->list_top.ptr,
-                .name = params->name,
-                .value = params->value,
-            };
-
-            archi_reference_count_increment(params->value.ref_count);
-
-            context_data->list_top.ptr = node;
-            context_data->list_top.flags++; // increment the counter of nodes
-        }
+        archi_status_t code = archi_context_parameters_copy(context, params);
+        if (code != 0)
+            return code;
     }
     else
         return ARCHI_STATUS_EKEY;
