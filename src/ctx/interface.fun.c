@@ -66,8 +66,10 @@ ARCHI_DESTRUCTOR_FUNC(archi_context_destructor)
     context->data->ref_count = context->ref_count;
 
     // Finalize the context
+    /*****************************************/
     if (interface_ptr->final_fn != NULL)
         interface_ptr->final_fn(context->data);
+    /*****************************************/
 
     // Decrement the reference count of the interface
     archi_reference_count_decrement(context->interface.ref_count);
@@ -126,7 +128,9 @@ archi_context_initialize(
     }
 
     // Initialize the context
+    /************************************************************************/
     archi_status_t code_init = interface_ptr->init_fn(&context->data, params);
+    /************************************************************************/
 
     if (code_init < 0)
     {
@@ -209,7 +213,9 @@ archi_context_get_slot(
             goto finish;
         }
 
+        /************************************************************/
         code_get = interface_ptr->get_fn(context->data, slot, &value);
+        /************************************************************/
     }
 
 finish:
@@ -237,7 +243,9 @@ archi_context_set_slot(
     if (interface_ptr->set_fn == NULL)
         return ARCHI_STATUS_EINTERFACE;
 
+    /*******************************************************/
     return interface_ptr->set_fn(context->data, slot, value);
+    /*******************************************************/
 }
 
 archi_status_t
@@ -262,11 +270,15 @@ archi_context_copy_slot(
 
     archi_pointer_t value = {0};
 
+    /***********************************************************************************/
     archi_status_t code = src_interface_ptr->get_fn(src_context->data, src_slot, &value);
+    /***********************************************************************************/
     if (code != 0)
         return code;
 
+    /*******************************************************/
     return interface_ptr->set_fn(context->data, slot, value);
+    /*******************************************************/
 }
 
 /*****************************************************************************/
@@ -286,6 +298,8 @@ archi_context_act(
     if (interface_ptr->act_fn == NULL)
         return ARCHI_STATUS_EINTERFACE;
 
+    /**********************************************************/
     return interface_ptr->act_fn(context->data, action, params);
+    /**********************************************************/
 }
 

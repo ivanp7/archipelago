@@ -789,8 +789,10 @@ execute_instructions(void)
         for (archi_exe_registry_instr_list_t *instr_list = instructions;
                 instr_list != NULL; instr_list = instr_list->next)
         {
+            /****************************************************************************/
             archi_status_t code = archi_exe_registry_instr_execute(archi_process.registry,
                     instr_list->instruction, file.ref_count, archi_process.args.dry_run);
+            /****************************************************************************/
 
             if (code > 0)
                 archi_log_warning(M, "Got non-zero instruction execution status %i, attempting to continue...", code);

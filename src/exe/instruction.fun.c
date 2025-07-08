@@ -38,7 +38,7 @@
 #include <string.h> // for memcpy()
 #include <stdbool.h>
 
-#define MAX_BYTES       32
+#define MAX_BYTES       (1 << 5)
 
 #define MAX_CHARS       (MAX_BYTES / sizeof(char))
 #define MAX_SHORTS      (MAX_BYTES / sizeof(short))
@@ -70,8 +70,6 @@ archi_exe_registry_instr_sizeof(
             return sizeof(archi_exe_registry_instr_init_pointer_t);
 
         case ARCHI_EXE_REGISTRY_INSTR_INIT_DATA_ARRAY:
-            return sizeof(archi_exe_registry_instr_init_array_t);
-
         case ARCHI_EXE_REGISTRY_INSTR_INIT_FUNC_ARRAY:
             return sizeof(archi_exe_registry_instr_init_array_t);
 
@@ -97,6 +95,8 @@ archi_exe_registry_instr_sizeof(
             return sizeof(archi_exe_registry_instr_base_t);
     }
 }
+
+///////////////////////////////////////////////////////////////////////////////
 
 static
 void
@@ -291,6 +291,89 @@ archi_print_params(
         archi_print(LOG_INDENT "    %s: <none>\n", name);
 }
 
+///////////////////////////////////////////////////////////////////////////////
+
+struct archi_exe_registry_instr_params {
+    archi_parameter_list_t *params;
+    archi_parameter_list_t *dparams;
+};
+
+static
+archi_pointer_t
+archi_exe_registry_instr_get_context(
+        archi_context_t registry,
+        const char *key,
+        archi_status_t *code)
+{
+    archi_pointer_t context_value = archi_context_get_slot(
+            registry, (archi_context_slot_t){.name = key}, code);
+
+    if (*code != 1)
+        *code = ARCHI_STATUS_TO_ERROR(*code);
+
+    if ((*code == 0) && ((context_value.flags & ARCHI_POINTER_FLAG_FUNCTION) ||
+                (context_value.ptr == NULL)))
+        *code = ARCHI_STATUS_EVALUE;
+
+    return context_value;
+}
+
+static
+archi_status_t
+archi_exe_registry_instr_check_context(
+        archi_context_t registry,
+        const char *key)
+{
+    archi_status_t code;
+    archi_exe_registry_instr_get_context(registry, key, &code);
+
+    if (code == 1) // key is not in the registry
+        return 0;
+    else if (code == 0) // key is in the registry
+        return 2;
+    else
+        return code;
+}
+
+static
+archi_status_t
+archi_exe_registry_instr_add_context(
+        archi_context_t registry,
+        const char *key,
+        archi_pointer_t interface_value,
+        struct archi_exe_registry_instr_params params)
+{
+    archi_status_t code;
+
+    // Initialize the context
+    archi_context_t context = archi_context_initialize(interface_value, params.params, &code);
+    if (context == NULL)
+        return ARCHI_STATUS_TO_ERROR(code);
+
+    archi_pointer_t context_value = {
+        .ptr = context,
+        .ref_count = archi_context_data(context).ref_count, // the reference count is 1 at this point
+        .element = {
+            .num_of = 1,
+        },
+    };
+
+    // Insert the context to the registry, which also increments the reference count
+    code = archi_context_set_slot(registry, (archi_context_slot_t){.name = key}, context_value);
+    if (code != 0)
+    {
+        archi_context_finalize(context);
+        return ARCHI_STATUS_TO_ERROR(code);
+    }
+
+    // Decrement the reference count back to 1, making
+    archi_reference_count_decrement(context_value.ref_count);
+
+    return 0;
+}
+
+///////////////////////////////////////////////////////////////////////////////
+
 static
 void
 archi_exe_registry_instr_params_free(
@@ -302,9 +385,31 @@ archi_exe_registry_instr_params_free(
     while (node != dparams)
     {
         archi_parameter_list_t *next = node->next;
+
+        free((char*)node->name);
         free(node);
+
         node = next;
     }
+}
+
+static
+char*
+archi_exe_registry_instr_params_copy_name(
+        const char *name)
+{
+    if (name == NULL)
+        return NULL;
+
+    size_t size = strlen(name) + 1;
+
+    char *name_copy = malloc(size);
+    if (name_copy == NULL)
+        return NULL;
+
+    memcpy(name_copy, name, size);
+
+    return name_copy;
 }
 
 static
@@ -312,31 +417,83 @@ archi_parameter_list_t*
 archi_exe_registry_instr_params_alloc(
         archi_parameter_list_t *dparams,
         const archi_parameter_list_t *sparams,
-        archi_reference_count_t ref_count)
+        archi_reference_count_t ref_count,
+        archi_status_t *code)
 {
-    archi_parameter_list_t *params = dparams;
+    archi_parameter_list_t *head = NULL, *tail = NULL;
 
-    for (const archi_parameter_list_t *param = sparams; param != NULL; param = param->next)
+    for (const archi_parameter_list_t *params = sparams; params != NULL; params = params->next)
     {
         archi_parameter_list_t *node = malloc(sizeof(*node));
         if (node == NULL)
         {
-            archi_exe_registry_instr_params_free(params, dparams);
+            archi_exe_registry_instr_params_free(head, NULL);
+            *code = ARCHI_STATUS_ENOMEMORY;
+            return NULL;
+        }
+
+        char *name = archi_exe_registry_instr_params_copy_name(params->name);
+        if (name == NULL)
+        {
+            free(node);
+            archi_exe_registry_instr_params_free(head, NULL);
+            *code = ARCHI_STATUS_ENOMEMORY;
             return NULL;
         }
 
         *node = (archi_parameter_list_t){
-            .next = params,
-            .name = param->name,
-            .value = param->value,
+            .name = name,
+            .value = params->value,
         };
         node->value.ref_count = ref_count;
 
-        params = node;
+        if (tail != NULL)
+        {
+            tail->next = node;
+            tail = node;
+        }
+        else
+            head = tail = node;
     }
+
+    *code = 0;
+
+    if (tail != NULL)
+    {
+        tail->next = dparams;
+        return head;
+    }
+    else
+        return dparams;
+}
+
+static
+struct archi_exe_registry_instr_params
+archi_exe_registry_instr_prepare_params(
+        archi_context_t registry,
+        const char *dparams_key,
+        const archi_parameter_list_t *sparams,
+        archi_reference_count_t ref_count,
+        archi_status_t *code)
+{
+    struct archi_exe_registry_instr_params params = {0};
+
+    if (dparams_key != NULL)
+    {
+        archi_pointer_t dparams_value = archi_exe_registry_instr_get_context(
+                registry, dparams_key, code);
+        if (*code != 0)
+            return params;
+
+        params.dparams = archi_context_data(dparams_value.ptr).ptr;
+    }
+
+    params.params = archi_exe_registry_instr_params_alloc(params.dparams, sparams, ref_count, code);
 
     return params;
 }
+
+///////////////////////////////////////////////////////////////////////////////
 
 static
 archi_status_t
@@ -354,6 +511,9 @@ archi_exe_registry_instr_execute_init_from_context(
         archi_print_key("interface_source_key", instruction->interface_source_key);
         archi_print_key("dparams_key", instruction->dparams_key);
         archi_print_params("sparams", instruction->sparams);
+
+        archi_print_color(ARCHI_COLOR_RESET);
+        archi_print_unlock();
     }
 
     if (dry_run)
@@ -365,111 +525,46 @@ archi_exe_registry_instr_execute_init_from_context(
     archi_status_t code;
 
     // Check early if the context key exists already
-    archi_context_get_slot(registry,
-            (archi_context_slot_t){.name = instruction->key}, &code);
-
-    if (code != 1)
-    {
-        if (code < 0)
-            return code;
-        else if (code == 0)
-            return 2; // the context key exists already
-        else
-            return ARCHI_STATUS_EFAILURE;
-    }
+    code = archi_exe_registry_instr_check_context(registry, instruction->key);
+    if (code != 0)
+        return code;
 
     // Obtain the context interface
     archi_pointer_t interface_value;
 
-    if (instruction->interface_source_key == NULL) // parameter list
+    if (instruction->interface_source_key != NULL)
+    {
+        // Obtain the source context from the registry
+        archi_pointer_t src_context_value = archi_exe_registry_instr_get_context(
+                registry, instruction->interface_source_key, &code);
+        if (code != 0)
+            return code;
+
+        // Get context interface from the source context
+        interface_value = archi_context_interface(src_context_value.ptr);
+    }
+    else // parameter list
+    {
         interface_value = (archi_pointer_t){
             .ptr = (void*)&archi_context_parameters_interface,
             .element = {
                 .num_of = 1,
             },
         };
-    else
-    {
-        // Obtain the source context from the registry
-        archi_pointer_t src_context_value = archi_context_get_slot(registry,
-                (archi_context_slot_t){.name = instruction->interface_source_key}, &code);
-
-        if (code != 0)
-        {
-            if (code < 0)
-                return code;
-            else if (code == 1)
-                return 1; // the context is not found
-            else
-                return ARCHI_STATUS_EFAILURE;
-        }
-        else if ((src_context_value.flags & ARCHI_POINTER_FLAG_FUNCTION) ||
-                (src_context_value.ptr == NULL))
-            return ARCHI_STATUS_EVALUE;
-
-        // Get context interface from the source context
-        interface_value = archi_context_interface(src_context_value.ptr);
     }
 
     // Prepare the context initialization parameter list
-    archi_parameter_list_t *dparams = NULL;
-    if (instruction->dparams_key != NULL)
-    {
-        // Get dynamic parameter list
-        archi_pointer_t dparams_value = archi_context_get_slot(registry,
-                (archi_context_slot_t){.name = instruction->dparams_key}, &code);
-
-        if (code != 0)
-        {
-            if (code < 0)
-                return code;
-            else if (code == 1)
-                return 1; // the parameter list is not found
-            else
-                return ARCHI_STATUS_EFAILURE;
-        }
-
-        if (dparams_value.flags & ARCHI_POINTER_FLAG_FUNCTION)
-            return ARCHI_STATUS_EVALUE;
-
-        dparams = dparams_value.ptr;
-    }
-
-    archi_parameter_list_t *params = archi_exe_registry_instr_params_alloc(
-            dparams, instruction->sparams, ref_count);
-    if ((params == NULL) && ((dparams != NULL) || (instruction->sparams != NULL)))
-        return ARCHI_STATUS_ENOMEMORY;
-
-    // Initialize the context
-    archi_context_t context = archi_context_initialize(interface_value, params, &code);
-
-    archi_exe_registry_instr_params_free(params, dparams);
-
-    if (context == NULL)
-        return ARCHI_STATUS_TO_ERROR(code);
-
-    archi_pointer_t context_value = {
-        .ptr = context,
-        .ref_count = archi_context_data(context).ref_count, // the reference count is 1 at this point
-        .element = {
-            .num_of = 1,
-        },
-    };
-
-    // Insert the context to the registry, which also increments the reference count
-    code = archi_context_set_slot(registry,
-            (archi_context_slot_t){.name = instruction->key}, context_value);
-
+    struct archi_exe_registry_instr_params params = archi_exe_registry_instr_prepare_params(
+            registry, instruction->dparams_key, instruction->sparams, ref_count, &code);
     if (code != 0)
-    {
-        archi_context_finalize(context);
-        return ARCHI_STATUS_TO_ERROR(code);
-    }
+        return code;
 
-    // Decrement the reference count back to 1, making
-    archi_reference_count_decrement(context_value.ref_count);
+    // Initialize the context and add it to the registry
+    code = archi_exe_registry_instr_add_context(registry, instruction->key, interface_value, params);
 
-    return 0;
+    archi_exe_registry_instr_params_free(params.params, params.dparams);
+
+    return code;
 }
 
 static
@@ -489,6 +584,9 @@ archi_exe_registry_instr_execute_init_from_slot(
         archi_print_slot("interface_source_slot", instruction->interface_source_slot);
         archi_print_key("dparams_key", instruction->dparams_key);
         archi_print_params("sparams", instruction->sparams);
+
+        archi_print_color(ARCHI_COLOR_RESET);
+        archi_print_unlock();
     }
 
     if (dry_run)
@@ -500,38 +598,18 @@ archi_exe_registry_instr_execute_init_from_slot(
     archi_status_t code;
 
     // Check early if the context key exists already
-    archi_context_get_slot(registry,
-            (archi_context_slot_t){.name = instruction->key}, &code);
-
-    if (code != 1)
-    {
-        if (code < 0)
-            return code;
-        else if (code == 0)
-            return 2; // the context key exists already
-        else
-            return ARCHI_STATUS_EFAILURE;
-    }
+    code = archi_exe_registry_instr_check_context(registry, instruction->key);
+    if (code != 0)
+        return code;
 
     // Obtain the context interface
     archi_pointer_t interface_value;
     {
         // Obtain the source context from the registry
-        archi_pointer_t src_context_value = archi_context_get_slot(registry,
-                (archi_context_slot_t){.name = instruction->interface_source_key}, &code);
-
+        archi_pointer_t src_context_value = archi_exe_registry_instr_get_context(
+                registry, instruction->interface_source_key, &code);
         if (code != 0)
-        {
-            if (code < 0)
-                return code;
-            else if (code == 1)
-                return 1; // the context is not found
-            else
-                return ARCHI_STATUS_EFAILURE;
-        }
-        else if ((src_context_value.flags & ARCHI_POINTER_FLAG_FUNCTION) ||
-                (src_context_value.ptr == NULL))
-            return ARCHI_STATUS_EVALUE;
+            return code;
 
         // Get context interface from the source context slot
         interface_value = archi_context_get_slot(src_context_value.ptr,
@@ -542,64 +620,17 @@ archi_exe_registry_instr_execute_init_from_slot(
     }
 
     // Prepare the context initialization parameter list
-    archi_parameter_list_t *dparams = NULL;
-    if (instruction->dparams_key != NULL)
-    {
-        // Get dynamic parameter list
-        archi_pointer_t dparams_value = archi_context_get_slot(registry,
-                (archi_context_slot_t){.name = instruction->dparams_key}, &code);
-
-        if (code != 0)
-        {
-            if (code < 0)
-                return code;
-            else if (code == 1)
-                return 1; // the parameter list is not found
-            else
-                return ARCHI_STATUS_EFAILURE;
-        }
-
-        if (dparams_value.flags & ARCHI_POINTER_FLAG_FUNCTION)
-            return ARCHI_STATUS_EVALUE;
-
-        dparams = dparams_value.ptr;
-    }
-
-    archi_parameter_list_t *params = archi_exe_registry_instr_params_alloc(
-            dparams, instruction->sparams, ref_count);
-    if ((params == NULL) && ((dparams != NULL) || (instruction->sparams != NULL)))
-        return ARCHI_STATUS_ENOMEMORY;
-
-    // Initialize the context
-    archi_context_t context = archi_context_initialize(interface_value, params, &code);
-
-    archi_exe_registry_instr_params_free(params, dparams);
-
-    if (context == NULL)
-        return ARCHI_STATUS_TO_ERROR(code);
-
-    archi_pointer_t context_value = {
-        .ptr = context,
-        .ref_count = archi_context_data(context).ref_count, // the reference count is 1 at this point
-        .element = {
-            .num_of = 1,
-        },
-    };
-
-    // Insert the context to the registry, which also increments the reference count
-    code = archi_context_set_slot(registry,
-            (archi_context_slot_t){.name = instruction->key}, context_value);
-
+    struct archi_exe_registry_instr_params params = archi_exe_registry_instr_prepare_params(
+            registry, instruction->dparams_key, instruction->sparams, ref_count, &code);
     if (code != 0)
-    {
-        archi_context_finalize(context);
-        return ARCHI_STATUS_TO_ERROR(code);
-    }
+        return code;
 
-    // Decrement the reference count back to 1, making
-    archi_reference_count_decrement(context_value.ref_count);
+    // Initialize the context and add it to the registry
+    code = archi_exe_registry_instr_add_context(registry, instruction->key, interface_value, params);
 
-    return 0;
+    archi_exe_registry_instr_params_free(params.params, params.dparams);
+
+    return code;
 }
 
 static
@@ -619,6 +650,9 @@ archi_exe_registry_instr_execute_init_pointer(
             archi_print(LOG_INDENT "    value = ");
             archi_print_value(LOG_INDENT "      ", instruction->value);
         }
+
+        archi_print_color(ARCHI_COLOR_RESET);
+        archi_print_unlock();
     }
 
     if (dry_run)
@@ -630,18 +664,9 @@ archi_exe_registry_instr_execute_init_pointer(
     archi_status_t code;
 
     // Check early if the context key exists already
-    archi_context_get_slot(registry,
-            (archi_context_slot_t){.name = instruction->key}, &code);
-
-    if (code != 1)
-    {
-        if (code < 0)
-            return code;
-        else if (code == 0)
-            return 2; // the context key exists already
-        else
-            return ARCHI_STATUS_EFAILURE;
-    }
+    code = archi_exe_registry_instr_check_context(registry, instruction->key);
+    if (code != 0)
+        return code;
 
     // Prepare the context interface
     archi_pointer_t interface_value = (archi_pointer_t){
@@ -652,43 +677,20 @@ archi_exe_registry_instr_execute_init_pointer(
     };
 
     // Prepare the context initialization parameter list
-    archi_parameter_list_t params[] = {
+    archi_parameter_list_t params_node[] = {
         {
             .name = "value",
             .value = instruction->value,
         },
     };
+    params_node[0].value.ref_count = ref_count;
 
-    params[0].value.ref_count = ref_count;
+    struct archi_exe_registry_instr_params params = {.params = params_node};
 
-    // Initialize the context
-    archi_context_t context = archi_context_initialize(interface_value, params, &code);
+    // Initialize the context and add it to the registry
+    code = archi_exe_registry_instr_add_context(registry, instruction->key, interface_value, params);
 
-    if (context == NULL)
-        return ARCHI_STATUS_TO_ERROR(code);
-
-    archi_pointer_t context_value = {
-        .ptr = context,
-        .ref_count = archi_context_data(context).ref_count, // the reference count is 1 at this point
-        .element = {
-            .num_of = 1,
-        },
-    };
-
-    // Insert the context to the registry, which also increments the reference count
-    code = archi_context_set_slot(registry,
-            (archi_context_slot_t){.name = instruction->key}, context_value);
-
-    if (code != 0)
-    {
-        archi_context_finalize(context);
-        return ARCHI_STATUS_TO_ERROR(code);
-    }
-
-    // Decrement the reference count back to 1, making
-    archi_reference_count_decrement(context_value.ref_count);
-
-    return 0;
+    return code;
 }
 
 static
@@ -712,6 +714,9 @@ archi_exe_registry_instr_execute_init_array(
             archi_print(LOG_INDENT "    func_ptrs = %s\n",
                     (instruction->base.type == ARCHI_EXE_REGISTRY_INSTR_INIT_FUNC_ARRAY) ? "true" : "false");
         }
+
+        archi_print_color(ARCHI_COLOR_RESET);
+        archi_print_unlock();
     }
 
     if (dry_run)
@@ -723,18 +728,9 @@ archi_exe_registry_instr_execute_init_array(
     archi_status_t code;
 
     // Check early if the context key exists already
-    archi_context_get_slot(registry,
-            (archi_context_slot_t){.name = instruction->key}, &code);
-
-    if (code != 1)
-    {
-        if (code < 0)
-            return code;
-        else if (code == 0)
-            return 2; // the context key exists already
-        else
-            return ARCHI_STATUS_EFAILURE;
-    }
+    code = archi_exe_registry_instr_check_context(registry, instruction->key);
+    if (code != 0)
+        return code;
 
     // Prepare the context interface
     archi_pointer_t interface_value = (archi_pointer_t){
@@ -747,7 +743,7 @@ archi_exe_registry_instr_execute_init_array(
     // Prepare the context initialization parameter list
     char func_ptrs = (instruction->base.type == ARCHI_EXE_REGISTRY_INSTR_INIT_FUNC_ARRAY) ? 1 : 0;
 
-    archi_parameter_list_t params[] = {
+    archi_parameter_list_t params_node[] = {
         {
             .name = "num_elements",
             .value = (archi_pointer_t){.ptr = (void*)&instruction->num_elements},
@@ -761,37 +757,15 @@ archi_exe_registry_instr_execute_init_array(
             .value = (archi_pointer_t){.ptr = (void*)&func_ptrs},
         },
     };
-    params[0].next = &params[1];
-    params[1].next = &params[2];
+    params_node[0].next = &params_node[1];
+    params_node[1].next = &params_node[2];
 
-    // Initialize the context
-    archi_context_t context = archi_context_initialize(interface_value, params, &code);
+    struct archi_exe_registry_instr_params params = {.params = params_node};
 
-    if (context == NULL)
-        return ARCHI_STATUS_TO_ERROR(code);
+    // Initialize the context and add it to the registry
+    code = archi_exe_registry_instr_add_context(registry, instruction->key, interface_value, params);
 
-    archi_pointer_t context_value = {
-        .ptr = context,
-        .ref_count = archi_context_data(context).ref_count, // the reference count is 1 at this point
-        .element = {
-            .num_of = 1,
-        },
-    };
-
-    // Insert the context to the registry, which also increments the reference count
-    code = archi_context_set_slot(registry,
-            (archi_context_slot_t){.name = instruction->key}, context_value);
-
-    if (code != 0)
-    {
-        archi_context_finalize(context);
-        return ARCHI_STATUS_TO_ERROR(code);
-    }
-
-    // Decrement the reference count back to 1, making
-    archi_reference_count_decrement(context_value.ref_count);
-
-    return 0;
+    return code;
 }
 
 static
@@ -810,6 +784,9 @@ archi_exe_registry_instr_execute_copy(
     {
         archi_print_key("key", instruction->key);
         archi_print_key("original_key", instruction->original_key);
+
+        archi_print_color(ARCHI_COLOR_RESET);
+        archi_print_unlock();
     }
 
     if (dry_run)
@@ -823,30 +800,17 @@ archi_exe_registry_instr_execute_copy(
     archi_status_t code;
 
     // Obtain the context from the registry
-    archi_pointer_t context_value = archi_context_get_slot(registry,
-            (archi_context_slot_t){.name = instruction->original_key}, &code);
-
+    archi_pointer_t context_value = archi_exe_registry_instr_get_context(
+            registry, instruction->original_key, &code);
     if (code != 0)
-    {
-        if (code < 0)
-            return code;
-        else if (code == 1)
-            return 1; // the context is not found
-        else
-            return ARCHI_STATUS_EFAILURE;
-    }
-    else if ((context_value.flags & ARCHI_POINTER_FLAG_FUNCTION) ||
-            (context_value.ptr == NULL))
-        return ARCHI_STATUS_EVALUE;
+        return code;
 
     // Insert the context to the registry, which also increments the reference count
     code = archi_context_set_slot(registry,
             (archi_context_slot_t){.name = instruction->key}, context_value);
+    code = ARCHI_STATUS_TO_ERROR(code);
 
-    if (code != 0)
-        return ARCHI_STATUS_TO_ERROR(code);
-
-    return 0;
+    return code;
 }
 
 static
@@ -864,6 +828,9 @@ archi_exe_registry_instr_execute_final(
     if (logging)
     {
         archi_print_key("key", instruction->key);
+
+        archi_print_color(ARCHI_COLOR_RESET);
+        archi_print_unlock();
     }
 
     if (dry_run)
@@ -875,18 +842,10 @@ archi_exe_registry_instr_execute_final(
     // Remove the context from the registry, which also decrements the reference count
     archi_status_t code = archi_context_set_slot(registry,
             (archi_context_slot_t){.name = instruction->key}, (archi_pointer_t){0});
+    if (code != 1)
+        code = ARCHI_STATUS_TO_ERROR(code);
 
-    if (code != 0)
-    {
-        if (code < 0)
-            return code;
-        else if (code == 1)
-            return 1; // the context is not found
-        else
-            return ARCHI_STATUS_EFAILURE;
-    }
-
-    return 0;
+    return code;
 }
 
 static
@@ -907,6 +866,9 @@ archi_exe_registry_instr_execute_set_to_value(
             archi_print(LOG_INDENT "    value = ");
             archi_print_value(LOG_INDENT "      ", instruction->value);
         }
+
+        archi_print_color(ARCHI_COLOR_RESET);
+        archi_print_unlock();
     }
 
     if (dry_run)
@@ -918,32 +880,19 @@ archi_exe_registry_instr_execute_set_to_value(
     archi_status_t code;
 
     // Obtain the context from the registry
-    archi_pointer_t context_value = archi_context_get_slot(registry,
-            (archi_context_slot_t){.name = instruction->key}, &code);
-
+    archi_pointer_t context_value = archi_exe_registry_instr_get_context(
+            registry, instruction->key, &code);
     if (code != 0)
-    {
-        if (code < 0)
-            return code;
-        else if (code == 1)
-            return 1; // the context is not found
-        else
-            return ARCHI_STATUS_EFAILURE;
-    }
-    else if ((context_value.flags & ARCHI_POINTER_FLAG_FUNCTION) ||
-            (context_value.ptr == NULL))
-        return ARCHI_STATUS_EVALUE;
+        return code;
 
     // Set the context value
     archi_pointer_t value = instruction->value;
     value.ref_count = ref_count;
 
     code = archi_context_set_slot(context_value.ptr, instruction->slot, value);
+    code = ARCHI_STATUS_TO_ERROR(code);
 
-    if (code != 0)
-        return ARCHI_STATUS_TO_ERROR(code);
-
-    return 0;
+    return code;
 }
 
 static
@@ -963,6 +912,9 @@ archi_exe_registry_instr_execute_set_to_context_data(
         archi_print_key("key", instruction->key);
         archi_print_slot("slot", instruction->slot);
         archi_print_key("source_key", instruction->source_key);
+
+        archi_print_color(ARCHI_COLOR_RESET);
+        archi_print_unlock();
     }
 
     if (dry_run)
@@ -976,47 +928,23 @@ archi_exe_registry_instr_execute_set_to_context_data(
     archi_status_t code;
 
     // Obtain the context from the registry
-    archi_pointer_t context_value = archi_context_get_slot(registry,
-            (archi_context_slot_t){.name = instruction->key}, &code);
-
+    archi_pointer_t context_value = archi_exe_registry_instr_get_context(
+            registry, instruction->key, &code);
     if (code != 0)
-    {
-        if (code < 0)
-            return code;
-        else if (code == 1)
-            return 1; // the context is not found
-        else
-            return ARCHI_STATUS_EFAILURE;
-    }
-    else if ((context_value.flags & ARCHI_POINTER_FLAG_FUNCTION) ||
-            (context_value.ptr == NULL))
-        return ARCHI_STATUS_EVALUE;
+        return code;
 
     // Obtain the source context from the registry
-    archi_pointer_t src_context_value = archi_context_get_slot(registry,
-            (archi_context_slot_t){.name = instruction->source_key}, &code);
-
+    archi_pointer_t src_context_value = archi_exe_registry_instr_get_context(
+            registry, instruction->source_key, &code);
     if (code != 0)
-    {
-        if (code < 0)
-            return code;
-        else if (code == 1)
-            return 1; // the context is not found
-        else
-            return ARCHI_STATUS_EFAILURE;
-    }
-    else if ((src_context_value.flags & ARCHI_POINTER_FLAG_FUNCTION) ||
-            (src_context_value.ptr == NULL))
-        return ARCHI_STATUS_EVALUE;
+        return code;
 
     // Set the context value
     code = archi_context_set_slot(context_value.ptr, instruction->slot,
             archi_context_data(src_context_value.ptr));
+    code = ARCHI_STATUS_TO_ERROR(code);
 
-    if (code != 0)
-        return ARCHI_STATUS_TO_ERROR(code);
-
-    return 0;
+    return code;
 }
 
 static
@@ -1037,6 +965,9 @@ archi_exe_registry_instr_execute_set_to_context_slot(
         archi_print_slot("slot", instruction->slot);
         archi_print_key("source_key", instruction->source_key);
         archi_print_slot("source_slot", instruction->source_slot);
+
+        archi_print_color(ARCHI_COLOR_RESET);
+        archi_print_unlock();
     }
 
     if (dry_run)
@@ -1050,47 +981,23 @@ archi_exe_registry_instr_execute_set_to_context_slot(
     archi_status_t code;
 
     // Obtain the context from the registry
-    archi_pointer_t context_value = archi_context_get_slot(registry,
-            (archi_context_slot_t){.name = instruction->key}, &code);
-
+    archi_pointer_t context_value = archi_exe_registry_instr_get_context(
+            registry, instruction->key, &code);
     if (code != 0)
-    {
-        if (code < 0)
-            return code;
-        else if (code == 1)
-            return 1; // the context is not found
-        else
-            return ARCHI_STATUS_EFAILURE;
-    }
-    else if ((context_value.flags & ARCHI_POINTER_FLAG_FUNCTION) ||
-            (context_value.ptr == NULL))
-        return ARCHI_STATUS_EVALUE;
+        return code;
 
     // Obtain the source context from the registry
-    archi_pointer_t src_context_value = archi_context_get_slot(registry,
-            (archi_context_slot_t){.name = instruction->source_key}, &code);
-
+    archi_pointer_t src_context_value = archi_exe_registry_instr_get_context(
+            registry, instruction->source_key, &code);
     if (code != 0)
-    {
-        if (code < 0)
-            return code;
-        else if (code == 1)
-            return 1; // the context is not found
-        else
-            return ARCHI_STATUS_EFAILURE;
-    }
-    else if ((src_context_value.flags & ARCHI_POINTER_FLAG_FUNCTION) ||
-            (src_context_value.ptr == NULL))
-        return ARCHI_STATUS_EVALUE;
+        return code;
 
     // Set the context value
     code = archi_context_copy_slot(context_value.ptr, instruction->slot,
             src_context_value.ptr, instruction->source_slot);
+    code = ARCHI_STATUS_TO_ERROR(code);
 
-    if (code != 0)
-        return ARCHI_STATUS_TO_ERROR(code);
-
-    return 0;
+    return code;
 }
 
 static
@@ -1109,6 +1016,9 @@ archi_exe_registry_instr_execute_act(
         archi_print_slot("action", instruction->action);
         archi_print_key("dparams_key", instruction->dparams_key);
         archi_print_params("sparams", instruction->sparams);
+
+        archi_print_color(ARCHI_COLOR_RESET);
+        archi_print_unlock();
     }
 
     if (dry_run)
@@ -1120,59 +1030,27 @@ archi_exe_registry_instr_execute_act(
     archi_status_t code;
 
     // Obtain the context from the registry
-    archi_pointer_t context_value = archi_context_get_slot(registry,
-            (archi_context_slot_t){.name = instruction->key}, &code);
-
+    archi_pointer_t context_value = archi_exe_registry_instr_get_context(
+            registry, instruction->key, &code);
     if (code != 0)
-    {
-        if (code < 0)
-            return code;
-        else if (code == 1)
-            return 1; // the context is not found
-        else
-            return ARCHI_STATUS_EFAILURE;
-    }
-    else if ((context_value.flags & ARCHI_POINTER_FLAG_FUNCTION) ||
-            (context_value.ptr == NULL))
-        return ARCHI_STATUS_EVALUE;
+        return code;
 
-    // Obtain the context action parameters
-    archi_parameter_list_t *dparams = NULL;
-    if (instruction->dparams_key != NULL)
-    {
-        archi_pointer_t dparams_value = archi_context_get_slot(registry,
-                (archi_context_slot_t){.name = instruction->dparams_key}, &code);
-
-        if (code != 0)
-        {
-            if (code < 0)
-                return code;
-            else if (code == 1)
-                return 1; // the parameter list is not found
-            else
-                return ARCHI_STATUS_EFAILURE;
-        }
-
-        if (dparams_value.flags & ARCHI_POINTER_FLAG_FUNCTION)
-            return ARCHI_STATUS_EVALUE;
-
-        dparams = dparams_value.ptr;
-    }
-
-    archi_parameter_list_t *params = archi_exe_registry_instr_params_alloc(dparams, instruction->sparams, ref_count);
-    if ((params == NULL) && ((dparams != NULL) || (instruction->sparams != NULL)))
-        return ARCHI_STATUS_ENOMEMORY;
+    // Prepare the context action parameters
+    struct archi_exe_registry_instr_params params = archi_exe_registry_instr_prepare_params(
+            registry, instruction->dparams_key, instruction->sparams, ref_count, &code);
+    if (code != 0)
+        return code;
 
     // Invoke the context action
-    code = archi_context_act(context_value.ptr, instruction->action, params);
+    code = archi_context_act(context_value.ptr, instruction->action, params.params);
+    code = ARCHI_STATUS_TO_ERROR(code);
 
-    archi_exe_registry_instr_params_free(params, dparams);
+    archi_exe_registry_instr_params_free(params.params, params.dparams);
 
-    if (code != 0)
-        return ARCHI_STATUS_TO_ERROR(code);
-
-    return 0;
+    return code;
 }
+
+///////////////////////////////////////////////////////////////////////////////
 
 archi_status_t
 archi_exe_registry_instr_execute(
@@ -1193,7 +1071,7 @@ archi_exe_registry_instr_execute(
     {
         if (logging)
         {
-            archi_print("---> NOOP\n");
+            archi_print("\n---> NOOP\n");
 
             archi_print_color(ARCHI_COLOR_RESET);
             archi_print_unlock();
@@ -1207,7 +1085,7 @@ archi_exe_registry_instr_execute(
 #define INSTRUCTION(type, name)                                                 \
         case ARCHI_EXE_REGISTRY_INSTR_##type:                                   \
             if (logging)                                                        \
-                archi_print("---> " #type "\n");       \
+                archi_print("\n---> " #type "\n");       \
                                                                                 \
             code = archi_exe_registry_instr_execute_##name(registry,            \
                     (const archi_exe_registry_instr_##name##_t*)instruction,    \
@@ -1230,15 +1108,14 @@ archi_exe_registry_instr_execute(
 
         default:
             if (logging)
-                archi_print("---> <unknown instruction type>\n");
+            {
+                archi_print("\n---> <unknown instruction type>\n");
+
+                archi_print_color(ARCHI_COLOR_RESET);
+                archi_print_unlock();
+            }
 
             code = !dry_run ? ARCHI_STATUS_EMISUSE : 0;
-    }
-
-    if (logging)
-    {
-        archi_print_color(ARCHI_COLOR_RESET);
-        archi_print_unlock();
     }
 
     return code;
