@@ -417,8 +417,17 @@ ARCHI_CONTEXT_ACT_FUNC(archi_context_memory_mapping_act)
 
         if (source.element.size != context_data->mapping.element.size)
             return ARCHI_STATUS_EMISUSE;
-        else if (source.element.alignment != context_data->mapping.element.alignment)
-            return ARCHI_STATUS_EMISUSE;
+
+        size_t padded_size = ARCHI_SIZE_PADDED(source.element.size, source.element.alignment);
+
+        {
+            size_t src_padded_size = source.element.size;
+            if (source.element.alignment != 0)
+                src_padded_size = ARCHI_SIZE_PADDED(src_padded_size, source.element.alignment);
+
+            if (padded_size != src_padded_size)
+                return ARCHI_STATUS_EMISUSE;
+        }
 
         if (!param_num_elements_set)
             num_elements = context_data->mapping.element.num_of - offset;
@@ -427,9 +436,6 @@ ARCHI_CONTEXT_ACT_FUNC(archi_context_memory_mapping_act)
             return ARCHI_STATUS_EMISUSE;
         else if (num_elements > source.element.num_of - source_offset)
             return ARCHI_STATUS_EMISUSE;
-
-        size_t padded_size = (source.element.size + (source.element.alignment - 1)) &
-                ~(source.element.alignment - 1);
 
         memmove((char*)context_data->mapping.ptr + offset * padded_size,
             (char*)source.ptr + source_offset * padded_size,

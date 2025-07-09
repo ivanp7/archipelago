@@ -175,9 +175,6 @@ ARCHI_CONTEXT_INIT_FUNC(archip_context_opencl_program_init_src)
         return code;
     }
 
-    memcpy(binaries.ids->device_id, device_id.ptr,
-            sizeof(cl_device_id) * device_id.element.num_of);
-
     *context_data = (struct archip_context_opencl_program_data){
         .program = {
             .ptr = program,
@@ -264,6 +261,20 @@ ARCHI_CONTEXT_INIT_FUNC(archip_context_opencl_program_init_bin)
             return code;
         }
 
+        // Get program platform ID
+        if (device_id.ptr != NULL)
+        {
+            cl_int ret = clGetDeviceInfo(device_id.ptr, CL_DEVICE_PLATFORM,
+                    sizeof(cl_platform_id), &binaries.ids->platform_id, NULL);
+            if (ret != CL_SUCCESS)
+            {
+                archip_opencl_program_binaries_free(binaries);
+                free(context_data);
+                return ARCHI_STATUS_ERESOURCE;
+            }
+        }
+
+        // Copy program device IDs
         memcpy(binaries.ids->device_id, device_id.ptr,
                 sizeof(cl_device_id) * device_id.element.num_of);
     }

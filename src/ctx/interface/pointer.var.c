@@ -30,6 +30,11 @@
 #include <string.h> // for strcmp(), memmove()
 #include <stdalign.h> // for alignof()
 
+struct archi_context_pointer_data {
+    archi_pointer_t pointer;
+    archi_reference_count_t ref_count;
+};
+
 ARCHI_CONTEXT_INIT_FUNC(archi_context_pointer_init)
 {
     archi_pointer_t value = {0};
@@ -143,51 +148,64 @@ ARCHI_CONTEXT_INIT_FUNC(archi_context_pointer_init)
             return ARCHI_STATUS_EVALUE;
     }
 
-    archi_pointer_t *context_data = malloc(sizeof(*context_data));
+    struct archi_context_pointer_data *context_data = malloc(sizeof(*context_data));
     if (context_data == NULL)
         return ARCHI_STATUS_ENOMEMORY;
 
-    *context_data = value;
+    *context_data = (struct archi_context_pointer_data){
+        .pointer = {
+            .ptr = value.ptr,
+            .flags = value.flags,
+            .element = value.element,
+        },
+        .ref_count = value.ref_count,
+    };
 
     archi_reference_count_increment(value.ref_count);
 
-    *context = context_data;
+    *context = (archi_pointer_t*)context_data;
     return 0;
 }
 
 ARCHI_CONTEXT_FINAL_FUNC(archi_context_pointer_final)
 {
-    archi_reference_count_decrement(context->ref_count);
-    free(context);
+    struct archi_context_pointer_data *context_data =
+        (struct archi_context_pointer_data*)context;
+
+    archi_reference_count_decrement(context_data->ref_count);
+    free(context_data);
 }
 
 ARCHI_CONTEXT_GET_FUNC(archi_context_pointer_get)
 {
+    struct archi_context_pointer_data *context_data =
+        (struct archi_context_pointer_data*)context;
+
     if (strcmp("", slot.name) == 0)
     {
         if (slot.num_indices != 1)
             return ARCHI_STATUS_EMISUSE;
-        else if (context->flags & ARCHI_POINTER_FLAG_FUNCTION)
+        else if (context_data->pointer.flags & ARCHI_POINTER_FLAG_FUNCTION)
             return ARCHI_STATUS_EMISUSE;
-        else if (context->element.size == 0)
+        else if (context_data->pointer.element.size == 0)
             return ARCHI_STATUS_EMISUSE;
 
         ptrdiff_t offset = slot.index[0];
-        if ((offset < 0) || ((size_t)offset >= context->element.num_of))
+        if ((offset < 0) || ((size_t)offset >= context_data->pointer.element.num_of))
             return ARCHI_STATUS_EMISUSE;
 
-        size_t padded_size = context->element.size;
-        if (context->element.alignment != 0)
-            padded_size = ARCHI_SIZE_PADDED(padded_size, context->element.alignment);
+        size_t padded_size = context_data->pointer.element.size;
+        if (context_data->pointer.element.alignment != 0)
+            padded_size = ARCHI_SIZE_PADDED(padded_size, context_data->pointer.element.alignment);
 
         *value = (archi_pointer_t){
-            .ptr = (char*)context->ptr + offset * padded_size,
-                .ref_count = context->ref_count,
-                .flags = context->flags,
+            .ptr = (char*)context_data->pointer.ptr + offset * padded_size,
+                .ref_count = context_data->ref_count,
+                .flags = context_data->pointer.flags,
                 .element = {
-                    .num_of = context->element.num_of - offset,
-                    .size = context->element.size,
-                    .alignment = context->element.alignment,
+                    .num_of = context_data->pointer.element.num_of - offset,
+                    .size = context_data->pointer.element.size,
+                    .alignment = context_data->pointer.element.alignment,
                 },
         };
     }
@@ -197,11 +215,11 @@ ARCHI_CONTEXT_GET_FUNC(archi_context_pointer_get)
             return ARCHI_STATUS_EMISUSE;
 
         *value = (archi_pointer_t){
-            .ptr = &context->flags,
-            .ref_count = context->ref_count,
+            .ptr = &context_data->pointer.flags,
+            .ref_count = context_data->ref_count,
             .element = {
                 .num_of = 1,
-                .size = sizeof(context->flags),
+                .size = sizeof(context_data->pointer.flags),
                 .alignment = alignof(archi_pointer_flags_t),
             },
         };
@@ -212,11 +230,11 @@ ARCHI_CONTEXT_GET_FUNC(archi_context_pointer_get)
             return ARCHI_STATUS_EMISUSE;
 
         *value = (archi_pointer_t){
-            .ptr = &context->element,
-            .ref_count = context->ref_count,
+            .ptr = &context_data->pointer.element,
+            .ref_count = context_data->ref_count,
             .element = {
                 .num_of = 1,
-                .size = sizeof(context->element),
+                .size = sizeof(context_data->pointer.element),
                 .alignment = alignof(archi_array_layout_t),
             },
         };
@@ -227,11 +245,11 @@ ARCHI_CONTEXT_GET_FUNC(archi_context_pointer_get)
             return ARCHI_STATUS_EMISUSE;
 
         *value = (archi_pointer_t){
-            .ptr = &context->element.num_of,
-            .ref_count = context->ref_count,
+            .ptr = &context_data->pointer.element.num_of,
+            .ref_count = context_data->ref_count,
             .element = {
                 .num_of = 1,
-                .size = sizeof(context->element.num_of),
+                .size = sizeof(context_data->pointer.element.num_of),
                 .alignment = alignof(size_t),
             },
         };
@@ -242,11 +260,11 @@ ARCHI_CONTEXT_GET_FUNC(archi_context_pointer_get)
             return ARCHI_STATUS_EMISUSE;
 
         *value = (archi_pointer_t){
-            .ptr = &context->element.size,
-            .ref_count = context->ref_count,
+            .ptr = &context_data->pointer.element.size,
+            .ref_count = context_data->ref_count,
             .element = {
                 .num_of = 1,
-                .size = sizeof(context->element.size),
+                .size = sizeof(context_data->pointer.element.size),
                 .alignment = alignof(size_t),
             },
         };
@@ -257,11 +275,11 @@ ARCHI_CONTEXT_GET_FUNC(archi_context_pointer_get)
             return ARCHI_STATUS_EMISUSE;
 
         *value = (archi_pointer_t){
-            .ptr = &context->element.alignment,
-            .ref_count = context->ref_count,
+            .ptr = &context_data->pointer.element.alignment,
+            .ref_count = context_data->ref_count,
             .element = {
                 .num_of = 1,
-                .size = sizeof(context->element.alignment),
+                .size = sizeof(context_data->pointer.element.alignment),
                 .alignment = alignof(size_t),
             },
         };
@@ -274,42 +292,53 @@ ARCHI_CONTEXT_GET_FUNC(archi_context_pointer_get)
 
 ARCHI_CONTEXT_SET_FUNC(archi_context_pointer_set)
 {
+    struct archi_context_pointer_data *context_data =
+        (struct archi_context_pointer_data*)context;
+
     if (strcmp("value", slot.name) == 0)
     {
         if (slot.num_indices != 0)
             return ARCHI_STATUS_EMISUSE;
 
         archi_reference_count_increment(value.ref_count);
-        archi_reference_count_decrement(context->ref_count);
+        archi_reference_count_decrement(context_data->ref_count);
 
-        *context = value;
+        archi_reference_count_t ref_count = context_data->pointer.ref_count;
+
+        context_data->pointer = (archi_pointer_t){
+            .ptr = value.ptr,
+            .ref_count = ref_count,
+            .flags = value.flags,
+            .element = value.element,
+        };
+        context_data->ref_count = value.ref_count;
     }
     else if (strcmp("", slot.name) == 0)
     {
         if (slot.num_indices != 1)
             return ARCHI_STATUS_EMISUSE;
-        else if (context->flags & ARCHI_POINTER_FLAG_FUNCTION)
+        else if (context_data->pointer.flags & ARCHI_POINTER_FLAG_FUNCTION)
             return ARCHI_STATUS_EMISUSE;
-        else if ((context->flags & ARCHI_POINTER_FLAG_WRITABLE) == 0)
+        else if ((context_data->pointer.flags & ARCHI_POINTER_FLAG_WRITABLE) == 0)
             return ARCHI_STATUS_EMISUSE;
-        else if (context->element.size == 0)
+        else if (context_data->pointer.element.size == 0)
             return ARCHI_STATUS_EMISUSE;
         else if (value.flags & ARCHI_POINTER_FLAG_FUNCTION)
             return ARCHI_STATUS_EMISUSE;
         else if (value.ptr == NULL)
             return ARCHI_STATUS_EMISUSE;
-        else if (value.element.size != context->element.size)
+        else if (value.element.size != context_data->pointer.element.size)
             return ARCHI_STATUS_EMISUSE;
 
         ptrdiff_t offset = slot.index[0];
-        if ((offset < 0) || ((size_t)offset >= context->element.num_of))
+        if ((offset < 0) || ((size_t)offset >= context_data->pointer.element.num_of))
             return ARCHI_STATUS_EMISUSE;
 
-        size_t padded_size = context->element.size;
-        if (context->element.alignment != 0)
-            padded_size = ARCHI_SIZE_PADDED(padded_size, context->element.alignment);
+        size_t padded_size = context_data->pointer.element.size;
+        if (context_data->pointer.element.alignment != 0)
+            padded_size = ARCHI_SIZE_PADDED(padded_size, context_data->pointer.element.alignment);
 
-        memmove((char*)context->ptr + offset * padded_size, value.ptr, value.element.size);
+        memmove((char*)context_data->pointer.ptr + offset * padded_size, value.ptr, value.element.size);
     }
     else
         return ARCHI_STATUS_EKEY;
@@ -319,12 +348,17 @@ ARCHI_CONTEXT_SET_FUNC(archi_context_pointer_set)
 
 ARCHI_CONTEXT_ACT_FUNC(archi_context_pointer_act)
 {
+    struct archi_context_pointer_data *context_data =
+        (struct archi_context_pointer_data*)context;
+
     if (strcmp("update", action.name) == 0)
     {
         if (action.num_indices != 0)
             return ARCHI_STATUS_EMISUSE;
 
-        archi_pointer_t value = *context;
+        archi_pointer_t value = context_data->pointer;
+        value.ref_count = context_data->ref_count;
+
         archi_pointer_flags_t flags = 0;
         archi_array_layout_t layout = {0};
         archi_array_layout_t layout_fields = {0};
@@ -436,9 +470,110 @@ ARCHI_CONTEXT_ACT_FUNC(archi_context_pointer_act)
         }
 
         archi_reference_count_increment(value.ref_count);
-        archi_reference_count_decrement(context->ref_count);
+        archi_reference_count_decrement(context_data->ref_count);
 
-        *context = value;
+        archi_reference_count_t ref_count = context_data->pointer.ref_count;
+
+        context_data->pointer = (archi_pointer_t){
+            .ptr = value.ptr,
+            .ref_count = ref_count,
+            .flags = value.flags,
+            .element = value.element,
+        };
+        context_data->ref_count = value.ref_count;
+    }
+    else if (strcmp("copy", action.name) == 0)
+    {
+        if (action.num_indices > 1)
+            return ARCHI_STATUS_EMISUSE;
+        else if (context_data->pointer.flags & ARCHI_POINTER_FLAG_FUNCTION)
+            return ARCHI_STATUS_EMISUSE;
+        else if (context_data->pointer.ptr == NULL)
+            return ARCHI_STATUS_EMISUSE;
+        else if (context_data->pointer.element.size == 0)
+            return ARCHI_STATUS_EMISUSE;
+
+        ptrdiff_t offset = (action.num_indices > 0) ? action.index[0] : 0;
+        if ((offset < 0) || ((size_t)offset >= context_data->pointer.element.num_of))
+            return ARCHI_STATUS_EMISUSE;
+
+        archi_pointer_t source = {0};
+        size_t source_offset = 0;
+        size_t num_elements = 0;
+
+        bool param_source_set = false;
+        bool param_source_offset_set = false;
+        bool param_num_elements_set = false;
+
+        for (; params != NULL; params = params->next)
+        {
+            if (strcmp("source", params->name) == 0)
+            {
+                if (param_source_set)
+                    continue;
+                param_source_set = true;
+
+                if ((params->value.flags & ARCHI_POINTER_FLAG_FUNCTION) ||
+                        (params->value.ptr == NULL))
+                    return ARCHI_STATUS_EVALUE;
+
+                source = params->value;
+            }
+            else if (strcmp("source_offset", params->name) == 0)
+            {
+                if (param_source_offset_set)
+                    continue;
+                param_source_offset_set = true;
+
+                if ((params->value.flags & ARCHI_POINTER_FLAG_FUNCTION) ||
+                        (params->value.ptr == NULL))
+                    return ARCHI_STATUS_EVALUE;
+
+                source_offset = *(size_t*)params->value.ptr;
+            }
+            else if (strcmp("num_elements", params->name) == 0)
+            {
+                if (param_num_elements_set)
+                    continue;
+                param_num_elements_set = true;
+
+                if ((params->value.flags & ARCHI_POINTER_FLAG_FUNCTION) ||
+                        (params->value.ptr == NULL))
+                    return ARCHI_STATUS_EVALUE;
+
+                num_elements = *(size_t*)params->value.ptr;
+            }
+            else
+                return ARCHI_STATUS_EKEY;
+        }
+
+        if (source.element.size != context_data->pointer.element.size)
+            return ARCHI_STATUS_EMISUSE;
+
+        size_t padded_size = context_data->pointer.element.size;
+        if (context_data->pointer.element.alignment != 0)
+            padded_size = ARCHI_SIZE_PADDED(padded_size, context_data->pointer.element.alignment);
+
+        {
+            size_t src_padded_size = source.element.size;
+            if (source.element.alignment != 0)
+                src_padded_size = ARCHI_SIZE_PADDED(src_padded_size, source.element.alignment);
+
+            if (padded_size != src_padded_size)
+                return ARCHI_STATUS_EMISUSE;
+        }
+
+        if (!param_num_elements_set)
+            num_elements = context_data->pointer.element.num_of - offset;
+
+        if (source_offset >= source.element.num_of)
+            return ARCHI_STATUS_EMISUSE;
+        else if (num_elements > source.element.num_of - source_offset)
+            return ARCHI_STATUS_EMISUSE;
+
+        memmove((char*)context_data->pointer.ptr + offset * padded_size,
+            (char*)source.ptr + source_offset * padded_size,
+            num_elements * padded_size);
     }
     else
         return ARCHI_STATUS_EKEY;

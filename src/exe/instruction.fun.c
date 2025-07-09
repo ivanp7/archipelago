@@ -366,7 +366,7 @@ archi_exe_registry_instr_add_context(
         return ARCHI_STATUS_TO_ERROR(code);
     }
 
-    // Decrement the reference count back to 1, making
+    // Decrement the reference count back to 1, making registry the exclusive owner of the context
     archi_reference_count_decrement(context_value.ref_count);
 
     return 0;
@@ -445,7 +445,8 @@ archi_exe_registry_instr_params_alloc(
             .name = name,
             .value = params->value,
         };
-        node->value.ref_count = ref_count;
+        if (params->value.ptr != NULL)
+            node->value.ref_count = ref_count;
 
         if (tail != NULL)
         {
@@ -683,7 +684,8 @@ archi_exe_registry_instr_execute_init_pointer(
             .value = instruction->value,
         },
     };
-    params_node[0].value.ref_count = ref_count;
+    if (instruction->value.ptr != NULL)
+        params_node[0].value.ref_count = ref_count;
 
     struct archi_exe_registry_instr_params params = {.params = params_node};
 
@@ -887,7 +889,8 @@ archi_exe_registry_instr_execute_set_to_value(
 
     // Set the context value
     archi_pointer_t value = instruction->value;
-    value.ref_count = ref_count;
+    if (instruction->value.ptr != NULL)
+        value.ref_count = ref_count;
 
     code = archi_context_set_slot(context_value.ptr, instruction->slot, value);
     code = ARCHI_STATUS_TO_ERROR(code);
