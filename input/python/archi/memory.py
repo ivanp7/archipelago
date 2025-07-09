@@ -38,7 +38,7 @@ class CValue:
         if isinstance(value, str):
             value = c.create_string_buffer(value.encode())
         elif isinstance(value, bytes):
-            value = c.create_string_buffer(value)
+            value = c.create_string_buffer(value, size=len(value))
 
         self._object = value
         self._callback = callback

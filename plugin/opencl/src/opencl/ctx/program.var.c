@@ -264,7 +264,7 @@ ARCHI_CONTEXT_INIT_FUNC(archip_context_opencl_program_init_bin)
         // Get program platform ID
         if (device_id.ptr != NULL)
         {
-            cl_int ret = clGetDeviceInfo(device_id.ptr, CL_DEVICE_PLATFORM,
+            cl_int ret = clGetDeviceInfo(*(cl_device_id*)device_id.ptr, CL_DEVICE_PLATFORM,
                     sizeof(cl_platform_id), &binaries.ids->platform_id, NULL);
             if (ret != CL_SUCCESS)
             {
@@ -330,6 +330,21 @@ ARCHI_CONTEXT_GET_FUNC(archip_context_opencl_program_get)
             return ARCHI_STATUS_EMISUSE;
 
         *value = context_data->context;
+    }
+    else if (strcmp("platform_id", slot.name) == 0)
+    {
+        if (slot.num_indices != 0)
+            return ARCHI_STATUS_EMISUSE;
+
+        *value = (archi_pointer_t){
+            .ptr = context_data->binaries.ids->platform_id,
+            .ref_count = context_data->program.ref_count,
+            .element = {
+                .num_of = 1,
+                .size = sizeof(context_data->binaries.ids->platform_id),
+                .alignment = alignof(cl_platform_id),
+            },
+        };
     }
     else if (strcmp("device_id", slot.name) == 0)
     {

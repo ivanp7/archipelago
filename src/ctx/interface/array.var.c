@@ -157,6 +157,7 @@ ARCHI_CONTEXT_GET_FUNC(archi_context_array_get)
 
         *value = (archi_pointer_t){
             .ptr = context_data->element,
+            .ref_count = context_data->array.ref_count,
             .element = {
                 .num_of = context_data->array.element.num_of,
                 .size = sizeof(*context_data->element),
