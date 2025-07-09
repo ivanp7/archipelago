@@ -125,74 +125,7 @@ First declare their interface by instantiating a ``ContextInterface`` object (co
 This provides its own callable operator accepting similar arguments; instead of executing immediately,
 it returns a ``ContextSpec`` which you assign to ``app[key]`` in order to initialize/register that new context.
 
-Here is an example script:
-
-```python
-import ctypes as c
-import sys
-
-from archi.memory import CValue
-from archi.registry import Registry, ContextInterface
-from archi.file import File
-from archi.ctypes.extra import archi_signal_watch_set_t
-
-###############################################################################
-
-MAP_ADDRESS = 0x7f0000000000
-
-TEXTURE_WIDTH  = c.c_int(512)
-TEXTURE_HEIGHT = c.c_int(256)
-
-TRUE = CValue(c.c_bool(True))
-
-###############################################################################
-
-# Form the list of instructions
-app = Registry()
-
-# Load plugins and create contexts
-executable = app[Registry.KEY_EXECUTABLE] # handle of the executable itself
-library_loader = ContextInterface(executable) # the context interface for library handles
-
-app['plugin.sdl'] = library_loader(pathname="libarchip_sdl.so") # load SDL plugin
-
-sdl_library_interface = ContextInterface(
-        app['plugin.sdl'].archip_context_sdl2_library_interface) # SDL2 library interface (for SDL_Init(), SDL_Quit())
-app['context.sdl_library'] = sdl_library_interface(
-        video=TRUE, audio=TRUE) # initialize SDL2 video and audio subsystems
-del sdl_library_interface
-
-sdl_window_interface = ContextInterface(
-        app['plugin.sdl'].archip_context_sdl2_window_interface) # SDL2 window context interface
-app['context.window'] = sdl_window_interface(texture_width=TEXTURE_WIDTH, texture_height=TEXTURE_HEIGHT,
-                                             window_title="Still Alive") # create a window
-del sdl_window_interface
-
-del app['plugin.sdl'] # unload SDL plugin
-
-###############################################################################
-
-# Prepare the input file representation
-file = File()
-
-file[File.KEY_REGISTRY] = app
-file[File.KEY_SIGNALS] = CValue(archi_signal_watch_set_t(watch=set(['SIGINT', 'SIGQUIT', 'SIGTERM', 'SIGCONT'])))
-
-###############################################################################
-
-# Fossilize the input file representation
-file_memory = file.memory() # get high-level memory description object
-file_memory.pack() # pack the memory to decrease total padding and size
-
-file_memory_buffer = file_memory.fossilize(MAP_ADDRESS) # fossilize the memory to be mapped at the specified address
-
-# Write the file
-with open(sys.argv[1], mode='wb') as file:
-    file.write(file_memory_buffer)
-
-print(f"Wrote {file_memory.size()} bytes to '{sys.argv[1]}',")
-print(f"including {file_memory.padding()} padding bytes")
-```
+There is a [script example](plugin/opencl/scripts/program-builder.py) available in the repository.
 
 For comprehensive descriptions see [docs/python.md](docs/python.md).
 
