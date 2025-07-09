@@ -27,7 +27,7 @@
 #include "archi/res/file/header.typ.h"
 
 #include <fcntl.h> // for open()
-#include <unistd.h> // for close(), sysconf()
+#include <unistd.h> // for close(), sysconf(), ftruncate()
 #include <sys/mman.h> // for mmap(), munmap()
 #include <sys/stat.h> // for fstat()
 #include <stdint.h> // for uintptr_t
@@ -47,6 +47,15 @@ archi_file_open(
 
     int flags = params.flags;
 
+    if (params.create)
+        flags |= O_CREAT;
+
+    if (params.exclusive)
+        flags |= O_EXCL;
+
+    if (params.truncate)
+        flags |= O_TRUNC;
+
     if (params.readable && params.writable)
         flags |= O_RDWR;
     else if (params.readable)
@@ -57,7 +66,21 @@ archi_file_open(
     if (params.nonblock)
         flags |= O_NONBLOCK;
 
-    return open(params.pathname, flags);
+    mode_t mode = params.mode;
+
+    int fd = open(params.pathname, flags, mode);
+
+    if ((fd >= 0) && params.truncate && (params.size > 0))
+    {
+        int ret = ftruncate(fd, params.size);
+        if (ret < 0)
+        {
+            close(fd);
+            fd = -1;
+        }
+    }
+
+    return fd;
 }
 
 bool

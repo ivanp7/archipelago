@@ -42,10 +42,15 @@ ARCHI_CONTEXT_INIT_FUNC(archi_context_res_file_init)
 
     bool param_params_set = false;
     bool param_pathname_set = false;
+    bool param_size_set = false;
+    bool param_create_set = false;
+    bool param_exclusive_set = false;
+    bool param_truncate_set = false;
     bool param_readable_set = false;
     bool param_writable_set = false;
     bool param_nonblock_set = false;
     bool param_flags_set = false;
+    bool param_mode_set = false;
 
     for (; params != NULL; params = params->next)
     {
@@ -61,6 +66,18 @@ ARCHI_CONTEXT_INIT_FUNC(archi_context_res_file_init)
 
             file_open_params = *(archi_file_open_params_t*)params->value.ptr;
         }
+        else if (strcmp("size", params->name) == 0)
+        {
+            if (param_size_set)
+                continue;
+            param_size_set = true;
+
+            if ((params->value.flags & ARCHI_POINTER_FLAG_FUNCTION) ||
+                    (params->value.ptr == NULL))
+                return ARCHI_STATUS_EVALUE;
+
+            file_open_params_fields.size = *(size_t*)params->value.ptr;
+        }
         else if (strcmp("pathname", params->name) == 0)
         {
             if (param_pathname_set)
@@ -72,6 +89,42 @@ ARCHI_CONTEXT_INIT_FUNC(archi_context_res_file_init)
                 return ARCHI_STATUS_EVALUE;
 
             file_open_params_fields.pathname = params->value.ptr;
+        }
+        else if (strcmp("create", params->name) == 0)
+        {
+            if (param_create_set)
+                continue;
+            param_create_set = true;
+
+            if ((params->value.flags & ARCHI_POINTER_FLAG_FUNCTION) ||
+                    (params->value.ptr == NULL))
+                return ARCHI_STATUS_EVALUE;
+
+            file_open_params_fields.create = *(char*)params->value.ptr;
+        }
+        else if (strcmp("exclusive", params->name) == 0)
+        {
+            if (param_exclusive_set)
+                continue;
+            param_exclusive_set = true;
+
+            if ((params->value.flags & ARCHI_POINTER_FLAG_FUNCTION) ||
+                    (params->value.ptr == NULL))
+                return ARCHI_STATUS_EVALUE;
+
+            file_open_params_fields.exclusive = *(char*)params->value.ptr;
+        }
+        else if (strcmp("truncate", params->name) == 0)
+        {
+            if (param_truncate_set)
+                continue;
+            param_truncate_set = true;
+
+            if ((params->value.flags & ARCHI_POINTER_FLAG_FUNCTION) ||
+                    (params->value.ptr == NULL))
+                return ARCHI_STATUS_EVALUE;
+
+            file_open_params_fields.truncate = *(char*)params->value.ptr;
         }
         else if (strcmp("readable", params->name) == 0)
         {
@@ -121,12 +174,36 @@ ARCHI_CONTEXT_INIT_FUNC(archi_context_res_file_init)
 
             file_open_params_fields.flags = *(int*)params->value.ptr;
         }
+        else if (strcmp("mode", params->name) == 0)
+        {
+            if (param_mode_set)
+                continue;
+            param_mode_set = true;
+
+            if ((params->value.flags & ARCHI_POINTER_FLAG_FUNCTION) ||
+                    (params->value.ptr == NULL))
+                return ARCHI_STATUS_EVALUE;
+
+            file_open_params_fields.mode = *(int*)params->value.ptr;
+        }
         else
             return ARCHI_STATUS_EKEY;
     }
 
     if (param_pathname_set)
         file_open_params.pathname = file_open_params_fields.pathname;
+
+    if (param_size_set)
+        file_open_params.size = file_open_params_fields.size;
+
+    if (param_create_set)
+        file_open_params.create = file_open_params_fields.create;
+
+    if (param_exclusive_set)
+        file_open_params.exclusive = file_open_params_fields.exclusive;
+
+    if (param_truncate_set)
+        file_open_params.truncate = file_open_params_fields.truncate;
 
     if (param_readable_set)
         file_open_params.readable = file_open_params_fields.readable;
@@ -139,6 +216,9 @@ ARCHI_CONTEXT_INIT_FUNC(archi_context_res_file_init)
 
     if (param_flags_set)
         file_open_params.flags = file_open_params_fields.flags;
+
+    if (param_mode_set)
+        file_open_params.mode = file_open_params_fields.mode;
 
     struct archi_context_res_file_data *context_data = malloc(sizeof(*context_data));
     if (context_data == NULL)

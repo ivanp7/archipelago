@@ -34,13 +34,20 @@
  * @brief Parameters for archi_file_open().
  */
 typedef struct archi_file_open_params {
-    const char *pathname; ///< Path to a file.
+    const char *pathname; ///< Path to file.
+
+    size_t size; ///< Size of file.
+
+    bool create;    ///< Whether file creation is allowed.
+    bool exclusive; ///< Whether file creation is ensured.
+    bool truncate;  ///< Whether file is truncated.
 
     bool readable; ///< Whether is file open to read.
     bool writable; ///< Whether is file open to write.
     bool nonblock; ///< Whether is file open in non-blocking mode.
 
-    int flags;     ///< Other flags for open().
+    int flags; ///< Other flags.
+    int mode;  ///< Created file mode.
 } archi_file_open_params_t;
 
 /**
