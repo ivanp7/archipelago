@@ -202,6 +202,19 @@ class Context:
         object.__setattr__(self, '_registry', registry)
         object.__setattr__(self, '_key', key)
 
+    def __enter__(self):
+        """Context manager entry.
+        """
+        return self
+
+    def __exit__(self, exc_type, exc_value, traceback):
+        """Context manager exit.
+        """
+        if exc_type is None:
+            self._registry._instruct(
+                    InstructionType.DELETE,
+                    key=self._key)
+
     def __getattr__(self, name: "str") -> "Context._Slot":
         """Obtain a context slot object.
         """
@@ -295,7 +308,7 @@ class Context:
                 key=self._key,
                 action_name=action_name,
                 action_indices=action_indices,
-                dparams_key=dparams._key,
+                dparams_key=dparams._key if dparams is not None else None,
                 sparams=sparams)
 
     @staticmethod
