@@ -70,8 +70,6 @@ elif len(args.src) != len(set(args.src)):
     raise RuntimeError("Source file pathnames must be all unique")
 elif len(args.lib) != len(set(args.lib)):
     raise RuntimeError("Library file pathnames must be all unique")
-elif len(args.out) != len(set(args.out)):
-    raise RuntimeError("Build output file pathnames must be all unique")
 
 ###############################################################################
 # Read contents of all input files
