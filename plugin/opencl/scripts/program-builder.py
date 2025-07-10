@@ -140,6 +140,7 @@ executable = app[Registry.KEY_EXECUTABLE]
 library_interface = ContextInterface(executable) # or executable.archi_context_res_library_interface
 file_interface = ContextInterface(executable.archi_context_res_file_interface)
 hashmap_interface = ContextInterface(executable.archi_context_ds_hashmap_interface)
+envvar_interface = ContextInterface(executable.archi_context_ipc_env_interface)
 
 # Load OpenCL plugin
 app['plugin.opencl'] = library_interface(pathname="libarchip_opencl.so")
@@ -199,9 +200,12 @@ with app['plugin.opencl'] as plugin_opencl:
         del app['params.program']
 
         # Form the parameter list for output file opening
-        app['params.open'] = Parameters(pathname=args.out, create=TRUE, truncate=TRUE,
-                                        readable=TRUE, writable=TRUE, mode=c.c_int(0o644))
-        app['params.open'].size = app['context.program'].binary_size[0]
+        app['value.pathname'] = envvar_interface(name='OUT', default_value=args.out)
+        with app['value.pathname'] as pathname:
+            app['params.open'] = Parameters(create=TRUE, truncate=TRUE,
+                                            readable=TRUE, writable=TRUE, mode=c.c_int(0o644))
+            app['params.open'].size = app['context.program'].binary_size[0]
+            app['params.open'].pathname = pathname
 
         # Open the output file
         app['file.out'] = file_interface(app['params.open'])
