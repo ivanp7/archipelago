@@ -103,13 +103,15 @@ There are several external plugins provided in `/plugin` directory:
 Initialization files for `archi` can be generated using the `archi` Python module.
 The typical workflow is as follows:
 
-1. Create an instance of the `Application` class.
+1. Create an instance of the `Registry` class.
 2. Manipulate its context registry as if operating directly on live contexts.
-3. Serialize ("fossilize") the internal state of your application instance into a byte array.
-4. Write this byte array to a file.
+3. Create an instance of the `File` class.
+4. Assign the context registry to the file, along with additional data, such as set of watched signals.
+5. Fossilize the file representation to a byte array.
+6. Write the byte array to a file.
 
-You interact with contexts in the registry via dictionary-like access: `app[key]`,
-where `app` is your Application instance and `key` is a string identifier.
+To interact with contexts in the registry use dictionary-like access: `app[key]`,
+where `app` is the Registry instance and `key` is a string identifier.
 
 - Assigning to `app[key]` initializes a new context and inserts it into the registry.
 - Deleting (`del app[key]`) finalizes and removes that context from the registry.
