@@ -4,6 +4,7 @@
  */
 
 #include "archip/opencl/program.fun.h"
+#include "archip/opencl/status.fun.h"
 #include "archi/ds/hashmap/api.fun.h"
 #include "archi/util/size.def.h"
 #include "archi/log/print.fun.h"
@@ -331,84 +332,6 @@ archip_opencl_program_binaries_free(
 }
 
 static
-const char*
-archip_opencl_error_string(
-        cl_int err)
-{
-    switch (err)
-    {
-#define CASE_ERROR_STR(x) case x: return #x;
-
-        // run-time and JIT compiler errors
-        CASE_ERROR_STR(CL_SUCCESS)
-        CASE_ERROR_STR(CL_DEVICE_NOT_FOUND)
-        CASE_ERROR_STR(CL_DEVICE_NOT_AVAILABLE)
-        CASE_ERROR_STR(CL_COMPILER_NOT_AVAILABLE)
-        CASE_ERROR_STR(CL_MEM_OBJECT_ALLOCATION_FAILURE)
-        CASE_ERROR_STR(CL_OUT_OF_RESOURCES)
-        CASE_ERROR_STR(CL_OUT_OF_HOST_MEMORY)
-        CASE_ERROR_STR(CL_PROFILING_INFO_NOT_AVAILABLE)
-        CASE_ERROR_STR(CL_MEM_COPY_OVERLAP)
-        CASE_ERROR_STR(CL_IMAGE_FORMAT_MISMATCH)
-        CASE_ERROR_STR(CL_IMAGE_FORMAT_NOT_SUPPORTED)
-        CASE_ERROR_STR(CL_BUILD_PROGRAM_FAILURE)
-        CASE_ERROR_STR(CL_MAP_FAILURE)
-        CASE_ERROR_STR(CL_MISALIGNED_SUB_BUFFER_OFFSET)
-        CASE_ERROR_STR(CL_EXEC_STATUS_ERROR_FOR_EVENTS_IN_WAIT_LIST)
-        CASE_ERROR_STR(CL_COMPILE_PROGRAM_FAILURE)
-        CASE_ERROR_STR(CL_LINKER_NOT_AVAILABLE)
-        CASE_ERROR_STR(CL_LINK_PROGRAM_FAILURE)
-        CASE_ERROR_STR(CL_DEVICE_PARTITION_FAILED)
-        CASE_ERROR_STR(CL_KERNEL_ARG_INFO_NOT_AVAILABLE)
-
-        // compile-time errors
-        CASE_ERROR_STR(CL_INVALID_VALUE)
-        CASE_ERROR_STR(CL_INVALID_DEVICE_TYPE)
-        CASE_ERROR_STR(CL_INVALID_PLATFORM)
-        CASE_ERROR_STR(CL_INVALID_DEVICE)
-        CASE_ERROR_STR(CL_INVALID_CONTEXT)
-        CASE_ERROR_STR(CL_INVALID_QUEUE_PROPERTIES)
-        CASE_ERROR_STR(CL_INVALID_COMMAND_QUEUE)
-        CASE_ERROR_STR(CL_INVALID_HOST_PTR)
-        CASE_ERROR_STR(CL_INVALID_MEM_OBJECT)
-        CASE_ERROR_STR(CL_INVALID_IMAGE_FORMAT_DESCRIPTOR)
-        CASE_ERROR_STR(CL_INVALID_IMAGE_SIZE)
-        CASE_ERROR_STR(CL_INVALID_SAMPLER)
-        CASE_ERROR_STR(CL_INVALID_BINARY)
-        CASE_ERROR_STR(CL_INVALID_BUILD_OPTIONS)
-        CASE_ERROR_STR(CL_INVALID_PROGRAM)
-        CASE_ERROR_STR(CL_INVALID_PROGRAM_EXECUTABLE)
-        CASE_ERROR_STR(CL_INVALID_KERNEL_NAME)
-        CASE_ERROR_STR(CL_INVALID_KERNEL_DEFINITION)
-        CASE_ERROR_STR(CL_INVALID_KERNEL)
-        CASE_ERROR_STR(CL_INVALID_ARG_INDEX)
-        CASE_ERROR_STR(CL_INVALID_ARG_VALUE)
-        CASE_ERROR_STR(CL_INVALID_ARG_SIZE)
-        CASE_ERROR_STR(CL_INVALID_KERNEL_ARGS)
-        CASE_ERROR_STR(CL_INVALID_WORK_DIMENSION)
-        CASE_ERROR_STR(CL_INVALID_WORK_GROUP_SIZE)
-        CASE_ERROR_STR(CL_INVALID_WORK_ITEM_SIZE)
-        CASE_ERROR_STR(CL_INVALID_GLOBAL_OFFSET)
-        CASE_ERROR_STR(CL_INVALID_EVENT_WAIT_LIST)
-        CASE_ERROR_STR(CL_INVALID_EVENT)
-        CASE_ERROR_STR(CL_INVALID_OPERATION)
-        CASE_ERROR_STR(CL_INVALID_GL_OBJECT)
-        CASE_ERROR_STR(CL_INVALID_BUFFER_SIZE)
-        CASE_ERROR_STR(CL_INVALID_MIP_LEVEL)
-        CASE_ERROR_STR(CL_INVALID_GLOBAL_WORK_SIZE)
-        CASE_ERROR_STR(CL_INVALID_PROPERTY)
-        CASE_ERROR_STR(CL_INVALID_IMAGE_DESCRIPTOR)
-        CASE_ERROR_STR(CL_INVALID_COMPILER_OPTIONS)
-        CASE_ERROR_STR(CL_INVALID_LINKER_OPTIONS)
-        CASE_ERROR_STR(CL_INVALID_DEVICE_PARTITION_COUNT)
-
-#undef CASE_ERROR_STR
-
-        default: return NULL;
-    }
-}
-
-static
 void
 archip_opencl_program_build_log(
         cl_program program,
@@ -434,18 +357,7 @@ archip_opencl_program_build_log(
                 continue;
             }
 
-            const char *status_str = NULL;
-            switch (error)
-            {
-#define CASE_STATUS_STR(x) case x: status_str = #x; break
-
-                CASE_STATUS_STR(CL_BUILD_NONE);
-                CASE_STATUS_STR(CL_BUILD_ERROR);
-                CASE_STATUS_STR(CL_BUILD_SUCCESS);
-                CASE_STATUS_STR(CL_BUILD_IN_PROGRESS);
-
-#undef CASE_STATUS_STR
-            }
+            const char *status_str = archip_opencl_build_status_string(status);
 
             if (status_str != NULL)
                 archi_log_debug(M, "[device #%u] build status: %s", i, status_str);
