@@ -66,13 +66,31 @@ ARCHI_HSP_STATE_FUNCTION(archip_opencl_hsp_state_kernel_enqueue)
 
     if (enqueue_data->num_event_copies > 0)
     {
-        for (size_t i = 0; i < enqueue_data->num_event_copies; i++)
+        if ((enqueue_data->target_event_arrays != NULL) &&
+                (enqueue_data->target_event_array_indices != NULL))
         {
-            archip_opencl_event_array_t *event_array = enqueue_data->target_event_arrays[i];
+            for (size_t i = 0; i < enqueue_data->num_event_copies; i++)
+            {
+                archip_opencl_event_array_t *event_array = enqueue_data->target_event_arrays[i];
 
-            event_array->event[enqueue_data->target_event_array_indices[i]] = event;
-            clRetainEvent(event);
+                if (event_array != NULL)
+                {
+                    cl_uint index = enqueue_data->target_event_array_indices[i];
+
+                    if (index < event_array->num_events)
+                    {
+                        event_array->event[index] = event;
+                        clRetainEvent(event);
+                    }
+                    else
+                        archi_log_warning(M, "Target event array index is out of bounds, continuing...");
+                }
+                else
+                    archi_log_warning(M, "Target event array is NULL, continuing...");
+            }
         }
+        else
+            archi_log_warning(M, "Array of target event arrays is NULL, continuing...");
 
         clReleaseEvent(event);
     }
