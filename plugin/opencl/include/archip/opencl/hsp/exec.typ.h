@@ -13,19 +13,19 @@
  * @brief Array of OpenCL events.
  */
 typedef struct archip_opencl_event_array {
-    cl_event *event;    ///< Array of events.
     cl_uint num_events; ///< Number of events in the array.
+    cl_event event[];   ///< Array of events.
 } archip_opencl_event_array_t;
 
 /**
  * @brief OpenCL kernel work description.
  */
 typedef struct archip_opencl_work {
-    size_t* global_work_offset; ///< Global work offset.
-    size_t* global_work_size;   ///< Global work size.
-    size_t* local_work_size;    ///< Local work size.
-
     cl_uint num_dimensions; ///< Number of work dimensions.
+
+    size_t *global_work_offset; ///< Global work offset.
+    size_t *global_work_size;   ///< Global work size.
+    size_t *local_work_size;    ///< Local work size.
 } archip_opencl_work_t;
 
 /**

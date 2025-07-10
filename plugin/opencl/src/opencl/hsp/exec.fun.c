@@ -12,7 +12,7 @@
 ARCHI_HSP_STATE_FUNCTION(archip_opencl_hsp_state_wait_for_events)
 {
     archip_opencl_event_array_t *event_array = ARCHI_HSP_CURRENT_STATE().data;
-    if ((event_array == NULL) || (event_array->num_events == 0) || (event_array->event == NULL))
+    if ((event_array == NULL) || (event_array->num_events == 0))
         return;
 
     clWaitForEvents(event_array->num_events, event_array->event);
@@ -34,32 +34,34 @@ ARCHI_HSP_STATE_FUNCTION(archip_opencl_hsp_state_kernel_enqueue)
 
     archip_opencl_work_t work = *enqueue_data->work;
 
-    archip_opencl_event_array_t wait_list;
-    if (enqueue_data->wait_list != NULL)
-        wait_list = *enqueue_data->wait_list;
-    else
-        wait_list = (archip_opencl_event_array_t){0};
+    cl_uint num_wait_events = 0;
+    cl_event *wait_events = NULL;
 
-    cl_event event, *event_ptr;
+    if (enqueue_data->wait_list != NULL)
+    {
+        num_wait_events = enqueue_data->wait_list->num_events;
+        wait_events = enqueue_data->wait_list->event;
+    }
+
+    cl_event event, *event_ptr = NULL;
+
     if (enqueue_data->num_event_copies > 0)
         event_ptr = &event;
-    else
-        event_ptr = NULL;
 
     cl_int ret = clEnqueueNDRangeKernel(
             enqueue_data->command_queue, enqueue_data->kernel,
             work.num_dimensions, work.global_work_offset,
             work.global_work_size, work.local_work_size,
-            wait_list.num_events, wait_list.event, event_ptr);
+            num_wait_events, wait_events, event_ptr);
 
     if (enqueue_data->name != NULL)
         archi_log_debug(M, "clEnqueueNDRangeKernel('%s') -> %s",
                 enqueue_data->name, archip_opencl_error_string(ret));
 
-    for (cl_uint i = 0; i < wait_list.num_events; i++)
+    for (cl_uint i = 0; i < num_wait_events; i++)
     {
-        clReleaseEvent(wait_list.event[i]);
-        wait_list.event[i] = NULL;
+        clReleaseEvent(wait_events[i]);
+        wait_events[i] = NULL;
     }
 
     if (enqueue_data->num_event_copies > 0)
