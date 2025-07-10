@@ -82,8 +82,8 @@ print(f"Map address: 0x{args.mapaddr:x}")
 print()
 print(f"OpenCL platform #: {args.plt}")
 print(f"OpenCL device #: {args.dev}")
-print(f"OpenCL compiler flags: '{args.cflags if args.cflags else ""}'")
-print(f"OpenCL linker flags: '{args.lflags if args.lflags else ""}'")
+print(f"OpenCL compiler flags: {f"'args.cflags'" if args.cflags else '<none>'}")
+print(f"OpenCL linker flags: {f"'args.lflags'" if args.lflags else '<none>'}")
 print()
 print("Headers:")
 for dirpath, filepaths in args.hdr_map.items():
@@ -164,12 +164,13 @@ with app['plugin.opencl'] as plugin_opencl:
             setattr(app['hashmap.sources'], key, CValue(value))
 
         # Prepare libraries the program depends on
+        libraries = []
+
         app['params.library'] = Parameters()
         with app['params.library'] as params_library:
             params_library.device_id = app['context.opencl'].device_id
             params_library.context = app['context.opencl']
 
-            libraries = []
             for i, binary in enumerate(content_libraries):
                 app['array.binary'] = [CValue(binary)]
                 with app['array.binary'] as array_binary:
@@ -177,22 +178,26 @@ with app['plugin.opencl'] as plugin_opencl:
 
                 app[f'context.library[{i}]'] = opencl_program_bin_interface(params_library)
                 libraries.append(app[f'context.library[{i}]'])
-            app['array.libraries'] = libraries
 
-            for i in range(len(content_libraries)):
-                del app[f'context.library[{i}]']
+        app['array.libraries'] = libraries
+        del libraries
+
+        for i in range(len(content_libraries)):
+            del app[f'context.library[{i}]']
 
         # Form the parameter list for program building
-        app['params.program'] = Parameters(cflags=args.cflags, lflags=args.lflags)
-        app['params.program'].libraries = app['array.libraries']
-        app['params.program'].sources = app['hashmap.sources']
-        app['params.program'].headers = app['hashmap.headers']
-        app['params.program'].device_id = app['context.opencl'].device_id
-        app['params.program'].context = app['context.opencl']
-
-        del app['hashmap.headers']
-        del app['hashmap.sources']
-        del app['array.libraries']
+        with app['hashmap.headers'] as headers, app['hashmap.sources'] as sources, app['array.libraries'] as libraries:
+            app['value.cflags'] = envvar_interface(name='CFLAGS', default_value=args.cflags)
+            app['value.lflags'] = envvar_interface(name='LFLAGS', default_value=args.lflags)
+            with app['value.cflags'] as cflags, app['value.lflags'] as lflags:
+                app['params.program'] = Parameters()
+                app['params.program'].lflags = lflags
+                app['params.program'].cflags = cflags
+                app['params.program'].libraries = app['array.libraries']
+                app['params.program'].sources = app['hashmap.sources']
+                app['params.program'].headers = app['hashmap.headers']
+                app['params.program'].device_id = app['context.opencl'].device_id
+                app['params.program'].context = app['context.opencl']
 
     # Build the program
     app['context.program'] = opencl_program_src_interface(app['params.program'])
