@@ -30,6 +30,12 @@
 #include <string.h> // for strcmp(), strlen()
 #include <stdbool.h>
 
+static
+ARCHI_DESTRUCTOR_FUNC(archi_context_ipc_env_destructor)
+{
+    free(data);
+}
+
 ARCHI_CONTEXT_INIT_FUNC(archi_context_ipc_env_init)
 {
     const char *name = NULL;
@@ -75,23 +81,36 @@ ARCHI_CONTEXT_INIT_FUNC(archi_context_ipc_env_init)
     char *var = archi_env_get(name, &code);
 
     if (var != NULL)
+    {
+        archi_reference_count_t ref_count =
+            archi_reference_count_alloc(archi_context_ipc_env_destructor, var);
+        if (ref_count == NULL)
+        {
+            free(var);
+            free(context_data);
+            return ARCHI_STATUS_ENOMEMORY;
+        }
+
         *context_data = (archi_pointer_t){
             .ptr = var,
+            .ref_count = ref_count,
             .element = {
                 .num_of = strlen(var) + 1,
                 .size = 1,
                 .alignment = 1,
             },
         };
+    }
     else if (code == 1)
+    {
         *context_data = default_value;
+        archi_reference_count_increment(default_value.ref_count);
+    }
     else
     {
         free(context_data);
         return code;
     }
-
-    archi_reference_count_increment(context_data->ref_count);
 
     *context = context_data;
     return 0;
@@ -100,7 +119,6 @@ ARCHI_CONTEXT_INIT_FUNC(archi_context_ipc_env_init)
 ARCHI_CONTEXT_FINAL_FUNC(archi_context_ipc_env_final)
 {
     archi_reference_count_decrement(context->ref_count);
-    free(context->ptr);
     free(context);
 }
 
