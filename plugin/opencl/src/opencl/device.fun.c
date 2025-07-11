@@ -11,15 +11,36 @@
 #include <CL/cl.h>
 
 archip_opencl_platform_device_ids_t*
+archip_opencl_platform_device_ids_alloc(
+        cl_uint num_devices,
+        cl_platform_id platform_id)
+{
+    archip_opencl_platform_device_ids_t *ids = malloc(
+            ARCHI_SIZEOF_FLEXIBLE(archip_opencl_platform_device_ids_t, device_id, num_devices));
+    if (ids == NULL)
+        return NULL;
+
+    cl_uint *num_devices_ptr = (cl_uint*)&ids->num_devices;
+    *num_devices_ptr = num_devices;
+
+    ids->platform_id = platform_id;
+
+    for (cl_uint i = 0; i < num_devices; i++)
+        ids->device_id[i] = NULL;
+
+    return ids;
+}
+
+archip_opencl_platform_device_ids_t*
 archip_opencl_get_platform_device_ids(
         cl_uint platform_index,
 
-        cl_uint num_device_indices,
+        cl_uint num_devices,
         const cl_uint *device_index,
 
         archi_status_t *code)
 {
-    if ((num_device_indices > 0) && (device_index == NULL))
+    if ((num_devices > 0) && (device_index == NULL))
     {
         if (code != NULL)
             *code = ARCHI_STATUS_EMISUSE;
@@ -27,8 +48,8 @@ archip_opencl_get_platform_device_ids(
         return NULL;
     }
 
-    archip_opencl_platform_device_ids_t *ids = malloc(ARCHI_SIZEOF_FLEXIBLE(
-                archip_opencl_platform_device_ids_t, device_id, num_device_indices));
+    archip_opencl_platform_device_ids_t *ids =
+        archip_opencl_platform_device_ids_alloc(num_devices, NULL);
     if (ids == NULL)
     {
         if (code != NULL)
@@ -87,7 +108,7 @@ archip_opencl_get_platform_device_ids(
     }
 
     // Obtain device IDs
-    if (num_device_indices > 0)
+    if (num_devices > 0)
     {
         cl_uint num_devices;
 
@@ -112,7 +133,7 @@ archip_opencl_get_platform_device_ids(
             return NULL;
         }
 
-        for (cl_uint i = 0; i < num_device_indices; i++)
+        for (cl_uint i = 0; i < num_devices; i++)
             if (device_index[i] >= num_devices)
             {
                 if (code != NULL)
@@ -134,14 +155,11 @@ archip_opencl_get_platform_device_ids(
             return NULL;
         }
 
-        ids->num_devices = num_devices;
-        for (cl_uint i = 0; i < num_device_indices; i++)
+        for (cl_uint i = 0; i < num_devices; i++)
             ids->device_id[i] = device_list[device_index[i]];
 
         free(device_list);
     }
-    else
-        ids->num_devices = 0;
 
     if (code != NULL)
         *code = 0;

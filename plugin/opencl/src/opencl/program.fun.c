@@ -4,9 +4,9 @@
  */
 
 #include "archip/opencl/program.fun.h"
+#include "archip/opencl/device.fun.h"
 #include "archip/opencl/status.fun.h"
 #include "archi/ds/hashmap/api.fun.h"
-#include "archi/util/size.def.h"
 #include "archi/log/print.fun.h"
 
 #include <stdlib.h> // for malloc(), free()
@@ -221,8 +221,7 @@ archip_opencl_program_binaries_from_array(
 
     archip_opencl_program_binaries_t binaries = {0};
 
-    binaries.ids = malloc(ARCHI_SIZEOF_FLEXIBLE(
-                archip_opencl_platform_device_ids_t, device_id, num_elements));
+    binaries.ids = archip_opencl_platform_device_ids_alloc(num_elements, NULL);
     if (binaries.ids == NULL)
     {
         if (code != NULL)
@@ -230,11 +229,6 @@ archip_opencl_program_binaries_from_array(
 
         return (archip_opencl_program_binaries_t){0};
     }
-
-    binaries.ids->platform_id = NULL;
-    binaries.ids->num_devices = num_elements;
-    for (size_t i = 0; i < num_elements; i++)
-        binaries.ids->device_id[i] = NULL;
 
     if (num_elements == 0)
     {
@@ -696,8 +690,7 @@ archip_opencl_program_binaries_extract(
             goto failure;
         }
 
-        binaries.ids = malloc(ARCHI_SIZEOF_FLEXIBLE(
-                    archip_opencl_platform_device_ids_t, device_id, num_devices));
+        binaries.ids = archip_opencl_platform_device_ids_alloc(num_devices, NULL);
         if (binaries.ids == NULL)
         {
             if (code != NULL)
@@ -705,8 +698,6 @@ archip_opencl_program_binaries_extract(
 
             goto failure;
         }
-
-        binaries.ids->num_devices = num_devices;
 
         ret = clGetProgramInfo(program, CL_PROGRAM_DEVICES,
                 sizeof(cl_device_id) * num_devices, binaries.ids->device_id, NULL);
