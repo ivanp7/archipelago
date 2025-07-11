@@ -27,7 +27,8 @@
 #ifndef _ARCHI_HSP_EXEC_FUN_H_
 #define _ARCHI_HSP_EXEC_FUN_H_
 
-#include "archi/hsp/instance.typ.h"
+#include "archi/hsp/state.typ.h"
+#include "archi/hsp/transition.typ.h"
 #include "archi/util/status.typ.h"
 
 /**
@@ -46,7 +47,8 @@
  */
 archi_status_t
 archi_hsp_execute(
-        archi_hsp_t hsp ///< [in] Hierarchical state processor.
+        archi_hsp_state_t entry_state,    ///< [in] Entry (initial) state.
+        archi_hsp_transition_t transition ///< [in] State transition.
 );
 
 #endif // _ARCHI_HSP_EXEC_FUN_H_

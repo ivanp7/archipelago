@@ -33,6 +33,7 @@ ARCHI_CONTEXT_INIT_FUNC(archi_context_hsp_state_init);   ///< HSP state initiali
 ARCHI_CONTEXT_FINAL_FUNC(archi_context_hsp_state_final); ///< HSP state finalization function.
 ARCHI_CONTEXT_GET_FUNC(archi_context_hsp_state_get);     ///< HSP state field getter function.
 ARCHI_CONTEXT_SET_FUNC(archi_context_hsp_state_set);     ///< HSP state field setter function.
+ARCHI_CONTEXT_ACT_FUNC(archi_context_hsp_state_act);     ///< HSP state action function.
 
 extern
 const archi_context_interface_t archi_context_hsp_state_interface; ///< HSP state interface.
@@ -46,17 +47,6 @@ ARCHI_CONTEXT_SET_FUNC(archi_context_hsp_transition_set);     ///< HSP transitio
 
 extern
 const archi_context_interface_t archi_context_hsp_transition_interface; ///< HSP transition interface.
-
-/*****************************************************************************/
-
-ARCHI_CONTEXT_INIT_FUNC(archi_context_hsp_init);   ///< HSP initialization function.
-ARCHI_CONTEXT_FINAL_FUNC(archi_context_hsp_final); ///< HSP finalization function.
-ARCHI_CONTEXT_GET_FUNC(archi_context_hsp_get);     ///< HSP field getter function.
-ARCHI_CONTEXT_SET_FUNC(archi_context_hsp_set);     ///< HSP field setter function.
-ARCHI_CONTEXT_ACT_FUNC(archi_context_hsp_act);     ///< HSP action function.
-
-extern
-const archi_context_interface_t archi_context_hsp_interface; ///< HSP interface.
 
 /*****************************************************************************/
 

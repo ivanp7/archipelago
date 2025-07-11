@@ -25,7 +25,6 @@
 
 #include "archi/builtin/hsp/context.var.h"
 #include "archi/hsp/exec.fun.h"
-#include "archi/hsp/instance.typ.h"
 #include "archi/hsp/state/branch.typ.h"
 #include "archi/util/alloc.fun.h"
 
@@ -226,11 +225,56 @@ ARCHI_CONTEXT_SET_FUNC(archi_context_hsp_state_set)
     return 0;
 }
 
+ARCHI_CONTEXT_ACT_FUNC(archi_context_hsp_state_act)
+{
+    struct archi_context_hsp_state_data *context_data =
+        (struct archi_context_hsp_state_data*)context;
+
+    archi_hsp_state_t *hsp_state = context_data->state.ptr;
+
+    if (strcmp("execute", action.name) == 0)
+    {
+        if (action.num_indices != 0)
+            return ARCHI_STATUS_EMISUSE;
+
+        archi_hsp_transition_t hsp_transition = {0};
+
+        bool param_transition_set = false;
+
+        for (; params != NULL; params = params->next)
+        {
+            if (strcmp("transition", params->name) == 0)
+            {
+                if (param_transition_set)
+                    continue;
+                param_transition_set = true;
+
+                if ((params->value.flags & ARCHI_POINTER_FLAG_FUNCTION) ||
+                        (params->value.ptr == NULL))
+                    return ARCHI_STATUS_EVALUE;
+
+                hsp_transition = *(archi_hsp_transition_t*)params->value.ptr;
+            }
+            else
+                return ARCHI_STATUS_EKEY;
+        }
+
+        archi_status_t code = archi_hsp_execute(*hsp_state, hsp_transition);
+        if (code != 0)
+            return code;
+    }
+    else
+        return ARCHI_STATUS_EKEY;
+
+    return 0;
+}
+
 const archi_context_interface_t archi_context_hsp_state_interface = {
     .init_fn = archi_context_hsp_state_init,
     .final_fn = archi_context_hsp_state_final,
     .get_fn = archi_context_hsp_state_get,
     .set_fn = archi_context_hsp_state_set,
+    .act_fn = archi_context_hsp_state_act,
 };
 
 /*****************************************************************************/
@@ -394,201 +438,6 @@ const archi_context_interface_t archi_context_hsp_transition_interface = {
     .final_fn = archi_context_hsp_transition_final,
     .get_fn = archi_context_hsp_transition_get,
     .set_fn = archi_context_hsp_transition_set,
-};
-
-/*****************************************************************************/
-
-struct archi_context_hsp_data {
-    archi_pointer_t hsp;
-
-    archi_pointer_t entry_state;
-    archi_pointer_t transition;
-};
-
-ARCHI_CONTEXT_INIT_FUNC(archi_context_hsp_init)
-{
-    archi_pointer_t hsp_entry_state = {0};
-    archi_pointer_t hsp_transition = {0};
-
-    bool param_entry_state_set = false;
-    bool param_transition_set = false;
-
-    for (; params != NULL; params = params->next)
-    {
-        if (strcmp("entry_state", params->name) == 0)
-        {
-            if (param_entry_state_set)
-                continue;
-            param_entry_state_set = true;
-
-            if (params->value.flags & ARCHI_POINTER_FLAG_FUNCTION)
-                return ARCHI_STATUS_EVALUE;
-
-            hsp_entry_state = params->value;
-        }
-        else if (strcmp("transition", params->name) == 0)
-        {
-            if (param_transition_set)
-                continue;
-            param_transition_set = true;
-
-            if (params->value.flags & ARCHI_POINTER_FLAG_FUNCTION)
-                return ARCHI_STATUS_EVALUE;
-
-            hsp_transition = params->value;
-        }
-        else
-            return ARCHI_STATUS_EKEY;
-    }
-
-    struct archi_context_hsp_data *context_data = malloc(sizeof(*context_data));
-    if (context_data == NULL)
-        return ARCHI_STATUS_ENOMEMORY;
-
-    archi_hsp_t *hsp = malloc(sizeof(*hsp));
-    if (hsp == NULL)
-    {
-        free(context_data);
-        return ARCHI_STATUS_ENOMEMORY;
-    }
-
-    *hsp = (archi_hsp_t){0};
-
-    if (hsp_entry_state.ptr != NULL)
-        hsp->entry_state = *(archi_hsp_state_t*)hsp_entry_state.ptr;
-
-    if (hsp_transition.ptr != NULL)
-        hsp->transition = *(archi_hsp_transition_t*)hsp_transition.ptr;
-
-    *context_data = (struct archi_context_hsp_data){
-        .hsp = {
-            .ptr = hsp,
-            .element = {
-                .num_of = 1,
-                .size = sizeof(*hsp),
-                .alignment = alignof(archi_hsp_t),
-            },
-        },
-        .entry_state = hsp_entry_state,
-        .transition = hsp_transition,
-    };
-
-    archi_reference_count_increment(hsp_entry_state.ref_count);
-    archi_reference_count_increment(hsp_transition.ref_count);
-
-    *context = (archi_pointer_t*)context_data;
-    return 0;
-}
-
-ARCHI_CONTEXT_FINAL_FUNC(archi_context_hsp_final)
-{
-    struct archi_context_hsp_data *context_data =
-        (struct archi_context_hsp_data*)context;
-
-    archi_reference_count_decrement(context_data->entry_state.ref_count);
-    archi_reference_count_decrement(context_data->transition.ref_count);
-    free(context_data->hsp.ptr);
-    free(context_data);
-}
-
-ARCHI_CONTEXT_GET_FUNC(archi_context_hsp_get)
-{
-    struct archi_context_hsp_data *context_data =
-        (struct archi_context_hsp_data*)context;
-
-    if (strcmp("entry_state", slot.name) == 0)
-    {
-        if (slot.num_indices != 0)
-            return ARCHI_STATUS_EMISUSE;
-
-        *value = context_data->entry_state;
-    }
-    else if (strcmp("transition", slot.name) == 0)
-    {
-        if (slot.num_indices != 0)
-            return ARCHI_STATUS_EMISUSE;
-
-        *value = context_data->transition;
-    }
-    else
-        return ARCHI_STATUS_EKEY;
-
-    return 0;
-}
-
-ARCHI_CONTEXT_SET_FUNC(archi_context_hsp_set)
-{
-    struct archi_context_hsp_data *context_data =
-        (struct archi_context_hsp_data*)context;
-
-    archi_hsp_t *hsp = context_data->hsp.ptr;
-
-    if (strcmp("entry_state", slot.name) == 0)
-    {
-        if (slot.num_indices != 0)
-            return ARCHI_STATUS_EMISUSE;
-        else if (value.flags & ARCHI_POINTER_FLAG_FUNCTION)
-            return ARCHI_STATUS_EVALUE;
-
-        archi_reference_count_increment(value.ref_count);
-        archi_reference_count_decrement(context_data->entry_state.ref_count);
-
-        if (value.ptr != NULL)
-            hsp->entry_state = *(archi_hsp_state_t*)value.ptr;
-        else
-            hsp->entry_state = (archi_hsp_state_t){0};
-
-        context_data->entry_state = value;
-    }
-    else if (strcmp("transition", slot.name) == 0)
-    {
-        if (slot.num_indices != 0)
-            return ARCHI_STATUS_EMISUSE;
-        else if (value.flags & ARCHI_POINTER_FLAG_FUNCTION)
-            return ARCHI_STATUS_EVALUE;
-
-        archi_reference_count_increment(value.ref_count);
-        archi_reference_count_decrement(context_data->transition.ref_count);
-
-        if (value.ptr != NULL)
-            hsp->transition = *(archi_hsp_transition_t*)value.ptr;
-        else
-            hsp->transition = (archi_hsp_transition_t){0};
-
-        context_data->transition = value;
-    }
-    else
-        return ARCHI_STATUS_EKEY;
-
-    return 0;
-}
-
-ARCHI_CONTEXT_ACT_FUNC(archi_context_hsp_act)
-{
-    struct archi_context_hsp_data *context_data =
-        (struct archi_context_hsp_data*)context;
-
-    archi_hsp_t *hsp = context_data->hsp.ptr;
-
-    if (strcmp("execute", action.name) == 0)
-    {
-        if (action.num_indices != 0)
-            return ARCHI_STATUS_EMISUSE;
-        else if (params != NULL)
-            return ARCHI_STATUS_EKEY;
-
-        return archi_hsp_execute(*hsp);
-    }
-    else
-        return ARCHI_STATUS_EKEY;
-}
-
-const archi_context_interface_t archi_context_hsp_interface = {
-    .init_fn = archi_context_hsp_init,
-    .final_fn = archi_context_hsp_final,
-    .get_fn = archi_context_hsp_get,
-    .set_fn = archi_context_hsp_set,
-    .act_fn = archi_context_hsp_act,
 };
 
 /*****************************************************************************/

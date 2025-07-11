@@ -68,15 +68,16 @@ archi_hsp_transition(
 
 archi_status_t
 archi_hsp_execute(
-        archi_hsp_t hsp)
+        archi_hsp_state_t entry_state,
+        archi_hsp_transition_t transition)
 {
     // Process the degenerate case
-    if ((hsp.entry_state.function == NULL) && (hsp.transition.function == NULL))
+    if ((entry_state.function == NULL) && (transition.function == NULL))
         return 0;
 
     // Initialize the context
     struct archi_hsp_context context = {
-        .transition = hsp.transition,
+        .transition = transition,
 
         .stack_capacity = ARCHI_HSP_INITIAL_STACK_CAPACITY,
         .stack_size = 1,
@@ -97,7 +98,7 @@ archi_hsp_execute(
         return ARCHI_STATUS_ENOMEMORY;
     }
 
-    context.stack[0] = hsp.entry_state;
+    context.stack[0] = entry_state;
     context.stack_frames[0] = 0;
 
     // Run the hierarchical state processor loop
