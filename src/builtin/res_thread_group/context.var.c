@@ -519,6 +519,8 @@ struct archi_context_res_thread_group_dispatch_data_data {
     archi_pointer_t context;
     archi_pointer_t work;
     archi_pointer_t callback;
+
+    archi_pointer_t name;
 };
 
 ARCHI_CONTEXT_INIT_FUNC(archi_context_res_thread_group_dispatch_data_init)
@@ -527,12 +529,14 @@ ARCHI_CONTEXT_INIT_FUNC(archi_context_res_thread_group_dispatch_data_init)
     archi_pointer_t thread_group_work = {0};
     archi_pointer_t thread_group_callback = {0};
     archi_thread_group_dispatch_params_t thread_group_dispatch_params = {0};
+    archi_pointer_t name = {0};
 
     bool param_context_set = false;
     bool param_work_set = false;
     bool param_callback_set = false;
     bool param_dispatch_params_set = false;
     bool param_dispatch_batch_size_set = false;
+    bool param_name_set = false;
 
     for (; params != NULL; params = params->next)
     {
@@ -593,6 +597,17 @@ ARCHI_CONTEXT_INIT_FUNC(archi_context_res_thread_group_dispatch_data_init)
 
             thread_group_dispatch_params.batch_size = *(size_t*)params->value.ptr;
         }
+        else if (strcmp("name", params->name) == 0)
+        {
+            if (param_name_set)
+                continue;
+            param_name_set = true;
+
+            if (params->value.flags & ARCHI_POINTER_FLAG_FUNCTION)
+                return ARCHI_STATUS_EVALUE;
+
+            name = params->value;
+        }
         else
             return ARCHI_STATUS_EKEY;
     }
@@ -611,6 +626,7 @@ ARCHI_CONTEXT_INIT_FUNC(archi_context_res_thread_group_dispatch_data_init)
     *dispatch_data = (archi_context_res_thread_group_dispatch_data_t){
         .context = thread_group_context.ptr,
         .params = thread_group_dispatch_params,
+        .name = name.ptr,
     };
 
     if (thread_group_work.ptr != NULL)
@@ -631,11 +647,13 @@ ARCHI_CONTEXT_INIT_FUNC(archi_context_res_thread_group_dispatch_data_init)
         .context = thread_group_context,
         .work = thread_group_work,
         .callback = thread_group_callback,
+        .name = name,
     };
 
     archi_reference_count_increment(thread_group_context.ref_count);
     archi_reference_count_increment(thread_group_work.ref_count);
     archi_reference_count_increment(thread_group_callback.ref_count);
+    archi_reference_count_increment(name.ref_count);
 
     *context = (archi_pointer_t*)context_data;
     return 0;
@@ -649,6 +667,7 @@ ARCHI_CONTEXT_FINAL_FUNC(archi_context_res_thread_group_dispatch_data_final)
     archi_reference_count_decrement(context_data->context.ref_count);
     archi_reference_count_decrement(context_data->work.ref_count);
     archi_reference_count_decrement(context_data->callback.ref_count);
+    archi_reference_count_decrement(context_data->name.ref_count);
     free(context_data->dispatch_data.ptr);
     free(context_data);
 }
@@ -695,6 +714,13 @@ ARCHI_CONTEXT_GET_FUNC(archi_context_res_thread_group_dispatch_data_get)
                 .alignment = alignof(size_t),
             },
         };
+    }
+    else if (strcmp("name", slot.name) == 0)
+    {
+        if (slot.num_indices != 0)
+            return ARCHI_STATUS_EMISUSE;
+
+        *value = context_data->name;
     }
     else
         return ARCHI_STATUS_EKEY;
@@ -764,6 +790,19 @@ ARCHI_CONTEXT_SET_FUNC(archi_context_res_thread_group_dispatch_data_set)
             return ARCHI_STATUS_EVALUE;
 
         dispatch_data->params.batch_size = *(size_t*)value.ptr;
+    }
+    else if (strcmp("name", slot.name) == 0)
+    {
+        if (slot.num_indices != 0)
+            return ARCHI_STATUS_EMISUSE;
+        else if (value.flags & ARCHI_POINTER_FLAG_FUNCTION)
+            return ARCHI_STATUS_EVALUE;
+
+        archi_reference_count_increment(value.ref_count);
+        archi_reference_count_decrement(context_data->name.ref_count);
+
+        dispatch_data->name = value.ptr;
+        context_data->name = value;
     }
     else
         return ARCHI_STATUS_EKEY;
