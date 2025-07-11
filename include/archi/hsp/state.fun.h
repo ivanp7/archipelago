@@ -82,15 +82,15 @@ archi_hsp_stack_frames(
  * Null states in the frame are left out and not pushed.
  * Null metadata in pushed states is replaced with `pushed_frame.metadata`.
  *
- * num_pop_frames == 0: nothing is popped from the stack;
- * num_pop_frames == 1: the rest of the current frame is popped from the stack;
- * num_pop_frames >= 2: the rest of the current frame and (num_pop_frames - 1) frames are popped from the stack.
+ * num_popped_frames == 0: nothing is popped from the stack;
+ * num_popped_frames == 1: the rest of the current frame is popped from the stack;
+ * num_popped_frames >= 2: the rest of the current frame and (num_popped_frames - 1) frames are popped from the stack.
  *
  * If the stack is empty after the pop operation and there are no states pushed,
  * the hierarchical state processor exits.
  *
  * Returning from a state function normally is equivalent to calling
- * archi_hsp_advance(hsp, 0, (archi_hsp_frame_t){0});
+ * archi_hsp_advance(hsp, 0, 0, NULL, NULL);
  *
  * If hsp is NULL, the function does nothing.
  * If the function is not called from a state function during hierarchical state processor execution, it does nothing.
@@ -100,8 +100,12 @@ void
 archi_hsp_advance(
         struct archi_hsp_context *hsp, ///< [in] Hierarchical state processor context.
 
-        size_t num_pop_frames, ///< [in] Number of frames to pop from the stack.
-        archi_hsp_frame_t pushed_frame ///< [in] Frame to push to the stack.
+        size_t num_popped_frames, ///< [in] Number of frames to pop from the stack.
+
+        size_t num_pushed_states, ///< [in] Number of states in the pushed frame.
+        const archi_hsp_state_t *pushed_states, ///< [in] States of the pushed frame.
+
+        void *frame_metadata ///< [in,out] Default state metadata for frame states.
 );
 
 /**
@@ -125,13 +129,11 @@ archi_hsp_abort(
  *
  * This macro utilizes the parameter `hsp` implicitly provided by signature of ARCHI_HSP_STATE_FUNCTION().
  */
-#define ARCHI_HSP_ADVANCE(num_pop_frames, ...) do {                 \
-    const archi_hsp_state_t _archi_frame_states_[] = {__VA_ARGS__}; \
-    archi_hsp_advance(hsp, (num_pop_frames), (archi_hsp_frame_t){   \
-            .state = _archi_frame_states_,                          \
-            .num_states = sizeof(_archi_frame_states_) /            \
-                          sizeof(_archi_frame_states_[0]),          \
-            .metadata = archi_hsp_current_state(hsp).metadata});    \
+#define ARCHI_HSP_ADVANCE(num_popped_frames, ...) do {                              \
+    const archi_hsp_state_t _archi_hsp_pushed_states_[] = {__VA_ARGS__};            \
+    archi_hsp_advance(hsp, (num_popped_frames),                                     \
+            sizeof(_archi_hsp_pushed_states_) / sizeof(archi_hsp_state_t),          \
+            (_archi_hsp_pushed_states_), archi_hsp_current_state(hsp).metadata);    \
 } while (0)
 
 /**
@@ -139,8 +141,8 @@ archi_hsp_abort(
  *
  * This macro utilizes the parameter `hsp` implicitly provided by signature of ARCHI_HSP_STATE_FUNCTION().
  */
-#define ARCHI_HSP_FINISH(num_pop_frames) do { \
-    archi_hsp_advance(hsp, (num_pop_frames), (archi_hsp_frame_t){0}); \
+#define ARCHI_HSP_FINISH(num_popped_frames) do {                \
+    archi_hsp_advance(hsp, (num_popped_frames), 0, NULL, NULL); \
 } while (0)
 
 /**

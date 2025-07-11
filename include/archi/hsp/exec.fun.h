@@ -47,7 +47,7 @@
  */
 archi_status_t
 archi_hsp_execute(
-        archi_hsp_state_t entry_state,    ///< [in] Entry (initial) state.
+        const archi_hsp_frame_t *entry_frame, ///< [in] Entry frame.
         archi_hsp_transition_t transition ///< [in] State transition.
 );
 

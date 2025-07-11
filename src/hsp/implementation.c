@@ -23,8 +23,8 @@
  * @brief Hierarchical state processor implementation.
  */
 
-#include "archi/hsp/exec.fun.h"
 #include "archi/hsp/state.fun.h"
+#include "archi/hsp/exec.fun.h"
 
 #include <stdlib.h>
 #include <stdbool.h>
@@ -56,6 +56,148 @@ struct archi_hsp_context {
 
 /*****************************************************************************/
 
+archi_hsp_state_t
+archi_hsp_current_state(
+        const struct archi_hsp_context *context)
+{
+    return (context != NULL) ? context->current_state : (archi_hsp_state_t){0};
+}
+
+size_t
+archi_hsp_stack_frames(
+        const struct archi_hsp_context *context)
+{
+    return (context != NULL) ? context->num_stack_frames : 0;
+}
+
+/*****************************************************************************/
+
+static
+void
+archi_hsp_longjump(
+        struct archi_hsp_context *context)
+{
+    longjmp(context->env, J_TRANSITION);
+}
+
+static
+void
+archi_hsp_state_context_stack_reserve(
+        struct archi_hsp_context *context,
+        size_t size)
+{
+    if (context->stack_capacity >= context->stack_size + size)
+        return; // the current capacity is enough
+
+    size_t new_stack_capacity = context->stack_capacity;
+    do
+        new_stack_capacity *= 2; // double the stack capacity
+    while (new_stack_capacity < context->stack_size + size);
+
+    archi_hsp_state_t *new_stack = realloc(context->stack,
+            sizeof(*context->stack) * new_stack_capacity);
+    if (new_stack == NULL)
+        archi_hsp_abort(context, ARCHI_STATUS_ENOMEMORY);
+
+    size_t *new_stack_frames = realloc(context->stack_frames,
+            sizeof(*context->stack_frames) * new_stack_capacity);
+    if (new_stack_frames == NULL)
+        archi_hsp_abort(context, ARCHI_STATUS_ENOMEMORY);
+
+    context->stack_capacity = new_stack_capacity;
+    context->stack = new_stack;
+    context->stack_frames = new_stack_frames;
+}
+
+static
+void
+archi_hsp_advance_impl(
+        struct archi_hsp_context *context,
+
+        size_t num_popped_frames,
+
+        size_t num_pushed_states,
+        const archi_hsp_state_t *pushed_states,
+
+        void *frame_metadata)
+{
+    bool new_frame_needed = true;
+
+    // Pop states from the stack
+    if (num_popped_frames > 0)
+        context->stack_size = context->stack_frames[context->num_stack_frames -= num_popped_frames];
+    else
+    {
+        if ((context->num_stack_frames > 0) &&
+                (context->stack_size == context->stack_frames[context->num_stack_frames - 1]))
+            new_frame_needed = false; // the current frame is empty and can be reused
+    }
+
+    // Push states to the stack in reverse order
+    size_t current_frame = context->stack_size;
+
+    for (size_t i = num_pushed_states; i-- > 0;)
+    {
+        archi_hsp_state_t state = pushed_states[i];
+
+        if (state.function == NULL)
+            continue; // ignore null states
+
+        // Set the metadata if not set
+        if (state.metadata == NULL)
+            state.metadata = frame_metadata;
+
+        // Ensure there is a seat in the stack
+        archi_hsp_state_context_stack_reserve(context, 1);
+
+        // Push
+        context->stack[context->stack_size++] = state;
+    }
+
+    // Add the new frame if needed
+    if ((context->stack_size > current_frame) && new_frame_needed)
+        context->stack_frames[context->num_stack_frames++] = current_frame;
+}
+
+void
+archi_hsp_advance(
+        struct archi_hsp_context *context,
+
+        size_t num_popped_frames,
+
+        size_t num_pushed_states,
+        const archi_hsp_state_t *pushed_states,
+
+        void *frame_metadata)
+{
+    if ((context == NULL) || (context->mode != J_STATE))
+        return;
+
+    if (num_popped_frames > context->num_stack_frames)
+        archi_hsp_abort(context, ARCHI_STATUS_EMISUSE);
+    else if ((num_pushed_states > 0) && (pushed_states == NULL))
+        archi_hsp_abort(context, ARCHI_STATUS_EMISUSE);
+
+    archi_hsp_advance_impl(context, num_popped_frames, num_pushed_states, pushed_states, frame_metadata);
+
+    // Proceed and don't return
+    archi_hsp_longjump(context);
+}
+
+void
+archi_hsp_abort(
+        struct archi_hsp_context *context,
+        archi_status_t code)
+{
+    if ((context == NULL) || (context->mode != J_STATE) || (code == 0))
+        return;
+
+    context->code = code;
+    archi_hsp_longjump(context);
+}
+
+/*****************************************************************************/
+
 static
 void
 archi_hsp_loop(
@@ -68,11 +210,10 @@ archi_hsp_transition(
 
 archi_status_t
 archi_hsp_execute(
-        archi_hsp_state_t entry_state,
+        const archi_hsp_frame_t *entry_frame,
         archi_hsp_transition_t transition)
 {
-    // Process the degenerate case
-    if ((entry_state.function == NULL) && (transition.function == NULL))
+    if ((entry_frame == NULL) || (entry_frame->num_states == 0))
         return 0;
 
     // Initialize the context
@@ -98,8 +239,8 @@ archi_hsp_execute(
         return ARCHI_STATUS_ENOMEMORY;
     }
 
-    context.stack[0] = entry_state;
-    context.stack_frames[0] = 0;
+    // Push the initial frame to the stack
+    archi_hsp_advance_impl(&context, 0, entry_frame->num_states, entry_frame->state, entry_frame->metadata);
 
     // Run the hierarchical state processor loop
     archi_hsp_loop(&context);
@@ -180,128 +321,5 @@ archi_hsp_transition(
         return false;
 
     return true;
-}
-
-/*****************************************************************************/
-
-archi_hsp_state_t
-archi_hsp_current_state(
-        const struct archi_hsp_context *context)
-{
-    return (context != NULL) ? context->current_state : (archi_hsp_state_t){0};
-}
-
-size_t
-archi_hsp_stack_frames(
-        const struct archi_hsp_context *context)
-{
-    return (context != NULL) ? context->num_stack_frames : 0;
-}
-
-/*****************************************************************************/
-
-static
-void
-archi_hsp_longjump(
-        struct archi_hsp_context *context)
-{
-    longjmp(context->env, J_TRANSITION);
-}
-
-static
-void
-archi_hsp_state_context_stack_reserve(
-        struct archi_hsp_context *context,
-        size_t size)
-{
-    if (context->stack_capacity >= context->stack_size + size)
-        return; // the current capacity is enough
-
-    size_t new_stack_capacity = context->stack_capacity;
-    do
-        new_stack_capacity *= 2; // double the stack capacity
-    while (new_stack_capacity < context->stack_size + size);
-
-    archi_hsp_state_t *new_stack = realloc(context->stack,
-            sizeof(*context->stack) * new_stack_capacity);
-    if (new_stack == NULL)
-        archi_hsp_abort(context, ARCHI_STATUS_ENOMEMORY);
-
-    size_t *new_stack_frames = realloc(context->stack_frames,
-            sizeof(*context->stack_frames) * new_stack_capacity);
-    if (new_stack_frames == NULL)
-        archi_hsp_abort(context, ARCHI_STATUS_ENOMEMORY);
-
-    context->stack_capacity = new_stack_capacity;
-    context->stack = new_stack;
-    context->stack_frames = new_stack_frames;
-}
-
-void
-archi_hsp_advance(
-        struct archi_hsp_context *context,
-
-        size_t num_pop_frames,
-        archi_hsp_frame_t pushed_frame)
-{
-    if ((context == NULL) || (context->mode != J_STATE))
-        return;
-
-    if (num_pop_frames > context->num_stack_frames)
-        archi_hsp_abort(context, ARCHI_STATUS_EMISUSE);
-    else if ((pushed_frame.num_states > 0) && (pushed_frame.state == NULL))
-        archi_hsp_abort(context, ARCHI_STATUS_EMISUSE);
-
-    bool new_frame_needed = true;
-
-    // Pop states from the stack
-    if (num_pop_frames > 0)
-        context->stack_size = context->stack_frames[context->num_stack_frames -= num_pop_frames];
-    else
-    {
-        if ((context->num_stack_frames > 0) &&
-                (context->stack_size == context->stack_frames[context->num_stack_frames - 1]))
-            new_frame_needed = false; // the current frame is empty and can be reused
-    }
-
-    // Push states to the stack in reverse order
-    size_t current_frame = context->stack_size;
-
-    for (size_t i = pushed_frame.num_states; i-- > 0;)
-    {
-        archi_hsp_state_t state = pushed_frame.state[i];
-
-        if (state.function == NULL)
-            continue; // ignore null states
-
-        // Set the metadata if not set
-        if (state.metadata == NULL)
-            state.metadata = pushed_frame.metadata;
-
-        // Ensure there is a seat in the stack
-        archi_hsp_state_context_stack_reserve(context, 1);
-
-        // Push
-        context->stack[context->stack_size++] = state;
-    }
-
-    // Add the new frame if needed
-    if ((context->stack_size > current_frame) && new_frame_needed)
-        context->stack_frames[context->num_stack_frames++] = current_frame;
-
-    // Proceed and don't return
-    archi_hsp_longjump(context);
-}
-
-void
-archi_hsp_abort(
-        struct archi_hsp_context *context,
-        archi_status_t code)
-{
-    if ((context == NULL) || (context->mode != J_STATE) || (code == 0))
-        return;
-
-    context->code = code;
-    archi_hsp_longjump(context);
 }
 

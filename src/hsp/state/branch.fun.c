@@ -31,35 +31,35 @@
 ARCHI_HSP_STATE_FUNCTION(archi_hsp_state_advance)
 {
     const archi_hsp_frame_t *frame = ARCHI_HSP_CURRENT_STATE().data;
-
     if (frame == NULL)
         return;
 
-    archi_hsp_advance(hsp, 0, *frame);
+    archi_hsp_advance(hsp, 0, frame->num_states, frame->state, frame->metadata);
 }
 
 ARCHI_HSP_STATE_FUNCTION(archi_hsp_state_branch)
 {
     const archi_hsp_branch_state_data_t *state_data = ARCHI_HSP_CURRENT_STATE().data;
-
-    if (state_data == NULL)
-        return;
-    else if ((state_data->branch == NULL) || (state_data->num_branches == 0))
+    if ((state_data == NULL) || (state_data->num_branches == 0))
         return;
 
     size_t index = 0;
     if (state_data->selector_fn != NULL)
         index = state_data->selector_fn(state_data->num_branches, state_data->selector_data);
 
-    archi_hsp_advance(hsp, 0, state_data->branch[index]);
+    if (index >= state_data->num_branches)
+        return;
+
+    const archi_hsp_frame_t *frame = state_data->branch[index];
+    archi_hsp_advance(hsp, 0, frame->num_states, frame->state, frame->metadata);
 }
 
 /*****************************************************************************/
 
 ARCHI_HSP_BRANCH_SELECTOR_FUNC(archi_hsp_branch_select_uncond)
 {
-    size_t branch_idx = (data != NULL) ? *(size_t*)data : 0;
-    return (branch_idx < num_branches) ? branch_idx : 0;
+    (void) num_branches;
+    return (data != NULL) ? *(size_t*)data : 0;
 }
 
 ARCHI_HSP_BRANCH_SELECTOR_FUNC(archi_hsp_branch_select_random)
