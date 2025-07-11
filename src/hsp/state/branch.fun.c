@@ -25,8 +25,34 @@
 
 #include "archi/hsp/state/branch.fun.h"
 #include "archi/hsp/state.fun.h"
+#include "archi/util/size.def.h"
 
 #include <stdlib.h> // for rand()
+
+archi_hsp_branch_state_data_t*
+archi_hsp_branch_state_data_alloc(
+        size_t num_branches,
+        archi_hsp_branch_selector_func_t selector_fn,
+        void *selector_data)
+{
+    archi_hsp_branch_state_data_t *state_data = malloc(
+            ARCHI_SIZEOF_FLEXIBLE(archi_hsp_branch_state_data_t, branch, num_branches));
+    if (state_data == NULL)
+        return NULL;
+
+    size_t *num_branches_ptr = (size_t*)&state_data->num_branches;
+    *num_branches_ptr = num_branches;
+
+    state_data->selector_fn = selector_fn;
+    state_data->selector_data = selector_data;
+
+    for (size_t i = 0; i < num_branches; i++)
+        state_data->branch[i] = NULL;
+
+    return state_data;
+}
+
+/*****************************************************************************/
 
 ARCHI_HSP_STATE_FUNCTION(archi_hsp_state_advance)
 {

@@ -30,6 +30,22 @@
 #include "archi/hsp/state/branch.typ.h"
 
 /**
+ * @brief Allocate branch state data.
+ *
+ * @note The returned pointer must be eventually released using free().
+ *
+ * @return Newly allocated branch state data.
+ */
+archi_hsp_branch_state_data_t*
+archi_hsp_branch_state_data_alloc(
+        size_t num_branches, ///< [in] Number of branches.
+        archi_hsp_branch_selector_func_t selector_fn, ///< [in] Branch selector function.
+        void *selector_data ///< [in] Branch selector data.
+);
+
+/*****************************************************************************/
+
+/**
  * @brief State function for calling archi_hsp_advance().
  *
  * This state function expects archi_hsp_frame_t object as function data.

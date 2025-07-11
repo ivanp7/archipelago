@@ -52,7 +52,7 @@ typedef struct archi_hsp_branch_state_data {
     archi_hsp_branch_selector_func_t selector_fn; ///< Branch selector function.
     void *selector_data;                          ///< Branch selector data.
 
-    size_t num_branches;         ///< Number of branches.
+    const size_t num_branches;   ///< Number of branches.
     archi_hsp_frame_t *branch[]; ///< Array of branches.
 } archi_hsp_branch_state_data_t;
 

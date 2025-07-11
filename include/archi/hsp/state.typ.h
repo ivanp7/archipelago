@@ -63,7 +63,7 @@ typedef struct archi_hsp_state {
 typedef struct archi_hsp_frame {
     void *metadata; ///< Default state metadata for frame states.
 
-    size_t num_states; ///< Number of states in the frame.
+    const size_t num_states;   ///< Number of states in the frame.
     archi_hsp_state_t state[]; ///< Frame states.
 } archi_hsp_frame_t;
 

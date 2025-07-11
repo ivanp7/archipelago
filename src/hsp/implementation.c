@@ -25,12 +25,36 @@
 
 #include "archi/hsp/state.fun.h"
 #include "archi/hsp/exec.fun.h"
+#include "archi/util/size.def.h"
 
 #include <stdlib.h>
 #include <stdbool.h>
 #include <setjmp.h>
 
 #define ARCHI_HSP_INITIAL_STACK_CAPACITY 32
+
+archi_hsp_frame_t*
+archi_hsp_frame_alloc(
+        size_t num_states,
+        void *metadata)
+{
+    archi_hsp_frame_t *frame = malloc(
+            ARCHI_SIZEOF_FLEXIBLE(archi_hsp_frame_t, state, num_states));
+    if (frame == NULL)
+        return NULL;
+
+    size_t *num_states_ptr = (size_t*)&frame->num_states;
+    *num_states_ptr = num_states;
+
+    frame->metadata = metadata;
+
+    for (size_t i = 0; i < num_states; i++)
+        frame->state[i] = (archi_hsp_state_t){0};
+
+    return frame;
+}
+
+/*****************************************************************************/
 
 enum archi_hsp_mode {
     J_STATE = 0,

@@ -33,6 +33,21 @@
 #include <stddef.h>
 
 /**
+ * @brief Allocate a frame.
+ *
+ * @note The returned pointer must be eventually released using free().
+ *
+ * @return Newly allocated frame.
+ */
+archi_hsp_frame_t*
+archi_hsp_frame_alloc(
+        size_t num_states, ///< [in] Number of states in the frame.
+        void *metadata ///< [in] Default state metadata for frame states.
+);
+
+/*****************************************************************************/
+
+/**
  * @brief Get current state.
  *
  * If hsp is NULL, the function returns null state.
