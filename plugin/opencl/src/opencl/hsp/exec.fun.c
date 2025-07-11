@@ -11,17 +11,30 @@
 
 ARCHI_HSP_STATE_FUNCTION(archip_opencl_hsp_state_wait_for_events)
 {
+#define M "archip_opencl_hsp_state_wait_for_events"
+
     archip_opencl_event_array_t *event_array = ARCHI_HSP_CURRENT_STATE().data;
     if ((event_array == NULL) || (event_array->num_events == 0))
         return;
 
-    clWaitForEvents(event_array->num_events, event_array->event);
+    cl_int ret = clWaitForEvents(event_array->num_events, event_array->event);
+
+    if (ret != CL_SUCCESS)
+        archi_log_error(M, "clWaitForEvents(<%u events>) -> %s",
+                event_array->num_events, archip_opencl_error_string(ret));
 
     for (cl_uint i = 0; i < event_array->num_events; i++)
     {
-        clReleaseEvent(event_array->event[i]);
+        ret = clReleaseEvent(event_array->event[i]);
+
+        if (ret != CL_SUCCESS)
+            archi_log_error(M, "clReleaseEvent(#%u) -> %s",
+                    i, archip_opencl_error_string(ret));
+
         event_array->event[i] = NULL;
     }
+
+#undef M
 }
 
 ARCHI_HSP_STATE_FUNCTION(archip_opencl_hsp_state_kernel_enqueue)
@@ -54,13 +67,24 @@ ARCHI_HSP_STATE_FUNCTION(archip_opencl_hsp_state_kernel_enqueue)
             work.global_work_size, work.local_work_size,
             num_wait_events, wait_events, event_ptr);
 
-    if (enqueue_data->name != NULL)
-        archi_log_debug(M, "clEnqueueNDRangeKernel('%s') -> %s",
-                enqueue_data->name, archip_opencl_error_string(ret));
+    if (ret != CL_SUCCESS)
+    {
+        if (enqueue_data->name != NULL)
+            archi_log_error(M, "clEnqueueNDRangeKernel('%s') -> %s",
+                    enqueue_data->name, archip_opencl_error_string(ret));
+        else
+            archi_log_error(M, "clEnqueueNDRangeKernel() -> %s",
+                    archip_opencl_error_string(ret));
+    }
 
     for (cl_uint i = 0; i < num_wait_events; i++)
     {
-        clReleaseEvent(wait_events[i]);
+        ret = clReleaseEvent(wait_events[i]);
+
+        if (ret != CL_SUCCESS)
+            archi_log_error(M, "clReleaseEvent(#%u) -> %s",
+                    i, archip_opencl_error_string(ret));
+
         wait_events[i] = NULL;
     }
 
@@ -80,7 +104,11 @@ ARCHI_HSP_STATE_FUNCTION(archip_opencl_hsp_state_kernel_enqueue)
                     if (index < event_array->num_events)
                     {
                         event_array->event[index] = event;
-                        clRetainEvent(event);
+                        ret = clRetainEvent(event);
+
+                        if (ret != CL_SUCCESS)
+                            archi_log_error(M, "clRetainEvent(#%zu) -> %s",
+                                    i, archip_opencl_error_string(ret));
                     }
                     else
                         archi_log_warning(M, "Target event array index is out of bounds, continuing...");
@@ -92,7 +120,11 @@ ARCHI_HSP_STATE_FUNCTION(archip_opencl_hsp_state_kernel_enqueue)
         else
             archi_log_warning(M, "Array of target event arrays is NULL, continuing...");
 
-        clReleaseEvent(event);
+        ret = clReleaseEvent(event);
+
+        if (ret != CL_SUCCESS)
+            archi_log_error(M, "clReleaseEvent(event) -> %s",
+                    archip_opencl_error_string(ret));
     }
 
 #undef M
