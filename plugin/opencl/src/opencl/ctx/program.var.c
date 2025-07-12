@@ -15,6 +15,7 @@
 
 struct archip_context_opencl_program_data {
     archi_pointer_t program;
+
     archi_pointer_t context;
     archip_opencl_program_binaries_t binaries;
 };
@@ -468,15 +469,18 @@ const archi_context_interface_t archip_context_opencl_program_bin_interface = {
 
 struct archip_context_opencl_kernel_data {
     archi_pointer_t kernel;
+
     archi_pointer_t program;
-    archi_pointer_t source_kernel;
+    char *kernel_name;
     cl_uint num_arguments;
 };
 
 ARCHI_CONTEXT_INIT_FUNC(archip_context_opencl_kernel_init_new)
 {
+#define M "archip_context_opencl_kernel_init_new"
+
     archi_pointer_t program = {0};
-    const char *kernel_name = NULL;
+    char *kernel_name = NULL;
 
     bool param_program_set = false;
     bool param_kernel_name_set = false;
@@ -515,14 +519,41 @@ ARCHI_CONTEXT_INIT_FUNC(archip_context_opencl_kernel_init_new)
     if (context_data == NULL)
         return ARCHI_STATUS_ENOMEMORY;
 
+    {
+        size_t name_len = strlen(kernel_name) + 1;
+        char *kernel_name_copy = malloc(name_len);
+        if (kernel_name_copy == NULL)
+        {
+            free(context_data);
+            return ARCHI_STATUS_ENOMEMORY;
+        }
+
+        memcpy(kernel_name_copy, kernel_name, name_len);
+
+        kernel_name = kernel_name_copy;
+    }
+
     cl_int ret;
     cl_kernel kernel = clCreateKernel(program.ptr, kernel_name, &ret);
     if (ret != CL_SUCCESS)
     {
-        archi_log_error("archip_context_opencl_kernel_init_new", "clCreateKernel('%s') failed with error %i",
+        archi_log_error(M, "clCreateKernel('%s') failed with error %i",
                 kernel_name, ret);
         free(context_data);
         return ARCHI_STATUS_ERESOURCE;
+    }
+
+    cl_uint num_arguments;
+    {
+        ret = clGetKernelInfo(kernel, CL_KERNEL_NUM_ARGS,
+                sizeof(num_arguments), &num_arguments, NULL);
+        if (ret != CL_SUCCESS)
+        {
+            archi_log_error(M, "clGetKernelInfo(CL_KERNEL_NUM_ARGS) failed with error %i", ret);
+            clReleaseKernel(kernel);
+            free(context_data);
+            return ARCHI_STATUS_ERESOURCE;
+        }
     }
 
     *context_data = (struct archip_context_opencl_kernel_data){
@@ -533,26 +564,22 @@ ARCHI_CONTEXT_INIT_FUNC(archip_context_opencl_kernel_init_new)
             },
         },
         .program = program,
+        .kernel_name = kernel_name,
+        .num_arguments = num_arguments,
     };
-
-    ret = clGetKernelInfo(kernel, CL_KERNEL_NUM_ARGS,
-            sizeof(context_data->num_arguments), &context_data->num_arguments, NULL);
-    if (ret != CL_SUCCESS)
-    {
-        archi_log_error("archip_context_opencl_kernel_init_new", "clGetKernelInfo(CL_KERNEL_NUM_ARGS) failed with error %i", ret);
-        clReleaseKernel(kernel);
-        free(context_data);
-        return ARCHI_STATUS_ERESOURCE;
-    }
 
     archi_reference_count_increment(program.ref_count);
 
     *context = (archi_pointer_t*)context_data;
     return 0;
+
+#undef M
 }
 
 ARCHI_CONTEXT_INIT_FUNC(archip_context_opencl_kernel_init_copy)
 {
+#define M "archip_context_opencl_kernel_init_copy"
+
     archi_pointer_t source_kernel = {0};
 
     bool param_source_kernel_set = false;
@@ -583,7 +610,7 @@ ARCHI_CONTEXT_INIT_FUNC(archip_context_opencl_kernel_init_copy)
     cl_kernel kernel = clCloneKernel(source_kernel.ptr, &ret);
     if (ret != CL_SUCCESS)
     {
-        archi_log_error("archip_context_opencl_kernel_init_copy", "clCloneKernel() failed with error %i", ret);
+        archi_log_error(M, "clCloneKernel() failed with error %i", ret);
         free(context_data);
         return ARCHI_STATUS_ERESOURCE;
     }
@@ -592,9 +619,54 @@ ARCHI_CONTEXT_INIT_FUNC(archip_context_opencl_kernel_init_copy)
     ret = clGetKernelInfo(kernel, CL_KERNEL_PROGRAM, sizeof(program), &program, NULL);
     if (ret != CL_SUCCESS)
     {
+        archi_log_error(M, "clGetKernelInfo(CL_KERNEL_PROGRAM) failed with error %i", ret);
         clReleaseKernel(kernel);
         free(context_data);
         return ARCHI_STATUS_ERESOURCE;
+    }
+
+    char *kernel_name;
+    {
+        size_t name_len;
+        ret = clGetKernelInfo(kernel, CL_KERNEL_FUNCTION_NAME, 0, NULL, &name_len);
+        if (ret != CL_SUCCESS)
+        {
+            archi_log_error(M, "clGetKernelInfo(CL_KERNEL_FUNCTION_NAME) failed with error %i", ret);
+            clReleaseKernel(kernel);
+            free(context_data);
+            return ARCHI_STATUS_ERESOURCE;
+        }
+
+        kernel_name = malloc(name_len);
+        if (kernel_name == NULL)
+        {
+            clReleaseKernel(kernel);
+            free(context_data);
+            return ARCHI_STATUS_ENOMEMORY;
+        }
+
+        ret = clGetKernelInfo(kernel, CL_KERNEL_FUNCTION_NAME, name_len, kernel_name, NULL);
+        if (ret != CL_SUCCESS)
+        {
+            archi_log_error(M, "clGetKernelInfo(CL_KERNEL_FUNCTION_NAME) failed with error %i", ret);
+            free(kernel_name);
+            clReleaseKernel(kernel);
+            free(context_data);
+            return ARCHI_STATUS_ERESOURCE;
+        }
+    }
+
+    cl_uint num_arguments;
+    {
+        ret = clGetKernelInfo(kernel, CL_KERNEL_NUM_ARGS,
+                sizeof(num_arguments), &num_arguments, NULL);
+        if (ret != CL_SUCCESS)
+        {
+            archi_log_error(M, "clGetKernelInfo(CL_KERNEL_NUM_ARGS) failed with error %i", ret);
+            clReleaseKernel(kernel);
+            free(context_data);
+            return ARCHI_STATUS_ERESOURCE;
+        }
     }
 
     *context_data = (struct archip_context_opencl_kernel_data){
@@ -606,27 +678,21 @@ ARCHI_CONTEXT_INIT_FUNC(archip_context_opencl_kernel_init_copy)
         },
         .program = {
             .ptr = program,
+            .ref_count = source_kernel.ref_count,
             .element = {
                 .num_of = 1,
             },
         },
-        .source_kernel = source_kernel,
+        .kernel_name = kernel_name,
+        .num_arguments = num_arguments,
     };
-
-    ret = clGetKernelInfo(kernel, CL_KERNEL_NUM_ARGS,
-            sizeof(context_data->num_arguments), &context_data->num_arguments, NULL);
-    if (ret != CL_SUCCESS)
-    {
-        archi_log_error("archip_context_opencl_kernel_init_copy", "clGetKernelInfo(CL_KERNEL_NUM_ARGS) failed with error %i", ret);
-        clReleaseKernel(kernel);
-        free(context_data);
-        return ARCHI_STATUS_ERESOURCE;
-    }
 
     archi_reference_count_increment(source_kernel.ref_count);
 
     *context = (archi_pointer_t*)context_data;
     return 0;
+
+#undef M
 }
 
 ARCHI_CONTEXT_FINAL_FUNC(archip_context_opencl_kernel_final)
@@ -636,7 +702,7 @@ ARCHI_CONTEXT_FINAL_FUNC(archip_context_opencl_kernel_final)
 
     clReleaseKernel(context_data->kernel.ptr);
     archi_reference_count_decrement(context_data->program.ref_count);
-    archi_reference_count_decrement(context_data->source_kernel.ref_count);
+    free(context_data->kernel_name);
     free(context_data);
 }
 
@@ -651,10 +717,39 @@ ARCHI_CONTEXT_GET_FUNC(archip_context_opencl_kernel_get)
             return ARCHI_STATUS_EMISUSE;
 
         archi_pointer_t program = context_data->program;
-        if (program.ref_count == NULL)
-            program.ref_count = context_data->source_kernel.ref_count;
+        program.ref_count = context_data->kernel.ref_count;
 
         *value = program;
+    }
+    else if (strcmp("kernel_name", slot.name) == 0)
+    {
+        if (slot.num_indices != 0)
+            return ARCHI_STATUS_EMISUSE;
+
+        *value = (archi_pointer_t){
+            .ptr = context_data->kernel_name,
+            .ref_count = context_data->kernel.ref_count,
+            .element = {
+                .num_of = strlen(context_data->kernel_name) + 1,
+                .size = 1,
+                .alignment = 1,
+            },
+        };
+    }
+    else if (strcmp("num_arguments", slot.name) == 0)
+    {
+        if (slot.num_indices != 0)
+            return ARCHI_STATUS_EMISUSE;
+
+        *value = (archi_pointer_t){
+            .ptr = &context_data->num_arguments,
+            .ref_count = context_data->kernel.ref_count,
+            .element = {
+                .num_of = 1,
+                .size = sizeof(context_data->num_arguments),
+                .alignment = alignof(cl_uint),
+            },
+        };
     }
     else
         return ARCHI_STATUS_EKEY;
