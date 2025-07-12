@@ -35,8 +35,8 @@
 typedef struct archi_context_res_thread_group_dispatch_data {
     archi_thread_group_context_t context; ///< Thread group context.
 
-    archi_thread_group_work_t work; ///< Concurrent work task.
-    archi_thread_group_callback_t callback; ///< Concurrent work completion callback.
+    archi_thread_group_work_t *work; ///< Concurrent work task.
+    archi_thread_group_callback_t *callback; ///< Concurrent work completion callback.
     archi_thread_group_dispatch_params_t params; ///< Dispatch parameters.
 
     const char *name; ///< Name of the operation (for logging).

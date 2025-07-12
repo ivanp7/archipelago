@@ -34,11 +34,15 @@ ARCHI_HSP_STATE_FUNCTION(archi_hsp_state_res_thread_group_dispatch)
 #define M "archi_hsp_state_res_thread_group_dispatch"
 
     archi_context_res_thread_group_dispatch_data_t *dispatch_data = ARCHI_HSP_CURRENT_STATE().data;
-    if (dispatch_data == NULL)
+    if ((dispatch_data == NULL) || (dispatch_data->work == NULL))
         return;
 
+    archi_thread_group_callback_t callback = {0};
+    if (dispatch_data->callback != NULL)
+        callback = *dispatch_data->callback;
+
     archi_status_t code = archi_thread_group_dispatch(dispatch_data->context,
-            dispatch_data->work, dispatch_data->callback, dispatch_data->params);
+            *dispatch_data->work, callback, dispatch_data->params);
 
     if (code != 0)
     {
