@@ -15,6 +15,7 @@
 struct archip_context_opencl_svm_alloc_data_data {
     archi_pointer_t alloc_data;
 
+    // References
     archi_pointer_t context;
 };
 
@@ -104,6 +105,8 @@ ARCHI_CONTEXT_GET_FUNC(archip_context_opencl_svm_alloc_data_get)
     struct archip_context_opencl_svm_alloc_data_data *context_data =
         (struct archip_context_opencl_svm_alloc_data_data*)context;
 
+    archip_opencl_svm_alloc_data_t *alloc_data = context_data->alloc_data.ptr;
+
     if (strcmp("context", slot.name) == 0)
     {
         if (slot.num_indices != 0)
@@ -111,40 +114,20 @@ ARCHI_CONTEXT_GET_FUNC(archip_context_opencl_svm_alloc_data_get)
 
         *value = context_data->context;
     }
-    else
-        return ARCHI_STATUS_EKEY;
-
-    return 0;
-}
-
-ARCHI_CONTEXT_SET_FUNC(archip_context_opencl_svm_alloc_data_set)
-{
-    struct archip_context_opencl_svm_alloc_data_data *context_data =
-        (struct archip_context_opencl_svm_alloc_data_data*)context;
-
-    archip_opencl_svm_alloc_data_t *alloc_data = context_data->alloc_data.ptr;
-
-    if (strcmp("context", slot.name) == 0)
-    {
-        if (slot.num_indices != 0)
-            return ARCHI_STATUS_EMISUSE;
-        else if (value.flags & ARCHI_POINTER_FLAG_FUNCTION)
-            return ARCHI_STATUS_EVALUE;
-
-        archi_reference_count_increment(value.ref_count);
-        archi_reference_count_decrement(context_data->context.ref_count);
-
-        alloc_data->context = value.ptr;
-        context_data->context = value;
-    }
     else if (strcmp("mem_flags", slot.name) == 0)
     {
         if (slot.num_indices != 0)
             return ARCHI_STATUS_EMISUSE;
-        else if ((value.flags & ARCHI_POINTER_FLAG_FUNCTION) || (value.ptr == NULL))
-            return ARCHI_STATUS_EVALUE;
 
-        alloc_data->mem_flags = *(cl_svm_mem_flags*)value.ptr;
+        *value = (archi_pointer_t){
+            .ptr = &alloc_data->mem_flags,
+            .ref_count = context_data->alloc_data.ref_count,
+            .element = {
+                .num_of = 1,
+                .size = sizeof(alloc_data->mem_flags),
+                .alignment = alignof(cl_svm_mem_flags),
+            },
+        };
     }
     else
         return ARCHI_STATUS_EKEY;
@@ -156,7 +139,6 @@ const archi_context_interface_t archip_context_opencl_svm_alloc_data_interface =
     .init_fn = archip_context_opencl_svm_alloc_data_init,
     .final_fn = archip_context_opencl_svm_alloc_data_final,
     .get_fn = archip_context_opencl_svm_alloc_data_get,
-    .set_fn = archip_context_opencl_svm_alloc_data_set,
 };
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -164,6 +146,7 @@ const archi_context_interface_t archip_context_opencl_svm_alloc_data_interface =
 struct archip_context_opencl_svm_map_data_data {
     archi_pointer_t map_data;
 
+    // References
     archi_pointer_t command_queue;
 };
 
@@ -253,6 +236,8 @@ ARCHI_CONTEXT_GET_FUNC(archip_context_opencl_svm_map_data_get)
     struct archip_context_opencl_svm_map_data_data *context_data =
         (struct archip_context_opencl_svm_map_data_data*)context;
 
+    archip_opencl_svm_map_data_t *map_data = context_data->map_data.ptr;
+
     if (strcmp("command_queue", slot.name) == 0)
     {
         if (slot.num_indices != 0)
@@ -260,40 +245,20 @@ ARCHI_CONTEXT_GET_FUNC(archip_context_opencl_svm_map_data_get)
 
         *value = context_data->command_queue;
     }
-    else
-        return ARCHI_STATUS_EKEY;
-
-    return 0;
-}
-
-ARCHI_CONTEXT_SET_FUNC(archip_context_opencl_svm_map_data_set)
-{
-    struct archip_context_opencl_svm_map_data_data *context_data =
-        (struct archip_context_opencl_svm_map_data_data*)context;
-
-    archip_opencl_svm_map_data_t *map_data = context_data->map_data.ptr;
-
-    if (strcmp("command_queue", slot.name) == 0)
-    {
-        if (slot.num_indices != 0)
-            return ARCHI_STATUS_EMISUSE;
-        else if (value.flags & ARCHI_POINTER_FLAG_FUNCTION)
-            return ARCHI_STATUS_EVALUE;
-
-        archi_reference_count_increment(value.ref_count);
-        archi_reference_count_decrement(context_data->command_queue.ref_count);
-
-        map_data->command_queue = value.ptr;
-        context_data->command_queue = value;
-    }
     else if (strcmp("map_flags", slot.name) == 0)
     {
         if (slot.num_indices != 0)
             return ARCHI_STATUS_EMISUSE;
-        else if ((value.flags & ARCHI_POINTER_FLAG_FUNCTION) || (value.ptr == NULL))
-            return ARCHI_STATUS_EVALUE;
 
-        map_data->map_flags = *(cl_map_flags*)value.ptr;
+        *value = (archi_pointer_t){
+            .ptr = &map_data->map_flags,
+            .ref_count = context_data->map_data.ref_count,
+            .element = {
+                .num_of = 1,
+                .size = sizeof(map_data->map_flags),
+                .alignment = alignof(cl_map_flags),
+            },
+        };
     }
     else
         return ARCHI_STATUS_EKEY;
@@ -305,6 +270,5 @@ const archi_context_interface_t archip_context_opencl_svm_map_data_interface = {
     .init_fn = archip_context_opencl_svm_map_data_init,
     .final_fn = archip_context_opencl_svm_map_data_final,
     .get_fn = archip_context_opencl_svm_map_data_get,
-    .set_fn = archip_context_opencl_svm_map_data_set,
 };
 
