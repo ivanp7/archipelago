@@ -150,24 +150,28 @@ archi ./file.archi
 
 Ensure that `archi` is installed in your system path so the kernel can locate it when executing `.archi` files.
 
-# Doxygen ocumentation
+# Doxygen Documentation
 
 Doxygen documentation is available at `/doxygen` subdirectory. To build it, run `make`.
 
-# How to build
+# How to Build
 
 0. go to the repository root directory;
 1. (optional) export environmental variables to control behavior of `configure.py` (see accepted environmental variables in the script);
 2. run `configure.py` to generate `build.ninja`;
 3. run `ninja` to build the project.
 
-# Build dependencies
+# Build Dependencies
 
 * [ninja](https://ninja-build.org/) -- build system
 
 # Dependencies
 
 * [glibc](https://www.gnu.org/software/libc/) -- POSIX; argument parsing with [argp](https://www.gnu.org/software/libc/manual/html_node/Argp.html).
+
+# Stuff to Do
+
+* Improve documentation comments, write documentation pages
 
 # License
 
