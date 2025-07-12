@@ -56,5 +56,15 @@ typedef struct archi_hsp_branch_state_data {
     archi_hsp_frame_t *branch[]; ///< Array of branches.
 } archi_hsp_branch_state_data_t;
 
+/*****************************************************************************/
+
+/**
+ * @brief Data for the simple loop selector function.
+ */
+typedef struct archi_hsp_branch_select_loop_data {
+    size_t num_iterations; ///< Number of iterations to do.
+    size_t iteration; ///< Number of the current iteration.
+} archi_hsp_branch_select_loop_data_t;
+
 #endif // _ARCHI_HSP_STATE_BRANCH_TYP_H_
 

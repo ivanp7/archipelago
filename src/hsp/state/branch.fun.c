@@ -94,3 +94,21 @@ ARCHI_HSP_BRANCH_SELECTOR_FUNC(archi_hsp_branch_select_random)
     return rand() % num_branches;
 }
 
+ARCHI_HSP_BRANCH_SELECTOR_FUNC(archi_hsp_branch_select_loop)
+{
+    (void) num_branches;
+
+    archi_hsp_branch_select_loop_data_t *loop_data = data;
+
+    if (loop_data->iteration < loop_data->num_iterations)
+    {
+        loop_data->iteration++;
+        return 0;
+    }
+    else
+    {
+        loop_data->iteration = 0;
+        return 1;
+    }
+}
+

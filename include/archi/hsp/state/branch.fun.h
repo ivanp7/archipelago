@@ -75,5 +75,10 @@ ARCHI_HSP_BRANCH_SELECTOR_FUNC(archi_hsp_branch_select_uncond);
  */
 ARCHI_HSP_BRANCH_SELECTOR_FUNC(archi_hsp_branch_select_random);
 
+/**
+ * @brief Simple loop - choose 0th branch N times, then choose 1st branch and reset.
+ */
+ARCHI_HSP_BRANCH_SELECTOR_FUNC(archi_hsp_branch_select_loop);
+
 #endif // _ARCHI_HSP_STATE_BRANCH_FUN_H_
 
