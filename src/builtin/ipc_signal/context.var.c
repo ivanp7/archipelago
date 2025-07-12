@@ -195,7 +195,7 @@ const archi_context_interface_t archi_context_ipc_signal_handler_interface = {
 
 /*****************************************************************************/
 
-#define ARCHI_CONTEXT_IPC_SIGNAL_HANDLERS_CAPACITY  16 // larger capacity isn't needed, probably
+#define ARCHI_CONTEXT_IPC_SIGNAL_HANDLERS_CAPACITY  32 // larger capacity isn't needed, probably
 
 struct archi_context_ipc_signal_management_data {
     archi_pointer_t context; ///< Signal management context.
