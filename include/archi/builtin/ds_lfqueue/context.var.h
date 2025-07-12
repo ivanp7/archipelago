@@ -31,6 +31,7 @@
 
 ARCHI_CONTEXT_INIT_FUNC(archi_context_ds_lfqueue_init);   ///< Lock-free queue initialization function.
 ARCHI_CONTEXT_FINAL_FUNC(archi_context_ds_lfqueue_final); ///< Lock-free queue finalization function.
+ARCHI_CONTEXT_GET_FUNC(archi_context_ds_lfqueue_get);     ///< Lock-free queue getter function.
 
 extern
 const archi_context_interface_t archi_context_ds_lfqueue_interface; ///< Lock-free queue interface.

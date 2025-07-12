@@ -28,6 +28,12 @@
 
 #include <stdlib.h> // for malloc(), free()
 #include <string.h> // for strcmp()
+#include <stdalign.h> // for alignof()
+
+struct archi_context_ds_lfqueue_data {
+    archi_pointer_t lfqueue;
+    archi_lfqueue_alloc_params_t params;
+};
 
 ARCHI_CONTEXT_INIT_FUNC(archi_context_ds_lfqueue_init)
 {
@@ -102,7 +108,7 @@ ARCHI_CONTEXT_INIT_FUNC(archi_context_ds_lfqueue_init)
     if (param_element_alignment_set)
         lfqueue_alloc_params.element_alignment = lfqueue_alloc_params_fields.element_alignment;
 
-    archi_pointer_t *context_data = malloc(sizeof(*context_data));
+    struct archi_context_ds_lfqueue_data *context_data = malloc(sizeof(*context_data));
     if (context_data == NULL)
         return ARCHI_STATUS_ENOMEMORY;
 
@@ -115,25 +121,88 @@ ARCHI_CONTEXT_INIT_FUNC(archi_context_ds_lfqueue_init)
         return code;
     }
 
-    *context_data = (archi_pointer_t){
-        .ptr = lfqueue,
-        .element = {
-            .num_of = 1,
+    *context_data = (struct archi_context_ds_lfqueue_data){
+        .lfqueue = {
+            .ptr = lfqueue,
+            .element = {
+                .num_of = 1,
+            },
         },
+        .params = lfqueue_alloc_params,
     };
 
-    *context = context_data;
+    *context = (archi_pointer_t*)context_data;
     return code;
 }
 
 ARCHI_CONTEXT_FINAL_FUNC(archi_context_ds_lfqueue_final)
 {
-    archi_lfqueue_free(context->ptr);
-    free(context);
+    struct archi_context_ds_lfqueue_data *context_data =
+        (struct archi_context_ds_lfqueue_data*)context;
+
+    archi_lfqueue_free(context_data->lfqueue.ptr);
+    free(context_data);
+}
+
+ARCHI_CONTEXT_GET_FUNC(archi_context_ds_lfqueue_get)
+{
+    struct archi_context_ds_lfqueue_data *context_data =
+        (struct archi_context_ds_lfqueue_data*)context;
+
+    if (strcmp("capacity_log2", slot.name) == 0)
+    {
+        if (slot.num_indices != 0)
+            return ARCHI_STATUS_EMISUSE;
+
+        *value = (archi_pointer_t){
+            .ptr = &context_data->params.capacity_log2,
+            .ref_count = context_data->lfqueue.ref_count,
+            .element = {
+                .num_of = 1,
+                .size = sizeof(context_data->params.capacity_log2),
+                .alignment = alignof(size_t),
+            },
+        };
+    }
+    else if (strcmp("element_size", slot.name) == 0)
+    {
+        if (slot.num_indices != 0)
+            return ARCHI_STATUS_EMISUSE;
+
+        *value = (archi_pointer_t){
+            .ptr = &context_data->params.element_size,
+            .ref_count = context_data->lfqueue.ref_count,
+            .element = {
+                .num_of = 1,
+                .size = sizeof(context_data->params.element_size),
+                .alignment = alignof(size_t),
+            },
+        };
+    }
+    else if (strcmp("element_alignment", slot.name) == 0)
+    {
+        if (slot.num_indices != 0)
+            return ARCHI_STATUS_EMISUSE;
+
+        *value = (archi_pointer_t){
+            .ptr = &context_data->params.element_alignment,
+            .ref_count = context_data->lfqueue.ref_count,
+            .element = {
+                .num_of = 1,
+                .size = sizeof(context_data->params.element_alignment),
+                .alignment = alignof(size_t),
+            },
+        };
+    }
+    else
+        return ARCHI_STATUS_EKEY;
+
+    return 0;
 }
 
 const archi_context_interface_t archi_context_ds_lfqueue_interface = {
     .init_fn = archi_context_ds_lfqueue_init,
     .final_fn = archi_context_ds_lfqueue_final,
+    .get_fn = archi_context_ds_lfqueue_get,
 };
 
