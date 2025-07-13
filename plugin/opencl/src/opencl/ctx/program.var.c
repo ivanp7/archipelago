@@ -339,7 +339,7 @@ ARCHI_CONTEXT_GET_FUNC(archip_context_opencl_program_get)
 
         *value = (archi_pointer_t){
             .ptr = context_data->binaries.ids->platform_id,
-            .ref_count = context_data->program.ref_count,
+            .ref_count = context->ref_count,
             .element = {
                 .num_of = 1,
                 .size = sizeof(context_data->binaries.ids->platform_id),
@@ -357,7 +357,7 @@ ARCHI_CONTEXT_GET_FUNC(archip_context_opencl_program_get)
             *value = (archi_pointer_t){
                 .ptr = (context_data->binaries.ids->num_devices > 0) ?
                     context_data->binaries.ids->device_id : NULL,
-                .ref_count = context_data->program.ref_count,
+                .ref_count = context->ref_count,
                 .element = {
                     .num_of = context_data->binaries.ids->num_devices,
                     .size = sizeof(context_data->binaries.ids->device_id[0]),
@@ -367,12 +367,12 @@ ARCHI_CONTEXT_GET_FUNC(archip_context_opencl_program_get)
         }
         else
         {
-            if (slot.index[0] >= context_data->binaries.ids->num_devices)
+            if ((slot.index[0] < 0) || (slot.index[0] >= context_data->binaries.ids->num_devices))
                 return ARCHI_STATUS_EMISUSE;
 
             *value = (archi_pointer_t){
                 .ptr = context_data->binaries.ids->device_id[slot.index[0]],
-                .ref_count = context_data->program.ref_count,
+                .ref_count = context->ref_count,
                 .element = {
                     .num_of = 1,
                     .size = sizeof(context_data->binaries.ids->device_id[0]),
@@ -390,7 +390,7 @@ ARCHI_CONTEXT_GET_FUNC(archip_context_opencl_program_get)
         {
             *value = (archi_pointer_t){
                 .ptr = context_data->binaries.sizes,
-                .ref_count = context_data->program.ref_count,
+                .ref_count = context->ref_count,
                 .element = {
                     .num_of = context_data->binaries.ids->num_devices,
                     .size = sizeof(context_data->binaries.sizes[0]),
@@ -400,12 +400,12 @@ ARCHI_CONTEXT_GET_FUNC(archip_context_opencl_program_get)
         }
         else
         {
-            if (slot.index[0] >= context_data->binaries.ids->num_devices)
+            if ((slot.index[0] < 0) || (slot.index[0] >= context_data->binaries.ids->num_devices))
                 return ARCHI_STATUS_EMISUSE;
 
             *value = (archi_pointer_t){
                 .ptr = &context_data->binaries.sizes[slot.index[0]],
-                .ref_count = context_data->program.ref_count,
+                .ref_count = context->ref_count,
                 .element = {
                     .num_of = 1,
                     .size = sizeof(context_data->binaries.sizes[0]),
@@ -423,7 +423,7 @@ ARCHI_CONTEXT_GET_FUNC(archip_context_opencl_program_get)
         {
             *value = (archi_pointer_t){
                 .ptr = context_data->binaries.contents,
-                .ref_count = context_data->program.ref_count,
+                .ref_count = context->ref_count,
                 .element = {
                     .num_of = context_data->binaries.ids->num_devices,
                     .size = sizeof(context_data->binaries.contents[0]),
@@ -433,12 +433,12 @@ ARCHI_CONTEXT_GET_FUNC(archip_context_opencl_program_get)
         }
         else
         {
-            if (slot.index[0] >= context_data->binaries.ids->num_devices)
+            if ((slot.index[0] < 0) || (slot.index[0] >= context_data->binaries.ids->num_devices))
                 return ARCHI_STATUS_EMISUSE;
 
             *value = (archi_pointer_t){
                 .ptr = context_data->binaries.contents[slot.index[0]],
-                .ref_count = context_data->program.ref_count,
+                .ref_count = context->ref_count,
                 .element = {
                     .num_of = context_data->binaries.sizes[slot.index[0]],
                     .size = sizeof(context_data->binaries.contents[0][0]),
@@ -717,7 +717,7 @@ ARCHI_CONTEXT_GET_FUNC(archip_context_opencl_kernel_get)
             return ARCHI_STATUS_EMISUSE;
 
         archi_pointer_t program = context_data->program;
-        program.ref_count = context_data->kernel.ref_count;
+        program.ref_count = context->ref_count;
 
         *value = program;
     }
@@ -728,7 +728,7 @@ ARCHI_CONTEXT_GET_FUNC(archip_context_opencl_kernel_get)
 
         *value = (archi_pointer_t){
             .ptr = context_data->kernel_name,
-            .ref_count = context_data->kernel.ref_count,
+            .ref_count = context->ref_count,
             .element = {
                 .num_of = strlen(context_data->kernel_name) + 1,
                 .size = 1,
@@ -743,7 +743,7 @@ ARCHI_CONTEXT_GET_FUNC(archip_context_opencl_kernel_get)
 
         *value = (archi_pointer_t){
             .ptr = &context_data->num_arguments,
-            .ref_count = context_data->kernel.ref_count,
+            .ref_count = context->ref_count,
             .element = {
                 .num_of = 1,
                 .size = sizeof(context_data->num_arguments),
