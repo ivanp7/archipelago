@@ -28,7 +28,7 @@
 #include "archi/res/thread_group/api.fun.h"
 
 #include <stdlib.h> // for malloc(), free()
-#include <string.h> // for strcmp()
+#include <string.h> // for strcmp(), strlen(), memcpy()
 #include <stdalign.h> // for alignof()
 
 struct archi_context_res_thread_group_data {
@@ -125,7 +125,7 @@ ARCHI_CONTEXT_GET_FUNC(archi_context_res_thread_group_get)
 
         *value = (archi_pointer_t){
             .ptr = &context_data->params.num_threads,
-            .ref_count = context_data->context.ref_count,
+            .ref_count = context->ref_count,
             .element = {
                 .num_of = 1,
                 .size = sizeof(context_data->params.num_threads),
@@ -280,7 +280,7 @@ ARCHI_CONTEXT_GET_FUNC(archi_context_res_thread_group_work_get)
 
         *value = (archi_pointer_t){
             .ptr = &work->size,
-            .ref_count = context_data->work.ref_count,
+            .ref_count = context->ref_count,
             .element = {
                 .num_of = 1,
                 .size = sizeof(work->size),
@@ -522,8 +522,6 @@ struct archi_context_res_thread_group_dispatch_data_data {
     archi_pointer_t context;
     archi_pointer_t work;
     archi_pointer_t callback;
-
-    archi_pointer_t name;
 };
 
 ARCHI_CONTEXT_INIT_FUNC(archi_context_res_thread_group_dispatch_data_init)
@@ -533,7 +531,7 @@ ARCHI_CONTEXT_INIT_FUNC(archi_context_res_thread_group_dispatch_data_init)
     archi_pointer_t thread_group_callback = {0};
     archi_thread_group_dispatch_params_t thread_group_dispatch_params = {0};
     archi_thread_group_dispatch_params_t thread_group_dispatch_params_fields = {0};
-    archi_pointer_t name = {0};
+    char *name = NULL;
 
     bool param_context_set = false;
     bool param_work_set = false;
@@ -610,7 +608,7 @@ ARCHI_CONTEXT_INIT_FUNC(archi_context_res_thread_group_dispatch_data_init)
             if (params->value.flags & ARCHI_POINTER_FLAG_FUNCTION)
                 return ARCHI_STATUS_EVALUE;
 
-            name = params->value;
+            name = params->value.ptr;
         }
         else
             return ARCHI_STATUS_EKEY;
@@ -630,12 +628,27 @@ ARCHI_CONTEXT_INIT_FUNC(archi_context_res_thread_group_dispatch_data_init)
         return ARCHI_STATUS_ENOMEMORY;
     }
 
+    if (name != NULL)
+    {
+        size_t name_len = strlen(name) + 1;
+        char *name_copy = malloc(name_len);
+        if (name_copy == NULL)
+        {
+            free(dispatch_data);
+            free(context_data);
+            return ARCHI_STATUS_ENOMEMORY;
+        }
+
+        memcpy(name_copy, name, name_len);
+        name = name_copy;
+    }
+
     *dispatch_data = (archi_context_res_thread_group_dispatch_data_t){
         .context = thread_group_context.ptr,
         .work = thread_group_work.ptr,
         .callback = thread_group_callback.ptr,
         .params = thread_group_dispatch_params,
-        .name = name.ptr,
+        .name = name,
     };
 
     *context_data = (struct archi_context_res_thread_group_dispatch_data_data){
@@ -650,13 +663,11 @@ ARCHI_CONTEXT_INIT_FUNC(archi_context_res_thread_group_dispatch_data_init)
         .context = thread_group_context,
         .work = thread_group_work,
         .callback = thread_group_callback,
-        .name = name,
     };
 
     archi_reference_count_increment(thread_group_context.ref_count);
     archi_reference_count_increment(thread_group_work.ref_count);
     archi_reference_count_increment(thread_group_callback.ref_count);
-    archi_reference_count_increment(name.ref_count);
 
     *context = (archi_pointer_t*)context_data;
     return 0;
@@ -667,11 +678,13 @@ ARCHI_CONTEXT_FINAL_FUNC(archi_context_res_thread_group_dispatch_data_final)
     struct archi_context_res_thread_group_dispatch_data_data *context_data =
         (struct archi_context_res_thread_group_dispatch_data_data*)context;
 
+    archi_context_res_thread_group_dispatch_data_t *dispatch_data = context_data->dispatch_data.ptr;
+
     archi_reference_count_decrement(context_data->context.ref_count);
     archi_reference_count_decrement(context_data->work.ref_count);
     archi_reference_count_decrement(context_data->callback.ref_count);
-    archi_reference_count_decrement(context_data->name.ref_count);
-    free(context_data->dispatch_data.ptr);
+    free((char*)dispatch_data->name);
+    free(dispatch_data);
     free(context_data);
 }
 
@@ -710,7 +723,7 @@ ARCHI_CONTEXT_GET_FUNC(archi_context_res_thread_group_dispatch_data_get)
 
         *value = (archi_pointer_t){
             .ptr = &dispatch_data->params.batch_size,
-            .ref_count = context_data->dispatch_data.ref_count,
+            .ref_count = context->ref_count,
             .element = {
                 .num_of = 1,
                 .size = sizeof(dispatch_data->params.batch_size),
@@ -723,7 +736,18 @@ ARCHI_CONTEXT_GET_FUNC(archi_context_res_thread_group_dispatch_data_get)
         if (slot.num_indices != 0)
             return ARCHI_STATUS_EMISUSE;
 
-        *value = context_data->name;
+        if (dispatch_data->name != NULL)
+            *value = (archi_pointer_t){
+                .ptr = (void*)dispatch_data->name,
+                .ref_count = context->ref_count,
+                .element = {
+                    .num_of = strlen(dispatch_data->name) + 1,
+                    .size = 1,
+                    .alignment = 1,
+                },
+            };
+        else
+            *value = (archi_pointer_t){0};
     }
     else
         return ARCHI_STATUS_EKEY;
@@ -785,19 +809,6 @@ ARCHI_CONTEXT_SET_FUNC(archi_context_res_thread_group_dispatch_data_set)
             return ARCHI_STATUS_EVALUE;
 
         dispatch_data->params.batch_size = *(size_t*)value.ptr;
-    }
-    else if (strcmp("name", slot.name) == 0)
-    {
-        if (slot.num_indices != 0)
-            return ARCHI_STATUS_EMISUSE;
-        else if (value.flags & ARCHI_POINTER_FLAG_FUNCTION)
-            return ARCHI_STATUS_EVALUE;
-
-        archi_reference_count_increment(value.ref_count);
-        archi_reference_count_decrement(context_data->name.ref_count);
-
-        dispatch_data->name = value.ptr;
-        context_data->name = value;
     }
     else
         return ARCHI_STATUS_EKEY;
