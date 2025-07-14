@@ -35,8 +35,7 @@
 
 archi_hsp_frame_t*
 archi_hsp_frame_alloc(
-        size_t num_states,
-        void *metadata)
+        size_t num_states)
 {
     archi_hsp_frame_t *frame = malloc(
             ARCHI_SIZEOF_FLEXIBLE(archi_hsp_frame_t, state, num_states));
@@ -45,8 +44,6 @@ archi_hsp_frame_alloc(
 
     size_t *num_states_ptr = (size_t*)&frame->num_states;
     *num_states_ptr = num_states;
-
-    frame->metadata = metadata;
 
     for (size_t i = 0; i < num_states; i++)
         frame->state[i] = (archi_hsp_state_t){0};
@@ -141,9 +138,7 @@ archi_hsp_advance_impl(
         size_t num_popped_frames,
 
         size_t num_pushed_states,
-        const archi_hsp_state_t *pushed_states,
-
-        void *frame_metadata)
+        const archi_hsp_state_t *pushed_states)
 {
     bool new_frame_needed = true;
 
@@ -167,10 +162,6 @@ archi_hsp_advance_impl(
         if (state.function == NULL)
             continue; // ignore null states
 
-        // Set the metadata if not set
-        if (state.metadata == NULL)
-            state.metadata = frame_metadata;
-
         // Ensure there is a seat in the stack
         archi_hsp_state_context_stack_reserve(context, 1);
 
@@ -190,9 +181,7 @@ archi_hsp_advance(
         size_t num_popped_frames,
 
         size_t num_pushed_states,
-        const archi_hsp_state_t *pushed_states,
-
-        void *frame_metadata)
+        const archi_hsp_state_t *pushed_states)
 {
     if ((context == NULL) || (context->mode != J_STATE))
         return;
@@ -202,7 +191,7 @@ archi_hsp_advance(
     else if ((num_pushed_states > 0) && (pushed_states == NULL))
         archi_hsp_abort(context, ARCHI_STATUS_EMISUSE);
 
-    archi_hsp_advance_impl(context, num_popped_frames, num_pushed_states, pushed_states, frame_metadata);
+    archi_hsp_advance_impl(context, num_popped_frames, num_pushed_states, pushed_states);
 
     // Proceed and don't return
     archi_hsp_longjump(context);
@@ -264,7 +253,7 @@ archi_hsp_execute(
     }
 
     // Push the initial frame to the stack
-    archi_hsp_advance_impl(&context, 0, entry_frame->num_states, entry_frame->state, entry_frame->metadata);
+    archi_hsp_advance_impl(&context, 0, entry_frame->num_states, entry_frame->state);
 
     // Run the hierarchical state processor loop
     archi_hsp_loop(&context);

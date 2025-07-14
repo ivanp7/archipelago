@@ -61,8 +61,6 @@ typedef struct archi_hsp_state {
  * @brief Frame of a hierarchical state processor -- a sequence of states.
  */
 typedef struct archi_hsp_frame {
-    void *metadata; ///< Default state metadata for frame states.
-
     const size_t num_states;   ///< Number of states in the frame.
     archi_hsp_state_t state[]; ///< Frame states.
 } archi_hsp_frame_t;

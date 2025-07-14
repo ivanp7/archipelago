@@ -38,7 +38,6 @@ struct archi_context_hsp_frame_data {
     archi_pointer_t frame;
 
     // References
-    archi_pointer_t frame_metadata;
     archi_pointer_t *frame_state_function;
     archi_pointer_t *frame_state_data;
     archi_pointer_t *frame_state_metadata;
@@ -47,10 +46,8 @@ struct archi_context_hsp_frame_data {
 ARCHI_CONTEXT_INIT_FUNC(archi_context_hsp_frame_init)
 {
     size_t num_states = 0;
-    archi_pointer_t hsp_frame_metadata = {0};
 
     bool param_num_states_set = false;
-    bool param_metadata_set = false;
 
     for (; params != NULL; params = params->next)
     {
@@ -66,17 +63,6 @@ ARCHI_CONTEXT_INIT_FUNC(archi_context_hsp_frame_init)
 
             num_states = *(size_t*)params->value.ptr;
         }
-        else if (strcmp("metadata", params->name) == 0)
-        {
-            if (param_metadata_set)
-                continue;
-            param_metadata_set = true;
-
-            if (params->value.flags & ARCHI_POINTER_FLAG_FUNCTION)
-                return ARCHI_STATUS_EVALUE;
-
-            hsp_frame_metadata = params->value;
-        }
         else
             return ARCHI_STATUS_EKEY;
     }
@@ -85,7 +71,7 @@ ARCHI_CONTEXT_INIT_FUNC(archi_context_hsp_frame_init)
     if (context_data == NULL)
         return ARCHI_STATUS_ENOMEMORY;
 
-    archi_hsp_frame_t *hsp_frame = archi_hsp_frame_alloc(num_states, hsp_frame_metadata.ptr);
+    archi_hsp_frame_t *hsp_frame = archi_hsp_frame_alloc(num_states);
     if (hsp_frame == NULL)
     {
         free(context_data);
@@ -101,7 +87,6 @@ ARCHI_CONTEXT_INIT_FUNC(archi_context_hsp_frame_init)
                 .alignment = alignof(archi_hsp_frame_t),
             },
         },
-        .frame_metadata = hsp_frame_metadata,
     };
 
     if (num_states > 0)
@@ -141,8 +126,6 @@ ARCHI_CONTEXT_INIT_FUNC(archi_context_hsp_frame_init)
         }
     }
 
-    archi_reference_count_increment(hsp_frame_metadata.ref_count);
-
     *context = (archi_pointer_t*)context_data;
     return 0;
 }
@@ -160,8 +143,6 @@ ARCHI_CONTEXT_FINAL_FUNC(archi_context_hsp_frame_final)
         archi_reference_count_decrement(context_data->frame_state_data[i].ref_count);
         archi_reference_count_decrement(context_data->frame_state_metadata[i].ref_count);
     }
-
-    archi_reference_count_decrement(context_data->frame_metadata.ref_count);
 
     free(context_data->frame_state_function);
     free(context_data->frame_state_data);
@@ -212,15 +193,12 @@ ARCHI_CONTEXT_GET_FUNC(archi_context_hsp_frame_get)
     }
     else if (strcmp("metadata", slot.name) == 0)
     {
-        if (slot.num_indices > 1)
+        if (slot.num_indices != 1)
             return ARCHI_STATUS_EMISUSE;
-        else if ((slot.num_indices > 0) && ((slot.index[0] < 0) || ((size_t)slot.index[0] >= hsp_frame->num_states)))
+        else if ((slot.index[0] < 0) || ((size_t)slot.index[0] >= hsp_frame->num_states))
             return ARCHI_STATUS_EMISUSE;
 
-        if (slot.num_indices == 0)
-            *value = context_data->frame_metadata;
-        else
-            *value = context_data->frame_state_metadata[slot.index[0]];
+        *value = context_data->frame_state_metadata[slot.index[0]];
     }
     else
         return ARCHI_STATUS_EKEY;
@@ -267,7 +245,7 @@ ARCHI_CONTEXT_SET_FUNC(archi_context_hsp_frame_set)
     }
     else if (strcmp("metadata", slot.name) == 0)
     {
-        if (slot.num_indices > 1)
+        if (slot.num_indices != 1)
             return ARCHI_STATUS_EMISUSE;
         else if ((slot.num_indices > 0) && ((slot.index[0] < 0) || ((size_t)slot.index[0] >= hsp_frame->num_states)))
             return ARCHI_STATUS_EMISUSE;
@@ -275,21 +253,10 @@ ARCHI_CONTEXT_SET_FUNC(archi_context_hsp_frame_set)
             return ARCHI_STATUS_EVALUE;
 
         archi_reference_count_increment(value.ref_count);
+        archi_reference_count_decrement(context_data->frame_state_metadata[slot.index[0]].ref_count);
 
-        if (slot.num_indices == 0)
-        {
-            archi_reference_count_decrement(context_data->frame_metadata.ref_count);
-
-            hsp_frame->metadata = value.ptr;
-            context_data->frame_metadata = value;
-        }
-        else
-        {
-            archi_reference_count_decrement(context_data->frame_state_metadata[slot.index[0]].ref_count);
-
-            hsp_frame->state[slot.index[0]].metadata = value.ptr;
-            context_data->frame_state_metadata[slot.index[0]] = value;
-        }
+        hsp_frame->state[slot.index[0]].metadata = value.ptr;
+        context_data->frame_state_metadata[slot.index[0]] = value;
     }
     else
         return ARCHI_STATUS_EKEY;

@@ -60,7 +60,7 @@ ARCHI_HSP_STATE_FUNCTION(archi_hsp_state_advance)
     if (frame == NULL)
         return;
 
-    archi_hsp_advance(hsp, 0, frame->num_states, frame->state, frame->metadata);
+    archi_hsp_advance(hsp, 0, frame->num_states, frame->state);
 }
 
 ARCHI_HSP_STATE_FUNCTION(archi_hsp_state_branch)
@@ -77,7 +77,7 @@ ARCHI_HSP_STATE_FUNCTION(archi_hsp_state_branch)
         return;
 
     const archi_hsp_frame_t *frame = state_data->branch[index];
-    archi_hsp_advance(hsp, 0, frame->num_states, frame->state, frame->metadata);
+    archi_hsp_advance(hsp, 0, frame->num_states, frame->state);
 }
 
 /*****************************************************************************/
