@@ -53,7 +53,7 @@ archi_hsp_branch_state_data_alloc(
 ARCHI_HSP_STATE_FUNCTION(archi_hsp_state_advance);
 
 /**
- * @brief Branch state function using a selector function.
+ * @brief Branch state function using a selector function to choose a branch.
  *
  * This state function expects archi_hsp_branch_state_data_t object as function data.
  */
