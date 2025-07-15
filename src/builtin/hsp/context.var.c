@@ -175,7 +175,24 @@ ARCHI_CONTEXT_GET_FUNC(archi_context_hsp_frame_get)
             },
         };
     }
-    else if (strcmp("function", slot.name) == 0)
+    else if (strcmp("state", slot.name) == 0)
+    {
+        if (slot.num_indices != 1)
+            return ARCHI_STATUS_EMISUSE;
+        else if ((slot.index[0] < 0) || ((size_t)slot.index[0] >= hsp_frame->num_states))
+            return ARCHI_STATUS_EMISUSE;
+
+        *value = (archi_pointer_t){
+            .ptr = &hsp_frame->state[slot.index[0]],
+            .ref_count = context->ref_count,
+            .element = {
+                .num_of = 1,
+                .size = sizeof(hsp_frame->state[0]),
+                .alignment = alignof(archi_hsp_state_t),
+            },
+        };
+    }
+    else if (strcmp("state.function", slot.name) == 0)
     {
         if (slot.num_indices != 1)
             return ARCHI_STATUS_EMISUSE;
@@ -184,7 +201,7 @@ ARCHI_CONTEXT_GET_FUNC(archi_context_hsp_frame_get)
 
         *value = context_data->frame_state_function[slot.index[0]];
     }
-    else if (strcmp("data", slot.name) == 0)
+    else if (strcmp("state.data", slot.name) == 0)
     {
         if (slot.num_indices != 1)
             return ARCHI_STATUS_EMISUSE;
@@ -193,7 +210,7 @@ ARCHI_CONTEXT_GET_FUNC(archi_context_hsp_frame_get)
 
         *value = context_data->frame_state_data[slot.index[0]];
     }
-    else if (strcmp("metadata", slot.name) == 0)
+    else if (strcmp("state.metadata", slot.name) == 0)
     {
         if (slot.num_indices != 1)
             return ARCHI_STATUS_EMISUSE;
@@ -215,7 +232,7 @@ ARCHI_CONTEXT_SET_FUNC(archi_context_hsp_frame_set)
 
     archi_hsp_frame_t *hsp_frame = context_data->frame.ptr;
 
-    if (strcmp("function", slot.name) == 0)
+    if (strcmp("state.function", slot.name) == 0)
     {
         if (slot.num_indices != 1)
             return ARCHI_STATUS_EMISUSE;
@@ -230,7 +247,7 @@ ARCHI_CONTEXT_SET_FUNC(archi_context_hsp_frame_set)
         hsp_frame->state[slot.index[0]].function = (archi_hsp_state_function_t)value.fptr;
         context_data->frame_state_function[slot.index[0]] = value;
     }
-    else if (strcmp("data", slot.name) == 0)
+    else if (strcmp("state.data", slot.name) == 0)
     {
         if (slot.num_indices != 1)
             return ARCHI_STATUS_EMISUSE;
@@ -245,7 +262,7 @@ ARCHI_CONTEXT_SET_FUNC(archi_context_hsp_frame_set)
         hsp_frame->state[slot.index[0]].data = value.ptr;
         context_data->frame_state_data[slot.index[0]] = value;
     }
-    else if (strcmp("metadata", slot.name) == 0)
+    else if (strcmp("state.metadata", slot.name) == 0)
     {
         if (slot.num_indices != 1)
             return ARCHI_STATUS_EMISUSE;
