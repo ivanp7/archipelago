@@ -27,6 +27,8 @@
 #include "archi/hsp/exec.fun.h"
 #include "archi/hsp/state.fun.h"
 #include "archi/hsp/state/branch.fun.h"
+#include "archi/hsp/transition.typ.h"
+#include "archi/hsp/transition/attachment.typ.h"
 #include "archi/util/size.def.h"
 
 #include <stdlib.h> // for malloc(), free()
@@ -562,5 +564,413 @@ const archi_context_interface_t archi_context_hsp_branch_state_data_interface = 
     .final_fn = archi_context_hsp_branch_state_data_final,
     .get_fn = archi_context_hsp_branch_state_data_get,
     .set_fn = archi_context_hsp_branch_state_data_set,
+};
+
+/*****************************************************************************/
+
+struct archi_context_hsp_transition_data {
+    archi_pointer_t transition;
+
+    // References
+    archi_pointer_t transition_function;
+    archi_pointer_t transition_data;
+};
+
+ARCHI_CONTEXT_INIT_FUNC(archi_context_hsp_transition_init)
+{
+    archi_pointer_t transition_function = {0};
+    archi_pointer_t transition_data = {0};
+
+    bool param_function_set = false;
+    bool param_data_set = false;
+
+    for (; params != NULL; params = params->next)
+    {
+        if (strcmp("function", params->name) == 0)
+        {
+            if (param_function_set)
+                continue;
+            param_function_set = true;
+
+            if ((params->value.flags & ARCHI_POINTER_FLAG_FUNCTION) == 0)
+                return ARCHI_STATUS_EVALUE;
+
+            transition_function = params->value;
+        }
+        else if (strcmp("data", params->name) == 0)
+        {
+            if (param_data_set)
+                continue;
+            param_data_set = true;
+
+            if (params->value.flags & ARCHI_POINTER_FLAG_FUNCTION)
+                return ARCHI_STATUS_EVALUE;
+
+            transition_data = params->value;
+        }
+        else
+            return ARCHI_STATUS_EKEY;
+    }
+
+    struct archi_context_hsp_transition_data *context_data = malloc(sizeof(*context_data));
+    if (context_data == NULL)
+        return ARCHI_STATUS_ENOMEMORY;
+
+    archi_hsp_transition_t *transition = malloc(sizeof(*transition));
+    if (transition == NULL)
+    {
+        free(context_data);
+        return ARCHI_STATUS_ENOMEMORY;
+    }
+
+    *transition = (archi_hsp_transition_t){
+        .function = (archi_hsp_transition_function_t)transition_function.fptr,
+        .data = transition_data.ptr,
+    };
+
+    *context_data = (struct archi_context_hsp_transition_data){
+        .transition = {
+            .ptr = transition,
+            .element = {
+                .num_of = 1,
+                .size = sizeof(*transition),
+                .alignment = alignof(archi_hsp_transition_t),
+            },
+        },
+        .transition_function = transition_function,
+        .transition_data = transition_data,
+    };
+
+    archi_reference_count_increment(transition_function.ref_count);
+    archi_reference_count_increment(transition_data.ref_count);
+
+    *context = (archi_pointer_t*)context_data;
+    return 0;
+}
+
+ARCHI_CONTEXT_FINAL_FUNC(archi_context_hsp_transition_final)
+{
+    struct archi_context_hsp_transition_data *context_data =
+        (struct archi_context_hsp_transition_data*)context;
+
+    archi_reference_count_decrement(context_data->transition_function.ref_count);
+    archi_reference_count_decrement(context_data->transition_data.ref_count);
+    free(context_data->transition.ptr);
+    free(context_data);
+}
+
+ARCHI_CONTEXT_GET_FUNC(archi_context_hsp_transition_get)
+{
+    struct archi_context_hsp_transition_data *context_data =
+        (struct archi_context_hsp_transition_data*)context;
+
+    if (strcmp("function", slot.name) == 0)
+    {
+        if (slot.num_indices != 0)
+            return ARCHI_STATUS_EMISUSE;
+
+        *value = context_data->transition_function;
+    }
+    else if (strcmp("data", slot.name) == 0)
+    {
+        if (slot.num_indices != 0)
+            return ARCHI_STATUS_EMISUSE;
+
+        *value = context_data->transition_data;
+    }
+    else
+        return ARCHI_STATUS_EKEY;
+
+    return 0;
+}
+
+ARCHI_CONTEXT_SET_FUNC(archi_context_hsp_transition_set)
+{
+    struct archi_context_hsp_transition_data *context_data =
+        (struct archi_context_hsp_transition_data*)context;
+
+    archi_hsp_transition_t *transition = context_data->transition.ptr;
+
+    if (strcmp("function", slot.name) == 0)
+    {
+        if (slot.num_indices != 0)
+            return ARCHI_STATUS_EMISUSE;
+        else if ((value.flags & ARCHI_POINTER_FLAG_FUNCTION) == 0)
+            return ARCHI_STATUS_EVALUE;
+
+        archi_reference_count_increment(value.ref_count);
+        archi_reference_count_decrement(context_data->transition_function.ref_count);
+
+        transition->function = (archi_hsp_transition_function_t)value.fptr;
+        context_data->transition_function = value;
+    }
+    else if (strcmp("data", slot.name) == 0)
+    {
+        if (slot.num_indices != 0)
+            return ARCHI_STATUS_EMISUSE;
+        else if (value.flags & ARCHI_POINTER_FLAG_FUNCTION)
+            return ARCHI_STATUS_EVALUE;
+
+        archi_reference_count_increment(value.ref_count);
+        archi_reference_count_decrement(context_data->transition_data.ref_count);
+
+        transition->data = value.ptr;
+        context_data->transition_data = value;
+    }
+    else
+        return ARCHI_STATUS_EKEY;
+
+    return 0;
+}
+
+const archi_context_interface_t archi_context_hsp_transition_interface = {
+    .init_fn = archi_context_hsp_transition_init,
+    .final_fn = archi_context_hsp_transition_final,
+    .get_fn = archi_context_hsp_transition_get,
+    .set_fn = archi_context_hsp_transition_set,
+};
+
+/*****************************************************************************/
+
+struct archi_context_hsp_transition_attachment_data {
+    archi_pointer_t transition_attachment;
+
+    // References
+    archi_pointer_t pre_function;
+    archi_pointer_t pre_data;
+    archi_pointer_t post_function;
+    archi_pointer_t post_data;
+};
+
+ARCHI_CONTEXT_INIT_FUNC(archi_context_hsp_transition_attachment_init)
+{
+    archi_pointer_t pre_function = {0};
+    archi_pointer_t pre_data = {0};
+    archi_pointer_t post_function = {0};
+    archi_pointer_t post_data = {0};
+
+    bool param_pre_function_set = false;
+    bool param_pre_data_set = false;
+    bool param_post_function_set = false;
+    bool param_post_data_set = false;
+
+    for (; params != NULL; params = params->next)
+    {
+        if (strcmp("pre_function", params->name) == 0)
+        {
+            if (param_pre_function_set)
+                continue;
+            param_pre_function_set = true;
+
+            if ((params->value.flags & ARCHI_POINTER_FLAG_FUNCTION) == 0)
+                return ARCHI_STATUS_EVALUE;
+
+            pre_function = params->value;
+        }
+        else if (strcmp("pre_data", params->name) == 0)
+        {
+            if (param_pre_data_set)
+                continue;
+            param_pre_data_set = true;
+
+            if (params->value.flags & ARCHI_POINTER_FLAG_FUNCTION)
+                return ARCHI_STATUS_EVALUE;
+
+            pre_data = params->value;
+        }
+        else if (strcmp("post_function", params->name) == 0)
+        {
+            if (param_post_function_set)
+                continue;
+            param_post_function_set = true;
+
+            if ((params->value.flags & ARCHI_POINTER_FLAG_FUNCTION) == 0)
+                return ARCHI_STATUS_EVALUE;
+
+            post_function = params->value;
+        }
+        else if (strcmp("post_data", params->name) == 0)
+        {
+            if (param_post_data_set)
+                continue;
+            param_post_data_set = true;
+
+            if (params->value.flags & ARCHI_POINTER_FLAG_FUNCTION)
+                return ARCHI_STATUS_EVALUE;
+
+            post_data = params->value;
+        }
+        else
+            return ARCHI_STATUS_EKEY;
+    }
+
+    struct archi_context_hsp_transition_attachment_data *context_data = malloc(sizeof(*context_data));
+    if (context_data == NULL)
+        return ARCHI_STATUS_ENOMEMORY;
+
+    archi_hsp_transition_attachment_t *attachment = malloc(sizeof(*attachment));
+    if (attachment == NULL)
+    {
+        free(context_data);
+        return ARCHI_STATUS_ENOMEMORY;
+    }
+
+    *attachment = (archi_hsp_transition_attachment_t){
+        .pre = {
+            .function = (archi_hsp_transition_function_t)pre_function.fptr,
+            .data = pre_data.ptr,
+        },
+        .post = {
+            .function = (archi_hsp_transition_function_t)post_function.fptr,
+            .data = post_data.ptr,
+        },
+    };
+
+    *context_data = (struct archi_context_hsp_transition_attachment_data){
+        .transition_attachment = {
+            .ptr = attachment,
+            .element = {
+                .num_of = 1,
+                .size = sizeof(*attachment),
+                .alignment = alignof(archi_hsp_transition_attachment_t),
+            },
+        },
+        .pre_function = pre_function,
+        .pre_data = pre_data,
+        .post_function = post_function,
+        .post_data = post_data,
+    };
+
+    archi_reference_count_increment(pre_function.ref_count);
+    archi_reference_count_increment(pre_data.ref_count);
+    archi_reference_count_increment(post_function.ref_count);
+    archi_reference_count_increment(post_data.ref_count);
+
+    *context = (archi_pointer_t*)context_data;
+    return 0;
+}
+
+ARCHI_CONTEXT_FINAL_FUNC(archi_context_hsp_transition_attachment_final)
+{
+    struct archi_context_hsp_transition_attachment_data *context_data =
+        (struct archi_context_hsp_transition_attachment_data*)context;
+
+    archi_reference_count_decrement(context_data->pre_function.ref_count);
+    archi_reference_count_decrement(context_data->pre_data.ref_count);
+    archi_reference_count_decrement(context_data->post_function.ref_count);
+    archi_reference_count_decrement(context_data->post_data.ref_count);
+    free(context_data->transition_attachment.ptr);
+    free(context_data);
+}
+
+ARCHI_CONTEXT_GET_FUNC(archi_context_hsp_transition_attachment_get)
+{
+    struct archi_context_hsp_transition_attachment_data *context_data =
+        (struct archi_context_hsp_transition_attachment_data*)context;
+
+    if (strcmp("pre.function", slot.name) == 0)
+    {
+        if (slot.num_indices != 0)
+            return ARCHI_STATUS_EMISUSE;
+
+        *value = context_data->pre_function;
+    }
+    else if (strcmp("pre.data", slot.name) == 0)
+    {
+        if (slot.num_indices != 0)
+            return ARCHI_STATUS_EMISUSE;
+
+        *value = context_data->pre_data;
+    }
+    else if (strcmp("post.function", slot.name) == 0)
+    {
+        if (slot.num_indices != 0)
+            return ARCHI_STATUS_EMISUSE;
+
+        *value = context_data->post_function;
+    }
+    else if (strcmp("post.data", slot.name) == 0)
+    {
+        if (slot.num_indices != 0)
+            return ARCHI_STATUS_EMISUSE;
+
+        *value = context_data->post_data;
+    }
+    else
+        return ARCHI_STATUS_EKEY;
+
+    return 0;
+}
+
+ARCHI_CONTEXT_SET_FUNC(archi_context_hsp_transition_attachment_set)
+{
+    struct archi_context_hsp_transition_attachment_data *context_data =
+        (struct archi_context_hsp_transition_attachment_data*)context;
+
+    archi_hsp_transition_attachment_t *attachment = context_data->transition_attachment.ptr;
+
+    if (strcmp("pre.function", slot.name) == 0)
+    {
+        if (slot.num_indices != 0)
+            return ARCHI_STATUS_EMISUSE;
+        else if ((value.flags & ARCHI_POINTER_FLAG_FUNCTION) == 0)
+            return ARCHI_STATUS_EVALUE;
+
+        archi_reference_count_increment(value.ref_count);
+        archi_reference_count_decrement(context_data->pre_function.ref_count);
+
+        attachment->pre.function = (archi_hsp_transition_function_t)value.fptr;
+        context_data->pre_function = value;
+    }
+    else if (strcmp("pre.data", slot.name) == 0)
+    {
+        if (slot.num_indices != 0)
+            return ARCHI_STATUS_EMISUSE;
+        else if (value.flags & ARCHI_POINTER_FLAG_FUNCTION)
+            return ARCHI_STATUS_EVALUE;
+
+        archi_reference_count_increment(value.ref_count);
+        archi_reference_count_decrement(context_data->pre_data.ref_count);
+
+        attachment->pre.data = value.ptr;
+        context_data->pre_data = value;
+    }
+    else if (strcmp("post.function", slot.name) == 0)
+    {
+        if (slot.num_indices != 0)
+            return ARCHI_STATUS_EMISUSE;
+        else if ((value.flags & ARCHI_POINTER_FLAG_FUNCTION) == 0)
+            return ARCHI_STATUS_EVALUE;
+
+        archi_reference_count_increment(value.ref_count);
+        archi_reference_count_decrement(context_data->post_function.ref_count);
+
+        attachment->post.function = (archi_hsp_transition_function_t)value.fptr;
+        context_data->post_function = value;
+    }
+    else if (strcmp("post.data", slot.name) == 0)
+    {
+        if (slot.num_indices != 0)
+            return ARCHI_STATUS_EMISUSE;
+        else if (value.flags & ARCHI_POINTER_FLAG_FUNCTION)
+            return ARCHI_STATUS_EVALUE;
+
+        archi_reference_count_increment(value.ref_count);
+        archi_reference_count_decrement(context_data->post_data.ref_count);
+
+        attachment->post.data = value.ptr;
+        context_data->post_data = value;
+    }
+    else
+        return ARCHI_STATUS_EKEY;
+
+    return 0;
+}
+
+const archi_context_interface_t archi_context_hsp_transition_attachment_interface = {
+    .init_fn = archi_context_hsp_transition_attachment_init,
+    .final_fn = archi_context_hsp_transition_attachment_final,
+    .get_fn = archi_context_hsp_transition_attachment_get,
+    .set_fn = archi_context_hsp_transition_attachment_set,
 };
 

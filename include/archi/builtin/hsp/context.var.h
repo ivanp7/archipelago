@@ -48,5 +48,25 @@ ARCHI_CONTEXT_SET_FUNC(archi_context_hsp_branch_state_data_set);     ///< HSP br
 extern
 const archi_context_interface_t archi_context_hsp_branch_state_data_interface; ///< HSP branch state data interface.
 
+/*****************************************************************************/
+
+ARCHI_CONTEXT_INIT_FUNC(archi_context_hsp_transition_init);   ///< HSP transition initialization function.
+ARCHI_CONTEXT_FINAL_FUNC(archi_context_hsp_transition_final); ///< HSP transition finalization function.
+ARCHI_CONTEXT_GET_FUNC(archi_context_hsp_transition_get);     ///< HSP transition field getter function.
+ARCHI_CONTEXT_SET_FUNC(archi_context_hsp_transition_set);     ///< HSP transition field setter function.
+
+extern
+const archi_context_interface_t archi_context_hsp_transition_interface; ///< HSP transition interface.
+
+/*****************************************************************************/
+
+ARCHI_CONTEXT_INIT_FUNC(archi_context_hsp_transition_attachment_init);   ///< HSP transition attachment initialization function.
+ARCHI_CONTEXT_FINAL_FUNC(archi_context_hsp_transition_attachment_final); ///< HSP transition attachment finalization function.
+ARCHI_CONTEXT_GET_FUNC(archi_context_hsp_transition_attachment_get);     ///< HSP transition attachment field getter function.
+ARCHI_CONTEXT_SET_FUNC(archi_context_hsp_transition_attachment_set);     ///< HSP transition attachment field setter function.
+
+extern
+const archi_context_interface_t archi_context_hsp_transition_attachment_interface; ///< HSP transition attachment interface.
+
 #endif // _ARCHI_BUILTIN_HSP_CONTEXT_VAR_H_
 
