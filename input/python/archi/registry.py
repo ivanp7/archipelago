@@ -501,6 +501,12 @@ class Registry:
                 InstructionType.DELETE,
                 key=key)
 
+    def noop(self):
+        """Emit a NOOP instruction.
+        """
+        self._instruct(
+                InstructionType.NOOP)
+
     def reset(self):
         """Reset the list of instructions.
         """
