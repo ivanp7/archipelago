@@ -30,18 +30,24 @@ ARCHI_HSP_TRANSITION_FUNCTION(archi_hsp_transition_attachments_handler)
 {
     (void) trans_state;
 
-    const archi_hsp_transition_attachment_t *attachment;
+    const archi_hsp_transition_attachment_t *global_attachment = data;
 
-    attachment = prev_state.metadata;
-    if ((attachment != NULL) && (attachment->post.function != NULL))
-        attachment->post.function(prev_state, next_state, NULL, attachment->post.data);
+    if (prev_state.function != NULL)
+    {
+        const archi_hsp_transition_attachment_t *attachment = prev_state.metadata;
+        if ((attachment != NULL) && (attachment->post.function != NULL))
+            attachment->post.function(prev_state, next_state, NULL, attachment->post.data);
+    }
+    else if ((global_attachment != NULL) && (global_attachment->pre.function != NULL))
+        global_attachment->pre.function(prev_state, next_state, NULL, global_attachment->pre.data);
 
-    const archi_hsp_transition_t *transition = data;
-    if ((transition != NULL) && (transition->function != NULL))
-        transition->function(prev_state, next_state, NULL, transition->data);
-
-    attachment = next_state.metadata;
-    if ((attachment != NULL) && (attachment->pre.function != NULL))
-        attachment->pre.function(prev_state, next_state, NULL, attachment->pre.data);
+    if (next_state.function != NULL)
+    {
+        const archi_hsp_transition_attachment_t *attachment = next_state.metadata;
+        if ((attachment != NULL) && (attachment->pre.function != NULL))
+            attachment->pre.function(prev_state, next_state, NULL, attachment->pre.data);
+    }
+    else if ((global_attachment != NULL) && (global_attachment->post.function != NULL))
+        global_attachment->post.function(prev_state, next_state, NULL, global_attachment->post.data);
 }
 
