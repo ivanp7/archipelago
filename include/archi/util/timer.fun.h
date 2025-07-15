@@ -42,7 +42,9 @@ typedef struct archi_timer *archi_timer_t;
  * @return Timer context.
  */
 archi_timer_t
-archi_timer_alloc(void);
+archi_timer_alloc(
+        const char *name ///< [in] Timer name.
+);
 
 /**
  * @brief Destroy a timer.
@@ -77,6 +79,16 @@ archi_timer_start(
  */
 float
 archi_timer_stop(
+        archi_timer_t timer ///< [in] Timer.
+);
+
+/**
+ * @brief Get timer name.
+ *
+ * @return Timer name.
+ */
+const char*
+archi_timer_name(
         archi_timer_t timer ///< [in] Timer.
 );
 

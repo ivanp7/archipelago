@@ -31,14 +31,32 @@
 
 ARCHI_CONTEXT_INIT_FUNC(archi_context_util_timer_init)
 {
-    if (params != NULL)
-        return ARCHI_STATUS_EKEY;
+    const char *name = NULL;
+
+    bool param_name_set = false;
+
+    for (; params != NULL; params = params->next)
+    {
+        if (strcmp("name", params->name) == 0)
+        {
+            if (param_name_set)
+                continue;
+            param_name_set = true;
+
+            if (params->value.flags & ARCHI_POINTER_FLAG_FUNCTION)
+                return ARCHI_STATUS_EVALUE;
+
+            name = params->value.ptr;
+        }
+        else
+            return ARCHI_STATUS_EKEY;
+    }
 
     archi_pointer_t *context_data = malloc(sizeof(*context_data));
     if (context_data == NULL)
         return ARCHI_STATUS_ENOMEMORY;
 
-    archi_timer_t timer = archi_timer_alloc();
+    archi_timer_t timer = archi_timer_alloc(name);
     if (timer == NULL)
     {
         free(context_data);

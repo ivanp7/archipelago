@@ -26,10 +26,13 @@
 #include "archi/util/timer.fun.h"
 
 #include <stdlib.h> // for malloc(), free()
+#include <string.h> // for strlen(), memcpy()
 #include <math.h> // for INFINITY
 #include <sys/time.h> // for gettimeofday(), struct timeval
 
 struct archi_timer {
+    const char *name; ///< Timer name.
+
     float total_seconds; ///< Total accumulated time.
     float min_seconds;   ///< Minimum run time.
     float max_seconds;   ///< Maximum run time.
@@ -42,13 +45,31 @@ struct archi_timer {
 };
 
 archi_timer_t
-archi_timer_alloc(void)
+archi_timer_alloc(
+        const char *name)
 {
     archi_timer_t timer = malloc(sizeof(*timer));
     if (timer == NULL)
         return NULL;
 
+    if (name != NULL)
+    {
+        size_t name_len = strlen(name) + 1;
+
+        char *name_copy = malloc(name_len);
+        if (name_copy == NULL)
+        {
+            free(timer);
+            return NULL;
+        }
+
+        memcpy(name_copy, name, name_len);
+        name = name_copy;
+    }
+
+    timer->name = name;
     archi_timer_reset(timer);
+
     return timer;
 }
 
@@ -56,6 +77,7 @@ void
 archi_timer_free(
         archi_timer_t timer)
 {
+    free(timer->name);
     free(timer);
 }
 
@@ -66,7 +88,11 @@ archi_timer_reset(
     if (timer == NULL)
         return;
 
-    *timer = (struct archi_timer){0};
+    const char *name = timer->name;
+
+    *timer = (struct archi_timer){
+        .name = name,
+    };
 }
 
 bool
@@ -126,6 +152,16 @@ archi_timer_stop(
 
     timer->started = false;
     return seconds;
+}
+
+const char*
+archi_timer_name(
+        archi_timer_t timer)
+{
+    if (timer == NULL)
+        return NULL;
+
+    return timer->name;
 }
 
 unsigned long
