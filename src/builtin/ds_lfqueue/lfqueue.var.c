@@ -23,7 +23,7 @@
  * @brief Application context interface for lock-free queues.
  */
 
-#include "archi/builtin/ds_lfqueue/context.var.h"
+#include "archi/builtin/ds_lfqueue/lfqueue.var.h"
 #include "archi/ds/lfqueue/api.fun.h"
 
 #include <stdlib.h> // for malloc(), free()

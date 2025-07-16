@@ -20,21 +20,21 @@
 
 /**
  * @file
- * @brief Application context interface for lock-free queues.
+ * @brief Application context interface for memory.
  */
 
 #pragma once
-#ifndef _ARCHI_BUILTIN_DS_LFQUEUE_CONTEXT_VAR_H_
-#define _ARCHI_BUILTIN_DS_LFQUEUE_CONTEXT_VAR_H_
+#ifndef _ARCHI_BUILTIN_MEM_MEMORY_VAR_H_
+#define _ARCHI_BUILTIN_MEM_MEMORY_VAR_H_
 
 #include "archi/ctx/interface.typ.h"
 
-ARCHI_CONTEXT_INIT_FUNC(archi_context_ds_lfqueue_init);   ///< Lock-free queue initialization function.
-ARCHI_CONTEXT_FINAL_FUNC(archi_context_ds_lfqueue_final); ///< Lock-free queue finalization function.
-ARCHI_CONTEXT_GET_FUNC(archi_context_ds_lfqueue_get);     ///< Lock-free queue getter function.
+ARCHI_CONTEXT_INIT_FUNC(archi_context_memory_init);   ///< Memory context initialization function.
+ARCHI_CONTEXT_FINAL_FUNC(archi_context_memory_final); ///< Memory context finalization function.
+ARCHI_CONTEXT_GET_FUNC(archi_context_memory_get);     ///< Memory context getter function.
 
 extern
-const archi_context_interface_t archi_context_ds_lfqueue_interface; ///< Lock-free queue interface.
+const archi_context_interface_t archi_context_memory_interface; ///< Memory context interface.
 
-#endif // _ARCHI_BUILTIN_DS_LFQUEUE_CONTEXT_VAR_H_
+#endif // _ARCHI_BUILTIN_MEM_MEMORY_VAR_H_
 

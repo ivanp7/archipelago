@@ -20,27 +20,22 @@
 
 /**
  * @file
- * @brief Types for thread group dispatch HSP state.
+ * @brief Application context interface for thread group work description.
  */
 
 #pragma once
-#ifndef _ARCHI_BUILTIN_RES_THREAD_GROUP_DISPATCH_TYP_H_
-#define _ARCHI_BUILTIN_RES_THREAD_GROUP_DISPATCH_TYP_H_
+#ifndef _ARCHI_BUILTIN_RES_THREAD_GROUP_WORK_VAR_H_
+#define _ARCHI_BUILTIN_RES_THREAD_GROUP_WORK_VAR_H_
 
-#include "archi/res/thread_group/api.fun.h"
+#include "archi/ctx/interface.typ.h"
 
-/**
- * @brief Parameters for archi_thread_group_dispatch().
- */
-typedef struct archi_context_res_thread_group_dispatch_data {
-    archi_thread_group_context_t context; ///< Thread group context.
+ARCHI_CONTEXT_INIT_FUNC(archi_context_res_thread_group_work_init);   ///< Thread group work initialization function.
+ARCHI_CONTEXT_FINAL_FUNC(archi_context_res_thread_group_work_final); ///< Thread group work finalization function.
+ARCHI_CONTEXT_GET_FUNC(archi_context_res_thread_group_work_get);     ///< Thread group work getter function.
+ARCHI_CONTEXT_SET_FUNC(archi_context_res_thread_group_work_set);     ///< Thread group work setter function.
 
-    archi_thread_group_work_t *work; ///< Concurrent work task.
-    archi_thread_group_callback_t *callback; ///< Concurrent work completion callback.
-    archi_thread_group_dispatch_params_t params; ///< Dispatch parameters.
+extern
+const archi_context_interface_t archi_context_res_thread_group_work_interface; ///< Thread group work interface.
 
-    const char *name; ///< Name of the operation (for logging).
-} archi_context_res_thread_group_dispatch_data_t;
-
-#endif // _ARCHI_BUILTIN_RES_THREAD_GROUP_DISPATCH_TYP_H_
+#endif // _ARCHI_BUILTIN_RES_THREAD_GROUP_WORK_VAR_H_
 

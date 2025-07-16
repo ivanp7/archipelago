@@ -20,22 +20,22 @@
 
 /**
  * @file
- * @brief Hierarchical state processor states for thread groups.
+ * @brief Application context interface for the signal handlers.
  */
 
 #pragma once
-#ifndef _ARCHI_BUILTIN_RES_THREAD_GROUP_HSP_STATE_FUN_H_
-#define _ARCHI_BUILTIN_RES_THREAD_GROUP_HSP_STATE_FUN_H_
+#ifndef _ARCHI_BUILTIN_IPC_SIGNAL_HANDLER_VAR_H_
+#define _ARCHI_BUILTIN_IPC_SIGNAL_HANDLER_VAR_H_
 
-#include "archi/hsp/state.typ.h"
+#include "archi/ctx/interface.typ.h"
 
-/**
- * @brief State function for calling archi_thread_group_dispatch().
- *
- * This state function expects archi_context_res_thread_group_dispatch_data_t
- * object as function data.
- */
-ARCHI_HSP_STATE_FUNCTION(archi_hsp_state_res_thread_group_dispatch);
+ARCHI_CONTEXT_INIT_FUNC(archi_context_ipc_signal_handler_init);   ///< Signal handler initialization function.
+ARCHI_CONTEXT_FINAL_FUNC(archi_context_ipc_signal_handler_final); ///< Signal handler finalization function.
+ARCHI_CONTEXT_GET_FUNC(archi_context_ipc_signal_handler_get);     ///< Signal handler slot getter function.
+ARCHI_CONTEXT_SET_FUNC(archi_context_ipc_signal_handler_set);     ///< Signal handler slot setter function.
 
-#endif // _ARCHI_BUILTIN_RES_THREAD_GROUP_HSP_STATE_FUN_H_
+extern
+const archi_context_interface_t archi_context_ipc_signal_handler_interface; ///< Signal handler interface.
+
+#endif // _ARCHI_BUILTIN_IPC_SIGNAL_HANDLER_VAR_H_
 

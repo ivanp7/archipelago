@@ -20,7 +20,7 @@
 
 /**
  * @file
- * @brief Application context interface for thread groups.
+ * @brief Application context interface for thread group contexts.
  */
 
 #pragma once
@@ -35,36 +35,6 @@ ARCHI_CONTEXT_GET_FUNC(archi_context_res_thread_group_get);     ///< Thread grou
 
 extern
 const archi_context_interface_t archi_context_res_thread_group_interface; ///< Thread group context interface.
-
-/*****************************************************************************/
-
-ARCHI_CONTEXT_INIT_FUNC(archi_context_res_thread_group_work_init);   ///< Thread group work initialization function.
-ARCHI_CONTEXT_FINAL_FUNC(archi_context_res_thread_group_work_final); ///< Thread group work finalization function.
-ARCHI_CONTEXT_GET_FUNC(archi_context_res_thread_group_work_get);     ///< Thread group work getter function.
-ARCHI_CONTEXT_SET_FUNC(archi_context_res_thread_group_work_set);     ///< Thread group work setter function.
-
-extern
-const archi_context_interface_t archi_context_res_thread_group_work_interface; ///< Thread group work interface.
-
-/*****************************************************************************/
-
-ARCHI_CONTEXT_INIT_FUNC(archi_context_res_thread_group_callback_init);   ///< Thread group callback initialization function.
-ARCHI_CONTEXT_FINAL_FUNC(archi_context_res_thread_group_callback_final); ///< Thread group callback finalization function.
-ARCHI_CONTEXT_GET_FUNC(archi_context_res_thread_group_callback_get);     ///< Thread group callback getter function.
-ARCHI_CONTEXT_SET_FUNC(archi_context_res_thread_group_callback_set);     ///< Thread group callback setter function.
-
-extern
-const archi_context_interface_t archi_context_res_thread_group_callback_interface; ///< Thread group callback interface.
-
-/*****************************************************************************/
-
-ARCHI_CONTEXT_INIT_FUNC(archi_context_res_thread_group_dispatch_data_init);   ///< Thread group dispatch data initialization function.
-ARCHI_CONTEXT_FINAL_FUNC(archi_context_res_thread_group_dispatch_data_final); ///< Thread group dispatch data finalization function.
-ARCHI_CONTEXT_GET_FUNC(archi_context_res_thread_group_dispatch_data_get);     ///< Thread group dispatch data getter function.
-ARCHI_CONTEXT_SET_FUNC(archi_context_res_thread_group_dispatch_data_set);     ///< Thread group dispatch data setter function.
-
-extern
-const archi_context_interface_t archi_context_res_thread_group_dispatch_data_interface; ///< Thread group dispatch data interface.
 
 #endif // _ARCHI_BUILTIN_RES_THREAD_GROUP_CONTEXT_VAR_H_
 

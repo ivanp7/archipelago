@@ -20,22 +20,21 @@
 
 /**
  * @file
- * @brief Application context interface for shared libraries.
+ * @brief Application context interface for timers.
  */
 
 #pragma once
-#ifndef _ARCHI_BUILTIN_RES_LIBRARY_CONTEXT_VAR_H_
-#define _ARCHI_BUILTIN_RES_LIBRARY_CONTEXT_VAR_H_
+#ifndef _ARCHI_BUILTIN_UTIL_TIMER_TIMER_VAR_H_
+#define _ARCHI_BUILTIN_UTIL_TIMER_TIMER_VAR_H_
 
 #include "archi/ctx/interface.typ.h"
 
-ARCHI_CONTEXT_INIT_FUNC(archi_context_res_library_init);   ///< Shared library context initialization function.
-ARCHI_CONTEXT_FINAL_FUNC(archi_context_res_library_final); ///< Shared library context finalization function.
-ARCHI_CONTEXT_GET_FUNC(archi_context_res_library_get);     ///< Shared library context slot getter function.
-ARCHI_CONTEXT_ACT_FUNC(archi_context_res_library_act);     ///< Shared library context action function.
+ARCHI_CONTEXT_INIT_FUNC(archi_context_util_timer_init);   ///< Timer initialization function.
+ARCHI_CONTEXT_FINAL_FUNC(archi_context_util_timer_final); ///< Timer finalization function.
+ARCHI_CONTEXT_ACT_FUNC(archi_context_util_timer_act);     ///< Timer action function.
 
 extern
-const archi_context_interface_t archi_context_res_library_interface; ///< Shared library context interface.
+const archi_context_interface_t archi_context_util_timer_interface; ///< Timer interface.
 
-#endif // _ARCHI_BUILTIN_RES_LIBRARY_CONTEXT_VAR_H_
+#endif // _ARCHI_BUILTIN_UTIL_TIMER_TIMER_VAR_H_
 

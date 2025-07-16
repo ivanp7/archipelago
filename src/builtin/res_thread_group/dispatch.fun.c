@@ -20,27 +20,38 @@
 
 /**
  * @file
- * @brief Types for thread group dispatch HSP state.
+ * @brief HSP state for thread group dispatch operation.
  */
 
-#pragma once
-#ifndef _ARCHI_BUILTIN_RES_THREAD_GROUP_DISPATCH_TYP_H_
-#define _ARCHI_BUILTIN_RES_THREAD_GROUP_DISPATCH_TYP_H_
-
+#include "archi/builtin/res_thread_group/dispatch.fun.h"
+#include "archi/builtin/res_thread_group/dispatch.typ.h"
 #include "archi/res/thread_group/api.fun.h"
+#include "archi/hsp/state.fun.h"
+#include "archi/log/print.fun.h"
 
-/**
- * @brief Parameters for archi_thread_group_dispatch().
- */
-typedef struct archi_context_res_thread_group_dispatch_data {
-    archi_thread_group_context_t context; ///< Thread group context.
+ARCHI_HSP_STATE_FUNCTION(archi_hsp_state_res_thread_group_dispatch)
+{
+#define M "archi_hsp_state_res_thread_group_dispatch"
 
-    archi_thread_group_work_t *work; ///< Concurrent work task.
-    archi_thread_group_callback_t *callback; ///< Concurrent work completion callback.
-    archi_thread_group_dispatch_params_t params; ///< Dispatch parameters.
+    archi_context_res_thread_group_dispatch_data_t *dispatch_data = ARCHI_HSP_CURRENT_STATE().data;
+    if ((dispatch_data == NULL) || (dispatch_data->work == NULL))
+        return;
 
-    const char *name; ///< Name of the operation (for logging).
-} archi_context_res_thread_group_dispatch_data_t;
+    archi_thread_group_callback_t callback = {0};
+    if (dispatch_data->callback != NULL)
+        callback = *dispatch_data->callback;
 
-#endif // _ARCHI_BUILTIN_RES_THREAD_GROUP_DISPATCH_TYP_H_
+    archi_status_t code = archi_thread_group_dispatch(dispatch_data->context,
+            *dispatch_data->work, callback, dispatch_data->params);
+
+    if (code != 0)
+    {
+        if (dispatch_data->name != NULL)
+            archi_log_error(M, "archi_thread_group_dispatch('%s') -> %i", dispatch_data->name, code);
+        else
+            archi_log_error(M, "archi_thread_group_dispatch() -> %i", code);
+    }
+
+#undef M
+}
 

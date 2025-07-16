@@ -20,22 +20,22 @@
 
 /**
  * @file
- * @brief Application context interface for files.
+ * @brief Application context interface for memory mapping.
  */
 
 #pragma once
-#ifndef _ARCHI_BUILTIN_RES_FILE_CONTEXT_VAR_H_
-#define _ARCHI_BUILTIN_RES_FILE_CONTEXT_VAR_H_
+#ifndef _ARCHI_BUILTIN_MEM_MAPPING_VAR_H_
+#define _ARCHI_BUILTIN_MEM_MAPPING_VAR_H_
 
 #include "archi/ctx/interface.typ.h"
 
-ARCHI_CONTEXT_INIT_FUNC(archi_context_res_file_init);   ///< File context initialization function.
-ARCHI_CONTEXT_FINAL_FUNC(archi_context_res_file_final); ///< File context finalization function.
-ARCHI_CONTEXT_GET_FUNC(archi_context_res_file_get);     ///< File context slot getter function.
-ARCHI_CONTEXT_ACT_FUNC(archi_context_res_file_act);     ///< File context action function.
+ARCHI_CONTEXT_INIT_FUNC(archi_context_memory_mapping_init);   ///< Memory mapping context initialization function.
+ARCHI_CONTEXT_FINAL_FUNC(archi_context_memory_mapping_final); ///< Memory mapping context finalization function.
+ARCHI_CONTEXT_GET_FUNC(archi_context_memory_mapping_get);     ///< Memory mapping context getter function.
+ARCHI_CONTEXT_ACT_FUNC(archi_context_memory_mapping_act);     ///< Memory mapping context action function.
 
 extern
-const archi_context_interface_t archi_context_res_file_interface; ///< File context interface.
+const archi_context_interface_t archi_context_memory_mapping_interface; ///< Memory mapping context interface.
 
-#endif // _ARCHI_BUILTIN_RES_FILE_CONTEXT_VAR_H_
+#endif // _ARCHI_BUILTIN_MEM_MAPPING_VAR_H_
 

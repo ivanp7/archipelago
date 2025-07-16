@@ -20,22 +20,20 @@
 
 /**
  * @file
- * @brief Application context interface for hashmaps.
+ * @brief Application context interface for environmental variables.
  */
 
 #pragma once
-#ifndef _ARCHI_BUILTIN_DS_HASHMAP_CONTEXT_VAR_H_
-#define _ARCHI_BUILTIN_DS_HASHMAP_CONTEXT_VAR_H_
+#ifndef _ARCHI_BUILTIN_IPC_ENV_ENVVAR_VAR_H_
+#define _ARCHI_BUILTIN_IPC_ENV_ENVVAR_VAR_H_
 
 #include "archi/ctx/interface.typ.h"
 
-ARCHI_CONTEXT_INIT_FUNC(archi_context_ds_hashmap_init);   ///< Hashmap initialization function.
-ARCHI_CONTEXT_FINAL_FUNC(archi_context_ds_hashmap_final); ///< Hashmap finalization function.
-ARCHI_CONTEXT_GET_FUNC(archi_context_ds_hashmap_get);     ///< Hashmap value getter function.
-ARCHI_CONTEXT_SET_FUNC(archi_context_ds_hashmap_set);     ///< Hashmap value setter function.
+ARCHI_CONTEXT_INIT_FUNC(archi_context_ipc_env_init);   ///< Environmental variable context initialization function.
+ARCHI_CONTEXT_FINAL_FUNC(archi_context_ipc_env_final); ///< Environmental variable context finalization function.
 
 extern
-const archi_context_interface_t archi_context_ds_hashmap_interface; ///< Hashmap interface.
+const archi_context_interface_t archi_context_ipc_env_interface; ///< Environmental variable context interface.
 
-#endif // _ARCHI_BUILTIN_DS_HASHMAP_CONTEXT_VAR_H_
+#endif // _ARCHI_BUILTIN_IPC_ENV_ENVVAR_VAR_H_
 

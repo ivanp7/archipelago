@@ -31,13 +31,13 @@
 #include "archi/exe/registry.def.h"
 #include "archi/exe/instruction.fun.h"
 #include "archi/exe/instruction.typ.h"
-#include "archi/builtin/ds_hashmap/context.var.h"
-#include "archi/builtin/res_file/context.var.h"
-#include "archi/builtin/res_library/context.var.h"
+#include "archi/builtin/ds_hashmap/hashmap.var.h"
+#include "archi/builtin/res_file/file.var.h"
+#include "archi/builtin/res_library/library.var.h"
 
 // Signal management
 #include "archi/ipc/signal/api.fun.h"
-#include "archi/builtin/ipc_signal/context.var.h"
+#include "archi/builtin/ipc_signal/management.fun.h"
 
 // Logging
 #include "archi/exe/logging.fun.h"

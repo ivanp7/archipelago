@@ -20,31 +20,22 @@
 
 /**
  * @file
- * @brief Application context interface for memory objects.
+ * @brief Application context interface for HSP transition attachment data.
  */
 
 #pragma once
-#ifndef _ARCHI_BUILTIN_MEM_CONTEXT_VAR_H_
-#define _ARCHI_BUILTIN_MEM_CONTEXT_VAR_H_
+#ifndef _ARCHI_BUILTIN_HSP_TRANSITION_ATTACHMENT_DATA_VAR_H_
+#define _ARCHI_BUILTIN_HSP_TRANSITION_ATTACHMENT_DATA_VAR_H_
 
 #include "archi/ctx/interface.typ.h"
 
-ARCHI_CONTEXT_INIT_FUNC(archi_context_memory_init);   ///< Memory context initialization function.
-ARCHI_CONTEXT_FINAL_FUNC(archi_context_memory_final); ///< Memory context finalization function.
-ARCHI_CONTEXT_GET_FUNC(archi_context_memory_get);     ///< Memory context getter function.
+ARCHI_CONTEXT_INIT_FUNC(archi_context_hsp_transition_attachment_data_init);   ///< HSP transition attachment initialization function.
+ARCHI_CONTEXT_FINAL_FUNC(archi_context_hsp_transition_attachment_data_final); ///< HSP transition attachment finalization function.
+ARCHI_CONTEXT_GET_FUNC(archi_context_hsp_transition_attachment_data_get);     ///< HSP transition attachment field getter function.
+ARCHI_CONTEXT_SET_FUNC(archi_context_hsp_transition_attachment_data_set);     ///< HSP transition attachment field setter function.
 
 extern
-const archi_context_interface_t archi_context_memory_interface; ///< Memory context interface.
+const archi_context_interface_t archi_context_hsp_transition_attachment_data_interface; ///< HSP transition attachment interface.
 
-/*****************************************************************************/
-
-ARCHI_CONTEXT_INIT_FUNC(archi_context_memory_mapping_init);   ///< Memory mapping context initialization function.
-ARCHI_CONTEXT_FINAL_FUNC(archi_context_memory_mapping_final); ///< Memory mapping context finalization function.
-ARCHI_CONTEXT_GET_FUNC(archi_context_memory_mapping_get);     ///< Memory mapping context getter function.
-ARCHI_CONTEXT_ACT_FUNC(archi_context_memory_mapping_act);     ///< Memory mapping context action function.
-
-extern
-const archi_context_interface_t archi_context_memory_mapping_interface; ///< Memory mapping context interface.
-
-#endif // _ARCHI_BUILTIN_MEM_CONTEXT_VAR_H_
+#endif // _ARCHI_BUILTIN_HSP_TRANSITION_ATTACHMENT_DATA_VAR_H_
 

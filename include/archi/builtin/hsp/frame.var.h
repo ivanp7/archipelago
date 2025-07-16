@@ -20,20 +20,23 @@
 
 /**
  * @file
- * @brief Application context interface for environmental variables.
+ * @brief Application context interface for hierarchical state processor frames.
  */
 
 #pragma once
-#ifndef _ARCHI_BUILTIN_IPC_ENV_CONTEXT_VAR_H_
-#define _ARCHI_BUILTIN_IPC_ENV_CONTEXT_VAR_H_
+#ifndef _ARCHI_BUILTIN_HSP_FRAME_VAR_H_
+#define _ARCHI_BUILTIN_HSP_FRAME_VAR_H_
 
 #include "archi/ctx/interface.typ.h"
 
-ARCHI_CONTEXT_INIT_FUNC(archi_context_ipc_env_init);   ///< Environmental variable context initialization function.
-ARCHI_CONTEXT_FINAL_FUNC(archi_context_ipc_env_final); ///< Environmental variable context finalization function.
+ARCHI_CONTEXT_INIT_FUNC(archi_context_hsp_frame_init);   ///< HSP frame initialization function.
+ARCHI_CONTEXT_FINAL_FUNC(archi_context_hsp_frame_final); ///< HSP frame finalization function.
+ARCHI_CONTEXT_GET_FUNC(archi_context_hsp_frame_get);     ///< HSP frame field getter function.
+ARCHI_CONTEXT_SET_FUNC(archi_context_hsp_frame_set);     ///< HSP frame field setter function.
+ARCHI_CONTEXT_ACT_FUNC(archi_context_hsp_frame_act);     ///< HSP frame action function.
 
 extern
-const archi_context_interface_t archi_context_ipc_env_interface; ///< Environmental variable context interface.
+const archi_context_interface_t archi_context_hsp_frame_interface; ///< HSP frame interface.
 
-#endif // _ARCHI_BUILTIN_IPC_ENV_CONTEXT_VAR_H_
+#endif // _ARCHI_BUILTIN_HSP_FRAME_VAR_H_
 

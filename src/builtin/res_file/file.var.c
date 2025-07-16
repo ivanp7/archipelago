@@ -23,7 +23,7 @@
  * @brief Application context interface for files.
  */
 
-#include "archi/builtin/res_file/context.var.h"
+#include "archi/builtin/res_file/file.var.h"
 #include "archi/res/file/api.fun.h"
 
 #include <stdlib.h> // for malloc(), free()

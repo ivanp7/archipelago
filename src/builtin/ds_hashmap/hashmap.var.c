@@ -23,7 +23,7 @@
  * @brief Application context interface for hashmaps.
  */
 
-#include "archi/builtin/ds_hashmap/context.var.h"
+#include "archi/builtin/ds_hashmap/hashmap.var.h"
 #include "archi/ds/hashmap/api.fun.h"
 
 #include <stdlib.h> // for malloc(), free()

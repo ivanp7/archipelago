@@ -20,24 +20,14 @@
 
 /**
  * @file
- * @brief Application context interface for the signal management.
+ * @brief Application context interface functions for the signal management.
  */
 
 #pragma once
-#ifndef _ARCHI_BUILTIN_IPC_SIGNAL_CONTEXT_FUN_H_
-#define _ARCHI_BUILTIN_IPC_SIGNAL_CONTEXT_FUN_H_
+#ifndef _ARCHI_BUILTIN_IPC_SIGNAL_MANAGEMENT_FUN_H_
+#define _ARCHI_BUILTIN_IPC_SIGNAL_MANAGEMENT_FUN_H_
 
 #include "archi/ctx/interface.typ.h"
-
-ARCHI_CONTEXT_INIT_FUNC(archi_context_ipc_signal_handler_init);   ///< Signal handler initialization function.
-ARCHI_CONTEXT_FINAL_FUNC(archi_context_ipc_signal_handler_final); ///< Signal handler finalization function.
-ARCHI_CONTEXT_GET_FUNC(archi_context_ipc_signal_handler_get);     ///< Signal handler slot getter function.
-ARCHI_CONTEXT_SET_FUNC(archi_context_ipc_signal_handler_set);     ///< Signal handler slot setter function.
-
-extern
-const archi_context_interface_t archi_context_ipc_signal_handler_interface; ///< Signal handler interface.
-
-/*****************************************************************************/
 
 ARCHI_CONTEXT_INIT_FUNC(archi_context_ipc_signal_management_init);   ///< Signal management context initialization function.
 ARCHI_CONTEXT_FINAL_FUNC(archi_context_ipc_signal_management_final); ///< Signal management context finalization function.
@@ -48,5 +38,5 @@ ARCHI_CONTEXT_SET_FUNC(archi_context_ipc_signal_management_set);     ///< Signal
 // There can be only one signal management thread, and it must be created before any other threads.
 // Thus, it has to be controlled by an application in a special way.
 
-#endif // _ARCHI_BUILTIN_IPC_SIGNAL_CONTEXT_FUN_H_
+#endif // _ARCHI_BUILTIN_IPC_SIGNAL_MANAGEMENT_FUN_H_
 

@@ -23,7 +23,7 @@
  * @brief Application context interface for shared libraries.
  */
 
-#include "archi/builtin/res_library/context.var.h"
+#include "archi/builtin/res_library/library.var.h"
 #include "archi/res/library/api.fun.h"
 
 #include <stdlib.h> // for malloc(), free()

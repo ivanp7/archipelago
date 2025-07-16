@@ -20,21 +20,21 @@
 
 /**
  * @file
- * @brief Application context interface for timers.
+ * @brief Application context interface for lock-free queues.
  */
 
 #pragma once
-#ifndef _ARCHI_BUILTIN_UTIL_TIMER_CONTEXT_VAR_H_
-#define _ARCHI_BUILTIN_UTIL_TIMER_CONTEXT_VAR_H_
+#ifndef _ARCHI_BUILTIN_DS_LFQUEUE_LFQUEUE_VAR_H_
+#define _ARCHI_BUILTIN_DS_LFQUEUE_LFQUEUE_VAR_H_
 
 #include "archi/ctx/interface.typ.h"
 
-ARCHI_CONTEXT_INIT_FUNC(archi_context_util_timer_init);   ///< Timer initialization function.
-ARCHI_CONTEXT_FINAL_FUNC(archi_context_util_timer_final); ///< Timer finalization function.
-ARCHI_CONTEXT_ACT_FUNC(archi_context_util_timer_act);     ///< Timer action function.
+ARCHI_CONTEXT_INIT_FUNC(archi_context_ds_lfqueue_init);   ///< Lock-free queue initialization function.
+ARCHI_CONTEXT_FINAL_FUNC(archi_context_ds_lfqueue_final); ///< Lock-free queue finalization function.
+ARCHI_CONTEXT_GET_FUNC(archi_context_ds_lfqueue_get);     ///< Lock-free queue getter function.
 
 extern
-const archi_context_interface_t archi_context_util_timer_interface; ///< Timer interface.
+const archi_context_interface_t archi_context_ds_lfqueue_interface; ///< Lock-free queue interface.
 
-#endif // _ARCHI_BUILTIN_UTIL_TIMER_CONTEXT_VAR_H_
+#endif // _ARCHI_BUILTIN_DS_LFQUEUE_LFQUEUE_VAR_H_
 
