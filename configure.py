@@ -55,6 +55,7 @@ MODULES = [
 
         "builtin/mem", # application context: memory objects
         "builtin/hsp", # application context: hierarchical state processor entities
+        "builtin/convert", # application context: data representation conversions
         "builtin/util_timer", # application context: utility: timer
         "builtin/ds_hashmap", # application context: data structure: hashmap
         "builtin/ds_lfqueue", # application context: data structure: lock-free queue
