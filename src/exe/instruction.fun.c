@@ -30,7 +30,7 @@
 #include "archi/ctx/interface/pointer.var.h"
 #include "archi/ctx/interface/array.var.h"
 #include "archi/log/print.fun.h"
-#include "archi/log/print.def.h"
+#include "archi/log/verbosity.def.h"
 #include "archi/log/color.def.h"
 #include "archi/util/alloc.fun.h"
 #include "archi/util/size.def.h"

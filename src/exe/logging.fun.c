@@ -24,7 +24,7 @@
  */
 
 #include "archi/exe/logging.fun.h"
-#include "archi/log/print.def.h"
+#include "archi/log/verbosity.def.h"
 #include "../log/context.typ.h" // for struct archi_log_context
 
 static

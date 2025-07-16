@@ -25,7 +25,7 @@
 
 #include "archi/log/context.fun.h"
 #include "archi/log/print.fun.h"
-#include "archi/log/print.def.h"
+#include "archi/log/verbosity.def.h"
 #include "archi/log/color.def.h"
 #include "context.typ.h" // for struct archi_log_context
 

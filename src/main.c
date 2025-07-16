@@ -43,7 +43,7 @@
 #include "archi/exe/logging.fun.h"
 #include "archi/log/context.fun.h"
 #include "archi/log/print.fun.h"
-#include "archi/log/print.def.h"
+#include "archi/log/verbosity.def.h"
 #include "archi/log/color.def.h"
 
 #include <stdlib.h>

@@ -24,8 +24,8 @@
  */
 
 #pragma once
-#ifndef _ARCHI_LOG_PRINT_DEF_H_
-#define _ARCHI_LOG_PRINT_DEF_H_
+#ifndef _ARCHI_LOG_VERBOSITY_DEF_H_
+#define _ARCHI_LOG_VERBOSITY_DEF_H_
 
 #define ARCHI_LOG_VERBOSITY_QUIET    0  ///< Disable all logging.
 #define ARCHI_LOG_VERBOSITY_ERROR    1  ///< Print errors only.
@@ -36,5 +36,5 @@
 
 #define ARCHI_LOG_VERBOSITY_MAX ARCHI_LOG_VERBOSITY_DEBUG ///< The maximum verbosity level.
 
-#endif // _ARCHI_LOG_PRINT_DEF_H_
+#endif // _ARCHI_LOG_VERBOSITY_DEF_H_
 

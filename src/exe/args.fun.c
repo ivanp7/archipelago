@@ -26,7 +26,7 @@
 #include "archi/exe/args.fun.h"
 #include "archi/exe/args.typ.h"
 #include "archi/exe/registry.def.h"
-#include "archi/log/print.def.h" // for ARCHI_LOG_VERBOSITY_*
+#include "archi/log/verbosity.def.h"
 
 #include <stdlib.h>
 #include <string.h>
