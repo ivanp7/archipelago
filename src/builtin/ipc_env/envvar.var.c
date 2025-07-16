@@ -101,7 +101,7 @@ ARCHI_CONTEXT_INIT_FUNC(archi_context_ipc_env_init)
             },
         };
     }
-    else if (code == 1)
+    else if ((code == 1) && param_default_value_set)
     {
         *context_data = default_value;
         archi_reference_count_increment(default_value.ref_count);
