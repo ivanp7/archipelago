@@ -1,11 +1,11 @@
 /**
  * @file
- * @brief Application context interfaces for OpenCL memory.
+ * @brief Application context interfaces for OpenCL shared virtual memory.
  */
 
 #pragma once
-#ifndef _ARCHIP_OPENCL_CTX_MEMORY_VAR_H_
-#define _ARCHIP_OPENCL_CTX_MEMORY_VAR_H_
+#ifndef _ARCHIP_OPENCL_CTX_SVM_VAR_H_
+#define _ARCHIP_OPENCL_CTX_SVM_VAR_H_
 
 #include "archi/ctx/interface.typ.h"
 
@@ -25,5 +25,5 @@ ARCHI_CONTEXT_GET_FUNC(archip_context_opencl_svm_map_data_get);     ///< SVM map
 extern
 const archi_context_interface_t archip_context_opencl_svm_map_data_interface; ///< SVM mapping parameters interface.
 
-#endif // _ARCHIP_OPENCL_CTX_MEMORY_VAR_H_
+#endif // _ARCHIP_OPENCL_CTX_SVM_VAR_H_
 

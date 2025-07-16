@@ -1,9 +1,9 @@
 /**
  * @file
- * @brief Application context interfaces for OpenCL memory.
+ * @brief Application context interfaces for OpenCL shared virtual memory.
  */
 
-#include "archip/opencl/ctx/memory.var.h"
+#include "archip/opencl/ctx/svm.var.h"
 #include "archip/opencl/mem/svm.typ.h"
 
 #include <stdlib.h> // for malloc(), free()

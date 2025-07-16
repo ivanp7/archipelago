@@ -19,18 +19,6 @@ const archi_context_interface_t archip_context_opencl_program_src_interface; ///
 extern
 const archi_context_interface_t archip_context_opencl_program_bin_interface; ///< OpenCL program interface (initialization from binaries).
 
-/*****************************************************************************/
-
-ARCHI_CONTEXT_INIT_FUNC(archip_context_opencl_kernel_init_new);  ///< OpenCL kernel initialization function (new).
-ARCHI_CONTEXT_INIT_FUNC(archip_context_opencl_kernel_init_copy); ///< OpenCL kernel initialization function (copy).
-ARCHI_CONTEXT_FINAL_FUNC(archip_context_opencl_kernel_final);    ///< OpenCL kernel finalization function.
-ARCHI_CONTEXT_GET_FUNC(archip_context_opencl_kernel_get);        ///< OpenCL kernel getter function.
-ARCHI_CONTEXT_SET_FUNC(archip_context_opencl_kernel_set);        ///< OpenCL kernel setter function.
-
-extern
-const archi_context_interface_t archip_context_opencl_kernel_new_interface;  ///< OpenCL kernel interface (newly created).
-extern
-const archi_context_interface_t archip_context_opencl_kernel_copy_interface; ///< OpenCL kernel interface (copied from existing).
 
 #endif // _ARCHIP_OPENCL_CTX_PROGRAM_VAR_H_
 
