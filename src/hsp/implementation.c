@@ -33,6 +33,8 @@
 
 #define ARCHI_HSP_INITIAL_STACK_CAPACITY 32
 
+/*****************************************************************************/
+
 archi_hsp_frame_t*
 archi_hsp_frame_alloc(
         size_t num_states)
@@ -54,8 +56,8 @@ archi_hsp_frame_alloc(
 /*****************************************************************************/
 
 enum archi_hsp_mode {
-    J_STATE = 0,
-    J_TRANSITION,
+    J_STATE = 0,  // zero: setjmp() returns without jump
+    J_TRANSITION, // non-zero: setjmp() returns after jump
 };
 
 struct archi_hsp_context {
@@ -95,14 +97,6 @@ archi_hsp_stack_frames(
 
 static
 void
-archi_hsp_longjump(
-        struct archi_hsp_context *context)
-{
-    longjmp(context->env, J_TRANSITION);
-}
-
-static
-void
 archi_hsp_state_context_stack_reserve(
         struct archi_hsp_context *context,
         size_t size)
@@ -115,18 +109,20 @@ archi_hsp_state_context_stack_reserve(
         new_stack_capacity *= 2; // double the stack capacity
     while (new_stack_capacity < context->stack_size + size);
 
+    context->stack_capacity = new_stack_capacity;
+
     archi_hsp_state_t *new_stack = realloc(context->stack,
-            sizeof(*context->stack) * new_stack_capacity);
+            sizeof(*new_stack) * new_stack_capacity);
     if (new_stack == NULL)
         archi_hsp_abort(context, ARCHI_STATUS_ENOMEMORY);
 
+    context->stack = new_stack;
+
     size_t *new_stack_frames = realloc(context->stack_frames,
-            sizeof(*context->stack_frames) * new_stack_capacity);
+            sizeof(*new_stack_frames) * new_stack_capacity);
     if (new_stack_frames == NULL)
         archi_hsp_abort(context, ARCHI_STATUS_ENOMEMORY);
 
-    context->stack_capacity = new_stack_capacity;
-    context->stack = new_stack;
     context->stack_frames = new_stack_frames;
 }
 
@@ -152,26 +148,32 @@ archi_hsp_advance_impl(
             new_frame_needed = false; // the current frame is empty and can be reused
     }
 
-    // Push states to the stack in reverse order
     size_t current_frame = context->stack_size;
 
+    // Count non-NULL states and reserve seats in the stack for them
+    size_t seats_required = 0;
+    for (size_t i = 0; i < num_pushed_states; i++)
+        if (pushed_states[i].function != NULL)
+            seats_required++;
+
+    archi_hsp_state_context_stack_reserve(context, seats_required);
+
+    // Push states to the stack in reverse order
     for (size_t i = num_pushed_states; i-- > 0;)
-    {
-        archi_hsp_state_t state = pushed_states[i];
-
-        if (state.function == NULL)
-            continue; // ignore null states
-
-        // Ensure there is a seat in the stack
-        archi_hsp_state_context_stack_reserve(context, 1);
-
-        // Push
-        context->stack[context->stack_size++] = state;
-    }
+        if (pushed_states[i].function != NULL)
+            context->stack[context->stack_size++] = pushed_states[i];
 
     // Add the new frame if needed
     if ((context->stack_size > current_frame) && new_frame_needed)
         context->stack_frames[context->num_stack_frames++] = current_frame;
+}
+
+static
+void
+archi_hsp_longjump(
+        struct archi_hsp_context *context)
+{
+    longjmp(context->env, J_TRANSITION);
 }
 
 void
@@ -212,14 +214,75 @@ archi_hsp_abort(
 /*****************************************************************************/
 
 static
-void
-archi_hsp_loop(
-        struct archi_hsp_context *const context);
-
-static
 bool
 archi_hsp_transition(
-        struct archi_hsp_context *const context);
+        struct archi_hsp_context *const context)
+{
+    archi_hsp_state_t next_state = {0}, trans_state = {0};
+
+    if (context->stack_size > 0)
+        next_state = context->stack[context->stack_size - 1]; // stack top
+
+    // Call the state transition function
+    if (context->transition.function != NULL)
+    {
+        /**********************************************************/
+        context->transition.function(context->current_state,
+                next_state, &trans_state, context->transition.data);
+        /**********************************************************/
+    }
+
+    // Update the current state
+    if (trans_state.function != NULL)
+        context->current_state = trans_state;
+    else if (next_state.function != NULL)
+    {
+        context->current_state = next_state;
+        context->stack_size--;
+
+        // Delete the finished frame
+        if ((context->num_stack_frames > 0) &&
+                (context->stack_size < context->stack_frames[context->num_stack_frames - 1]))
+            context->num_stack_frames--;
+    }
+    else // the stack is empty, exit now
+        return false;
+
+    return true;
+}
+
+static
+void
+archi_hsp_loop(
+        struct archi_hsp_context *const context)
+{
+    // This function is needed to get rid of local variables in the stack frame,
+    // as setjmp() requires modifiable local variables to be volatile.
+    // The only local variable left is `context` pointer,
+    // but its address is constant and thus not required to be volatile.
+
+    while ((context->code == 0) && archi_hsp_transition(context)) // no errors and there is a next state
+    {
+        // Set the jump point and call the current state function
+        switch (setjmp(context->env))
+        {
+            case J_STATE: // hasn't jumped yet, call the state function
+                context->mode = J_STATE;
+                {
+                    /***************************************/
+                    context->current_state.function(context);
+                    /***************************************/
+                }
+                // fallthrough
+            case J_TRANSITION: // returned from the state function
+                context->mode = J_TRANSITION;
+                continue;
+
+            default: // shouldn't happen
+                abort();
+        }
+    }
+}
 
 archi_status_t
 archi_hsp_execute(
@@ -263,76 +326,5 @@ archi_hsp_execute(
     free(context.stack_frames);
 
     return context.code;
-}
-
-void
-archi_hsp_loop(
-        struct archi_hsp_context *const context)
-{
-    // This function is needed to get rid of local variables in the stack frame,
-    // as setjmp() requires modifiable local variables to be volatile.
-    // The only local variable left is `context` pointer,
-    // but its address is constant and thus not required to be volatile.
-
-    while ((context->code == 0) && archi_hsp_transition(context)) // no errors and there is a next state
-    {
-        // Set the jump point and call the current state function
-        switch (setjmp(context->env))
-        {
-            case J_STATE: // hasn't jumped yet, call the state function
-                context->mode = J_STATE;
-                {
-                    /***************************************/
-                    context->current_state.function(context);
-                    /***************************************/
-                }
-                // fallthrough
-            case J_TRANSITION: // returned from the state function
-                context->mode = J_TRANSITION;
-                continue;
-
-            default: // shouldn't happen
-                abort();
-        }
-    }
-}
-
-bool
-archi_hsp_transition(
-        struct archi_hsp_context *const context)
-{
-    archi_hsp_state_t next_state, trans_state = {0};
-
-    if (context->stack_size > 0)
-        next_state = context->stack[context->stack_size - 1]; // stack top
-    else
-        next_state = (archi_hsp_state_t){0};
-
-    // Call the state transition function
-    if (context->transition.function != NULL)
-    {
-        /**********************************************************/
-        context->transition.function(context->current_state,
-                next_state, &trans_state, context->transition.data);
-        /**********************************************************/
-    }
-
-    // Update the current state
-    if (trans_state.function != NULL)
-        context->current_state = trans_state;
-    else if (next_state.function != NULL)
-    {
-        context->current_state = next_state;
-        context->stack_size--;
-
-        // Delete the finished frame
-        if ((context->num_stack_frames > 0) &&
-                (context->stack_size < context->stack_frames[context->num_stack_frames - 1]))
-            context->num_stack_frames--;
-    }
-    else // the stack is empty, exit now
-        return false;
-
-    return true;
 }
 
