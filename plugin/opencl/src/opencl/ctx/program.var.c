@@ -6,6 +6,7 @@
 #include "archip/opencl/ctx/program.var.h"
 #include "archip/opencl/program.fun.h"
 #include "archi/log/print.fun.h"
+#include "archi/util/alloc.fun.h"
 
 #include <stdlib.h> // for malloc(), free()
 #include <string.h> // for strcmp(), memcpy()
@@ -519,16 +520,14 @@ ARCHI_CONTEXT_INIT_FUNC(archip_context_opencl_kernel_init_new)
     if (context_data == NULL)
         return ARCHI_STATUS_ENOMEMORY;
 
+    if (kernel_name != NULL)
     {
-        size_t name_len = strlen(kernel_name) + 1;
-        char *kernel_name_copy = malloc(name_len);
+        char *kernel_name_copy = archi_copy_string(kernel_name);
         if (kernel_name_copy == NULL)
         {
             free(context_data);
             return ARCHI_STATUS_ENOMEMORY;
         }
-
-        memcpy(kernel_name_copy, kernel_name, name_len);
 
         kernel_name = kernel_name_copy;
     }

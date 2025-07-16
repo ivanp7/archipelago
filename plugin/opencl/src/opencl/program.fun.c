@@ -8,6 +8,7 @@
 #include "archip/opencl/status.fun.h"
 #include "archi/ds/hashmap/api.fun.h"
 #include "archi/log/print.fun.h"
+#include "archi/util/alloc.fun.h"
 
 #include <stdlib.h> // for malloc(), free()
 #include <string.h> // for memcpy(), strlen()
@@ -43,25 +44,6 @@ archip_opencl_program_concat_flags(
 }
 
 static
-char*
-archip_opencl_copy_key(
-        const char *key)
-{
-    if (key == NULL)
-        return NULL;
-
-    size_t size = strlen(key) + 1;
-
-    char *key_copy = malloc(size);
-    if (key_copy == NULL)
-        return NULL;
-
-    memcpy(key_copy, key, size);
-
-    return key_copy;
-}
-
-static
 ARCHI_HASHMAP_TRAV_KV_FUNC(archip_opencl_program_sources_from_hashmap_traverse_func)
 {
     archip_opencl_program_sources_t *sources = data;
@@ -77,7 +59,7 @@ ARCHI_HASHMAP_TRAV_KV_FUNC(archip_opencl_program_sources_from_hashmap_traverse_f
     if ((value.ptr == NULL) || (size == 0))
         return (archi_hashmap_trav_action_t){.interrupt = true};
 
-    char *key_copy = archip_opencl_copy_key(key);
+    char *key_copy = archi_copy_string(key);
     if (key_copy == NULL)
         return (archi_hashmap_trav_action_t){.interrupt = true};
 

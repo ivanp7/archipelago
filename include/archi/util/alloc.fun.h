@@ -27,29 +27,14 @@
 #ifndef _ARCHI_UTIL_ALLOC_FUN_H_
 #define _ARCHI_UTIL_ALLOC_FUN_H_
 
-#include "archi/util/pointer.typ.h"
-#include "archi/util/status.typ.h"
-
 /**
- * @brief Resize array of values together with array of references to individual elements.
+ * @brief Create a string copy.
  *
- * This function is protected from intermediate memory allocation errors.
- * If such an error occurs, the original arrays are not modified.
- *
- * If the array is shrunk, reference counters of deleted elements are decremented.
- *
- * `new_size` can be zero, in which case arrays are freed and pointers set to NULL.
- * If `empty_element` is NULL, the new array memory is memset() to 0.
- *
- * @return Status code.
+ * @return String copy.
  */
-archi_status_t
-archi_resize_array(
-        archi_pointer_t *array,     ///< [in,out] Pointer to array to resize.
-        archi_pointer_t **elements, ///< [in,out] Array of pointers to individual elements.
-
-        size_t new_num_elements, ///< [in] New array size.
-        const void *new_element  ///< [in] Contents of new array elements.
+char*
+archi_copy_string(
+        const char *string ///< [in] Original string.
 );
 
 #endif // _ARCHI_UTIL_ALLOC_FUN_H_

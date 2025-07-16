@@ -26,9 +26,10 @@
 #include "archi/builtin/res_thread_group/context.var.h"
 #include "archi/builtin/res_thread_group/dispatch.typ.h"
 #include "archi/res/thread_group/api.fun.h"
+#include "archi/util/alloc.fun.h"
 
 #include <stdlib.h> // for malloc(), free()
-#include <string.h> // for strcmp(), strlen(), memcpy()
+#include <string.h> // for strcmp(), strlen()
 #include <stdalign.h> // for alignof()
 
 struct archi_context_res_thread_group_data {
@@ -630,8 +631,7 @@ ARCHI_CONTEXT_INIT_FUNC(archi_context_res_thread_group_dispatch_data_init)
 
     if (name != NULL)
     {
-        size_t name_len = strlen(name) + 1;
-        char *name_copy = malloc(name_len);
+        char *name_copy = archi_copy_string(name);
         if (name_copy == NULL)
         {
             free(dispatch_data);
@@ -639,7 +639,6 @@ ARCHI_CONTEXT_INIT_FUNC(archi_context_res_thread_group_dispatch_data_init)
             return ARCHI_STATUS_ENOMEMORY;
         }
 
-        memcpy(name_copy, name, name_len);
         name = name_copy;
     }
 

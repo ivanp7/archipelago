@@ -24,10 +24,11 @@
  */
 
 #include "archi/ds/hashmap/api.fun.h"
+#include "archi/util/alloc.fun.h"
 #include "archi/util/size.def.h"
 
 #include <stdlib.h> // for malloc(), free()
-#include <string.h> // for strcmp(), strlen(), memcpy()
+#include <string.h> // for strcmp()
 
 size_t
 archi_hash(
@@ -178,25 +179,6 @@ archi_hashmap_get(
     }
 }
 
-static
-char*
-archi_hashmap_copy_key(
-        const char *key)
-{
-    if (key == NULL)
-        return NULL;
-
-    size_t size = strlen(key) + 1;
-
-    char *key_copy = malloc(size);
-    if (key_copy == NULL)
-        return NULL;
-
-    memcpy(key_copy, key, size);
-
-    return key_copy;
-}
-
 archi_status_t
 archi_hashmap_set(
         archi_hashmap_t hashmap,
@@ -236,7 +218,7 @@ archi_hashmap_set(
         if (node == NULL)
             return ARCHI_STATUS_ENOMEMORY;
 
-        char *key_copy = archi_hashmap_copy_key(key);
+        char *key_copy = archi_copy_string(key);
         if (key_copy == NULL)
         {
             free(node);

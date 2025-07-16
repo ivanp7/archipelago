@@ -24,9 +24,9 @@
  */
 
 #include "archi/ipc/env/api.fun.h"
+#include "archi/util/alloc.fun.h"
 
-#include <stdlib.h> // for getenv(), malloc()
-#include <string.h> // for strlen(), memcpy()
+#include <stdlib.h> // for getenv()
 #ifndef __STDC_NO_ATOMICS__
 #  include <stdatomic.h>
 #endif
@@ -63,9 +63,7 @@ archi_env_get(
         goto finish;
     }
 
-    size_t valuesz = strlen(value_orig) + 1;
-
-    value = malloc(valuesz);
+    value = archi_copy_string(value_orig);
     if (value == NULL)
     {
         if (code != NULL)
@@ -73,8 +71,6 @@ archi_env_get(
 
         goto finish;
     }
-
-    memcpy(value, value_orig, valuesz);
 
     if (code != NULL)
         *code = 0;

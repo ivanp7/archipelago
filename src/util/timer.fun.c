@@ -24,14 +24,14 @@
  */
 
 #include "archi/util/timer.fun.h"
+#include "archi/util/alloc.fun.h"
 
 #include <stdlib.h> // for malloc(), free()
-#include <string.h> // for strlen(), memcpy()
 #include <math.h> // for INFINITY
 #include <sys/time.h> // for gettimeofday(), struct timeval
 
 struct archi_timer {
-    const char *name; ///< Timer name.
+    char *name; ///< Timer name.
 
     float total_seconds; ///< Total accumulated time.
     float min_seconds;   ///< Minimum run time.
@@ -54,20 +54,18 @@ archi_timer_alloc(
 
     if (name != NULL)
     {
-        size_t name_len = strlen(name) + 1;
-
-        char *name_copy = malloc(name_len);
+        char *name_copy = archi_copy_string(name);
         if (name_copy == NULL)
         {
             free(timer);
             return NULL;
         }
 
-        memcpy(name_copy, name, name_len);
-        name = name_copy;
+        timer->name = name_copy;
     }
+    else
+        timer->name = NULL;
 
-    timer->name = name;
     archi_timer_reset(timer);
 
     return timer;
@@ -88,7 +86,7 @@ archi_timer_reset(
     if (timer == NULL)
         return;
 
-    const char *name = timer->name;
+    char *name = timer->name;
 
     *timer = (struct archi_timer){
         .name = name,

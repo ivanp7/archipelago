@@ -32,6 +32,7 @@
 #include "archi/log/print.fun.h"
 #include "archi/log/print.def.h"
 #include "archi/log/color.def.h"
+#include "archi/util/alloc.fun.h"
 #include "archi/util/size.def.h"
 
 #include <stdlib.h> // for malloc(), free()
@@ -394,25 +395,6 @@ archi_exe_registry_instr_params_free(
 }
 
 static
-char*
-archi_exe_registry_instr_params_copy_name(
-        const char *name)
-{
-    if (name == NULL)
-        return NULL;
-
-    size_t size = strlen(name) + 1;
-
-    char *name_copy = malloc(size);
-    if (name_copy == NULL)
-        return NULL;
-
-    memcpy(name_copy, name, size);
-
-    return name_copy;
-}
-
-static
 archi_parameter_list_t*
 archi_exe_registry_instr_params_alloc(
         archi_parameter_list_t *dparams,
@@ -432,7 +414,7 @@ archi_exe_registry_instr_params_alloc(
             return NULL;
         }
 
-        char *name = archi_exe_registry_instr_params_copy_name(params->name);
+        char *name = archi_copy_string(params->name);
         if (name == NULL)
         {
             free(node);

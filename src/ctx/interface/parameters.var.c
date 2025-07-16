@@ -24,30 +24,12 @@
  */
 
 #include "archi/ctx/interface/parameters.var.h"
+#include "archi/util/alloc.fun.h"
 
 #include <stdlib.h> // for malloc(), free()
 #include <string.h> // for strcmp()
 #include <stdbool.h>
 #include <stdalign.h>
-
-static
-char*
-archi_context_parameters_copy_name(
-        const char *name)
-{
-    if (name == NULL)
-        return NULL;
-
-    size_t size = strlen(name) + 1;
-
-    char *name_copy = malloc(size);
-    if (name_copy == NULL)
-        return NULL;
-
-    memcpy(name_copy, name, size);
-
-    return name_copy;
-}
 
 static
 archi_status_t
@@ -63,7 +45,7 @@ archi_context_parameters_copy(
         if (node == NULL)
             goto failure;
 
-        char *name = archi_context_parameters_copy_name(params->name);
+        char *name = archi_copy_string(params->name);
         if (name == NULL)
         {
             free(node);
@@ -193,7 +175,7 @@ ARCHI_CONTEXT_SET_FUNC(archi_context_parameters_set)
     if (node == NULL)
         return ARCHI_STATUS_ENOMEMORY;
 
-    char *name = archi_context_parameters_copy_name(slot.name);
+    char *name = archi_copy_string(slot.name);
     if (name == NULL)
     {
         free(node);

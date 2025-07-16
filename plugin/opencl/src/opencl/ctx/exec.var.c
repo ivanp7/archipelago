@@ -7,6 +7,7 @@
 #include "archip/opencl/hsp/exec.typ.h"
 #include "archip/opencl/event.fun.h"
 #include "archip/opencl/work.fun.h"
+#include "archi/util/alloc.fun.h"
 #include "archi/util/size.def.h"
 
 #include <stdlib.h> // for malloc(), free()
@@ -410,8 +411,7 @@ ARCHI_CONTEXT_INIT_FUNC(archip_opencl_kernel_enqueue_data_init)
 
     if (name != NULL)
     {
-        size_t name_len = strlen(name) + 1;
-        char *name_copy = malloc(name_len);
+        char *name_copy = archi_copy_string(name);
         if (name_copy == NULL)
         {
             free(enqueue_data);
@@ -419,7 +419,6 @@ ARCHI_CONTEXT_INIT_FUNC(archip_opencl_kernel_enqueue_data_init)
             return ARCHI_STATUS_ENOMEMORY;
         }
 
-        memcpy(name_copy, name, name_len);
         name = name_copy;
     }
 
