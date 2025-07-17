@@ -53,8 +53,8 @@ parser.add_argument('--file', metavar="PATHNAME", required=True, help="Pathname 
 parser.add_argument('--mapaddr', type=lambda value: int(value, base=16), default=DEFAULT_MAP_ADDRESS,
                     metavar="ADDRESS", help="Memory map address")
 
-parser.add_argument('--plt', type=int, default=0, metavar="ID", help="OpenCL platform number")
-parser.add_argument('--dev', type=int, default=0, metavar="ID", help="OpenCL device number")
+parser.add_argument('--platform', type=int, default=0, metavar="ID", help="OpenCL platform number")
+parser.add_argument('--devices', nargs='+', type=int, default=[0], metavar="ID", help="OpenCL device number(s)")
 
 parser.add_argument('--cflags', metavar="FLAGS", help="Compiler flags")
 parser.add_argument('--lflags', metavar="FLAGS", help="Linker flags")
@@ -74,7 +74,7 @@ parser.add_argument('--libdir', metavar="PATH", action=DirFileGroupAction,
 parser.add_argument('--lib', nargs='+', metavar="PATHNAME",  action=DirFileGroupAction,
                     group_id='lib', is_dir=False, help="Library file(s)")
 
-parser.add_argument('--out', metavar="PATHNAME", required=True, help="Build output file")
+parser.add_argument('--out', nargs='+', default=[], metavar="PATHNAME", required=True, help="Build output file(s)")
 
 parser.set_defaults(hdr_map={}, src_map={}, lib_map={})
 args = parser.parse_args()
@@ -82,8 +82,8 @@ args = parser.parse_args()
 print(f"Generated file: '{args.file}'")
 print(f"Map address: 0x{args.mapaddr:x}")
 print()
-print(f"OpenCL platform #: {args.plt}")
-print(f"OpenCL device #: {args.dev}")
+print(f"OpenCL platform #: {args.platform}")
+print(f"OpenCL device #: {args.devices}")
 print(f"OpenCL compiler flags: {f"'args.cflags'" if args.cflags else '<none>'}")
 print(f"OpenCL linker flags: {f"'args.lflags'" if args.lflags else '<none>'}")
 print()
@@ -99,8 +99,11 @@ print("Libraries:")
 for dirpath, filepaths in args.lib_map.items():
     print(f"    '{dirpath}': {filepaths}")
 print()
-print(f"Build output file: '{args.out}'")
+print(f"Build output file(s): {args.out}")
 print()
+
+if len(args.devices) != len(args.out):
+    raise ValueError("Number of output files must be the same as the number of devices")
 
 ###############################################################################
 # Read contents of all input files
@@ -157,7 +160,6 @@ library_interface = ContextInterface(executable) # or executable.archi_context_r
 file_interface = ContextInterface(executable.archi_context_res_file_interface)
 hashmap_interface = ContextInterface(executable.archi_context_ds_hashmap_interface)
 envvar_interface = ContextInterface(executable.archi_context_ipc_env_interface)
-str2num_interface = ContextInterface(executable.archi_context_converter_string_to_number_interface)
 
 # Load OpenCL plugin
 with app.context('plugin.opencl', library_interface(pathname="libarchip_opencl.so")) as plugin_opencl:
@@ -167,15 +169,8 @@ with app.context('plugin.opencl', library_interface(pathname="libarchip_opencl.s
     opencl_program_bin_interface = ContextInterface(plugin_opencl.archip_context_opencl_program_bin_interface)
 
     # Create the OpenCL context
-    with app.context('string.platform_idx', envvar_interface(name="PLATFORM_IDX",
-                                                             default_value=str(args.plt))) as platform_idx_str, \
-            app.context('string.device_idx', envvar_interface(name="DEVICE_IDX",
-                                                              default_value=str(args.dev))) as device_idx_str, \
-            app.context('value.platform_idx', str2num_interface(as_uint=platform_idx_str)) as platform_idx, \
-            app.context('value.device_idx', str2num_interface(as_uint=device_idx_str)) as device_idx:
-        app['context.opencl'] = opencl_context_interface(platform_idx=platform_idx, device_idx=device_idx)
-
-    with app['context.opencl'] as opencl_context:
+    with app.context('context.opencl', opencl_context_interface(platform_idx=c.c_uint(args.platform),
+                                                                device_idx=(c.c_uint * len(args.devices))(*args.devices))) as opencl_context:
         # Prepare the list of dependency libraries of the program
         map_libraries = {}
         with app.context('params.library', Parameters(context=opencl_context,
@@ -216,16 +211,16 @@ with app.context('plugin.opencl', library_interface(pathname="libarchip_opencl.s
                                                                   lflags=lflags)
 
     with app['context.program'] as opencl_program:
-        # Open the output file and map it to memory
-        with app.context('string.pathname', envvar_interface(name='OUT', default_value=args.out)) as pathname, \
-                app.context('file.out', file_interface(pathname=pathname,
-                                                       size=opencl_program.binary_size[0],
-                                                       create=TRUE, truncate=TRUE,
-                                                       readable=TRUE, writable=TRUE,
-                                                       mode=c.c_int(0o644))) as file, \
-                app.context('file.memory', file.map(writable=TRUE, shared=TRUE)) as file_memory:
-            # Write the program binary into the output file
-            file_memory.copy(source=opencl_program.binary[0])
+        for i, out_file in enumerate(args.out):
+            # Open an output file and map it to memory
+            with app.context('file.out', file_interface(pathname=out_file,
+                                                        size=opencl_program.binary_size[i],
+                                                        create=TRUE, truncate=TRUE,
+                                                        readable=TRUE, writable=TRUE,
+                                                        mode=c.c_int(0o644))) as file, \
+                    app.context('file.memory', file.map(writable=TRUE, shared=TRUE)) as file_memory:
+                # Write the program binary into the output file
+                file_memory.copy(source=opencl_program.binary[i])
 
 ###############################################################################
 # Generate the .archi file
