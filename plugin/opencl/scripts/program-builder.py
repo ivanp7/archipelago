@@ -5,7 +5,9 @@
 
 import argparse
 import ctypes as c
+import os
 from pathlib import Path
+import subprocess
 
 from archi.memory import CValue
 from archi.registry import Registry, ContextInterface, Parameters
@@ -103,29 +105,43 @@ print()
 ###############################################################################
 # Read contents of all input files
 
-content_headers = {}
-for dirpath, filepaths in args.hdr_map.items():
-    for filepath in filepaths:
-        with open(Path(dirpath) / filepath, 'r') as file:
-            if filepath in content_headers:
-                raise ValueError("Duplicate header detected")
+def read_sources(path_map, allow_duplicates=True):
+    content = {}
 
-            content_headers[filepath] = file.read()
+    for dirpath, filepaths in path_map.items():
+        for filepath in filepaths:
+            if not allow_duplicates and filepath in content:
+                raise ValueError("Duplicate file path detected")
 
-content_sources = {}
-for dirpath, filepaths in args.src_map.items():
-    for filepath in filepaths:
-        with open(Path(dirpath) / filepath, 'r') as file:
-            if filepath in content_sources:
-                raise ValueError("Duplicate source detected")
+            path = Path(dirpath) / filepath
 
-            content_sources[filepath] = file.read()
+            if 'PREPROCESSOR' in os.environ:
+                result = subprocess.run([os.environ['PREPROCESSOR'], str(path)],
+                                        stdout=subprocess.PIPE, stderr=None, text=True)
 
-content_libraries = []
-for dirpath, filepaths in args.lib_map.items():
-    for filepath in filepaths:
-        with open(Path(dirpath) / filepath, 'rb') as file:
-            content_libraries.append(file.read())
+                if result.returncode != 0:
+                    raise RuntimeError(f"Preprocessor script returned code {result.returncode}")
+
+                content[filepath] = result.stdout
+            else:
+                with open(path, 'r') as file:
+                    content[filepath] = file.read()
+
+    return content
+
+def read_binaries(path_map):
+    content = []
+
+    for dirpath, filepaths in path_map.items():
+        for filepath in filepaths:
+            with open(Path(dirpath) / filepath, 'rb') as file:
+                content.append(file.read())
+
+    return content
+
+content_headers = read_sources(args.hdr_map, allow_duplicates=False)
+content_sources = read_sources(args.src_map)
+content_libraries = read_binaries(args.lib_map)
 
 ###############################################################################
 # Forming the list of instructions
@@ -248,6 +264,16 @@ file_memory_buffer = file_memory.fossilize(args.mapaddr)
 with open(args.file, mode='wb') as file:
     file.write(file_memory_buffer)
 
-print(f"Wrote {file_memory.size()} bytes to '{args.file}',")
-print(f"including {file_memory.padding()} padding bytes")
+# Report the sizes
+file_size_b = file_memory.size()
+file_size_kib = file_size_b / 1024
+file_size_mib = file_size_kib / 1024
+file_size_gib = file_size_mib / 1024
+
+file_padding_b = file_memory.padding()
+file_padding_kib = file_padding_b / 1024
+file_padding_mib = file_padding_kib / 1024
+
+print(f"Wrote {file_size_b} bytes ({file_size_kib:.1f} KiB, {file_size_mib:.1f} MiB, {file_size_gib:.1f} GiB) to '{args.file}',")
+print(f"including {file_padding_b} padding bytes ({file_padding_kib:.1f} KiB, {file_padding_mib:.1f} MiB)")
 
