@@ -495,7 +495,7 @@ archi_exe_registry_instr_execute_init_from_context(
         archi_print_key("dparams_key", instruction->dparams_key);
         archi_print_params("sparams", instruction->sparams);
 
-        archi_print_color(ARCHI_COLOR_RESET "\n");
+        archi_print_color(ARCHI_COLOR_RESET);
         archi_print_unlock();
     }
 
@@ -568,7 +568,7 @@ archi_exe_registry_instr_execute_init_from_slot(
         archi_print_key("dparams_key", instruction->dparams_key);
         archi_print_params("sparams", instruction->sparams);
 
-        archi_print_color(ARCHI_COLOR_RESET "\n");
+        archi_print_color(ARCHI_COLOR_RESET);
         archi_print_unlock();
     }
 
@@ -634,7 +634,7 @@ archi_exe_registry_instr_execute_init_pointer(
             archi_print_value(LOG_INDENT "      ", instruction->value);
         }
 
-        archi_print_color(ARCHI_COLOR_RESET "\n");
+        archi_print_color(ARCHI_COLOR_RESET);
         archi_print_unlock();
     }
 
@@ -699,7 +699,7 @@ archi_exe_registry_instr_execute_init_array(
                     (instruction->base.type == ARCHI_EXE_REGISTRY_INSTR_INIT_FUNC_ARRAY) ? "true" : "false");
         }
 
-        archi_print_color(ARCHI_COLOR_RESET "\n");
+        archi_print_color(ARCHI_COLOR_RESET);
         archi_print_unlock();
     }
 
@@ -769,7 +769,7 @@ archi_exe_registry_instr_execute_copy(
         archi_print_key("key", instruction->key);
         archi_print_key("original_key", instruction->original_key);
 
-        archi_print_color(ARCHI_COLOR_RESET "\n");
+        archi_print_color(ARCHI_COLOR_RESET);
         archi_print_unlock();
     }
 
@@ -813,7 +813,7 @@ archi_exe_registry_instr_execute_delete(
     {
         archi_print_key("key", instruction->key);
 
-        archi_print_color(ARCHI_COLOR_RESET "\n");
+        archi_print_color(ARCHI_COLOR_RESET);
         archi_print_unlock();
     }
 
@@ -851,7 +851,7 @@ archi_exe_registry_instr_execute_set_to_value(
             archi_print_value(LOG_INDENT "      ", instruction->value);
         }
 
-        archi_print_color(ARCHI_COLOR_RESET "\n");
+        archi_print_color(ARCHI_COLOR_RESET);
         archi_print_unlock();
     }
 
@@ -898,7 +898,7 @@ archi_exe_registry_instr_execute_set_to_context_data(
         archi_print_slot("slot", instruction->slot);
         archi_print_key("source_key", instruction->source_key);
 
-        archi_print_color(ARCHI_COLOR_RESET "\n");
+        archi_print_color(ARCHI_COLOR_RESET);
         archi_print_unlock();
     }
 
@@ -951,7 +951,7 @@ archi_exe_registry_instr_execute_set_to_context_slot(
         archi_print_key("source_key", instruction->source_key);
         archi_print_slot("source_slot", instruction->source_slot);
 
-        archi_print_color(ARCHI_COLOR_RESET "\n");
+        archi_print_color(ARCHI_COLOR_RESET);
         archi_print_unlock();
     }
 
@@ -1002,7 +1002,7 @@ archi_exe_registry_instr_execute_act(
         archi_print_key("dparams_key", instruction->dparams_key);
         archi_print_params("sparams", instruction->sparams);
 
-        archi_print_color(ARCHI_COLOR_RESET "\n");
+        archi_print_color(ARCHI_COLOR_RESET);
         archi_print_unlock();
     }
 
@@ -1052,13 +1052,15 @@ archi_exe_registry_instr_execute(
     if (logging)
         archi_print_color(ARCHI_LOG_COLOR_DEBUG);
 
+    archi_print("\n");
+
     if ((instruction == NULL) || (instruction->type == ARCHI_EXE_REGISTRY_INSTR_NOOP))
     {
         if (logging)
         {
             archi_print(" [NOOP]\n");
 
-            archi_print_color(ARCHI_COLOR_RESET "\n");
+            archi_print_color(ARCHI_COLOR_RESET);
             archi_print_unlock();
         }
 
@@ -1096,7 +1098,7 @@ archi_exe_registry_instr_execute(
             {
                 archi_print(" <unknown instruction type>\n");
 
-                archi_print_color(ARCHI_COLOR_RESET "\n");
+                archi_print_color(ARCHI_COLOR_RESET);
                 archi_print_unlock();
             }
 
