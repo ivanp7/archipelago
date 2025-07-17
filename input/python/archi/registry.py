@@ -50,21 +50,50 @@ class Parameters:
     def __init__(self, _: "Context" = None, /, **params):
         """Create a context parameter list representation instance.
         """
+        import random
+        import string
+
         if _ is not None and not isinstance(_, Context):
             raise TypeError
 
-        self._dparams = _
-        self._sparams = params
+        self._dparams_orig = _
+        self._dparams_temp_key = ".params_" + ''.join(random.choice(string.ascii_letters + string.digits) \
+                for char in range(16))
 
-    def dynamic_list(self) -> "Context":
-        """Obtain the dynamic parameter list.
-        """
-        return self._dparams
+        self._sparams_dynamic = {}
+        self._sparams_static = {}
 
-    def static_list(self) -> "dict":
-        """Obtain the static parameter list.
+        for key, value in params.items():
+            if isinstance(value, Context) \
+                    or isinstance(value, Context._Slot) or isinstance(value, Context._Action):
+                self._sparams_dynamic[key] = value
+            else:
+                self._sparams_static[key] = value
+
+    def dynamic_list_original(self) -> "Context":
+        """Obtain the original dynamic parameter list.
         """
-        return self._sparams
+        return self._dparams_orig
+
+    def dynamic_list_original_key(self) -> "Context":
+        """Obtain key of the original dynamic parameter list.
+        """
+        return self._dparams_orig._key if self._dparams_orig is not None else None
+
+    def dynamic_list_temporary_key(self) -> "str":
+        """Obtain key of a temporary dynamic parameter list.
+        """
+        return self._dparams_temp_key
+
+    def static_list_dynamic_values(self) -> "dict":
+        """Obtain the static parameter list of dynamic values.
+        """
+        return self._sparams_dynamic
+
+    def static_list_static_values(self) -> "dict":
+        """Obtain the static parameter list of static values.
+        """
+        return self._sparams_static
 
 
 class ContextSpec:
@@ -170,7 +199,7 @@ class Context:
             if _ is not None and not isinstance(_, Context):
                 raise TypeError
 
-            self._context._act(self._name, self._indices, dparams=_, sparams=params)
+            self._context._act(self._name, self._indices, Parameters(_, **params))
             return Context._Action(self._context, self._name, self._indices)
 
     class _Action:
@@ -247,7 +276,7 @@ class Context:
         if _ is not None and not isinstance(_, Context):
             raise TypeError
 
-        self._act('', [], dparams=_, sparams=params)
+        self._act('', [], Parameters(_, **params))
         return Context._Action(self, '', [])
 
     def _set(self, slot_name: "str", slot_indices: "list[int]", value):
@@ -288,8 +317,7 @@ class Context:
         else:
             raise TypeError("Cannot set slot to an unsupported value type")
 
-    def _act(self, action_name: "str", action_indices: "list[int]",
-             dparams: "Context", sparams: "dict"):
+    def _act(self, action_name: "str", action_indices: "list[int]", params: "Parameters"):
         """Append an act() instruction to the list.
         """
         if not isinstance(action_name, str):
@@ -297,19 +325,30 @@ class Context:
         elif not isinstance(action_indices, list) \
                 or not all(isinstance(index, int) for index in action_indices):
             raise TypeError
-        elif dparams is not None and not isinstance(dparams, Context):
+        elif not isinstance(params, Parameters):
             raise TypeError
-        elif not isinstance(sparams, dict) \
-                or not all(isinstance(key, str) for key in sparams.keys()):
-            raise TypeError
+
+        temp_params_key = self._registry._prepare_params(params)
+
+        if temp_params_key is not None:
+            dparams_key = temp_params_key
+            sparams = {}
+        else:
+            dparams_key = params.dynamic_list_original_key()
+            sparams = params.static_list_static_values()
 
         self._registry._instruct(
                 InstructionType.ACT,
                 key=self._key,
                 action_name=action_name,
                 action_indices=action_indices,
-                dparams_key=dparams._key if dparams is not None else None,
+                dparams_key=dparams_key,
                 sparams=sparams)
+
+        if temp_params_key is not None:
+            self._registry._instruct(
+                    InstructionType.DELETE,
+                    key=temp_params_key)
 
     @staticmethod
     def key_of(context: "Context") -> "str":
@@ -387,34 +426,48 @@ class Registry:
             raise TypeError
 
         if isinstance(entity, Parameters):
-            dparams_key = entity.dynamic_list()._key \
-                    if entity.dynamic_list() is not None else None
+            temp_params_key = self._prepare_params(entity)
+
+            if temp_params_key is not None:
+                dparams_key = temp_params_key
+                sparams = {}
+            else:
+                dparams_key = entity.dynamic_list_original_key()
+                sparams = entity.static_list_static_values()
 
             self._instruct(
                     InstructionType.INIT_FROM_CONTEXT,
                     key=key,
                     interface_source_key=None,
                     dparams_key=dparams_key,
-                    sparams=entity.static_list())
+                    sparams=sparams)
+
+            if temp_params_key is not None:
+                self._instruct(
+                        InstructionType.DELETE,
+                        key=temp_params_key)
 
         elif isinstance(entity, ContextSpec):
             source = entity.interface().source()
 
-            if isinstance(source, Context):
-                dparams_key = entity.parameters().dynamic_list()._key \
-                        if entity.parameters().dynamic_list() is not None else None
+            temp_params_key = self._prepare_params(entity.parameters())
 
+            if temp_params_key is not None:
+                dparams_key = temp_params_key
+                sparams = {}
+            else:
+                dparams_key = entity.parameters().dynamic_list_original_key()
+                sparams = entity.parameters().static_list_static_values()
+
+            if isinstance(source, Context):
                 self._instruct(
                         InstructionType.INIT_FROM_CONTEXT,
                         key=key,
                         interface_source_key=source._key,
                         dparams_key=dparams_key,
-                        sparams=entity.parameters().static_list())
+                        sparams=sparams)
 
             elif isinstance(source, Context._Slot):
-                dparams_key = entity.parameters().dynamic_list()._key \
-                        if entity.parameters().dynamic_list() is not None else None
-
                 self._instruct(
                         InstructionType.INIT_FROM_SLOT,
                         key=key,
@@ -422,7 +475,12 @@ class Registry:
                         interface_source_slot_name=source._name,
                         interface_source_slot_indices=source._indices,
                         dparams_key=dparams_key,
-                        sparams=entity.parameters().static_list())
+                        sparams=sparams)
+
+            if temp_params_key is not None:
+                self._instruct(
+                        InstructionType.DELETE,
+                        key=temp_params_key)
 
         elif entity is None or isinstance(entity, CValue):
             self._instruct(
@@ -516,4 +574,41 @@ class Registry:
         """Append an instruction to the list.
         """
         self._instructions.append(Registry._Instruction(type, **fields))
+
+    def _prepare_params(self, params: "Parameters"):
+        """Append necessary instructions to prepare a parameter list and return the temporary dynamic list key.
+        """
+        if not params.static_list_dynamic_values():
+            return None
+
+        self._instruct(
+                InstructionType.INIT_FROM_CONTEXT,
+                key=params.dynamic_list_temporary_key(),
+                interface_source_key=None,
+                dparams_key=params.dynamic_list_original_key(),
+                sparams=params.static_list_static_values())
+
+        for key, value in reversed(params.static_list_dynamic_values().items()):
+            if isinstance(value, Context):
+                self._instruct(
+                        InstructionType.SET_TO_CONTEXT_DATA,
+                        key=params.dynamic_list_temporary_key(),
+                        slot_name=key,
+                        slot_indices=[],
+                        source_key=value._key)
+
+            elif isinstance(value, Context._Slot) or isinstance(value, Context._Action):
+                self._instruct(
+                        InstructionType.SET_TO_CONTEXT_SLOT,
+                        key=params.dynamic_list_temporary_key(),
+                        slot_name=key,
+                        slot_indices=[],
+                        source_key=value._context._key,
+                        source_slot_name=value._name,
+                        source_slot_indices=value._indices)
+
+            else:
+                raise TypeError
+
+        return params.dynamic_list_temporary_key()
 
