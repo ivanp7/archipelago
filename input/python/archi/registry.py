@@ -22,6 +22,7 @@
 # @brief Representation of Archipelago executable registry.
 
 import enum
+from contextlib import contextmanager
 
 from .memory import CValue
 
@@ -558,6 +559,16 @@ class Registry:
         self._instruct(
                 InstructionType.DELETE,
                 key=key)
+
+    @contextmanager
+    def context(self, key: "str", value):
+        """Context manager for creating a temporary context.
+        """
+        self[key] = value
+        try:
+            yield self[key]
+        finally:
+            del self[key]
 
     def noop(self):
         """Emit a NOOP instruction.
