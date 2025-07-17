@@ -774,7 +774,7 @@ execute_instructions(void)
             }
         }
 
-        archi_log_debug(M, " * executing instructions in file #%zu ('%s')", i, archi_process.args.input[i]);
+        archi_log_debug(M, " * executing instructions in file #%zu ('%s')\n", i, archi_process.args.input[i]);
 
         archi_exe_registry_instr_list_t *instructions = NULL;
         for (archi_parameter_list_t *contents = input->contents; contents != NULL; contents = contents->next)
