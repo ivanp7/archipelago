@@ -141,6 +141,7 @@ library_interface = ContextInterface(executable) # or executable.archi_context_r
 file_interface = ContextInterface(executable.archi_context_res_file_interface)
 hashmap_interface = ContextInterface(executable.archi_context_ds_hashmap_interface)
 envvar_interface = ContextInterface(executable.archi_context_ipc_env_interface)
+str2num_interface = ContextInterface(executable.archi_context_converter_string_to_number_interface)
 
 # Load OpenCL plugin
 app['plugin.opencl'] = library_interface(pathname="libarchip_opencl.so")
@@ -151,8 +152,19 @@ with app['plugin.opencl'] as plugin_opencl:
     opencl_program_bin_interface = ContextInterface(plugin_opencl.archip_context_opencl_program_bin_interface)
 
     # Create the OpenCL context
-    app['context.opencl'] = opencl_context_interface(platform_idx=c.c_uint(args.plt),
-                                                     device_idx=c.c_uint(args.dev))
+    app['value.platform_idx.string'] = envvar_interface(name="PLATFORM_IDX", default_value=str(args.plt))
+    app['value.device_idx.string'] = envvar_interface(name="DEVICE_IDX", default_value=str(args.dev))
+
+    with app['value.platform_idx.string'] as str_platform_idx, \
+            app['value.device_idx.string'] as str_device_idx:
+        app['value.platform_idx'] = str2num_interface(as_uint=str_platform_idx)
+        app['value.device_idx'] = str2num_interface(as_uint=str_device_idx)
+
+        with app['value.platform_idx'] as platform_idx, \
+                app['value.device_idx'] as device_idx:
+            app['context.opencl'] = opencl_context_interface(platform_idx=platform_idx,
+                                                             device_idx=device_idx)
+
     with app['context.opencl'] as opencl_context:
         # Prepare program sources
         app['hashmap.headers'] = hashmap_interface(capacity=HASHMAP_CAPACITY)
@@ -166,11 +178,9 @@ with app['plugin.opencl'] as plugin_opencl:
         # Prepare libraries the program depends on
         libraries = []
 
-        app['params.library'] = Parameters()
+        app['params.library'] = Parameters(context=opencl_context,
+                                           device_id=opencl_context.device_id)
         with app['params.library'] as params_library:
-            params_library.device_id = app['context.opencl'].device_id
-            params_library.context = app['context.opencl']
-
             for i, binary in enumerate(content_libraries):
                 app['array.binary'] = [CValue(binary)]
                 with app['array.binary'] as array_binary:
@@ -186,47 +196,41 @@ with app['plugin.opencl'] as plugin_opencl:
             del app[f'context.library[{i}]']
 
         # Form the parameter list for program building
-        with app['hashmap.headers'] as headers, app['hashmap.sources'] as sources, app['array.libraries'] as libraries:
-            app['value.cflags'] = envvar_interface(name='CFLAGS', default_value=args.cflags)
-            app['value.lflags'] = envvar_interface(name='LFLAGS', default_value=args.lflags)
-            with app['value.cflags'] as cflags, app['value.lflags'] as lflags:
-                app['params.program'] = Parameters()
-                app['params.program'].lflags = lflags
-                app['params.program'].cflags = cflags
-                app['params.program'].libraries = app['array.libraries']
-                app['params.program'].sources = app['hashmap.sources']
-                app['params.program'].headers = app['hashmap.headers']
-                app['params.program'].device_id = app['context.opencl'].device_id
-                app['params.program'].context = app['context.opencl']
+        app['value.cflags'] = envvar_interface(name='CFLAGS', default_value=args.cflags)
+        app['value.lflags'] = envvar_interface(name='LFLAGS', default_value=args.lflags)
 
-    # Build the program
-    app['context.program'] = opencl_program_src_interface(app['params.program'])
+        # Build the program
+        with app['hashmap.headers'] as headers, \
+                app['hashmap.sources'] as sources, \
+                app['array.libraries'] as libraries, \
+                app['value.cflags'] as cflags, \
+                app['value.lflags'] as lflags:
+            app['context.program'] = opencl_program_src_interface(context=opencl_context,
+                                                                  device_id=opencl_context.device_id,
+                                                                  headers=headers,
+                                                                  sources=sources,
+                                                                  libraries=libraries,
+                                                                  cflags=cflags,
+                                                                  lflags=lflags)
+
     with app['context.program'] as program:
-        del app['params.program']
-
-        # Form the parameter list for output file opening
+        # Open the output file
         app['value.pathname'] = envvar_interface(name='OUT', default_value=args.out)
         with app['value.pathname'] as pathname:
-            app['params.open'] = Parameters(create=TRUE, truncate=TRUE,
-                                            readable=TRUE, writable=TRUE, mode=c.c_int(0o644))
-            app['params.open'].size = app['context.program'].binary_size[0]
-            app['params.open'].pathname = pathname
+            app['file.out'] = file_interface(pathname=pathname,
+                                             size=program.binary_size[0],
+                                             create=TRUE,
+                                             truncate=TRUE,
+                                             readable=TRUE,
+                                             writable=TRUE,
+                                             mode=c.c_int(0o644))
 
-        # Open the output file
-        app['file.out'] = file_interface(app['params.open'])
         with app['file.out'] as file:
-            del app['params.open']
-
             # Create a pointer into mapped file memory
-            app['file.memory'] = app['file.out'].map(writable=TRUE, shared=TRUE)
-            with app['file.memory'] as memory:
+            app['file.memory'] = file.map(writable=TRUE, shared=TRUE)
+            with app['file.memory'] as file_memory:
                 # Write the program binary into the output file
-                app['params.copy'] = Parameters()
-                app['params.copy'].source = app['context.program'].binary[0]
-
-                app['file.memory'].copy(app['params.copy'])
-
-                del app['params.copy']
+                file_memory.copy(source=program.binary[0])
 
 ###############################################################################
 # Generate the .archi file
