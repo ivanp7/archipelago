@@ -108,12 +108,12 @@ if len(args.devices) != len(args.out):
 ###############################################################################
 # Read contents of all input files
 
-def read_sources(path_map, allow_duplicates=True):
+def read_sources(path_map):
     content = {}
 
     for dirpath, filepaths in path_map.items():
         for filepath in filepaths:
-            if not allow_duplicates and filepath in content:
+            if filepath in content:
                 raise ValueError("Duplicate file path detected")
 
             path = Path(dirpath) / filepath
@@ -142,7 +142,7 @@ def read_binaries(path_map):
 
     return content
 
-content_headers = read_sources(args.hdr_map, allow_duplicates=False)
+content_headers = read_sources(args.hdr_map)
 content_sources = read_sources(args.src_map)
 content_libraries = read_binaries(args.lib_map)
 
