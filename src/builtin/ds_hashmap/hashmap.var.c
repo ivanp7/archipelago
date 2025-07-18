@@ -119,14 +119,14 @@ ARCHI_CONTEXT_SET_FUNC(archi_context_ds_hashmap_set)
 {
     if (slot.num_indices > 1)
         return ARCHI_STATUS_EMISUSE;
-    else if ((slot.num_indices > 0) && ((slot.index[0] < 0) || (slot.index[0] > 1)))
+    else if ((slot.num_indices > 0) && (slot.index[0] != 0))
         return ARCHI_STATUS_EMISUSE;
 
     if (value.ptr != NULL)
     {
         archi_hashmap_set_params_t params = {
             .insertion_allowed = true,
-            .update_allowed = (slot.num_indices > 0) ? slot.index[0] : false,
+            .update_allowed = (slot.num_indices != 0),
         };
 
         return archi_hashmap_set(context->ptr, slot.name, value, params);

@@ -751,13 +751,13 @@ execute_instructions(void)
         archi_log_debug(M, " * inserting mapped memory of file #%zu into the registry...", i);
         {
             // Insert the context into the registry, which also increments the reference count
-            ptrdiff_t slot_index = 1; // allow updating value for the existing key in the hashmap
+            ptrdiff_t slot_index = 0;
 
             archi_status_t code = archi_context_set_slot(archi_process.registry,
                     (archi_context_slot_t){
                         .name = ARCHI_EXE_REGISTRY_KEY_INPUT_FILE,
                         .index = &slot_index,
-                        .num_indices = 1,
+                        .num_indices = 1, // allow updating value for the existing key in the hashmap
                     },
                     (archi_pointer_t){
                         .ptr = archi_process.input_file[i],
