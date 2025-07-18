@@ -59,17 +59,20 @@ processing, data structures, inter-process communication (IPC), resources access
 - **Meta Features**
   - `archi_context_parameters_interface`: Parameter list used for `init()` and `act()` context operations.
   - `archi_context_pointer_interface`: Copied pointer with custom attributes.
+  - `archi_context_array_interface`: Array of pointers to data or functions.
 
 - **Memory Management**
   - `archi_context_memory_interface`: Generic memory allocation context.
   - `archi_context_memory_mapping_interface`: Pointer to a mapped region of memory.
 
 - **Hierarchical State Processing (HSP)**
-  - `archi_context_hsp_state_interface`: HSP state (function + data + metadata).
-  - `archi_context_hsp_transition_interface`: HSP transition (function + data).
-  - `archi_context_hsp_interface`: HSP instance (entry state + transition).
   - `archi_context_hsp_frame_interface`: HSP frame (sequence of states).
+  - `archi_context_hsp_transition_interface`: HSP transition (function + data).
   - `archi_context_hsp_branch_state_data_interface`: Data for a HSP branch state.
+  - `archi_context_hsp_transition_attachment_data_interface`: Data for a HSP transition attachment data.
+
+- Data Representation
+  - `archi_context_converter_string_to_number_interface`: Conversion of strings to numbers.
 
 - **Data Structures**
   - `archi_context_ds_hashmap_interface`: Hashmap.
