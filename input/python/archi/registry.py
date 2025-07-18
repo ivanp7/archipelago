@@ -283,73 +283,19 @@ class Context:
     def _set(self, slot_name: "str", slot_indices: "list[int]", value):
         """Append a set() instruction to the list.
         """
-        if not isinstance(slot_name, str):
-            raise TypeError
-        elif not isinstance(slot_indices, list) \
-                or not all(isinstance(index, int) for index in slot_indices):
-            raise TypeError
-
-        if value is None or isinstance(value, CValue):
-            self._registry._instruct(
-                    InstructionType.SET_TO_VALUE,
-                    key=self._key,
-                    slot_name=slot_name,
-                    slot_indices=slot_indices,
-                    value=value)
-
-        elif isinstance(value, Context):
-            self._registry._instruct(
-                    InstructionType.SET_TO_CONTEXT_DATA,
-                    key=self._key,
-                    slot_name=slot_name,
-                    slot_indices=slot_indices,
-                    source_key=value._key)
-
-        elif isinstance(value, Context._Slot) or isinstance(value, Context._Action):
-            self._registry._instruct(
-                    InstructionType.SET_TO_CONTEXT_SLOT,
-                    key=self._key,
-                    slot_name=slot_name,
-                    slot_indices=slot_indices,
-                    source_key=value._context._key,
-                    source_slot_name=value._name,
-                    source_slot_indices=value._indices)
-
-        else:
-            raise TypeError("Cannot set slot to an unsupported value type")
+        self._registry._set_slot(self._key, slot_name, slot_indices, value)
 
     def _act(self, action_name: "str", action_indices: "list[int]", params: "Parameters"):
         """Append an act() instruction to the list.
         """
-        if not isinstance(action_name, str):
-            raise TypeError
-        elif not isinstance(action_indices, list) \
-                or not all(isinstance(index, int) for index in action_indices):
-            raise TypeError
-        elif not isinstance(params, Parameters):
-            raise TypeError
-
-        temp_params_key = self._registry._prepare_params(params)
-
-        if temp_params_key is not None:
-            dparams_key = temp_params_key
-            sparams = {}
-        else:
-            dparams_key = params.dynamic_list_original_key()
-            sparams = params.static_list_static_values()
-
-        self._registry._instruct(
-                InstructionType.ACT,
-                key=self._key,
-                action_name=action_name,
-                action_indices=action_indices,
-                dparams_key=dparams_key,
-                sparams=sparams)
-
-        if temp_params_key is not None:
-            self._registry._instruct(
-                    InstructionType.DELETE,
-                    key=temp_params_key)
+        self._registry._with_params(params, lambda dparams_key, sparams:
+                                    self._registry._instruct(
+                                        InstructionType.ACT,
+                                        key=self._key,
+                                        action_name=action_name,
+                                        action_indices=action_indices,
+                                        dparams_key=dparams_key,
+                                        sparams=sparams))
 
     @staticmethod
     def key_of(context: "Context") -> "str":
@@ -427,61 +373,37 @@ class Registry:
             raise TypeError
 
         if isinstance(entity, Parameters):
-            temp_params_key = self._prepare_params(entity)
-
-            if temp_params_key is not None:
-                dparams_key = temp_params_key
-                sparams = {}
-            else:
-                dparams_key = entity.dynamic_list_original_key()
-                sparams = entity.static_list_static_values()
-
-            self._instruct(
-                    InstructionType.INIT_FROM_CONTEXT,
-                    key=key,
-                    interface_source_key=None,
-                    dparams_key=dparams_key,
-                    sparams=sparams)
-
-            if temp_params_key is not None:
-                self._instruct(
-                        InstructionType.DELETE,
-                        key=temp_params_key)
+            self._with_params(entity, lambda dparams_key, sparams:
+                              self._instruct(
+                                  InstructionType.INIT_FROM_CONTEXT,
+                                  key=key,
+                                  interface_source_key=None,
+                                  dparams_key=dparams_key,
+                                  sparams=sparams))
 
         elif isinstance(entity, ContextSpec):
             source = entity.interface().source()
 
-            temp_params_key = self._prepare_params(entity.parameters())
+            def func(dparams_key, sparams):
+                if isinstance(source, Context):
+                    self._instruct(
+                            InstructionType.INIT_FROM_CONTEXT,
+                            key=key,
+                            interface_source_key=source._key,
+                            dparams_key=dparams_key,
+                            sparams=sparams)
 
-            if temp_params_key is not None:
-                dparams_key = temp_params_key
-                sparams = {}
-            else:
-                dparams_key = entity.parameters().dynamic_list_original_key()
-                sparams = entity.parameters().static_list_static_values()
+                elif isinstance(source, Context._Slot):
+                    self._instruct(
+                            InstructionType.INIT_FROM_SLOT,
+                            key=key,
+                            interface_source_key=source._context._key,
+                            interface_source_slot_name=source._name,
+                            interface_source_slot_indices=source._indices,
+                            dparams_key=dparams_key,
+                            sparams=sparams)
 
-            if isinstance(source, Context):
-                self._instruct(
-                        InstructionType.INIT_FROM_CONTEXT,
-                        key=key,
-                        interface_source_key=source._key,
-                        dparams_key=dparams_key,
-                        sparams=sparams)
-
-            elif isinstance(source, Context._Slot):
-                self._instruct(
-                        InstructionType.INIT_FROM_SLOT,
-                        key=key,
-                        interface_source_key=source._context._key,
-                        interface_source_slot_name=source._name,
-                        interface_source_slot_indices=source._indices,
-                        dparams_key=dparams_key,
-                        sparams=sparams)
-
-            if temp_params_key is not None:
-                self._instruct(
-                        InstructionType.DELETE,
-                        key=temp_params_key)
+            self._with_params(entity.parameters(), func)
 
         elif entity is None or isinstance(entity, CValue):
             self._instruct(
@@ -518,34 +440,7 @@ class Registry:
                     flags=None)
 
             for index, element in enumerate(entity):
-                if element is None or isinstance(element, CValue):
-                    self._instruct(
-                            InstructionType.SET_TO_VALUE,
-                            key=key,
-                            slot_name='',
-                            slot_indices=[index],
-                            value=element)
-
-                elif isinstance(element, Context):
-                    self._instruct(
-                            InstructionType.SET_TO_CONTEXT_DATA,
-                            key=key,
-                            slot_name='',
-                            slot_indices=[index],
-                            source_key=element._key)
-
-                elif isinstance(element, Context._Slot) or isinstance(element, Context._Action):
-                    self._instruct(
-                            InstructionType.SET_TO_CONTEXT_SLOT,
-                            key=key,
-                            slot_name='',
-                            slot_indices=[index],
-                            source_key=element._context._key,
-                            source_slot_name=element._name,
-                            source_slot_indices=element._indices)
-
-                else:
-                    raise TypeError("Cannot set array element to an unsupported value type")
+                self._set_slot(key, '', [index], element)
 
         else:
             raise TypeError("Cannot add an entity of unsupported type to a registry")
@@ -586,11 +481,52 @@ class Registry:
         """
         self._instructions.append(Registry._Instruction(type, **fields))
 
-    def _prepare_params(self, params: "Parameters"):
-        """Append necessary instructions to prepare a parameter list and return the temporary dynamic list key.
+    def _set_slot(self, key: "str", slot_name: "str", slot_indices: "list[int]", value):
+        """Append a setter instruction corresponding to the value type to the list.
+        """
+        if not isinstance(key, str):
+            raise TypeError
+        elif not isinstance(slot_name, str):
+            raise TypeError
+        elif not isinstance(slot_indices, list) \
+                or not all(isinstance(index, int) for index in slot_indices):
+            raise TypeError
+
+        if value is None or isinstance(value, CValue):
+            self._instruct(
+                    InstructionType.SET_TO_VALUE,
+                    key=key,
+                    slot_name=slot_name,
+                    slot_indices=slot_indices,
+                    value=value)
+
+        elif isinstance(value, Context):
+            self._instruct(
+                    InstructionType.SET_TO_CONTEXT_DATA,
+                    key=key,
+                    slot_name=slot_name,
+                    slot_indices=slot_indices,
+                    source_key=value._key)
+
+        elif isinstance(value, Context._Slot) or isinstance(value, Context._Action):
+            self._instruct(
+                    InstructionType.SET_TO_CONTEXT_SLOT,
+                    key=key,
+                    slot_name=slot_name,
+                    slot_indices=slot_indices,
+                    source_key=value._context._key,
+                    source_slot_name=value._name,
+                    source_slot_indices=value._indices)
+
+        else:
+            raise TypeError("Cannot set slot to an unsupported value type")
+
+    def _with_params(self, params: "Parameters", func):
+        """Prepare a temporary parameter list if needed and invoke a custom function before deleting the list.
         """
         if not params.static_list_dynamic_values():
-            return None
+            func(params.dynamic_list_original_key(), params.static_list_static_values())
+            return
 
         self._instruct(
                 InstructionType.INIT_FROM_CONTEXT,
@@ -600,26 +536,11 @@ class Registry:
                 sparams=params.static_list_static_values())
 
         for key, value in reversed(params.static_list_dynamic_values().items()):
-            if isinstance(value, Context):
-                self._instruct(
-                        InstructionType.SET_TO_CONTEXT_DATA,
-                        key=params.dynamic_list_temporary_key(),
-                        slot_name=key,
-                        slot_indices=[],
-                        source_key=value._key)
+            self._set_slot(params.dynamic_list_temporary_key(), key, [], value)
 
-            elif isinstance(value, Context._Slot) or isinstance(value, Context._Action):
-                self._instruct(
-                        InstructionType.SET_TO_CONTEXT_SLOT,
-                        key=params.dynamic_list_temporary_key(),
-                        slot_name=key,
-                        slot_indices=[],
-                        source_key=value._context._key,
-                        source_slot_name=value._name,
-                        source_slot_indices=value._indices)
+        func(params.dynamic_list_temporary_key(), {})
 
-            else:
-                raise TypeError
-
-        return params.dynamic_list_temporary_key()
+        self._instruct(
+                InstructionType.DELETE,
+                key=params.dynamic_list_temporary_key())
 
