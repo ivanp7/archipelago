@@ -195,13 +195,14 @@ with app.context('plugin.opencl', library_interface(pathname="libarchip_opencl.s
 
             del map_libraries
 
-            # Fill the hashmaps
+            # Fill the hashmaps with sources
             for path, contents in content_headers.items():
                 setattr(headers, path, CValue(contents))
 
             for path, contents in content_sources.items():
                 setattr(sources, path, CValue(contents))
 
+            # Build the program
             app['context.program'] = opencl_program_src_interface(context=opencl_context,
                                                                   device_id=opencl_context.device_id,
                                                                   headers=headers,
@@ -211,6 +212,7 @@ with app.context('plugin.opencl', library_interface(pathname="libarchip_opencl.s
                                                                   lflags=lflags)
 
     with app['context.program'] as opencl_program:
+        # Write program binaries to output files
         for i, out_file in enumerate(args.out):
             # Open an output file and map it to memory
             with app.context('file.out', file_interface(pathname=out_file,
@@ -219,7 +221,7 @@ with app.context('plugin.opencl', library_interface(pathname="libarchip_opencl.s
                                                         readable=TRUE, writable=TRUE,
                                                         mode=c.c_int(0o644))) as file, \
                     app.context('file.memory', file.map(writable=TRUE, shared=TRUE)) as file_memory:
-                # Write the program binary into the output file
+                # Write the program binary for the current device into the output file
                 file_memory.copy(source=opencl_program.binary[i])
 
 ###############################################################################
