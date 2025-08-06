@@ -8,10 +8,15 @@ import ctypes as c
 import os
 from pathlib import Path
 import subprocess
+import sys
 
 from archi.memory import CValue
 from archi.registry import Registry, ContextInterface, Parameters
 from archi.file import File
+
+
+def eprint(*args, **kwargs):
+    print(*args, file=sys.stderr, **kwargs)
 
 ###############################################################################
 # Parse command line arguments
@@ -49,7 +54,7 @@ class DirFileGroupAction(argparse.Action):
 parser = argparse.ArgumentParser(
         description="Build an OpenCL library program and write the binaries to file system.")
 
-parser.add_argument('--file', metavar="PATHNAME", required=True, help="Pathname of the generated .archi file")
+parser.add_argument('--file', metavar="PATHNAME", help="Pathname of the generated .archi file (stdout if none)")
 parser.add_argument('--mapaddr', type=lambda value: int(value, base=16), default=DEFAULT_MAP_ADDRESS,
                     metavar="ADDRESS", help="Memory map address")
 
@@ -79,28 +84,31 @@ parser.add_argument('--out', nargs='+', default=[], metavar="PATHNAME", required
 parser.set_defaults(hdr_map={}, src_map={}, lib_map={})
 args = parser.parse_args()
 
-print(f"Generated file: '{args.file}'")
-print(f"Map address: 0x{args.mapaddr:x}")
-print()
-print(f"OpenCL platform #: {args.platform}")
-print(f"OpenCL device #: {args.devices}")
-print(f"OpenCL compiler flags: {f"'args.cflags'" if args.cflags else '<none>'}")
-print(f"OpenCL linker flags: {f"'args.lflags'" if args.lflags else '<none>'}")
-print()
-print("Headers:")
+if args.file is not None:
+    eprint(f"Generated file: '{args.file}'")
+else:
+    eprint("Generated file: <stdout>")
+eprint(f"Map address: 0x{args.mapaddr:x}")
+eprint()
+eprint(f"OpenCL platform #: {args.platform}")
+eprint(f"OpenCL device #: {args.devices}")
+eprint(f"OpenCL compiler flags: {f"'args.cflags'" if args.cflags else '<none>'}")
+eprint(f"OpenCL linker flags: {f"'args.lflags'" if args.lflags else '<none>'}")
+eprint()
+eprint("Headers:")
 for dirpath, filepaths in args.hdr_map.items():
-    print(f"    '{dirpath}': {filepaths}")
-print()
-print("Sources:")
+    eprint(f"    '{dirpath}': {filepaths}")
+eprint()
+eprint("Sources:")
 for dirpath, filepaths in args.src_map.items():
-    print(f"    '{dirpath}': {filepaths}")
-print()
-print("Libraries:")
+    eprint(f"    '{dirpath}': {filepaths}")
+eprint()
+eprint("Libraries:")
 for dirpath, filepaths in args.lib_map.items():
-    print(f"    '{dirpath}': {filepaths}")
-print()
-print(f"Build output file(s): {args.out}")
-print()
+    eprint(f"    '{dirpath}': {filepaths}")
+eprint()
+eprint(f"Build output file(s): {args.out}")
+eprint()
 
 if len(args.devices) != len(args.out):
     raise ValueError("Number of output files must be the same as the number of devices")
@@ -237,8 +245,12 @@ file_memory.pack() # get rid of padding bytes where possible
 file_memory_buffer = file_memory.fossilize(args.mapaddr)
 
 # Write the file
-with open(args.file, mode='wb') as file:
-    file.write(file_memory_buffer)
+if args.file is not None:
+    with open(args.file, mode='wb') as file:
+        file.write(file_memory_buffer)
+else:
+    sys.stdout.buffer.write(file_memory_buffer)
+    sys.stdout.flush()
 
 # Report the sizes
 file_size_b = file_memory.size()
@@ -250,6 +262,6 @@ file_padding_b = file_memory.padding()
 file_padding_kib = file_padding_b / 1024
 file_padding_mib = file_padding_kib / 1024
 
-print(f"Wrote {file_size_b} bytes ({file_size_kib:.1f} KiB, {file_size_mib:.1f} MiB, {file_size_gib:.1f} GiB) to '{args.file}',")
-print(f"including {file_padding_b} padding bytes ({file_padding_kib:.1f} KiB, {file_padding_mib:.1f} MiB)")
+eprint(f"Wrote {file_size_b} bytes ({file_size_kib:.1f} KiB, {file_size_mib:.1f} MiB, {file_size_gib:.1f} GiB) to '{args.file}',")
+eprint(f"including {file_padding_b} padding bytes ({file_padding_kib:.1f} KiB, {file_padding_mib:.1f} MiB)")
 
