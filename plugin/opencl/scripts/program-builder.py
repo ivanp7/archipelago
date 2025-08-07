@@ -14,15 +14,12 @@ import sys
 from archi.memory import CValue
 from archi.registry import Registry, ContextInterface, Parameters
 from archi.file import File
-
-
-def eprint(*args, **kwargs):
-    print(*args, file=sys.stderr, **kwargs)
+from archi.script import eprint, random_map_address, dump_file
 
 ###############################################################################
 # Parse command line arguments
 
-DEFAULT_MAP_ADDRESS = 0x7f0000000000 + (random.randrange(0, 0x10000000000) & 0xfffffff000)
+DEFAULT_MAP_ADDRESS = random_map_address()
 
 class DirFileGroupAction(argparse.Action):
     """Generalized Action for grouping files under directories for a specific pair.
@@ -237,34 +234,7 @@ with app.context('plugin.opencl', library_interface(pathname="libarchip_opencl.s
 # Generate the .archi file
 
 file = File()
-
 file[File.KEY_REGISTRY] = app
 
-file_memory = file.memory()
-file_memory.pack() # get rid of padding bytes where possible
-
-file_memory_buffer = file_memory.fossilize(args.mapaddr)
-
-# Write the file
-if args.file is not None:
-    with open(args.file, mode='wb') as file:
-        file.write(file_memory_buffer)
-else:
-    sys.stdout.buffer.write(file_memory_buffer)
-    sys.stdout.flush()
-
-# Report the sizes
-file_size_b = file_memory.size()
-file_size_kib = file_size_b / 1024
-file_size_mib = file_size_kib / 1024
-file_size_gib = file_size_mib / 1024
-
-file_padding_b = file_memory.padding()
-file_padding_kib = file_padding_b / 1024
-file_padding_mib = file_padding_kib / 1024
-
-eprint(f"Wrote {file_size_b} bytes ({file_size_kib:.1f} KiB, {file_size_mib:.1f} MiB, \
-{file_size_gib:.1f} GiB) to {f"'{args.file}'" if args.file else "<stdout>"},")
-eprint(f"including {file_padding_b} padding bytes ({file_padding_kib:.1f} KiB, {file_padding_mib:.1f} MiB)")
-eprint()
+dump_file(file, args.mapaddr, args.file)
 
