@@ -7,6 +7,7 @@ import argparse
 import ctypes as c
 import os
 from pathlib import Path
+import random
 import subprocess
 import sys
 
@@ -21,7 +22,7 @@ def eprint(*args, **kwargs):
 ###############################################################################
 # Parse command line arguments
 
-DEFAULT_MAP_ADDRESS = 0x7f0000000000
+DEFAULT_MAP_ADDRESS = 0x7f0000000000 + (random.randrange(0, 0x10000000000) & 0xfffffff000)
 
 class DirFileGroupAction(argparse.Action):
     """Generalized Action for grouping files under directories for a specific pair.
@@ -54,9 +55,9 @@ class DirFileGroupAction(argparse.Action):
 parser = argparse.ArgumentParser(
         description="Build an OpenCL library program and write the binaries to file system.")
 
-parser.add_argument('--file', metavar="PATHNAME", help="Pathname of the generated .archi file (stdout if none)")
 parser.add_argument('--mapaddr', type=lambda value: int(value, base=16), default=DEFAULT_MAP_ADDRESS,
                     metavar="ADDRESS", help="Memory map address")
+parser.add_argument('--file', metavar="PATHNAME", help="Pathname of the generated .archi file (stdout if none)")
 
 parser.add_argument('--platform', type=int, default=0, metavar="ID", help="OpenCL platform number")
 parser.add_argument('--devices', nargs='+', type=int, default=[0], metavar="ID", help="OpenCL device number(s)")
@@ -84,16 +85,16 @@ parser.add_argument('--out', nargs='+', default=[], metavar="PATHNAME", required
 parser.set_defaults(hdr_map={}, src_map={}, lib_map={})
 args = parser.parse_args()
 
+eprint(f"Map address: 0x{args.mapaddr:x}")
 if args.file is not None:
     eprint(f"Generated file: '{args.file}'")
 else:
     eprint("Generated file: <stdout>")
-eprint(f"Map address: 0x{args.mapaddr:x}")
 eprint()
 eprint(f"OpenCL platform #: {args.platform}")
 eprint(f"OpenCL device #: {args.devices}")
-eprint(f"OpenCL compiler flags: {f"'args.cflags'" if args.cflags else '<none>'}")
-eprint(f"OpenCL linker flags: {f"'args.lflags'" if args.lflags else '<none>'}")
+eprint(f"OpenCL compiler flags: {f"'{args.cflags}'" if args.cflags else '<none>'}")
+eprint(f"OpenCL linker flags: {f"'{args.lflags}'" if args.lflags else '<none>'}")
 eprint()
 eprint("Headers:")
 for dirpath, filepaths in args.hdr_map.items():
@@ -262,6 +263,8 @@ file_padding_b = file_memory.padding()
 file_padding_kib = file_padding_b / 1024
 file_padding_mib = file_padding_kib / 1024
 
-eprint(f"Wrote {file_size_b} bytes ({file_size_kib:.1f} KiB, {file_size_mib:.1f} MiB, {file_size_gib:.1f} GiB) to '{args.file}',")
+eprint(f"Wrote {file_size_b} bytes ({file_size_kib:.1f} KiB, {file_size_mib:.1f} MiB, \
+{file_size_gib:.1f} GiB) to {f"'{args.file}'" if args.file else "<stdout>"},")
 eprint(f"including {file_padding_b} padding bytes ({file_padding_kib:.1f} KiB, {file_padding_mib:.1f} MiB)")
+eprint()
 
