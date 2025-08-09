@@ -105,18 +105,18 @@ archi_file_map(
     int prot = (params.readable ? PROT_READ : 0) | (params.writable ? PROT_WRITE : 0);
     int all_flags = (params.shared ? MAP_SHARED_VALIDATE : MAP_PRIVATE) | params.flags;
 
+    struct stat statbuf;
+    if (fstat(fd, &statbuf) != 0)
+        return NULL;
+
     if (!params.has_header)
     {
         if (params.size == 0)
         {
-            struct stat statbuf;
-            if (fstat(fd, &statbuf) != 0)
-                return NULL;
-
             if (params.offset >= (size_t)statbuf.st_size)
                 return NULL;
 
-            params.size = statbuf.st_size - params.offset;
+            params.size = (size_t)statbuf.st_size - params.offset;
         }
 
         void *mm = mmap(NULL, params.size, prot, all_flags, fd, params.offset);
@@ -130,6 +130,9 @@ archi_file_map(
     }
     else
     {
+        if ((size_t)statbuf.st_size < sizeof(archi_file_header_t))
+            return NULL;
+
         archi_file_header_t *mm;
         archi_file_header_t header;
 
