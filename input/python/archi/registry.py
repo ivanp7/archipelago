@@ -361,7 +361,9 @@ class Registry:
     def __getitem__(self, key: "str") -> "Context":
         """Obtain a context from the registry.
         """
-        if not isinstance(key, str):
+        if key is None:
+            return None
+        elif not isinstance(key, str):
             raise TypeError
 
         return Context(self, key)
