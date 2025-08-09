@@ -168,21 +168,22 @@ hashmap_interface = ContextInterface(executable.archi_context_ds_hashmap_interfa
 envvar_interface = ContextInterface(executable.archi_context_ipc_env_interface)
 
 # Load OpenCL plugin
-with app.context('plugin.opencl', library_interface(pathname="libarchip_opencl.so")) as plugin_opencl:
+with app.context(library_interface(pathname="libarchip_opencl.so"), key='plugin.opencl') as plugin_opencl:
     # Prepare used OpenCL plugin interfaces
     opencl_context_interface = ContextInterface(plugin_opencl.archip_context_opencl_context_interface)
     opencl_program_src_interface = ContextInterface(plugin_opencl.archip_context_opencl_program_src_interface)
     opencl_program_bin_interface = ContextInterface(plugin_opencl.archip_context_opencl_program_bin_interface)
 
     # Create the OpenCL context
-    with app.context('context.opencl', opencl_context_interface(platform_idx=c.c_uint(args.platform),
-                                                                device_idx=(c.c_uint * len(args.devices))(*args.devices))) as opencl_context:
+    with app.context(opencl_context_interface(platform_idx=c.c_uint(args.platform),
+                                              device_idx=(c.c_uint * len(args.devices))(*args.devices)),
+                     key='context.opencl') as opencl_context:
         # Prepare the list of dependency libraries of the program
         map_libraries = {}
-        with app.context('params.library', Parameters(context=opencl_context,
-                                                      device_id=opencl_context.device_id)) as params_library:
+        with app.context(Parameters(context=opencl_context, device_id=opencl_context.device_id),
+                         key='params.library') as params_library:
             for i, binary in enumerate(content_libraries):
-                with app.context('array.binary', [CValue(binary)]) as array_binary:
+                with app.context([CValue(binary)], key='array.binary') as array_binary:
                     params_library.binaries = array_binary.elements
 
                 library_key = f'context.library[{i}]'
@@ -190,11 +191,11 @@ with app.context('plugin.opencl', library_interface(pathname="libarchip_opencl.s
                 map_libraries[library_key] = app[library_key]
 
         # Prepare program headers, sources, and library dependencies
-        with app.context('array.libraries', list(map_libraries.values())) as libraries, \
-                app.context('hashmap.headers', hashmap_interface(capacity=HASHMAP_CAPACITY)) as headers, \
-                app.context('hashmap.sources', hashmap_interface(capacity=HASHMAP_CAPACITY)) as sources, \
-                app.context('string.cflags', envvar_interface(name='CFLAGS', default_value=args.cflags)) as cflags, \
-                app.context('string.lflags', envvar_interface(name='LFLAGS', default_value=args.lflags)) as lflags:
+        with app.context(list(map_libraries.values()), key='array.libraries') as libraries, \
+                app.context(hashmap_interface(capacity=HASHMAP_CAPACITY), key='hashmap.headers') as headers, \
+                app.context(hashmap_interface(capacity=HASHMAP_CAPACITY), key='hashmap.sources') as sources, \
+                app.context(envvar_interface(name='CFLAGS', default_value=args.cflags), key='string.cflags') as cflags, \
+                app.context(envvar_interface(name='LFLAGS', default_value=args.lflags), key='string.lflags') as lflags:
             # Release the temporary contexts
             for library_key in map_libraries.keys():
                 del app[library_key]
@@ -221,12 +222,12 @@ with app.context('plugin.opencl', library_interface(pathname="libarchip_opencl.s
         # Write program binaries to output files
         for i, out_file in enumerate(args.out):
             # Open an output file and map it to memory
-            with app.context('file.out', file_interface(pathname=out_file,
-                                                        size=opencl_program.binary_size[i],
-                                                        create=TRUE, truncate=TRUE,
-                                                        readable=TRUE, writable=TRUE,
-                                                        mode=c.c_int(0o644))) as file, \
-                    app.context('file.memory', file.map(writable=TRUE, shared=TRUE)) as file_memory:
+            with app.context(file_interface(pathname=out_file,
+                                            size=opencl_program.binary_size[i],
+                                            create=TRUE, truncate=TRUE,
+                                            readable=TRUE, writable=TRUE,
+                                            mode=c.c_int(0o644)), key='file.out') as file, \
+                    app.context(file.map(writable=TRUE, shared=TRUE), key='file.memory') as file_memory:
                 # Write the program binary for the current device into the output file
                 file_memory.copy(source=opencl_program.binary[i])
 

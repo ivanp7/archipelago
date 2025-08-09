@@ -58,7 +58,7 @@ class Parameters:
             raise TypeError
 
         self._dparams_orig = _
-        self._dparams_temp_key = ".params_" + ''.join(random.choice(string.ascii_letters + string.digits) \
+        self._dparams_temp_key = '.params_' + ''.join(random.choice(string.ascii_letters + string.digits) \
                 for char in range(16))
 
         self._sparams_dynamic = {}
@@ -456,9 +456,12 @@ class Registry:
                 key=key)
 
     @contextmanager
-    def context(self, key: "str", value):
+    def context(self, value, /, key: "str" = None):
         """Context manager for creating a temporary context.
         """
+        if key is None:
+            key = Registry.temp_key()
+
         self[key] = value
         try:
             yield self[key]
@@ -543,4 +546,15 @@ class Registry:
         self._instruct(
                 InstructionType.DELETE,
                 key=params.dynamic_list_temporary_key())
+
+    @staticmethod
+    def temp_key(comment: "str" = None) -> "str":
+        """Generate a random temporary context key with an optional comment in it.
+        """
+        import random
+        import string
+
+        return '.context' + (f'({comment})_' if comment is not None else '_') \
+                + ''.join(random.choice(string.ascii_letters + string.digits) \
+                for char in range(16))
 
