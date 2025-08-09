@@ -35,6 +35,7 @@
 struct archi_context_memory_mapping_data {
     archi_pointer_t mapping;
     archi_pointer_t memory;
+    size_t full_size;
 };
 
 ARCHI_CONTEXT_INIT_FUNC(archi_context_memory_mapping_init)
@@ -134,6 +135,7 @@ ARCHI_CONTEXT_INIT_FUNC(archi_context_memory_mapping_init)
     *context_data = (struct archi_context_memory_mapping_data){
         .mapping = mapping,
         .memory = memory,
+        .full_size = mapping.element.num_of * mapping.element.size,
     };
 
     *context = (archi_pointer_t*)context_data;
@@ -192,7 +194,7 @@ ARCHI_CONTEXT_GET_FUNC(archi_context_memory_mapping_get)
 
         *value = (archi_pointer_t){
             .ptr = &context_data->mapping.element,
-            .ref_count = context_data->mapping.ref_count,
+            .ref_count = context->ref_count,
             .element = {
                 .num_of = 1,
                 .size = sizeof(context_data->mapping.element),
@@ -207,7 +209,7 @@ ARCHI_CONTEXT_GET_FUNC(archi_context_memory_mapping_get)
 
         *value = (archi_pointer_t){
             .ptr = &context_data->mapping.element.num_of,
-            .ref_count = context_data->mapping.ref_count,
+            .ref_count = context->ref_count,
             .element = {
                 .num_of = 1,
                 .size = sizeof(context_data->mapping.element.num_of),
@@ -222,7 +224,7 @@ ARCHI_CONTEXT_GET_FUNC(archi_context_memory_mapping_get)
 
         *value = (archi_pointer_t){
             .ptr = &context_data->mapping.element.size,
-            .ref_count = context_data->mapping.ref_count,
+            .ref_count = context->ref_count,
             .element = {
                 .num_of = 1,
                 .size = sizeof(context_data->mapping.element.size),
@@ -237,10 +239,25 @@ ARCHI_CONTEXT_GET_FUNC(archi_context_memory_mapping_get)
 
         *value = (archi_pointer_t){
             .ptr = &context_data->mapping.element.alignment,
-            .ref_count = context_data->mapping.ref_count,
+            .ref_count = context->ref_count,
             .element = {
                 .num_of = 1,
                 .size = sizeof(context_data->mapping.element.alignment),
+                .alignment = alignof(size_t),
+            },
+        };
+    }
+    else if (strcmp("full_size", slot.name) == 0)
+    {
+        if (slot.num_indices != 0)
+            return ARCHI_STATUS_EMISUSE;
+
+        *value = (archi_pointer_t){
+            .ptr = &context_data->full_size,
+            .ref_count = context->ref_count,
+            .element = {
+                .num_of = 1,
+                .size = sizeof(context_data->full_size),
                 .alignment = alignof(size_t),
             },
         };

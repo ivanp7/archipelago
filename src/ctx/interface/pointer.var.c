@@ -33,6 +33,7 @@
 struct archi_context_pointer_data {
     archi_pointer_t pointer;
     archi_reference_count_t ref_count;
+    size_t full_size;
 };
 
 ARCHI_CONTEXT_INIT_FUNC(archi_context_pointer_init)
@@ -138,13 +139,19 @@ ARCHI_CONTEXT_INIT_FUNC(archi_context_pointer_init)
     if (param_element_alignment_set)
         value.element.alignment = layout_fields.alignment;
 
+    size_t full_size = 0;
+
     if ((value.flags & ARCHI_POINTER_FLAG_FUNCTION) == 0)
     {
+        full_size = value.element.num_of * value.element.size;
+
         if ((value.ptr == NULL) && (value.element.num_of != 0))
             return ARCHI_STATUS_EVALUE;
         else if ((value.ptr != NULL) && (value.element.num_of == 0))
             return ARCHI_STATUS_EVALUE;
         else if ((value.element.alignment & (value.element.alignment - 1)) != 0)
+            return ARCHI_STATUS_EVALUE;
+        else if ((value.element.size != 0) && (full_size / value.element.size != value.element.num_of))
             return ARCHI_STATUS_EVALUE;
     }
 
@@ -159,6 +166,7 @@ ARCHI_CONTEXT_INIT_FUNC(archi_context_pointer_init)
             .element = value.element,
         },
         .ref_count = value.ref_count,
+        .full_size = full_size,
     };
 
     archi_reference_count_increment(value.ref_count);
@@ -216,7 +224,7 @@ ARCHI_CONTEXT_GET_FUNC(archi_context_pointer_get)
 
         *value = (archi_pointer_t){
             .ptr = &context_data->pointer.flags,
-            .ref_count = context_data->ref_count,
+            .ref_count = context->ref_count,
             .element = {
                 .num_of = 1,
                 .size = sizeof(context_data->pointer.flags),
@@ -231,7 +239,7 @@ ARCHI_CONTEXT_GET_FUNC(archi_context_pointer_get)
 
         *value = (archi_pointer_t){
             .ptr = &context_data->pointer.element,
-            .ref_count = context_data->ref_count,
+            .ref_count = context->ref_count,
             .element = {
                 .num_of = 1,
                 .size = sizeof(context_data->pointer.element),
@@ -246,7 +254,7 @@ ARCHI_CONTEXT_GET_FUNC(archi_context_pointer_get)
 
         *value = (archi_pointer_t){
             .ptr = &context_data->pointer.element.num_of,
-            .ref_count = context_data->ref_count,
+            .ref_count = context->ref_count,
             .element = {
                 .num_of = 1,
                 .size = sizeof(context_data->pointer.element.num_of),
@@ -261,7 +269,7 @@ ARCHI_CONTEXT_GET_FUNC(archi_context_pointer_get)
 
         *value = (archi_pointer_t){
             .ptr = &context_data->pointer.element.size,
-            .ref_count = context_data->ref_count,
+            .ref_count = context->ref_count,
             .element = {
                 .num_of = 1,
                 .size = sizeof(context_data->pointer.element.size),
@@ -276,10 +284,25 @@ ARCHI_CONTEXT_GET_FUNC(archi_context_pointer_get)
 
         *value = (archi_pointer_t){
             .ptr = &context_data->pointer.element.alignment,
-            .ref_count = context_data->ref_count,
+            .ref_count = context->ref_count,
             .element = {
                 .num_of = 1,
                 .size = sizeof(context_data->pointer.element.alignment),
+                .alignment = alignof(size_t),
+            },
+        };
+    }
+    else if (strcmp("full_size", slot.name) == 0)
+    {
+        if (slot.num_indices != 0)
+            return ARCHI_STATUS_EMISUSE;
+
+        *value = (archi_pointer_t){
+            .ptr = &context_data->full_size,
+            .ref_count = context->ref_count,
+            .element = {
+                .num_of = 1,
+                .size = sizeof(context_data->full_size),
                 .alignment = alignof(size_t),
             },
         };

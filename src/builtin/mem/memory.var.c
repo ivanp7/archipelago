@@ -31,7 +31,10 @@
 #include <stdbool.h>
 #include <stdalign.h> // for alignof()
 
-/*****************************************************************************/
+struct archi_context_memory_data {
+    archi_pointer_t memory;
+    size_t full_size;
+};
 
 ARCHI_CONTEXT_INIT_FUNC(archi_context_memory_init)
 {
@@ -133,7 +136,7 @@ ARCHI_CONTEXT_INIT_FUNC(archi_context_memory_init)
     if (param_element_alignment_set)
         layout.alignment = layout_fields.alignment;
 
-    archi_pointer_t *context_data = malloc(sizeof(*context_data));
+    struct archi_context_memory_data *context_data = malloc(sizeof(*context_data));
     if (context_data == NULL)
         return ARCHI_STATUS_ENOMEMORY;
 
@@ -146,36 +149,45 @@ ARCHI_CONTEXT_INIT_FUNC(archi_context_memory_init)
         return code;
     }
 
-    *context_data = (archi_pointer_t){
-        .ptr = memory,
-        .element = layout,
+    *context_data = (struct archi_context_memory_data){
+        .memory = {
+            .ptr = memory,
+            .element = layout,
+        },
+        .full_size = layout.num_of * layout.size,
     };
 
-    *context = context_data;
+    *context = (archi_pointer_t*)context_data;
     return code;
 }
 
 ARCHI_CONTEXT_FINAL_FUNC(archi_context_memory_final)
 {
-    archi_memory_free(context->ptr);
+    struct archi_context_memory_data *context_data =
+        (struct archi_context_memory_data*)context;
+
+    archi_memory_free(context_data->memory.ptr);
     free(context);
 }
 
 ARCHI_CONTEXT_GET_FUNC(archi_context_memory_get)
 {
+    struct archi_context_memory_data *context_data =
+        (struct archi_context_memory_data*)context;
+
     if (strcmp("interface", slot.name) == 0)
     {
         if (slot.num_indices != 0)
             return ARCHI_STATUS_EMISUSE;
 
-        *value = archi_memory_interface(context->ptr);
+        *value = archi_memory_interface(context_data->memory.ptr);
     }
     else if (strcmp("allocation", slot.name) == 0)
     {
         if (slot.num_indices != 0)
             return ARCHI_STATUS_EMISUSE;
 
-        *value = archi_memory_allocation(context->ptr);
+        *value = archi_memory_allocation(context_data->memory.ptr);
     }
     else if (strcmp("layout", slot.name) == 0)
     {
@@ -183,11 +195,11 @@ ARCHI_CONTEXT_GET_FUNC(archi_context_memory_get)
             return ARCHI_STATUS_EMISUSE;
 
         *value = (archi_pointer_t){
-            .ptr = &context->element,
+            .ptr = &context_data->memory.element,
             .ref_count = context->ref_count,
             .element = {
                 .num_of = 1,
-                .size = sizeof(context->element),
+                .size = sizeof(context_data->memory.element),
                 .alignment = alignof(archi_array_layout_t),
             },
         };
@@ -198,11 +210,11 @@ ARCHI_CONTEXT_GET_FUNC(archi_context_memory_get)
             return ARCHI_STATUS_EMISUSE;
 
         *value = (archi_pointer_t){
-            .ptr = &context->element.num_of,
+            .ptr = &context_data->memory.element.num_of,
             .ref_count = context->ref_count,
             .element = {
                 .num_of = 1,
-                .size = sizeof(context->element.num_of),
+                .size = sizeof(context_data->memory.element.num_of),
                 .alignment = alignof(size_t),
             },
         };
@@ -213,11 +225,11 @@ ARCHI_CONTEXT_GET_FUNC(archi_context_memory_get)
             return ARCHI_STATUS_EMISUSE;
 
         *value = (archi_pointer_t){
-            .ptr = &context->element.size,
+            .ptr = &context_data->memory.element.size,
             .ref_count = context->ref_count,
             .element = {
                 .num_of = 1,
-                .size = sizeof(context->element.size),
+                .size = sizeof(context_data->memory.element.size),
                 .alignment = alignof(size_t),
             },
         };
@@ -228,11 +240,26 @@ ARCHI_CONTEXT_GET_FUNC(archi_context_memory_get)
             return ARCHI_STATUS_EMISUSE;
 
         *value = (archi_pointer_t){
-            .ptr = &context->element.alignment,
+            .ptr = &context_data->memory.element.alignment,
             .ref_count = context->ref_count,
             .element = {
                 .num_of = 1,
-                .size = sizeof(context->element.alignment),
+                .size = sizeof(context_data->memory.element.alignment),
+                .alignment = alignof(size_t),
+            },
+        };
+    }
+    else if (strcmp("full_size", slot.name) == 0)
+    {
+        if (slot.num_indices != 0)
+            return ARCHI_STATUS_EMISUSE;
+
+        *value = (archi_pointer_t){
+            .ptr = &context_data->full_size,
+            .ref_count = context->ref_count,
+            .element = {
+                .num_of = 1,
+                .size = sizeof(context_data->full_size),
                 .alignment = alignof(size_t),
             },
         };
