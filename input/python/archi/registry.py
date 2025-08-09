@@ -66,7 +66,7 @@ class Parameters:
 
         for key, value in params.items():
             if isinstance(value, Context) \
-                    or isinstance(value, Context._Slot) or isinstance(value, Context._Action):
+                    or isinstance(value, Context.Slot) or isinstance(value, Context.Action):
                 self._sparams_dynamic[key] = value
             else:
                 self._sparams_static[key] = value
@@ -128,7 +128,7 @@ class ContextInterface:
     def __init__(self, source):
         """Create a context interface instance.
         """
-        if not isinstance(source, Context) and not isinstance(source, Context._Slot):
+        if not isinstance(source, Context) and not isinstance(source, Context.Slot):
             raise TypeError
 
         self._source = source
@@ -147,7 +147,7 @@ class ContextInterface:
 class Context:
     """Representation of a context.
     """
-    class _Slot:
+    class Slot:
         """Representation of a context slot.
         """
         def __init__(self, context: "Context", name: "str" = '', indices: "list[int]" = []):
@@ -165,21 +165,21 @@ class Context:
             object.__setattr__(self, '_name', name)
             object.__setattr__(self, '_indices', indices)
 
-        def __getattr__(self, name: "str") -> "Context._Slot":
+        def __getattr__(self, name: "str") -> "Context.Slot":
             """Obtain a context slot object.
             """
             if self._indices:
                 raise RuntimeError("Indexed slot name is final and cannot be extended using dot (.)")
 
-            return Context._Slot(self._context, f'{self._name}.{name}')
+            return Context.Slot(self._context, f'{self._name}.{name}')
 
-        def __getitem__(self, index: "int") -> "Context._Slot":
+        def __getitem__(self, index: "int") -> "Context.Slot":
             """Obtain a context slot object.
             """
             if not isinstance(index, int):
                 raise TypeError
 
-            return Context._Slot(self._context, self._name, self._indices + [index])
+            return Context.Slot(self._context, self._name, self._indices + [index])
 
         def __setattr__(self, name: "str", value):
             """Perform a slot setting operation.
@@ -194,16 +194,16 @@ class Context:
 
             self._context._set(self._name, self._indices + [index], value)
 
-        def __call__(self, _: "Context" = None, /, **params) -> "Context._Action":
+        def __call__(self, _: "Context" = None, /, **params) -> "Context.Action":
             """Perform an action.
             """
             if _ is not None and not isinstance(_, Context):
                 raise TypeError
 
             self._context._act(self._name, self._indices, Parameters(_, **params))
-            return Context._Action(self._context, self._name, self._indices)
+            return Context.Action(self._context, self._name, self._indices)
 
-    class _Action:
+    class Action:
         """Representation of a context action.
         """
         def __init__(self, context: "Context", name: "str", indices: "list[int]" = []):
@@ -245,18 +245,18 @@ class Context:
                     InstructionType.DELETE,
                     key=self._key)
 
-    def __getattr__(self, name: "str") -> "Context._Slot":
+    def __getattr__(self, name: "str") -> "Context.Slot":
         """Obtain a context slot object.
         """
-        return Context._Slot(self, name)
+        return Context.Slot(self, name)
 
-    def __getitem__(self, index: "int") -> "Context._Slot":
+    def __getitem__(self, index: "int") -> "Context.Slot":
         """Obtain a context slot object.
         """
         if not isinstance(index, int):
             raise TypeError
 
-        return Context._Slot(self, indices=[index])
+        return Context.Slot(self, indices=[index])
 
     def __setattr__(self, name: "str", value):
         """Perform a slot setting operation.
@@ -271,14 +271,14 @@ class Context:
 
         self._set('', [index], value)
 
-    def __call__(self, _: "Context" = None, /, **params) -> "Context._Action":
+    def __call__(self, _: "Context" = None, /, **params) -> "Context.Action":
         """Perform an action.
         """
         if _ is not None and not isinstance(_, Context):
             raise TypeError
 
         self._act('', [], Parameters(_, **params))
-        return Context._Action(self, '', [])
+        return Context.Action(self, '', [])
 
     def _set(self, slot_name: "str", slot_indices: "list[int]", value):
         """Append a set() instruction to the list.
@@ -393,7 +393,7 @@ class Registry:
                             dparams_key=dparams_key,
                             sparams=sparams)
 
-                elif isinstance(source, Context._Slot):
+                elif isinstance(source, Context.Slot):
                     self._instruct(
                             InstructionType.INIT_FROM_SLOT,
                             key=key,
@@ -417,7 +417,7 @@ class Registry:
                     key=key,
                     original_key=entity._key)
 
-        elif isinstance(entity, Context._Slot) or isinstance(entity, Context._Action):
+        elif isinstance(entity, Context.Slot) or isinstance(entity, Context.Action):
             self._instruct(
                     InstructionType.INIT_POINTER,
                     key=key,
@@ -511,7 +511,7 @@ class Registry:
                     slot_indices=slot_indices,
                     source_key=value._key)
 
-        elif isinstance(value, Context._Slot) or isinstance(value, Context._Action):
+        elif isinstance(value, Context.Slot) or isinstance(value, Context.Action):
             self._instruct(
                     InstructionType.SET_TO_CONTEXT_SLOT,
                     key=key,
