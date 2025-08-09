@@ -30,6 +30,7 @@
 #include <stdlib.h> // for malloc(), free()
 #include <string.h> // for strcmp(), memmove()
 #include <stdbool.h>
+#include <stdalign.h> // for alignof()
 
 struct archi_context_memory_mapping_data {
     archi_pointer_t mapping;
@@ -182,6 +183,66 @@ ARCHI_CONTEXT_GET_FUNC(archi_context_memory_mapping_get)
                     .size = context->element.size,
                     .alignment = context->element.alignment,
                 },
+        };
+    }
+    else if (strcmp("layout", slot.name) == 0)
+    {
+        if (slot.num_indices != 0)
+            return ARCHI_STATUS_EMISUSE;
+
+        *value = (archi_pointer_t){
+            .ptr = &context_data->mapping.element,
+            .ref_count = context_data->mapping.ref_count,
+            .element = {
+                .num_of = 1,
+                .size = sizeof(context_data->mapping.element),
+                .alignment = alignof(archi_array_layout_t),
+            },
+        };
+    }
+    else if (strcmp("num_elements", slot.name) == 0)
+    {
+        if (slot.num_indices != 0)
+            return ARCHI_STATUS_EMISUSE;
+
+        *value = (archi_pointer_t){
+            .ptr = &context_data->mapping.element.num_of,
+            .ref_count = context_data->mapping.ref_count,
+            .element = {
+                .num_of = 1,
+                .size = sizeof(context_data->mapping.element.num_of),
+                .alignment = alignof(size_t),
+            },
+        };
+    }
+    else if (strcmp("element_size", slot.name) == 0)
+    {
+        if (slot.num_indices != 0)
+            return ARCHI_STATUS_EMISUSE;
+
+        *value = (archi_pointer_t){
+            .ptr = &context_data->mapping.element.size,
+            .ref_count = context_data->mapping.ref_count,
+            .element = {
+                .num_of = 1,
+                .size = sizeof(context_data->mapping.element.size),
+                .alignment = alignof(size_t),
+            },
+        };
+    }
+    else if (strcmp("element_alignment", slot.name) == 0)
+    {
+        if (slot.num_indices != 0)
+            return ARCHI_STATUS_EMISUSE;
+
+        *value = (archi_pointer_t){
+            .ptr = &context_data->mapping.element.alignment,
+            .ref_count = context_data->mapping.ref_count,
+            .element = {
+                .num_of = 1,
+                .size = sizeof(context_data->mapping.element.alignment),
+                .alignment = alignof(size_t),
+            },
         };
     }
     else
