@@ -49,7 +49,7 @@ class Parameters:
     """Representation of a parameter list.
     """
     def __init__(self, _: "Context" = None, /, **params):
-        """Create a context parameter list representation instance.
+        """Initialize a context parameter list representation instance.
         """
         import random
         import string
@@ -101,7 +101,7 @@ class ContextSpec:
     """Representation of a context interface bundled with context initialization parameters.
     """
     def __init__(self, interface: "ContextInterface", params: "Parameters"):
-        """Create a context specification instance.
+        """Initialize a context specification instance.
         """
         if not isinstance(interface, ContextInterface):
             raise TypeError
@@ -126,7 +126,7 @@ class ContextInterface:
     """Representation of a context interface.
     """
     def __init__(self, source):
-        """Create a context interface instance.
+        """Initialize a context interface instance.
         """
         if not isinstance(source, Context) \
                 and not isinstance(source, Context.Slot) \
@@ -153,7 +153,7 @@ class Context:
         """Representation of a context slot.
         """
         def __init__(self, context: "Context", name: "str" = '', indices: "list[int]" = []):
-            """Create a context slot representation instance.
+            """Initialize a context slot representation instance.
             """
             if not isinstance(context, Context):
                 raise TypeError
@@ -209,7 +209,7 @@ class Context:
         """Representation of a context action.
         """
         def __init__(self, context: "Context", name: "str", indices: "list[int]" = []):
-            """Create a context action representation instance.
+            """Initialize a context action representation instance.
             """
             if not isinstance(context, Context):
                 raise TypeError
@@ -224,7 +224,7 @@ class Context:
             self._indices = indices
 
     def __init__(self, registry: "Registry", key: "str"):
-        """Create a context representation instance.
+        """Initialize a context representation instance.
         """
         if not isinstance(registry, Registry):
             raise TypeError
@@ -326,7 +326,7 @@ class Registry:
         """Representation of an registry instruction.
         """
         def __init__(self, _: "InstructionType", /, **fields):
-            """Create an registry instruction instance.
+            """Initialize an registry instruction instance.
             """
             if not isinstance(_, InstructionType):
                 raise TypeError
@@ -371,7 +371,7 @@ class Registry:
         return Context(self, key)
 
     def __setitem__(self, key: "str", entity):
-        """Initialize a context and insert it to the registry.
+        """Create a context and insert it to the registry.
         """
         if not isinstance(key, str):
             raise TypeError
