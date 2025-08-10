@@ -59,7 +59,7 @@ class Parameters:
 
         self._dparams_orig = _
         self._dparams_temp_key = '.params_' + ''.join(random.choice(string.ascii_letters + string.digits) \
-                for char in range(16))
+                for char in range(8))
 
         self._sparams_dynamic = {}
         self._sparams_static = {}
@@ -233,19 +233,6 @@ class Context:
 
         object.__setattr__(self, '_registry', registry)
         object.__setattr__(self, '_key', key)
-
-    def __enter__(self):
-        """Context manager entry.
-        """
-        return self
-
-    def __exit__(self, exc_type, exc_value, traceback):
-        """Context manager exit.
-        """
-        if exc_type is None:
-            self._registry._instruct(
-                    InstructionType.DELETE,
-                    key=self._key)
 
     def __getattr__(self, name: "str") -> "Context.Slot":
         """Obtain a context slot object.
@@ -452,7 +439,9 @@ class Registry:
     def __delitem__(self, key: "str"):
         """Finalize a context and remove it from the registry.
         """
-        if not isinstance(key, str):
+        if key is None:
+            return
+        elif not isinstance(key, str):
             raise TypeError
 
         self._instruct(
@@ -460,7 +449,16 @@ class Registry:
                 key=key)
 
     @contextmanager
-    def context(self, value, /, key: "str" = None):
+    def del_context(self, key: "str", /):
+        """Context manager for automatically deleting an existing context.
+        """
+        try:
+            yield self[key]
+        finally:
+            del self[key]
+
+    @contextmanager
+    def temp_context(self, value, /, key: "str" = None):
         """Context manager for creating a temporary context.
         """
         if key is None:
@@ -560,5 +558,5 @@ class Registry:
 
         return '.context' + (f'({comment})_' if comment is not None else '_') \
                 + ''.join(random.choice(string.ascii_letters + string.digits) \
-                for char in range(16))
+                for char in range(8))
 
