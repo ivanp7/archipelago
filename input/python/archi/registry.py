@@ -128,7 +128,9 @@ class ContextInterface:
     def __init__(self, source):
         """Create a context interface instance.
         """
-        if not isinstance(source, Context) and not isinstance(source, Context.Slot):
+        if not isinstance(source, Context) \
+                and not isinstance(source, Context.Slot) \
+                and not isinstance(source, Context.Action):
             raise TypeError
 
         self._source = source
@@ -395,7 +397,7 @@ class Registry:
                             dparams_key=dparams_key,
                             sparams=sparams)
 
-                elif isinstance(source, Context.Slot):
+                elif isinstance(source, Context.Slot) or isinstance(source, Context.Action):
                     self._instruct(
                             InstructionType.INIT_FROM_SLOT,
                             key=key,
