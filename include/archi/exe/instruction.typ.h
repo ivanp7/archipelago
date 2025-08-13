@@ -36,7 +36,7 @@ typedef enum archi_exe_registry_instr_type {
     ARCHI_EXE_REGISTRY_INSTR_NOOP = 0,              ///< No operation.
 
     /* Initialization of new contexts */
-    ARCHI_EXE_REGISTRY_INSTR_INIT_FROM_CONTEXT,     ///< Initialize a new context using interface of a source context.
+    ARCHI_EXE_REGISTRY_INSTR_INIT_FROM_CONTEXT,     ///< Initialize a new context using interface of an origin context.
     ARCHI_EXE_REGISTRY_INSTR_INIT_FROM_SLOT,        ///< Initialize a new context using interface from a context slot.
 
     /* Initialization of auxiliary contexts */
@@ -92,7 +92,7 @@ typedef struct archi_exe_registry_instr_init_from_context {
 
     const char *key; ///< Key of the new context.
 
-    const char *interface_source_key; ///< Key of the interface source context.
+    const char *interface_origin_key; ///< Key of the interface origin context.
 
     const char *dparams_key; ///< Key of the dynamic parameter list.
     const archi_parameter_list_t *sparams; ///< Static parameter list.
@@ -106,8 +106,8 @@ typedef struct archi_exe_registry_instr_init_from_slot {
 
     const char *key; ///< Key of the new context.
 
-    const char *interface_source_key; ///< Key of the interface source context.
-    archi_context_slot_t interface_source_slot; ///< Interface source slot designator.
+    const char *interface_origin_key; ///< Key of the interface origin context.
+    archi_context_slot_t interface_origin_slot; ///< Interface origin slot designator.
 
     const char *dparams_key; ///< Key of the dynamic parameter list.
     const archi_parameter_list_t *sparams; ///< Static parameter list.

@@ -491,7 +491,7 @@ archi_exe_registry_instr_execute_init_from_context(
     if (logging)
     {
         archi_print_key("key", instruction->key);
-        archi_print_key("interface_source_key", instruction->interface_source_key);
+        archi_print_key("interface_origin_key", instruction->interface_origin_key);
         archi_print_key("dparams_key", instruction->dparams_key);
         archi_print_params("sparams", instruction->sparams);
 
@@ -515,15 +515,15 @@ archi_exe_registry_instr_execute_init_from_context(
     // Obtain the context interface
     archi_pointer_t interface_value;
 
-    if (instruction->interface_source_key != NULL)
+    if (instruction->interface_origin_key != NULL)
     {
-        // Obtain the source context from the registry
+        // Obtain the origin context from the registry
         archi_pointer_t src_context_value = archi_exe_registry_instr_get_context(
-                registry, instruction->interface_source_key, &code);
+                registry, instruction->interface_origin_key, &code);
         if (code != 0)
             return code;
 
-        // Get context interface from the source context
+        // Get context interface from the origin context
         interface_value = archi_context_interface(src_context_value.ptr);
     }
     else // parameter list
@@ -563,8 +563,8 @@ archi_exe_registry_instr_execute_init_from_slot(
     if (logging)
     {
         archi_print_key("key", instruction->key);
-        archi_print_key("interface_source_key", instruction->interface_source_key);
-        archi_print_slot("interface_source_slot", instruction->interface_source_slot);
+        archi_print_key("interface_origin_key", instruction->interface_origin_key);
+        archi_print_slot("interface_origin_slot", instruction->interface_origin_slot);
         archi_print_key("dparams_key", instruction->dparams_key);
         archi_print_params("sparams", instruction->sparams);
 
@@ -588,15 +588,15 @@ archi_exe_registry_instr_execute_init_from_slot(
     // Obtain the context interface
     archi_pointer_t interface_value;
     {
-        // Obtain the source context from the registry
+        // Obtain the origin context from the registry
         archi_pointer_t src_context_value = archi_exe_registry_instr_get_context(
-                registry, instruction->interface_source_key, &code);
+                registry, instruction->interface_origin_key, &code);
         if (code != 0)
             return code;
 
-        // Get context interface from the source context slot
+        // Get context interface from the origin context slot
         interface_value = archi_context_get_slot(src_context_value.ptr,
-                instruction->interface_source_slot, &code);
+                instruction->interface_origin_slot, &code);
 
         if (code != 0)
             return ARCHI_STATUS_TO_ERROR(code);
