@@ -41,8 +41,7 @@ typedef enum archi_exe_registry_instr_type {
 
     /* Initialization of auxiliary contexts */
     ARCHI_EXE_REGISTRY_INSTR_INIT_POINTER,          ///< Initialize a new pointer context.
-    ARCHI_EXE_REGISTRY_INSTR_INIT_DATA_ARRAY,       ///< Initialize a new data pointer array context.
-    ARCHI_EXE_REGISTRY_INSTR_INIT_FUNC_ARRAY,       ///< Initialize a new function pointer array context.
+    ARCHI_EXE_REGISTRY_INSTR_INIT_ARRAY,            ///< Initialize a new data pointer array context.
 
     ARCHI_EXE_REGISTRY_INSTR_COPY,                  ///< Create a context alias.
 

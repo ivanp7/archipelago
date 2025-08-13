@@ -70,8 +70,7 @@ archi_exe_registry_instr_sizeof(
         case ARCHI_EXE_REGISTRY_INSTR_INIT_POINTER:
             return sizeof(archi_exe_registry_instr_init_pointer_t);
 
-        case ARCHI_EXE_REGISTRY_INSTR_INIT_DATA_ARRAY:
-        case ARCHI_EXE_REGISTRY_INSTR_INIT_FUNC_ARRAY:
+        case ARCHI_EXE_REGISTRY_INSTR_INIT_ARRAY:
             return sizeof(archi_exe_registry_instr_init_array_t);
 
         case ARCHI_EXE_REGISTRY_INSTR_COPY:
@@ -695,8 +694,6 @@ archi_exe_registry_instr_execute_init_array(
         {
             archi_print(LOG_INDENT "    num_elements = %zu\n", instruction->num_elements);
             archi_print(LOG_INDENT "    flags = %llX\n", (unsigned long long)instruction->flags);
-            archi_print(LOG_INDENT "    func_ptrs = %s\n",
-                    (instruction->base.type == ARCHI_EXE_REGISTRY_INSTR_INIT_FUNC_ARRAY) ? "true" : "false");
         }
 
         archi_print_color(ARCHI_COLOR_RESET);
@@ -725,8 +722,6 @@ archi_exe_registry_instr_execute_init_array(
     };
 
     // Prepare the context initialization parameter list
-    char func_ptrs = (instruction->base.type == ARCHI_EXE_REGISTRY_INSTR_INIT_FUNC_ARRAY) ? 1 : 0;
-
     archi_parameter_list_t params_node[] = {
         {
             .name = "num_elements",
@@ -736,13 +731,8 @@ archi_exe_registry_instr_execute_init_array(
             .name = "flags",
             .value = (archi_pointer_t){.ptr = (void*)&instruction->flags},
         },
-        {
-            .name = "func_ptrs",
-            .value = (archi_pointer_t){.ptr = (void*)&func_ptrs},
-        },
     };
     params_node[0].next = &params_node[1];
-    params_node[1].next = &params_node[2];
 
     struct archi_exe_registry_instr_params params = {.params = params_node};
 
@@ -1084,8 +1074,7 @@ archi_exe_registry_instr_execute(
         INSTRUCTION(INIT_FROM_CONTEXT, init_from_context);
         INSTRUCTION(INIT_FROM_SLOT, init_from_slot);
         INSTRUCTION(INIT_POINTER, init_pointer);
-        INSTRUCTION(INIT_DATA_ARRAY, init_array);
-        INSTRUCTION(INIT_FUNC_ARRAY, init_array);
+        INSTRUCTION(INIT_ARRAY, init_array);
         INSTRUCTION(COPY, copy);
         INSTRUCTION(DELETE, delete);
         INSTRUCTION(SET_TO_VALUE, set_to_value);
