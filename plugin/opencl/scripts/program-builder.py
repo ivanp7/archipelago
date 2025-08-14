@@ -155,7 +155,7 @@ content_libraries = read_binaries(args.lib_map)
 ###############################################################################
 # Forming the list of instructions
 
-PLUGIN_OPENCL_PATHNAME = "libarchip_opencl.so"
+PLUGIN_OPENCL_PATHNAME = "libarchi_opencl.so"
 
 HASHMAP_CAPACITY = CValue(c.c_size_t(1024))
 TRUE = CValue(c.c_bool(True))
@@ -163,18 +163,18 @@ TRUE = CValue(c.c_bool(True))
 app = Registry()
 
 # Prepare used built-in interfaces
-executable = app[Registry.KEY_EXECUTABLE]
-library_interface = ContextInterface(executable) # or executable.archi_context_res_library_interface
-file_interface = ContextInterface(executable.archi_context_res_file_interface)
-hashmap_interface = ContextInterface(executable.archi_context_ds_hashmap_interface)
-envvar_interface = ContextInterface(executable.archi_context_ipc_env_interface)
+builtin = app[Registry.KEY_EXECUTABLE]
+library_interface = ContextInterface(builtin) # or builtin.archi_context_res_library_interface
+file_interface = ContextInterface(builtin.archi_context_res_file_interface)
+hashmap_interface = ContextInterface(builtin.archi_context_ds_hashmap_interface)
+envvar_interface = ContextInterface(builtin.archi_context_ipc_env_interface)
 
 # Load OpenCL plugin
 with app.temp_context(library_interface(pathname=PLUGIN_OPENCL_PATHNAME), key='plugin.opencl') as plugin_opencl:
     # Prepare used OpenCL plugin interfaces
-    opencl_context_interface = ContextInterface(plugin_opencl.archip_context_opencl_context_interface)
-    opencl_program_src_interface = ContextInterface(plugin_opencl.archip_context_opencl_program_src_interface)
-    opencl_program_bin_interface = ContextInterface(plugin_opencl.archip_context_opencl_program_bin_interface)
+    opencl_context_interface = ContextInterface(plugin_opencl.archi_context_opencl_context_interface)
+    opencl_program_src_interface = ContextInterface(plugin_opencl.archi_context_opencl_program_src_interface)
+    opencl_program_bin_interface = ContextInterface(plugin_opencl.archi_context_opencl_program_bin_interface)
 
     # Create the OpenCL context
     with app.temp_context(opencl_context_interface(platform_idx=c.c_uint(args.platform),

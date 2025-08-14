@@ -3,8 +3,8 @@
  * @brief Application context interfaces for OpenCL programs.
  */
 
-#include "archip/opencl/ctx/program.var.h"
-#include "archip/opencl/program.fun.h"
+#include "archi/opencl/ctx/program.var.h"
+#include "archi/opencl/api/program.fun.h"
 
 #include <stdlib.h> // for malloc(), free()
 #include <string.h> // for strcmp(), memcpy()
@@ -12,14 +12,14 @@
 
 #include <CL/cl.h>
 
-struct archip_context_opencl_program_data {
+struct archi_context_opencl_program_data {
     archi_pointer_t program;
 
     archi_pointer_t context;
-    archip_opencl_program_binaries_t binaries;
+    archi_opencl_program_binaries_t binaries;
 };
 
-ARCHI_CONTEXT_INIT_FUNC(archip_context_opencl_program_init_src)
+ARCHI_CONTEXT_INIT_FUNC(archi_context_opencl_program_init_src)
 {
     archi_pointer_t opencl_context = {0};
     archi_pointer_t device_id = {0};
@@ -123,14 +123,14 @@ ARCHI_CONTEXT_INIT_FUNC(archip_context_opencl_program_init_src)
             return ARCHI_STATUS_EKEY;
     }
 
-    struct archip_context_opencl_program_data *context_data = malloc(sizeof(*context_data));
+    struct archi_context_opencl_program_data *context_data = malloc(sizeof(*context_data));
     if (context_data == NULL)
         return ARCHI_STATUS_ENOMEMORY;
 
-    archip_opencl_program_sources_t headers;
+    archi_opencl_program_sources_t headers;
     {
         archi_status_t code;
-        headers = archip_opencl_program_sources_from_hashmap(hashmap_headers.ptr, &code);
+        headers = archi_opencl_program_sources_from_hashmap(hashmap_headers.ptr, &code);
         if (code != 0)
         {
             free(context_data);
@@ -138,26 +138,26 @@ ARCHI_CONTEXT_INIT_FUNC(archip_context_opencl_program_init_src)
         }
     }
 
-    archip_opencl_program_sources_t sources;
+    archi_opencl_program_sources_t sources;
     {
         archi_status_t code;
-        sources = archip_opencl_program_sources_from_hashmap(hashmap_sources.ptr, &code);
+        sources = archi_opencl_program_sources_from_hashmap(hashmap_sources.ptr, &code);
         if (code != 0)
         {
-            archip_opencl_program_sources_free(headers);
+            archi_opencl_program_sources_free(headers);
             free(context_data);
             return code;
         }
     }
 
     archi_status_t code;
-    cl_program program = archip_opencl_program_build(opencl_context.ptr,
+    cl_program program = archi_opencl_program_build(opencl_context.ptr,
             device_id.element.num_of, device_id.ptr, headers, sources,
             array_libraries.element.num_of, array_libraries.ptr, cflags, lflags,
             true, &code);
 
-    archip_opencl_program_sources_free(headers);
-    archip_opencl_program_sources_free(sources);
+    archi_opencl_program_sources_free(headers);
+    archi_opencl_program_sources_free(sources);
 
     if (code != 0)
     {
@@ -165,8 +165,8 @@ ARCHI_CONTEXT_INIT_FUNC(archip_context_opencl_program_init_src)
         return code;
     }
 
-    archip_opencl_program_binaries_t binaries =
-        archip_opencl_program_binaries_extract(program, &code);
+    archi_opencl_program_binaries_t binaries =
+        archi_opencl_program_binaries_extract(program, &code);
 
     if (code != 0)
     {
@@ -175,7 +175,7 @@ ARCHI_CONTEXT_INIT_FUNC(archip_context_opencl_program_init_src)
         return code;
     }
 
-    *context_data = (struct archip_context_opencl_program_data){
+    *context_data = (struct archi_context_opencl_program_data){
         .program = {
             .ptr = program,
             .element = {
@@ -192,7 +192,7 @@ ARCHI_CONTEXT_INIT_FUNC(archip_context_opencl_program_init_src)
     return 0;
 }
 
-ARCHI_CONTEXT_INIT_FUNC(archip_context_opencl_program_init_bin)
+ARCHI_CONTEXT_INIT_FUNC(archi_context_opencl_program_init_bin)
 {
     archi_pointer_t opencl_context = {0};
     archi_pointer_t device_id = {0};
@@ -246,14 +246,14 @@ ARCHI_CONTEXT_INIT_FUNC(archip_context_opencl_program_init_bin)
     if (array_binaries.element.num_of != device_id.element.num_of)
         return ARCHI_STATUS_EMISUSE;
 
-    struct archip_context_opencl_program_data *context_data = malloc(sizeof(*context_data));
+    struct archi_context_opencl_program_data *context_data = malloc(sizeof(*context_data));
     if (context_data == NULL)
         return ARCHI_STATUS_ENOMEMORY;
 
-    archip_opencl_program_binaries_t binaries;
+    archi_opencl_program_binaries_t binaries;
     {
         archi_status_t code;
-        binaries = archip_opencl_program_binaries_from_array(
+        binaries = archi_opencl_program_binaries_from_array(
                 array_binaries.ptr, array_binaries.element.num_of, &code);
         if (code != 0)
         {
@@ -268,7 +268,7 @@ ARCHI_CONTEXT_INIT_FUNC(archip_context_opencl_program_init_bin)
                     sizeof(cl_platform_id), &binaries.ids->platform_id, NULL);
             if (ret != CL_SUCCESS)
             {
-                archip_opencl_program_binaries_free(binaries);
+                archi_opencl_program_binaries_free(binaries);
                 free(context_data);
                 return ARCHI_STATUS_ERESOURCE;
             }
@@ -280,17 +280,17 @@ ARCHI_CONTEXT_INIT_FUNC(archip_context_opencl_program_init_bin)
     }
 
     archi_status_t code;
-    cl_program program = archip_opencl_program_create(
+    cl_program program = archi_opencl_program_create(
             opencl_context.ptr, binaries, true, &code);
 
     if (code != 0)
     {
-        archip_opencl_program_binaries_free(binaries);
+        archi_opencl_program_binaries_free(binaries);
         free(context_data);
         return code;
     }
 
-    *context_data = (struct archip_context_opencl_program_data){
+    *context_data = (struct archi_context_opencl_program_data){
         .program = {
             .ptr = program,
             .element = {
@@ -307,22 +307,22 @@ ARCHI_CONTEXT_INIT_FUNC(archip_context_opencl_program_init_bin)
     return 0;
 }
 
-ARCHI_CONTEXT_FINAL_FUNC(archip_context_opencl_program_final)
+ARCHI_CONTEXT_FINAL_FUNC(archi_context_opencl_program_final)
 {
-    struct archip_context_opencl_program_data *context_data =
-        (struct archip_context_opencl_program_data*)context;
+    struct archi_context_opencl_program_data *context_data =
+        (struct archi_context_opencl_program_data*)context;
 
     clReleaseProgram(context_data->program.ptr);
 
     archi_reference_count_decrement(context_data->context.ref_count);
-    archip_opencl_program_binaries_free(context_data->binaries);
+    archi_opencl_program_binaries_free(context_data->binaries);
     free(context_data);
 }
 
-ARCHI_CONTEXT_GET_FUNC(archip_context_opencl_program_get)
+ARCHI_CONTEXT_GET_FUNC(archi_context_opencl_program_get)
 {
-    struct archip_context_opencl_program_data *context_data =
-        (struct archip_context_opencl_program_data*)context;
+    struct archi_context_opencl_program_data *context_data =
+        (struct archi_context_opencl_program_data*)context;
 
     if (strcmp("context", slot.name) == 0)
     {
@@ -452,15 +452,15 @@ ARCHI_CONTEXT_GET_FUNC(archip_context_opencl_program_get)
     return 0;
 }
 
-const archi_context_interface_t archip_context_opencl_program_src_interface = {
-    .init_fn = archip_context_opencl_program_init_src,
-    .final_fn = archip_context_opencl_program_final,
-    .get_fn = archip_context_opencl_program_get,
+const archi_context_interface_t archi_context_opencl_program_src_interface = {
+    .init_fn = archi_context_opencl_program_init_src,
+    .final_fn = archi_context_opencl_program_final,
+    .get_fn = archi_context_opencl_program_get,
 };
 
-const archi_context_interface_t archip_context_opencl_program_bin_interface = {
-    .init_fn = archip_context_opencl_program_init_bin,
-    .final_fn = archip_context_opencl_program_final,
-    .get_fn = archip_context_opencl_program_get,
+const archi_context_interface_t archi_context_opencl_program_bin_interface = {
+    .init_fn = archi_context_opencl_program_init_bin,
+    .final_fn = archi_context_opencl_program_final,
+    .get_fn = archi_context_opencl_program_get,
 };
 

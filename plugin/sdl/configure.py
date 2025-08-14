@@ -11,12 +11,12 @@ os.chdir(os.path.dirname(__file__))
 # project name {{{
 
 PROJECT_NAME = "archi-plugin-sdl"
-PROJECT_PREFIX = "archip_sdl"
+PROJECT_PREFIX = "archi_sdl"
 
 # }}}
 # names of files/directories {{{
 
-SLIB_NAME = lambda module : f"lib{PROJECT_PREFIX}-{module}.a"
+SLIB_NAME = lambda module : f"lib{module}.a"
 LIB_NAME = f"lib{PROJECT_PREFIX}.so"
 EXEC_NAME = f"{PROJECT_PREFIX}"
 TESTS_NAME = f"{PROJECT_PREFIX}-tests"
@@ -39,8 +39,9 @@ ARCHI_LDIR  = os.environ.get('ARCHI_LDIR', "../../build/")  ### <<<<<<<<<<<<<<<<
 # modules to build {{{
 
 MODULES = [
-        "font", # fonts
-        "sdl2", # SDL2 features
+        "sdl2",
+
+        "font_psf2",
         ]
 
 # }}}
@@ -59,7 +60,7 @@ LFLAGS += [f'-L{ARCHI_LDIR}']
 
 CFLAGS += pkgconfig.cflags('sdl2').split(' ')
 
-LIBS = ['-larchi-util']
+LIBS = ['-larchipelago-base']
 LIBS += pkgconfig.libs('sdl2').split(' ')
 
 ## }}}

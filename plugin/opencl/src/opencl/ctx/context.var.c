@@ -3,9 +3,9 @@
  * @brief Application context interfaces for OpenCL devices.
  */
 
-#include "archip/opencl/ctx/context.var.h"
-#include "archip/opencl/device.fun.h"
-#include "archi/log/print.fun.h"
+#include "archi/opencl/ctx/context.var.h"
+#include "archi/opencl/api/device.fun.h"
+#include "archipelago/log/print.fun.h"
 
 #include <stdlib.h> // for malloc(), free()
 #include <string.h> // for strcmp()
@@ -13,12 +13,12 @@
 
 #include <CL/cl.h>
 
-struct archip_context_opencl_context_data {
+struct archi_context_opencl_context_data {
     archi_pointer_t context;
-    archip_opencl_platform_device_ids_t *ids;
+    archi_opencl_platform_device_ids_t *ids;
 };
 
-ARCHI_CONTEXT_INIT_FUNC(archip_context_opencl_context_init)
+ARCHI_CONTEXT_INIT_FUNC(archi_context_opencl_context_init)
 {
     cl_uint platform_idx = 0;
     cl_uint *device_idx = NULL;
@@ -57,14 +57,14 @@ ARCHI_CONTEXT_INIT_FUNC(archip_context_opencl_context_init)
             return ARCHI_STATUS_EKEY;
     }
 
-    struct archip_context_opencl_context_data *context_data = malloc(sizeof(*context_data));
+    struct archi_context_opencl_context_data *context_data = malloc(sizeof(*context_data));
     if (context_data == NULL)
         return ARCHI_STATUS_ENOMEMORY;
 
     archi_status_t code;
 
-    *context_data = (struct archip_context_opencl_context_data){
-        .ids = archip_opencl_get_platform_device_ids(
+    *context_data = (struct archi_context_opencl_context_data){
+        .ids = archi_opencl_get_platform_device_ids(
                 platform_idx, num_devices, device_idx, &code),
     };
 
@@ -83,7 +83,7 @@ ARCHI_CONTEXT_INIT_FUNC(archip_context_opencl_context_init)
             num_devices, context_data->ids->device_id, NULL, NULL, &ret);
     if (ret != CL_SUCCESS)
     {
-        archi_log_error("archip_context_opencl_context_init", "clCreateContext(<platform #%u>) failed with error %i",
+        archi_log_error("archi_context_opencl_context_init", "clCreateContext(<platform #%u>) failed with error %i",
                 platform_idx, ret);
         free(context_data);
         return ARCHI_STATUS_ERESOURCE;
@@ -100,20 +100,20 @@ ARCHI_CONTEXT_INIT_FUNC(archip_context_opencl_context_init)
     return 0;
 }
 
-ARCHI_CONTEXT_FINAL_FUNC(archip_context_opencl_context_final)
+ARCHI_CONTEXT_FINAL_FUNC(archi_context_opencl_context_final)
 {
-    struct archip_context_opencl_context_data *context_data =
-        (struct archip_context_opencl_context_data*)context;
+    struct archi_context_opencl_context_data *context_data =
+        (struct archi_context_opencl_context_data*)context;
 
     clReleaseContext(context_data->context.ptr);
     free(context_data->ids);
     free(context_data);
 }
 
-ARCHI_CONTEXT_GET_FUNC(archip_context_opencl_context_get)
+ARCHI_CONTEXT_GET_FUNC(archi_context_opencl_context_get)
 {
-    struct archip_context_opencl_context_data *context_data =
-        (struct archip_context_opencl_context_data*)context;
+    struct archi_context_opencl_context_data *context_data =
+        (struct archi_context_opencl_context_data*)context;
 
     if (strcmp("platform_id", slot.name) == 0)
     {
@@ -169,9 +169,9 @@ ARCHI_CONTEXT_GET_FUNC(archip_context_opencl_context_get)
     return 0;
 }
 
-const archi_context_interface_t archip_context_opencl_context_interface = {
-    .init_fn = archip_context_opencl_context_init,
-    .final_fn = archip_context_opencl_context_final,
-    .get_fn = archip_context_opencl_context_get,
+const archi_context_interface_t archi_context_opencl_context_interface = {
+    .init_fn = archi_context_opencl_context_init,
+    .final_fn = archi_context_opencl_context_final,
+    .get_fn = archi_context_opencl_context_get,
 };
 

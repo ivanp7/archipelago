@@ -11,12 +11,12 @@ os.chdir(os.path.dirname(__file__))
 # project name {{{
 
 PROJECT_NAME = "archi-plugin-opencl"
-PROJECT_PREFIX = "archip_opencl"
+PROJECT_PREFIX = "archi_opencl"
 
 # }}}
 # names of files/directories {{{
 
-SLIB_NAME = lambda module : f"lib{PROJECT_PREFIX}-{module}.a"
+SLIB_NAME = lambda module : f"lib{module}.a"
 LIB_NAME = f"lib{PROJECT_PREFIX}.so"
 EXEC_NAME = f"{PROJECT_PREFIX}"
 TESTS_NAME = f"{PROJECT_PREFIX}-tests"
@@ -39,7 +39,10 @@ ARCHI_LDIR  = os.environ.get('ARCHI_LDIR', "../../build/")  ### <<<<<<<<<<<<<<<<
 # modules to build {{{
 
 MODULES = [
-        "opencl", # OpenCL features
+        "opencl/api",
+        "opencl/ctx",
+        "opencl/mem",
+        "opencl/hsp",
         ]
 
 # }}}
@@ -59,7 +62,7 @@ LFLAGS += [f'-L{ARCHI_LDIR}']
 CFLAGS += pkgconfig.cflags('OpenCL').split(' ')
 CFLAGS += ['-DCL_TARGET_OPENCL_VERSION=300']
 
-LIBS = ['-larchi-util', '-larchi-hsp', '-larchi-ds-hashmap', '-larchi-log']
+LIBS = ['-larchipelago-base', '-larchipelago-util', '-larchi-hsp-api', '-larchi-ds_hashmap-api', '-larchipelago-log']
 LIBS += pkgconfig.libs('OpenCL').split(' ')
 
 ## }}}

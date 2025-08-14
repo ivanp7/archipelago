@@ -3,22 +3,22 @@
  * @brief Memory interface for OpenCL memory.
  */
 
-#include "archip/opencl/mem/svm.var.h"
-#include "archip/opencl/mem/svm.typ.h"
-#include "archi/log/print.fun.h"
+#include "archi/opencl/mem/svm.var.h"
+#include "archi/opencl/mem/svm.typ.h"
+#include "archipelago/log/print.fun.h"
 
 #include <stdlib.h> // for malloc(), free()
 
-struct archip_opencl_svm_allocation {
+struct archi_opencl_svm_allocation {
     void *memory;
 
     cl_context context;
     cl_command_queue command_queue;
 };
 
-ARCHI_MEMORY_ALLOC_FUNC(archip_opencl_svm_alloc)
+ARCHI_MEMORY_ALLOC_FUNC(archi_opencl_svm_alloc)
 {
-    archip_opencl_svm_alloc_data_t *svm_alloc_data = alloc_data;
+    archi_opencl_svm_alloc_data_t *svm_alloc_data = alloc_data;
     if (svm_alloc_data == NULL)
     {
         if (code != NULL)
@@ -27,7 +27,7 @@ ARCHI_MEMORY_ALLOC_FUNC(archip_opencl_svm_alloc)
         return NULL;
     }
 
-    struct archip_opencl_svm_allocation *svm_allocation = malloc(sizeof(*svm_allocation));
+    struct archi_opencl_svm_allocation *svm_allocation = malloc(sizeof(*svm_allocation));
     if (svm_allocation == NULL)
     {
         if (code != NULL)
@@ -36,7 +36,7 @@ ARCHI_MEMORY_ALLOC_FUNC(archip_opencl_svm_alloc)
         return NULL;
     }
 
-    *svm_allocation = (struct archip_opencl_svm_allocation){
+    *svm_allocation = (struct archi_opencl_svm_allocation){
         .memory = clSVMAlloc(svm_alloc_data->context, svm_alloc_data->mem_flags,
                 num_bytes, alignment),
         .context = svm_alloc_data->context,
@@ -59,21 +59,21 @@ ARCHI_MEMORY_ALLOC_FUNC(archip_opencl_svm_alloc)
     return svm_allocation;
 }
 
-ARCHI_MEMORY_FREE_FUNC(archip_opencl_svm_free)
+ARCHI_MEMORY_FREE_FUNC(archi_opencl_svm_free)
 {
-    struct archip_opencl_svm_allocation *svm_allocation = allocation;
+    struct archi_opencl_svm_allocation *svm_allocation = allocation;
 
     clSVMFree(svm_allocation->context, svm_allocation->memory);
     free(svm_allocation);
 }
 
-ARCHI_MEMORY_MAP_FUNC(archip_opencl_svm_map)
+ARCHI_MEMORY_MAP_FUNC(archi_opencl_svm_map)
 {
     (void) for_writing;
 
-    struct archip_opencl_svm_allocation *svm_allocation = allocation;
+    struct archi_opencl_svm_allocation *svm_allocation = allocation;
 
-    archip_opencl_svm_map_data_t *svm_map_data = map_data;
+    archi_opencl_svm_map_data_t *svm_map_data = map_data;
     if (svm_map_data == NULL)
     {
         if (code != NULL)
@@ -88,7 +88,7 @@ ARCHI_MEMORY_MAP_FUNC(archip_opencl_svm_map)
 
     if (ret != CL_SUCCESS)
     {
-        archi_log_error("archip_opencl_svm_map", "clEnqueueSVMMap() failed with error %i", ret);
+        archi_log_error("archi_opencl_svm_map", "clEnqueueSVMMap() failed with error %i", ret);
 
         if (code != NULL)
             *code = ARCHI_STATUS_ERESOURCE;
@@ -104,9 +104,9 @@ ARCHI_MEMORY_MAP_FUNC(archip_opencl_svm_map)
     return (char*)svm_allocation->memory + offset;
 }
 
-ARCHI_MEMORY_UNMAP_FUNC(archip_opencl_svm_unmap)
+ARCHI_MEMORY_UNMAP_FUNC(archi_opencl_svm_unmap)
 {
-    struct archip_opencl_svm_allocation *svm_allocation = allocation;
+    struct archi_opencl_svm_allocation *svm_allocation = allocation;
 
     cl_event event;
     cl_int ret = clEnqueueSVMUnmap(svm_allocation->command_queue,
@@ -115,15 +115,15 @@ ARCHI_MEMORY_UNMAP_FUNC(archip_opencl_svm_unmap)
     if (ret == CL_SUCCESS)
         clWaitForEvents(1, &event);
     else
-        archi_log_error("archip_opencl_svm_unmap", "clEnqueueSVMUnmap() failed with error %i", ret);
+        archi_log_error("archi_opencl_svm_unmap", "clEnqueueSVMUnmap() failed with error %i", ret);
 
     svm_allocation->command_queue = NULL;
 }
 
-const archi_memory_interface_t archip_opencl_svm_interface = {
-    .alloc_fn = archip_opencl_svm_alloc,
-    .free_fn = archip_opencl_svm_free,
-    .map_fn = archip_opencl_svm_map,
-    .unmap_fn = archip_opencl_svm_unmap,
+const archi_memory_interface_t archi_opencl_svm_interface = {
+    .alloc_fn = archi_opencl_svm_alloc,
+    .free_fn = archi_opencl_svm_free,
+    .map_fn = archi_opencl_svm_map,
+    .unmap_fn = archi_opencl_svm_unmap,
 };
 

@@ -3,18 +3,18 @@
  * @brief Hierarchical state processor states for OpenCL kernel execution.
  */
 
-#include "archip/opencl/hsp/exec.fun.h"
-#include "archip/opencl/hsp/exec.typ.h"
-#include "archip/opencl/event.fun.h"
-#include "archip/opencl/status.fun.h"
-#include "archi/hsp/state.fun.h"
-#include "archi/log/print.fun.h"
+#include "archi/opencl/hsp/exec.fun.h"
+#include "archi/opencl/hsp/exec.typ.h"
+#include "archi/opencl/api/event.fun.h"
+#include "archi/opencl/api/status.fun.h"
+#include "archi/hsp/api/state.fun.h"
+#include "archipelago/log/print.fun.h"
 
-ARCHI_HSP_STATE_FUNCTION(archip_opencl_hsp_state_wait_for_events)
+ARCHI_HSP_STATE_FUNCTION(archi_opencl_hsp_state_wait_for_events)
 {
-#define M "archip_opencl_hsp_state_wait_for_events"
+#define M "archi_opencl_hsp_state_wait_for_events"
 
-    archip_opencl_event_array_t *event_array = ARCHI_HSP_CURRENT_STATE().data;
+    archi_opencl_event_array_t *event_array = ARCHI_HSP_CURRENT_STATE().data;
     if ((event_array == NULL) || (event_array->num_events == 0))
         return;
 
@@ -22,18 +22,18 @@ ARCHI_HSP_STATE_FUNCTION(archip_opencl_hsp_state_wait_for_events)
 
     if (ret != CL_SUCCESS)
         archi_log_error(M, "clWaitForEvents(<%u events>) -> %s",
-                event_array->num_events, archip_opencl_error_string(ret));
+                event_array->num_events, archi_opencl_error_string(ret));
 
-    archip_opencl_event_array_reset(event_array);
+    archi_opencl_event_array_reset(event_array);
 
 #undef M
 }
 
-ARCHI_HSP_STATE_FUNCTION(archip_opencl_hsp_state_kernel_enqueue)
+ARCHI_HSP_STATE_FUNCTION(archi_opencl_hsp_state_kernel_enqueue)
 {
-#define M "archip_opencl_hsp_state_kernel_enqueue"
+#define M "archi_opencl_hsp_state_kernel_enqueue"
 
-    archip_opencl_kernel_enqueue_data_t *enqueue_data = ARCHI_HSP_CURRENT_STATE().data;
+    archi_opencl_kernel_enqueue_data_t *enqueue_data = ARCHI_HSP_CURRENT_STATE().data;
     if ((enqueue_data == NULL) || (enqueue_data->global_work_size == NULL))
         return;
 
@@ -89,17 +89,17 @@ ARCHI_HSP_STATE_FUNCTION(archip_opencl_hsp_state_kernel_enqueue)
     {
         if (enqueue_data->name != NULL)
             archi_log_error(M, "clEnqueueNDRangeKernel('%s') -> %s",
-                    enqueue_data->name, archip_opencl_error_string(ret));
+                    enqueue_data->name, archi_opencl_error_string(ret));
         else
             archi_log_error(M, "clEnqueueNDRangeKernel() -> %s",
-                    archip_opencl_error_string(ret));
+                    archi_opencl_error_string(ret));
     }
 
-    archip_opencl_event_array_reset(enqueue_data->wait_list);
+    archi_opencl_event_array_reset(enqueue_data->wait_list);
 
     if (enqueue_data->event_target_list != NULL)
     {
-        for (archip_opencl_event_ptr_list_t *node = enqueue_data->event_target_list;
+        for (archi_opencl_event_ptr_list_t *node = enqueue_data->event_target_list;
                 node != NULL; node = node->next)
         {
             if (node->event_ptr == NULL)

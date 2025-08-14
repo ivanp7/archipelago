@@ -3,8 +3,8 @@
  * @brief Application context interfaces for OpenCL shared virtual memory.
  */
 
-#include "archip/opencl/ctx/svm.var.h"
-#include "archip/opencl/mem/svm.typ.h"
+#include "archi/opencl/ctx/svm.var.h"
+#include "archi/opencl/mem/svm.typ.h"
 
 #include <stdlib.h> // for malloc(), free()
 #include <string.h> // for strcmp()
@@ -12,14 +12,14 @@
 
 #include <CL/cl.h>
 
-struct archip_context_opencl_svm_alloc_data_data {
+struct archi_context_opencl_svm_alloc_data_data {
     archi_pointer_t alloc_data;
 
     // References
     archi_pointer_t context;
 };
 
-ARCHI_CONTEXT_INIT_FUNC(archip_context_opencl_svm_alloc_data_init)
+ARCHI_CONTEXT_INIT_FUNC(archi_context_opencl_svm_alloc_data_init)
 {
     archi_pointer_t opencl_context = {0};
     cl_svm_mem_flags mem_flags = 0;
@@ -56,29 +56,29 @@ ARCHI_CONTEXT_INIT_FUNC(archip_context_opencl_svm_alloc_data_init)
             return ARCHI_STATUS_EKEY;
     }
 
-    struct archip_context_opencl_svm_alloc_data_data *context_data = malloc(sizeof(*context_data));
+    struct archi_context_opencl_svm_alloc_data_data *context_data = malloc(sizeof(*context_data));
     if (context_data == NULL)
         return ARCHI_STATUS_ENOMEMORY;
 
-    archip_opencl_svm_alloc_data_t *alloc_data = malloc(sizeof(*alloc_data));
+    archi_opencl_svm_alloc_data_t *alloc_data = malloc(sizeof(*alloc_data));
     if (alloc_data == NULL)
     {
         free(context_data);
         return ARCHI_STATUS_ENOMEMORY;
     }
 
-    *alloc_data = (archip_opencl_svm_alloc_data_t){
+    *alloc_data = (archi_opencl_svm_alloc_data_t){
         .context = opencl_context.ptr,
         .mem_flags = mem_flags,
     };
 
-    *context_data = (struct archip_context_opencl_svm_alloc_data_data){
+    *context_data = (struct archi_context_opencl_svm_alloc_data_data){
         .alloc_data = {
             .ptr = alloc_data,
             .element = {
                 .num_of = 1,
                 .size = sizeof(*alloc_data),
-                .alignment = alignof(archip_opencl_svm_alloc_data_t),
+                .alignment = alignof(archi_opencl_svm_alloc_data_t),
             },
         },
         .context = opencl_context,
@@ -90,22 +90,22 @@ ARCHI_CONTEXT_INIT_FUNC(archip_context_opencl_svm_alloc_data_init)
     return 0;
 }
 
-ARCHI_CONTEXT_FINAL_FUNC(archip_context_opencl_svm_alloc_data_final)
+ARCHI_CONTEXT_FINAL_FUNC(archi_context_opencl_svm_alloc_data_final)
 {
-    struct archip_context_opencl_svm_alloc_data_data *context_data =
-        (struct archip_context_opencl_svm_alloc_data_data*)context;
+    struct archi_context_opencl_svm_alloc_data_data *context_data =
+        (struct archi_context_opencl_svm_alloc_data_data*)context;
 
     archi_reference_count_decrement(context_data->context.ref_count);
     free(context_data->alloc_data.ptr);
     free(context_data);
 }
 
-ARCHI_CONTEXT_GET_FUNC(archip_context_opencl_svm_alloc_data_get)
+ARCHI_CONTEXT_GET_FUNC(archi_context_opencl_svm_alloc_data_get)
 {
-    struct archip_context_opencl_svm_alloc_data_data *context_data =
-        (struct archip_context_opencl_svm_alloc_data_data*)context;
+    struct archi_context_opencl_svm_alloc_data_data *context_data =
+        (struct archi_context_opencl_svm_alloc_data_data*)context;
 
-    archip_opencl_svm_alloc_data_t *alloc_data = context_data->alloc_data.ptr;
+    archi_opencl_svm_alloc_data_t *alloc_data = context_data->alloc_data.ptr;
 
     if (strcmp("context", slot.name) == 0)
     {
@@ -135,22 +135,22 @@ ARCHI_CONTEXT_GET_FUNC(archip_context_opencl_svm_alloc_data_get)
     return 0;
 }
 
-const archi_context_interface_t archip_context_opencl_svm_alloc_data_interface = {
-    .init_fn = archip_context_opencl_svm_alloc_data_init,
-    .final_fn = archip_context_opencl_svm_alloc_data_final,
-    .get_fn = archip_context_opencl_svm_alloc_data_get,
+const archi_context_interface_t archi_context_opencl_svm_alloc_data_interface = {
+    .init_fn = archi_context_opencl_svm_alloc_data_init,
+    .final_fn = archi_context_opencl_svm_alloc_data_final,
+    .get_fn = archi_context_opencl_svm_alloc_data_get,
 };
 
 ///////////////////////////////////////////////////////////////////////////////
 
-struct archip_context_opencl_svm_map_data_data {
+struct archi_context_opencl_svm_map_data_data {
     archi_pointer_t map_data;
 
     // References
     archi_pointer_t command_queue;
 };
 
-ARCHI_CONTEXT_INIT_FUNC(archip_context_opencl_svm_map_data_init)
+ARCHI_CONTEXT_INIT_FUNC(archi_context_opencl_svm_map_data_init)
 {
     archi_pointer_t command_queue = {0};
     cl_map_flags map_flags = 0;
@@ -187,29 +187,29 @@ ARCHI_CONTEXT_INIT_FUNC(archip_context_opencl_svm_map_data_init)
             return ARCHI_STATUS_EKEY;
     }
 
-    struct archip_context_opencl_svm_map_data_data *context_data = malloc(sizeof(*context_data));
+    struct archi_context_opencl_svm_map_data_data *context_data = malloc(sizeof(*context_data));
     if (context_data == NULL)
         return ARCHI_STATUS_ENOMEMORY;
 
-    archip_opencl_svm_map_data_t *map_data = malloc(sizeof(*map_data));
+    archi_opencl_svm_map_data_t *map_data = malloc(sizeof(*map_data));
     if (map_data == NULL)
     {
         free(context_data);
         return ARCHI_STATUS_ENOMEMORY;
     }
 
-    *map_data = (archip_opencl_svm_map_data_t){
+    *map_data = (archi_opencl_svm_map_data_t){
         .command_queue = command_queue.ptr,
         .map_flags = map_flags,
     };
 
-    *context_data = (struct archip_context_opencl_svm_map_data_data){
+    *context_data = (struct archi_context_opencl_svm_map_data_data){
         .map_data = {
             .ptr = map_data,
             .element = {
                 .num_of = 1,
                 .size = sizeof(*map_data),
-                .alignment = alignof(archip_opencl_svm_map_data_t),
+                .alignment = alignof(archi_opencl_svm_map_data_t),
             },
         },
         .command_queue = command_queue,
@@ -221,22 +221,22 @@ ARCHI_CONTEXT_INIT_FUNC(archip_context_opencl_svm_map_data_init)
     return 0;
 }
 
-ARCHI_CONTEXT_FINAL_FUNC(archip_context_opencl_svm_map_data_final)
+ARCHI_CONTEXT_FINAL_FUNC(archi_context_opencl_svm_map_data_final)
 {
-    struct archip_context_opencl_svm_map_data_data *context_data =
-        (struct archip_context_opencl_svm_map_data_data*)context;
+    struct archi_context_opencl_svm_map_data_data *context_data =
+        (struct archi_context_opencl_svm_map_data_data*)context;
 
     archi_reference_count_decrement(context_data->command_queue.ref_count);
     free(context_data->map_data.ptr);
     free(context_data);
 }
 
-ARCHI_CONTEXT_GET_FUNC(archip_context_opencl_svm_map_data_get)
+ARCHI_CONTEXT_GET_FUNC(archi_context_opencl_svm_map_data_get)
 {
-    struct archip_context_opencl_svm_map_data_data *context_data =
-        (struct archip_context_opencl_svm_map_data_data*)context;
+    struct archi_context_opencl_svm_map_data_data *context_data =
+        (struct archi_context_opencl_svm_map_data_data*)context;
 
-    archip_opencl_svm_map_data_t *map_data = context_data->map_data.ptr;
+    archi_opencl_svm_map_data_t *map_data = context_data->map_data.ptr;
 
     if (strcmp("command_queue", slot.name) == 0)
     {
@@ -266,9 +266,9 @@ ARCHI_CONTEXT_GET_FUNC(archip_context_opencl_svm_map_data_get)
     return 0;
 }
 
-const archi_context_interface_t archip_context_opencl_svm_map_data_interface = {
-    .init_fn = archip_context_opencl_svm_map_data_init,
-    .final_fn = archip_context_opencl_svm_map_data_final,
-    .get_fn = archip_context_opencl_svm_map_data_get,
+const archi_context_interface_t archi_context_opencl_svm_map_data_interface = {
+    .init_fn = archi_context_opencl_svm_map_data_init,
+    .final_fn = archi_context_opencl_svm_map_data_final,
+    .get_fn = archi_context_opencl_svm_map_data_get,
 };
 

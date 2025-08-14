@@ -3,15 +3,15 @@
  * @brief Application context interfaces for OpenCL work description.
  */
 
-#include "archip/opencl/ctx/work.var.h"
-#include "archip/opencl/work.fun.h"
-#include "archi/util/size.def.h"
+#include "archi/opencl/ctx/work.var.h"
+#include "archi/opencl/api/work.fun.h"
+#include "archipelago/util/size.def.h"
 
 #include <stdlib.h> // for malloc(), free()
 #include <string.h> // for strcmp(), memcpy()
 #include <stdalign.h> // for alignof()
 
-ARCHI_CONTEXT_INIT_FUNC(archip_context_opencl_work_vector_init)
+ARCHI_CONTEXT_INIT_FUNC(archi_context_opencl_work_vector_init)
 {
     cl_uint num_dimensions = 0;
     archi_pointer_t dimensions = {0};
@@ -56,7 +56,7 @@ ARCHI_CONTEXT_INIT_FUNC(archip_context_opencl_work_vector_init)
     {
         if (num_dimensions != dimensions.element.num_of)
             return ARCHI_STATUS_EVALUE;
-        else if (dimensions.element.size != sizeof(((archip_opencl_work_vector_t*)NULL)->dimension[0]))
+        else if (dimensions.element.size != sizeof(((archi_opencl_work_vector_t*)NULL)->dimension[0]))
             return ARCHI_STATUS_EVALUE;
     }
 
@@ -64,8 +64,8 @@ ARCHI_CONTEXT_INIT_FUNC(archip_context_opencl_work_vector_init)
     if (context_data == NULL)
         return ARCHI_STATUS_ENOMEMORY;
 
-    archip_opencl_work_vector_t *work_vector =
-        archip_opencl_work_vector_alloc(num_dimensions);
+    archi_opencl_work_vector_t *work_vector =
+        archi_opencl_work_vector_alloc(num_dimensions);
     if (work_vector == NULL)
     {
         free(context_data);
@@ -80,8 +80,8 @@ ARCHI_CONTEXT_INIT_FUNC(archip_context_opencl_work_vector_init)
         .ptr = work_vector,
         .element = {
             .num_of = 1,
-            .size = ARCHI_SIZEOF_FLEXIBLE(archip_opencl_work_vector_t, dimension, num_dimensions),
-            .alignment = alignof(archip_opencl_work_vector_t),
+            .size = ARCHI_SIZEOF_FLEXIBLE(archi_opencl_work_vector_t, dimension, num_dimensions),
+            .alignment = alignof(archi_opencl_work_vector_t),
         },
     };
 
@@ -89,15 +89,15 @@ ARCHI_CONTEXT_INIT_FUNC(archip_context_opencl_work_vector_init)
     return 0;
 }
 
-ARCHI_CONTEXT_FINAL_FUNC(archip_context_opencl_work_vector_final)
+ARCHI_CONTEXT_FINAL_FUNC(archi_context_opencl_work_vector_final)
 {
     free(context->ptr);
     free(context);
 }
 
-ARCHI_CONTEXT_GET_FUNC(archip_context_opencl_work_vector_get)
+ARCHI_CONTEXT_GET_FUNC(archi_context_opencl_work_vector_get)
 {
-    archip_opencl_work_vector_t *work_vector = context->ptr;
+    archi_opencl_work_vector_t *work_vector = context->ptr;
 
     if (strcmp("num_dimensions", slot.name) == 0)
     {
@@ -137,9 +137,9 @@ ARCHI_CONTEXT_GET_FUNC(archip_context_opencl_work_vector_get)
     return 0;
 }
 
-ARCHI_CONTEXT_SET_FUNC(archip_context_opencl_work_vector_set)
+ARCHI_CONTEXT_SET_FUNC(archi_context_opencl_work_vector_set)
 {
-    archip_opencl_work_vector_t *work_vector = context->ptr;
+    archi_opencl_work_vector_t *work_vector = context->ptr;
 
     if (strcmp("dimension", slot.name) == 0)
     {
@@ -158,10 +158,10 @@ ARCHI_CONTEXT_SET_FUNC(archip_context_opencl_work_vector_set)
     return 0;
 }
 
-const archi_context_interface_t archip_context_opencl_work_vector_interface = {
-    .init_fn = archip_context_opencl_work_vector_init,
-    .final_fn = archip_context_opencl_work_vector_final,
-    .get_fn = archip_context_opencl_work_vector_get,
-    .set_fn = archip_context_opencl_work_vector_set,
+const archi_context_interface_t archi_context_opencl_work_vector_interface = {
+    .init_fn = archi_context_opencl_work_vector_init,
+    .final_fn = archi_context_opencl_work_vector_final,
+    .get_fn = archi_context_opencl_work_vector_get,
+    .set_fn = archi_context_opencl_work_vector_set,
 };
 

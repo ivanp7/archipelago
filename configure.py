@@ -15,7 +15,7 @@ PROJECT_PREFIX = "archi"
 # }}}
 # names of files/directories {{{
 
-SLIB_NAME = lambda module : f"lib{PROJECT_PREFIX}-{module}.a"
+SLIB_NAME = lambda module : f"lib{module}.a"
 LIB_NAME = f"lib{PROJECT_PREFIX}.so"
 EXEC_NAME = f"{PROJECT_PREFIX}"
 TESTS_NAME = f"{PROJECT_PREFIX}-tests"
@@ -35,39 +35,63 @@ BUILD_DIR = "build"
 # modules to build {{{
 
 MODULES = [
-        "util", # common utilities
-        "log",  # logging
+        ### Archipelago base ###
 
-        "ctx", # abstract context interface
-        "mem", # abstract memory interface
+        "archipelago/base",
+        "archipelago/util",
+        "archipelago/context",
+        "archipelago/log",
 
-        "hsp", # hierarchical state processor
+        ### built-in modules ###
 
-        "ds/hashmap", # data structure: hashmap
-        "ds/lfqueue", # data structure: lock-free queue
+        # hierarchical state processor
+        "archi/hsp/api",
+        "archi/hsp/ctx",
 
-        "ipc/env",    # inter-process communication: environmental variables
-        "ipc/signal", # inter-process communication: signal management
+        # hashmaps
+        "archi/ds_hashmap/api",
+        "archi/ds_hashmap/ctx",
 
-        "res/file",         # system resource: file
-        "res/library",      # system resource: shared library
-        "res/thread_group", # system resource: thread group
+        # lock-free queues
+        "archi/ds_lfqueue/api",
+        "archi/ds_lfqueue/ctx",
 
-        "builtin/mem", # application context: memory objects
-        "builtin/hsp", # application context: hierarchical state processor entities
-        "builtin/convert", # application context: data representation conversions
-        "builtin/util_timer", # application context: utility: timer
-        "builtin/ds_hashmap", # application context: data structure: hashmap
-        "builtin/ds_lfqueue", # application context: data structure: lock-free queue
-        "builtin/ipc_env",    # application context: inter-process communication: environmental variables
-        "builtin/ipc_signal", # application context: inter-process communication: signal management
-        "builtin/res_file",    # application context: system resource: file
-        "builtin/res_library", # application context: system resource: shared library
-        "builtin/res_thread_group",     # application context: system resource: thread group
-        "builtin/res_thread_group_hsp", # application context: HSP state: thread group dispatch
+        # environmental variables
+        "archi/ipc_env/api",
+        "archi/ipc_env/ctx",
+
+        # signal management
+        "archi/ipc_signal/api",
+        "archi/ipc_signal/ctx",
+
+        # memory
+        "archi/mem/api",
+        "archi/mem/ctx",
+
+        # files
+        "archi/res_file/api",
+        "archi/res_file/ctx",
+
+        # shared libraries
+        "archi/res_library/api",
+        "archi/res_library/ctx",
+
+        # threads
+        "archi/res_thread/api",
+        "archi/res_thread/ctx",
+        "archi/res_thread/hsp",
+        "archi/res_thread/ctx_hsp",
+
+        # type conversions
+        "archi/util_convert/ctx",
+
+        # timer
+        "archi/util_timer/api",
+        "archi/util_timer/ctx",
+        "archi/util_timer/hsp",
         ]
 
-MODULE_EXE = "exe" # utilities for the implementation of the executable
+MODULE_EXE = "archi_exe" # implementation of the executable
 
 # }}}
 # build flags {{{

@@ -3,22 +3,22 @@
  * @brief Application context interface for data of HSP state for OpenCL kernel execution.
  */
 
-#include "archip/opencl/ctx/exec.var.h"
-#include "archip/opencl/hsp/exec.typ.h"
-#include "archi/util/alloc.fun.h"
+#include "archi/opencl/ctx/exec.var.h"
+#include "archi/opencl/hsp/exec.typ.h"
+#include "archipelago/util/alloc.fun.h"
 
 #include <stdlib.h> // for malloc(), free()
 #include <string.h> // for strcmp(), strlen()
 #include <stdalign.h> // for alignof()
 
-struct archip_opencl_kernel_enqueue_data_data_event_target_list;
+struct archi_opencl_kernel_enqueue_data_data_event_target_list;
 
-struct archip_opencl_kernel_enqueue_data_data_event_target_list {
-    struct archip_opencl_kernel_enqueue_data_data_event_target_list *next;
+struct archi_opencl_kernel_enqueue_data_data_event_target_list {
+    struct archi_opencl_kernel_enqueue_data_data_event_target_list *next;
     archi_pointer_t event_ptr;
 };
 
-struct archip_opencl_kernel_enqueue_data_data {
+struct archi_opencl_kernel_enqueue_data_data {
     archi_pointer_t enqueue_data;
 
     // References
@@ -30,10 +30,10 @@ struct archip_opencl_kernel_enqueue_data_data {
     archi_pointer_t local_work_size;
 
     archi_pointer_t wait_list;
-    struct archip_opencl_kernel_enqueue_data_data_event_target_list *event_target_list;
+    struct archi_opencl_kernel_enqueue_data_data_event_target_list *event_target_list;
 };
 
-ARCHI_CONTEXT_INIT_FUNC(archip_opencl_kernel_enqueue_data_init)
+ARCHI_CONTEXT_INIT_FUNC(archi_opencl_kernel_enqueue_data_init)
 {
     archi_pointer_t command_queue = {0};
     archi_pointer_t kernel = {0};
@@ -134,11 +134,11 @@ ARCHI_CONTEXT_INIT_FUNC(archip_opencl_kernel_enqueue_data_init)
             return ARCHI_STATUS_EKEY;
     }
 
-    struct archip_opencl_kernel_enqueue_data_data *context_data = malloc(sizeof(*context_data));
+    struct archi_opencl_kernel_enqueue_data_data *context_data = malloc(sizeof(*context_data));
     if (context_data == NULL)
         return ARCHI_STATUS_ENOMEMORY;
 
-    archip_opencl_kernel_enqueue_data_t *enqueue_data = malloc(sizeof(*enqueue_data));
+    archi_opencl_kernel_enqueue_data_t *enqueue_data = malloc(sizeof(*enqueue_data));
     if (enqueue_data == NULL)
     {
         free(context_data);
@@ -158,7 +158,7 @@ ARCHI_CONTEXT_INIT_FUNC(archip_opencl_kernel_enqueue_data_init)
         name = name_copy;
     }
 
-    *enqueue_data = (archip_opencl_kernel_enqueue_data_t){
+    *enqueue_data = (archi_opencl_kernel_enqueue_data_t){
         .command_queue = command_queue.ptr,
         .kernel = kernel.ptr,
         .global_work_offset = global_work_offset.ptr,
@@ -168,13 +168,13 @@ ARCHI_CONTEXT_INIT_FUNC(archip_opencl_kernel_enqueue_data_init)
         .name = name,
     };
 
-    *context_data = (struct archip_opencl_kernel_enqueue_data_data){
+    *context_data = (struct archi_opencl_kernel_enqueue_data_data){
         .enqueue_data = {
             .ptr = enqueue_data,
             .element = {
                 .num_of = 1,
                 .size = sizeof(*enqueue_data),
-                .alignment = alignof(archip_opencl_kernel_enqueue_data_t),
+                .alignment = alignof(archi_opencl_kernel_enqueue_data_t),
             },
         },
         .command_queue = command_queue,
@@ -196,17 +196,17 @@ ARCHI_CONTEXT_INIT_FUNC(archip_opencl_kernel_enqueue_data_init)
     return 0;
 }
 
-ARCHI_CONTEXT_FINAL_FUNC(archip_opencl_kernel_enqueue_data_final)
+ARCHI_CONTEXT_FINAL_FUNC(archi_opencl_kernel_enqueue_data_final)
 {
-    struct archip_opencl_kernel_enqueue_data_data *context_data =
-        (struct archip_opencl_kernel_enqueue_data_data*)context;
+    struct archi_opencl_kernel_enqueue_data_data *context_data =
+        (struct archi_opencl_kernel_enqueue_data_data*)context;
 
     {
-        struct archip_opencl_kernel_enqueue_data_data_event_target_list *event_target_list =
+        struct archi_opencl_kernel_enqueue_data_data_event_target_list *event_target_list =
             context_data->event_target_list;
         while (event_target_list != NULL)
         {
-            struct archip_opencl_kernel_enqueue_data_data_event_target_list *next =
+            struct archi_opencl_kernel_enqueue_data_data_event_target_list *next =
                 event_target_list->next;
 
             archi_reference_count_decrement(event_target_list->event_ptr.ref_count);
@@ -223,13 +223,13 @@ ARCHI_CONTEXT_FINAL_FUNC(archip_opencl_kernel_enqueue_data_final)
     archi_reference_count_decrement(context_data->local_work_size.ref_count);
     archi_reference_count_decrement(context_data->wait_list.ref_count);
 
-    archip_opencl_kernel_enqueue_data_t *enqueue_data = context_data->enqueue_data.ptr;
+    archi_opencl_kernel_enqueue_data_t *enqueue_data = context_data->enqueue_data.ptr;
 
     {
-        archip_opencl_event_ptr_list_t *event_target_list = enqueue_data->event_target_list;
+        archi_opencl_event_ptr_list_t *event_target_list = enqueue_data->event_target_list;
         while (event_target_list != NULL)
         {
-            archip_opencl_event_ptr_list_t *next = event_target_list->next;
+            archi_opencl_event_ptr_list_t *next = event_target_list->next;
 
             free(event_target_list);
 
@@ -242,12 +242,12 @@ ARCHI_CONTEXT_FINAL_FUNC(archip_opencl_kernel_enqueue_data_final)
     free(context_data);
 }
 
-ARCHI_CONTEXT_GET_FUNC(archip_opencl_kernel_enqueue_data_get)
+ARCHI_CONTEXT_GET_FUNC(archi_opencl_kernel_enqueue_data_get)
 {
-    struct archip_opencl_kernel_enqueue_data_data *context_data =
-        (struct archip_opencl_kernel_enqueue_data_data*)context;
+    struct archi_opencl_kernel_enqueue_data_data *context_data =
+        (struct archi_opencl_kernel_enqueue_data_data*)context;
 
-    archip_opencl_kernel_enqueue_data_t *enqueue_data = context_data->enqueue_data.ptr;
+    archi_opencl_kernel_enqueue_data_t *enqueue_data = context_data->enqueue_data.ptr;
 
     if (strcmp("command_queue", slot.name) == 0)
     {
@@ -315,12 +315,12 @@ ARCHI_CONTEXT_GET_FUNC(archip_opencl_kernel_enqueue_data_get)
     return 0;
 }
 
-ARCHI_CONTEXT_SET_FUNC(archip_opencl_kernel_enqueue_data_set)
+ARCHI_CONTEXT_SET_FUNC(archi_opencl_kernel_enqueue_data_set)
 {
-    struct archip_opencl_kernel_enqueue_data_data *context_data =
-        (struct archip_opencl_kernel_enqueue_data_data*)context;
+    struct archi_opencl_kernel_enqueue_data_data *context_data =
+        (struct archi_opencl_kernel_enqueue_data_data*)context;
 
-    archip_opencl_kernel_enqueue_data_t *enqueue_data = context_data->enqueue_data.ptr;
+    archi_opencl_kernel_enqueue_data_t *enqueue_data = context_data->enqueue_data.ptr;
 
     if (strcmp("command_queue", slot.name) == 0)
     {
@@ -407,16 +407,16 @@ ARCHI_CONTEXT_SET_FUNC(archip_opencl_kernel_enqueue_data_set)
         else if (value.flags & ARCHI_POINTER_FLAG_FUNCTION)
             return ARCHI_STATUS_EVALUE;
 
-        archip_opencl_event_ptr_list_t *event_target_list = malloc(sizeof(*event_target_list));
+        archi_opencl_event_ptr_list_t *event_target_list = malloc(sizeof(*event_target_list));
         if (event_target_list == NULL)
             return ARCHI_STATUS_ENOMEMORY;
 
-        *event_target_list = (archip_opencl_event_ptr_list_t){
+        *event_target_list = (archi_opencl_event_ptr_list_t){
             .next = enqueue_data->event_target_list,
             .event_ptr = value.ptr,
         };
 
-        struct archip_opencl_kernel_enqueue_data_data_event_target_list *event_target_list_ref =
+        struct archi_opencl_kernel_enqueue_data_data_event_target_list *event_target_list_ref =
             malloc(sizeof(*event_target_list_ref));
         if (event_target_list_ref == NULL)
         {
@@ -424,7 +424,7 @@ ARCHI_CONTEXT_SET_FUNC(archip_opencl_kernel_enqueue_data_set)
             return ARCHI_STATUS_ENOMEMORY;
         }
 
-        *event_target_list_ref = (struct archip_opencl_kernel_enqueue_data_data_event_target_list){
+        *event_target_list_ref = (struct archi_opencl_kernel_enqueue_data_data_event_target_list){
             .next = context_data->event_target_list,
             .event_ptr = value,
         };
@@ -440,10 +440,10 @@ ARCHI_CONTEXT_SET_FUNC(archip_opencl_kernel_enqueue_data_set)
     return 0;
 }
 
-const archi_context_interface_t archip_opencl_kernel_enqueue_data_interface = {
-    .init_fn = archip_opencl_kernel_enqueue_data_init,
-    .final_fn = archip_opencl_kernel_enqueue_data_final,
-    .get_fn = archip_opencl_kernel_enqueue_data_get,
-    .set_fn = archip_opencl_kernel_enqueue_data_set,
+const archi_context_interface_t archi_opencl_kernel_enqueue_data_interface = {
+    .init_fn = archi_opencl_kernel_enqueue_data_init,
+    .final_fn = archi_opencl_kernel_enqueue_data_final,
+    .get_fn = archi_opencl_kernel_enqueue_data_get,
+    .set_fn = archi_opencl_kernel_enqueue_data_set,
 };
 

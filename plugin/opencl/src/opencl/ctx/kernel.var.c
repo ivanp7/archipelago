@@ -3,9 +3,9 @@
  * @brief Application context interfaces for OpenCL kernels.
  */
 
-#include "archip/opencl/ctx/kernel.var.h"
-#include "archi/log/print.fun.h"
-#include "archi/util/alloc.fun.h"
+#include "archi/opencl/ctx/kernel.var.h"
+#include "archipelago/log/print.fun.h"
+#include "archipelago/util/alloc.fun.h"
 
 #include <stdlib.h> // for malloc(), free()
 #include <string.h> // for strcmp()
@@ -13,7 +13,7 @@
 
 #include <CL/cl.h>
 
-struct archip_context_opencl_kernel_data {
+struct archi_context_opencl_kernel_data {
     archi_pointer_t kernel;
 
     archi_pointer_t program;
@@ -21,9 +21,9 @@ struct archip_context_opencl_kernel_data {
     cl_uint num_arguments;
 };
 
-ARCHI_CONTEXT_INIT_FUNC(archip_context_opencl_kernel_init_new)
+ARCHI_CONTEXT_INIT_FUNC(archi_context_opencl_kernel_init_new)
 {
-#define M "archip_context_opencl_kernel_init_new"
+#define M "archi_context_opencl_kernel_init_new"
 
     archi_pointer_t program = {0};
     char *kernel_name = NULL;
@@ -61,7 +61,7 @@ ARCHI_CONTEXT_INIT_FUNC(archip_context_opencl_kernel_init_new)
             return ARCHI_STATUS_EKEY;
     }
 
-    struct archip_context_opencl_kernel_data *context_data = malloc(sizeof(*context_data));
+    struct archi_context_opencl_kernel_data *context_data = malloc(sizeof(*context_data));
     if (context_data == NULL)
         return ARCHI_STATUS_ENOMEMORY;
 
@@ -100,7 +100,7 @@ ARCHI_CONTEXT_INIT_FUNC(archip_context_opencl_kernel_init_new)
         }
     }
 
-    *context_data = (struct archip_context_opencl_kernel_data){
+    *context_data = (struct archi_context_opencl_kernel_data){
         .kernel = {
             .ptr = kernel,
             .element = {
@@ -120,9 +120,9 @@ ARCHI_CONTEXT_INIT_FUNC(archip_context_opencl_kernel_init_new)
 #undef M
 }
 
-ARCHI_CONTEXT_INIT_FUNC(archip_context_opencl_kernel_init_copy)
+ARCHI_CONTEXT_INIT_FUNC(archi_context_opencl_kernel_init_copy)
 {
-#define M "archip_context_opencl_kernel_init_copy"
+#define M "archi_context_opencl_kernel_init_copy"
 
     archi_pointer_t source_kernel = {0};
 
@@ -146,7 +146,7 @@ ARCHI_CONTEXT_INIT_FUNC(archip_context_opencl_kernel_init_copy)
             return ARCHI_STATUS_EKEY;
     }
 
-    struct archip_context_opencl_kernel_data *context_data = malloc(sizeof(*context_data));
+    struct archi_context_opencl_kernel_data *context_data = malloc(sizeof(*context_data));
     if (context_data == NULL)
         return ARCHI_STATUS_ENOMEMORY;
 
@@ -213,7 +213,7 @@ ARCHI_CONTEXT_INIT_FUNC(archip_context_opencl_kernel_init_copy)
         }
     }
 
-    *context_data = (struct archip_context_opencl_kernel_data){
+    *context_data = (struct archi_context_opencl_kernel_data){
         .kernel = {
             .ptr = kernel,
             .element = {
@@ -239,10 +239,10 @@ ARCHI_CONTEXT_INIT_FUNC(archip_context_opencl_kernel_init_copy)
 #undef M
 }
 
-ARCHI_CONTEXT_FINAL_FUNC(archip_context_opencl_kernel_final)
+ARCHI_CONTEXT_FINAL_FUNC(archi_context_opencl_kernel_final)
 {
-    struct archip_context_opencl_kernel_data *context_data =
-        (struct archip_context_opencl_kernel_data*)context;
+    struct archi_context_opencl_kernel_data *context_data =
+        (struct archi_context_opencl_kernel_data*)context;
 
     clReleaseKernel(context_data->kernel.ptr);
     archi_reference_count_decrement(context_data->program.ref_count);
@@ -250,10 +250,10 @@ ARCHI_CONTEXT_FINAL_FUNC(archip_context_opencl_kernel_final)
     free(context_data);
 }
 
-ARCHI_CONTEXT_GET_FUNC(archip_context_opencl_kernel_get)
+ARCHI_CONTEXT_GET_FUNC(archi_context_opencl_kernel_get)
 {
-    struct archip_context_opencl_kernel_data *context_data =
-        (struct archip_context_opencl_kernel_data*)context;
+    struct archi_context_opencl_kernel_data *context_data =
+        (struct archi_context_opencl_kernel_data*)context;
 
     if (strcmp("program", slot.name) == 0)
     {
@@ -301,10 +301,10 @@ ARCHI_CONTEXT_GET_FUNC(archip_context_opencl_kernel_get)
     return 0;
 }
 
-ARCHI_CONTEXT_SET_FUNC(archip_context_opencl_kernel_set)
+ARCHI_CONTEXT_SET_FUNC(archi_context_opencl_kernel_set)
 {
-    struct archip_context_opencl_kernel_data *context_data =
-        (struct archip_context_opencl_kernel_data*)context;
+    struct archi_context_opencl_kernel_data *context_data =
+        (struct archi_context_opencl_kernel_data*)context;
 
     if (strcmp("arg.value", slot.name) == 0)
     {
@@ -328,7 +328,7 @@ ARCHI_CONTEXT_SET_FUNC(archip_context_opencl_kernel_set)
         cl_int ret = clSetKernelArg(context_data->kernel.ptr, arg_index, arg_size, value.ptr);
         if (ret != CL_SUCCESS)
         {
-            archi_log_error("archip_context_opencl_kernel_set", "clSetKernelArg(%ti) failed with error %i", arg_index, ret);
+            archi_log_error("archi_context_opencl_kernel_set", "clSetKernelArg(%ti) failed with error %i", arg_index, ret);
             return ARCHI_STATUS_ERESOURCE;
         }
     }
@@ -348,7 +348,7 @@ ARCHI_CONTEXT_SET_FUNC(archip_context_opencl_kernel_set)
         cl_int ret = clSetKernelArgSVMPointer(context_data->kernel.ptr, arg_index, value.ptr);
         if (ret != CL_SUCCESS)
         {
-            archi_log_error("archip_context_opencl_kernel_set", "clSetKernelArgSVMPointer(%ti) failed with error %i", arg_index, ret);
+            archi_log_error("archi_context_opencl_kernel_set", "clSetKernelArgSVMPointer(%ti) failed with error %i", arg_index, ret);
             return ARCHI_STATUS_ERESOURCE;
         }
     }
@@ -365,7 +365,7 @@ ARCHI_CONTEXT_SET_FUNC(archip_context_opencl_kernel_set)
                 sizeof(void*) * value.element.num_of, value.ptr);
         if (ret != CL_SUCCESS)
         {
-            archi_log_error("archip_context_opencl_kernel_set", "clSetKernelExecInfo(CL_KERNEL_EXEC_INFO_SVM_PTRS) failed with error %i", ret);
+            archi_log_error("archi_context_opencl_kernel_set", "clSetKernelExecInfo(CL_KERNEL_EXEC_INFO_SVM_PTRS) failed with error %i", ret);
             return ARCHI_STATUS_ERESOURCE;
         }
     }
@@ -375,17 +375,17 @@ ARCHI_CONTEXT_SET_FUNC(archip_context_opencl_kernel_set)
     return 0;
 }
 
-const archi_context_interface_t archip_context_opencl_kernel_new_interface = {
-    .init_fn = archip_context_opencl_kernel_init_new,
-    .final_fn = archip_context_opencl_kernel_final,
-    .get_fn = archip_context_opencl_kernel_get,
-    .set_fn = archip_context_opencl_kernel_set,
+const archi_context_interface_t archi_context_opencl_kernel_new_interface = {
+    .init_fn = archi_context_opencl_kernel_init_new,
+    .final_fn = archi_context_opencl_kernel_final,
+    .get_fn = archi_context_opencl_kernel_get,
+    .set_fn = archi_context_opencl_kernel_set,
 };
 
-const archi_context_interface_t archip_context_opencl_kernel_copy_interface = {
-    .init_fn = archip_context_opencl_kernel_init_copy,
-    .final_fn = archip_context_opencl_kernel_final,
-    .get_fn = archip_context_opencl_kernel_get,
-    .set_fn = archip_context_opencl_kernel_set,
+const archi_context_interface_t archi_context_opencl_kernel_copy_interface = {
+    .init_fn = archi_context_opencl_kernel_init_copy,
+    .final_fn = archi_context_opencl_kernel_final,
+    .get_fn = archi_context_opencl_kernel_get,
+    .set_fn = archi_context_opencl_kernel_set,
 };
 

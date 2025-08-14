@@ -23,28 +23,29 @@
  * @brief Implementation of the Archipelago executable.
  */
 
-#include "archi/ctx/interface.fun.h"
-#include "archi/exe/args.fun.h"
-#include "archi/exe/args.typ.h"
-#include "archi/exe/input.typ.h"
-#include "archi/exe/input.def.h"
-#include "archi/exe/registry.def.h"
-#include "archi/exe/instruction.fun.h"
-#include "archi/exe/instruction.typ.h"
-#include "archi/builtin/ds_hashmap/hashmap.var.h"
-#include "archi/builtin/res_file/file.var.h"
-#include "archi/builtin/res_library/library.var.h"
+#include "archipelago/context/interface.fun.h"
+#include "archi_exe/args.fun.h"
+#include "archi_exe/args.typ.h"
+#include "archi_exe/input.typ.h"
+#include "archi_exe/input.def.h"
+#include "archi_exe/registry.def.h"
+#include "archi_exe/instruction.fun.h"
+#include "archi_exe/instruction.typ.h"
+#include "archi/ds_hashmap/ctx/hashmap.var.h"
+#include "archi/res_file/ctx/file.var.h"
+#include "archi/res_library/ctx/library.var.h"
 
 // Signal management
-#include "archi/ipc/signal/api.fun.h"
-#include "archi/builtin/ipc_signal/management.fun.h"
+#include "archi/ipc_signal/api/management.fun.h"
+#include "archi/ipc_signal/api/signal.fun.h"
+#include "archi/ipc_signal/ctx/management.fun.h"
 
 // Logging
-#include "archi/exe/logging.fun.h"
-#include "archi/log/context.fun.h"
-#include "archi/log/print.fun.h"
-#include "archi/log/verbosity.def.h"
-#include "archi/log/color.def.h"
+#include "archi_exe/logging.fun.h"
+#include "archipelago/log/context.fun.h"
+#include "archipelago/log/print.fun.h"
+#include "archipelago/log/verbosity.def.h"
+#include "archipelago/log/color.def.h"
 
 #include <stdlib.h>
 #include <string.h> // for strcmp(), strncmp()

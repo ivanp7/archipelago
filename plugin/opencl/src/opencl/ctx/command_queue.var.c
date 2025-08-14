@@ -3,21 +3,21 @@
  * @brief Application context interfaces for OpenCL command queues.
  */
 
-#include "archip/opencl/ctx/command_queue.var.h"
-#include "archi/log/print.fun.h"
+#include "archi/opencl/ctx/command_queue.var.h"
+#include "archipelago/log/print.fun.h"
 
 #include <stdlib.h> // for malloc(), free()
 #include <string.h> // for strcmp()
 
 #include <CL/cl.h>
 
-struct archip_context_opencl_command_queue_data {
+struct archi_context_opencl_command_queue_data {
     archi_pointer_t command_queue;
     archi_pointer_t context;
     archi_pointer_t device_id;
 };
 
-ARCHI_CONTEXT_INIT_FUNC(archip_context_opencl_command_queue_init)
+ARCHI_CONTEXT_INIT_FUNC(archi_context_opencl_command_queue_init)
 {
     archi_pointer_t opencl_context = {0};
     archi_pointer_t device_id = {0};
@@ -123,7 +123,7 @@ ARCHI_CONTEXT_INIT_FUNC(archip_context_opencl_command_queue_init)
             return ARCHI_STATUS_EKEY;
     }
 
-    struct archip_context_opencl_command_queue_data *context_data = malloc(sizeof(*context_data));
+    struct archi_context_opencl_command_queue_data *context_data = malloc(sizeof(*context_data));
     if (context_data == NULL)
         return ARCHI_STATUS_ENOMEMORY;
 
@@ -144,12 +144,12 @@ ARCHI_CONTEXT_INIT_FUNC(archip_context_opencl_command_queue_init)
 
     if (ret != CL_SUCCESS)
     {
-        archi_log_error("archip_context_opencl_command_queue_init", "clCreateCommandQueueWithProperties() failed with error %i", ret);
+        archi_log_error("archi_context_opencl_command_queue_init", "clCreateCommandQueueWithProperties() failed with error %i", ret);
         free(context_data);
         return ARCHI_STATUS_ERESOURCE;
     }
 
-    *context_data = (struct archip_context_opencl_command_queue_data){
+    *context_data = (struct archi_context_opencl_command_queue_data){
         .command_queue = {
             .ptr = command_queue,
             .element = {
@@ -166,20 +166,20 @@ ARCHI_CONTEXT_INIT_FUNC(archip_context_opencl_command_queue_init)
     return 0;
 }
 
-ARCHI_CONTEXT_FINAL_FUNC(archip_context_opencl_command_queue_final)
+ARCHI_CONTEXT_FINAL_FUNC(archi_context_opencl_command_queue_final)
 {
-    struct archip_context_opencl_command_queue_data *context_data =
-        (struct archip_context_opencl_command_queue_data*)context;
+    struct archi_context_opencl_command_queue_data *context_data =
+        (struct archi_context_opencl_command_queue_data*)context;
 
     clReleaseCommandQueue(context_data->command_queue.ptr);
     archi_reference_count_decrement(context_data->context.ref_count);
     free(context_data);
 }
 
-ARCHI_CONTEXT_GET_FUNC(archip_context_opencl_command_queue_get)
+ARCHI_CONTEXT_GET_FUNC(archi_context_opencl_command_queue_get)
 {
-    struct archip_context_opencl_command_queue_data *context_data =
-        (struct archip_context_opencl_command_queue_data*)context;
+    struct archi_context_opencl_command_queue_data *context_data =
+        (struct archi_context_opencl_command_queue_data*)context;
 
     if (strcmp("context", slot.name) == 0)
     {
@@ -201,9 +201,9 @@ ARCHI_CONTEXT_GET_FUNC(archip_context_opencl_command_queue_get)
     return 0;
 }
 
-const archi_context_interface_t archip_context_opencl_command_queue_interface = {
-    .init_fn = archip_context_opencl_command_queue_init,
-    .final_fn = archip_context_opencl_command_queue_final,
-    .get_fn = archip_context_opencl_command_queue_get,
+const archi_context_interface_t archi_context_opencl_command_queue_interface = {
+    .init_fn = archi_context_opencl_command_queue_init,
+    .final_fn = archi_context_opencl_command_queue_final,
+    .get_fn = archi_context_opencl_command_queue_get,
 };
 

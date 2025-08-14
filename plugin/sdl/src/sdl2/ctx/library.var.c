@@ -3,14 +3,14 @@
  * @brief Application context interface for SDL library initialization.
  */
 
-#include "archip/sdl2/ctx/library.var.h"
+#include "archi/sdl2/ctx/library.var.h"
 
 #include "SDL.h"
 
 #include <stdlib.h> // for malloc(), free()
 #include <string.h> // for strcmp()
 
-ARCHI_CONTEXT_INIT_FUNC(archip_context_sdl2_library_init)
+ARCHI_CONTEXT_INIT_FUNC(archi_context_sdl2_library_init)
 {
     Uint32 flags = 0;
 
@@ -182,14 +182,14 @@ ARCHI_CONTEXT_INIT_FUNC(archip_context_sdl2_library_init)
     return 0;
 }
 
-ARCHI_CONTEXT_FINAL_FUNC(archip_context_sdl2_library_final)
+ARCHI_CONTEXT_FINAL_FUNC(archi_context_sdl2_library_final)
 {
     SDL_Quit();
     free(context);
 }
 
-const archi_context_interface_t archip_context_sdl2_library_interface = {
-    .init_fn = archip_context_sdl2_library_init,
-    .final_fn = archip_context_sdl2_library_final,
+const archi_context_interface_t archi_context_sdl2_library_interface = {
+    .init_fn = archi_context_sdl2_library_init,
+    .final_fn = archi_context_sdl2_library_final,
 };
 

@@ -3,14 +3,14 @@
  * @brief Application context interface for SDL windows.
  */
 
-#include "archip/sdl2/ctx/window.var.h"
-#include "archip/sdl2/window.fun.h"
+#include "archi/sdl2/ctx/window.var.h"
+#include "archi/sdl2/api/window.fun.h"
 
 #include <stdlib.h> // for malloc(), free()
 #include <string.h> // for strcmp()
 #include <stdalign.h> // for alignof()
 
-struct archip_context_sdl2_window_data {
+struct archi_context_sdl2_window_data {
     archi_pointer_t context;
 
     struct {
@@ -27,10 +27,10 @@ struct archip_context_sdl2_window_data {
     } texture_lock;
 };
 
-ARCHI_CONTEXT_INIT_FUNC(archip_context_sdl2_window_init)
+ARCHI_CONTEXT_INIT_FUNC(archi_context_sdl2_window_init)
 {
-    archip_sdl2_window_params_t window_params = {0};
-    archip_sdl2_window_params_t window_params_fields = {0};
+    archi_sdl2_window_params_t window_params = {0};
+    archi_sdl2_window_params_t window_params_fields = {0};
 
     bool param_params_set = false;
     bool param_texture_width_set = false;
@@ -52,7 +52,7 @@ ARCHI_CONTEXT_INIT_FUNC(archip_context_sdl2_window_init)
                     (params->value.ptr == NULL))
                 return ARCHI_STATUS_EVALUE;
 
-            window_params = *(archip_sdl2_window_params_t*)params->value.ptr;
+            window_params = *(archi_sdl2_window_params_t*)params->value.ptr;
         }
         else if (strcmp("texture_width", params->name) == 0)
         {
@@ -148,12 +148,12 @@ ARCHI_CONTEXT_INIT_FUNC(archip_context_sdl2_window_init)
     if (param_window_title_set)
         window_params.window.title = window_params_fields.window.title;
 
-    struct archip_context_sdl2_window_data *context_data = malloc(sizeof(*context_data));
+    struct archi_context_sdl2_window_data *context_data = malloc(sizeof(*context_data));
     if (context_data == NULL)
         return ARCHI_STATUS_ENOMEMORY;
 
     archi_status_t code;
-    archip_sdl2_window_context_t window = archip_sdl2_window_create(window_params, &code);
+    archi_sdl2_window_context_t window = archi_sdl2_window_create(window_params, &code);
 
     if (window == NULL)
     {
@@ -161,7 +161,7 @@ ARCHI_CONTEXT_INIT_FUNC(archip_context_sdl2_window_init)
         return code;
     }
 
-    *context_data = (struct archip_context_sdl2_window_data){
+    *context_data = (struct archi_context_sdl2_window_data){
         .context = {
             .ptr = window,
             .element = {
@@ -178,19 +178,19 @@ ARCHI_CONTEXT_INIT_FUNC(archip_context_sdl2_window_init)
     return 0;
 }
 
-ARCHI_CONTEXT_FINAL_FUNC(archip_context_sdl2_window_final)
+ARCHI_CONTEXT_FINAL_FUNC(archi_context_sdl2_window_final)
 {
-    struct archip_context_sdl2_window_data *context_data =
-        (struct archip_context_sdl2_window_data*)context;
+    struct archi_context_sdl2_window_data *context_data =
+        (struct archi_context_sdl2_window_data*)context;
 
-    archip_sdl2_window_destroy(context_data->context.ptr);
+    archi_sdl2_window_destroy(context_data->context.ptr);
     free(context_data);
 }
 
-ARCHI_CONTEXT_GET_FUNC(archip_context_sdl2_window_get)
+ARCHI_CONTEXT_GET_FUNC(archi_context_sdl2_window_get)
 {
-    struct archip_context_sdl2_window_data *context_data =
-        (struct archip_context_sdl2_window_data*)context;
+    struct archi_context_sdl2_window_data *context_data =
+        (struct archi_context_sdl2_window_data*)context;
 
     if (strcmp("window", slot.name) == 0)
     {
@@ -198,7 +198,7 @@ ARCHI_CONTEXT_GET_FUNC(archip_context_sdl2_window_get)
             return ARCHI_STATUS_EMISUSE;
 
         *value = (archi_pointer_t){
-            .ptr = archip_sdl2_window_get_handle(context_data->context.ptr),
+            .ptr = archi_sdl2_window_get_handle(context_data->context.ptr),
             .ref_count = context_data->context.ref_count,
             .element = {
                 .num_of = 1,
@@ -211,7 +211,7 @@ ARCHI_CONTEXT_GET_FUNC(archip_context_sdl2_window_get)
             return ARCHI_STATUS_EMISUSE;
 
         *value = (archi_pointer_t){
-            .ptr = archip_sdl2_window_get_renderer(context_data->context.ptr),
+            .ptr = archi_sdl2_window_get_renderer(context_data->context.ptr),
             .ref_count = context_data->context.ref_count,
             .element = {
                 .num_of = 1,
@@ -224,7 +224,7 @@ ARCHI_CONTEXT_GET_FUNC(archip_context_sdl2_window_get)
             return ARCHI_STATUS_EMISUSE;
 
         *value = (archi_pointer_t){
-            .ptr = archip_sdl2_window_get_texture(context_data->context.ptr),
+            .ptr = archi_sdl2_window_get_texture(context_data->context.ptr),
             .ref_count = context_data->context.ref_count,
             .element = {
                 .num_of = 1,
@@ -266,7 +266,7 @@ ARCHI_CONTEXT_GET_FUNC(archip_context_sdl2_window_get)
         if (slot.num_indices != 0)
             return ARCHI_STATUS_EMISUSE;
 
-        archip_sdl2_pixel_t *pixels = archip_sdl2_window_get_texture_lock(
+        archi_sdl2_pixel_t *pixels = archi_sdl2_window_get_texture_lock(
                 context_data->context.ptr, NULL, NULL, NULL,
                 &context_data->texture_lock.width, NULL);
 
@@ -275,8 +275,8 @@ ARCHI_CONTEXT_GET_FUNC(archip_context_sdl2_window_get)
             .ref_count = context_data->context.ref_count,
             .element = {
                 .num_of = context_data->texture_lock.width, // only `width` pixels are contiguous
-                .size = sizeof(archip_sdl2_pixel_t),
-                .alignment = alignof(archip_sdl2_pixel_t),
+                .size = sizeof(archi_sdl2_pixel_t),
+                .alignment = alignof(archi_sdl2_pixel_t),
             },
         };
     }
@@ -285,7 +285,7 @@ ARCHI_CONTEXT_GET_FUNC(archip_context_sdl2_window_get)
         if (slot.num_indices != 0)
             return ARCHI_STATUS_EMISUSE;
 
-        archip_sdl2_window_get_texture_lock(
+        archi_sdl2_window_get_texture_lock(
                 context_data->context.ptr,
                 &context_data->texture_lock.pitch,
                 NULL, NULL, NULL, NULL);
@@ -305,7 +305,7 @@ ARCHI_CONTEXT_GET_FUNC(archip_context_sdl2_window_get)
         if (slot.num_indices != 0)
             return ARCHI_STATUS_EMISUSE;
 
-        archip_sdl2_window_get_texture_lock(
+        archi_sdl2_window_get_texture_lock(
                 context_data->context.ptr, NULL,
                 &context_data->texture_lock.x,
                 NULL, NULL, NULL);
@@ -325,7 +325,7 @@ ARCHI_CONTEXT_GET_FUNC(archip_context_sdl2_window_get)
         if (slot.num_indices != 0)
             return ARCHI_STATUS_EMISUSE;
 
-        archip_sdl2_window_get_texture_lock(
+        archi_sdl2_window_get_texture_lock(
                 context_data->context.ptr, NULL, NULL,
                 &context_data->texture_lock.y,
                 NULL, NULL);
@@ -345,7 +345,7 @@ ARCHI_CONTEXT_GET_FUNC(archip_context_sdl2_window_get)
         if (slot.num_indices != 0)
             return ARCHI_STATUS_EMISUSE;
 
-        archip_sdl2_window_get_texture_lock(
+        archi_sdl2_window_get_texture_lock(
                 context_data->context.ptr, NULL, NULL, NULL,
                 &context_data->texture_lock.width,
                 NULL);
@@ -365,7 +365,7 @@ ARCHI_CONTEXT_GET_FUNC(archip_context_sdl2_window_get)
         if (slot.num_indices != 0)
             return ARCHI_STATUS_EMISUSE;
 
-        archip_sdl2_window_get_texture_lock(
+        archi_sdl2_window_get_texture_lock(
                 context_data->context.ptr, NULL, NULL, NULL, NULL,
                 &context_data->texture_lock.height);
 
@@ -385,9 +385,9 @@ ARCHI_CONTEXT_GET_FUNC(archip_context_sdl2_window_get)
     return 0;
 }
 
-const archi_context_interface_t archip_context_sdl2_window_interface = {
-    .init_fn = archip_context_sdl2_window_init,
-    .final_fn = archip_context_sdl2_window_final,
-    .get_fn = archip_context_sdl2_window_get,
+const archi_context_interface_t archi_context_sdl2_window_interface = {
+    .init_fn = archi_context_sdl2_window_init,
+    .final_fn = archi_context_sdl2_window_final,
+    .get_fn = archi_context_sdl2_window_get,
 };
 
