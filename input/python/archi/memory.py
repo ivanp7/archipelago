@@ -27,7 +27,7 @@ import ctypes as c
 class CValue:
     """Wrapper around a ctypes value with a callback function and optional attributes.
     """
-    def __init__(self, value, /, callback: "Callable" = None, **attributes):
+    def __init__(self, value, /, callback: 'Callable' = None, **attributes):
         """Initialize a ctypes value wrapper.
         """
         import types
@@ -40,7 +40,7 @@ class CValue:
         elif isinstance(value, bytes):
             value = c.create_string_buffer(value, size=len(value))
 
-        self._object = value
+        self._value = value
         self._callback = callback
         self._attributes = attributes
 
@@ -56,12 +56,12 @@ class CValue:
             self._size = c.sizeof(value)
             self._alignment = c.alignment(value)
 
-    def object(self):
+    def value(self):
         """Obtain the original value object.
         """
-        return self._object
+        return self._value
 
-    def callback(self) -> "Callable":
+    def callback(self) -> 'Callable':
         """Obtain the callback.
 
         This callback function is called on the copy when the value is copied to the memory,
@@ -70,22 +70,22 @@ class CValue:
         """
         return self._callback
 
-    def attributes(self) -> "dict":
+    def attributes(self) -> 'dict':
         """Obtain dictionary of additional attributes.
         """
         return self._attributes
 
-    def num_elements(self) -> "int":
+    def num_elements(self) -> 'int':
         """Get the number of value elements.
         """
         return self._num_of
 
-    def element_size(self) -> "int":
+    def element_size(self) -> 'int':
         """Get the size of a value element in bytes.
         """
         return self._size
 
-    def element_alignment(self) -> "int":
+    def element_alignment(self) -> 'int':
         """Get the alignment requirement of a value element in bytes.
         """
         return self._alignment
@@ -94,41 +94,41 @@ class CValue:
 class MemoryBlock:
     """Representation of a continuous memory block.
     """
-    def __init__(self, value: "CValue", /):
+    def __init__(self, value: 'CValue', /):
         """Initialize a memory block.
         """
         if not isinstance(value, CValue):
             raise TypeError
 
-        self._value = value
+        self._cvalue = value
 
-        self._address = None
-        self._object = None
+        self._mem_address = None
+        self._mem_value = None
 
-    def value(self) -> "CValue":
+    def cvalue(self) -> 'CValue':
         """Obtain the original value.
         """
-        return self._value
+        return self._cvalue
 
-    def size(self) -> "int":
+    def size(self) -> 'int':
         """Obtain block size in bytes.
         """
-        return c.sizeof(self._value.object())
+        return c.sizeof(self._cvalue.value())
 
-    def alignment(self) -> "int":
+    def alignment(self) -> 'int':
         """Obtain block alignment requirement in bytes.
         """
-        return c.alignment(self._value.object())
+        return c.alignment(self._cvalue.value())
 
-    def address(self) -> "int":
+    def memory_address(self) -> 'int':
         """Obtain actual block address in the memory.
         """
-        return self._address
+        return self._mem_address
 
-    def object(self):
+    def memory_value(self):
         """Obtain actual block object in the memory.
         """
-        return self._object
+        return self._mem_value
 
 
 class MemoryBlockSet:
@@ -139,7 +139,7 @@ class MemoryBlockSet:
         """
         self.reset()
 
-    def get(self, key: "CValue") -> "MemoryBlock":
+    def get(self, key: 'CValue', /) -> 'MemoryBlock':
         """Extract a memory block by ctypes value.
         """
         if not isinstance(key, CValue):
@@ -147,7 +147,7 @@ class MemoryBlockSet:
 
         return self._values.get(key)
 
-    def add(self, value) -> "MemoryBlock":
+    def add(self, value, /) -> 'MemoryBlock':
         """Insert a ctypes value or a memory block to the set
         and return the corresponding memory block.
         """
@@ -173,7 +173,7 @@ class MemoryBlockSet:
         self._blocks = set()
         self._values = {}
 
-    def blocks(self) -> "list[MemoryBlock]":
+    def blocks(self) -> 'list[MemoryBlock]':
         """Get the list of all memory blocks.
         """
         return list(self._blocks) + list(self._values.values())
@@ -182,7 +182,7 @@ class MemoryBlockSet:
 class Memory:
     """Representation of memory consisting of relocatable memory blocks.
     """
-    def __init__(self, header: "MemoryBlock" = None, blocks: "list[MemoryBlock]" = []):
+    def __init__(self, header: 'MemoryBlock' = None, blocks: 'list[MemoryBlock]' = []):
         """Initialize a memory object.
         """
         self._header = None
@@ -191,12 +191,12 @@ class Memory:
         self.set_header_block(header)
         self.set_blocks(blocks)
 
-    def header_block(self) -> "MemoryBlock":
+    def header_block(self) -> 'MemoryBlock':
         """Obtain the header block of the memory.
         """
         return self._header
 
-    def set_header_block(self, header: "MemoryBlock"):
+    def set_header_block(self, header: 'MemoryBlock', /):
         """Set the header block of the memory.
         """
         if header is self._header:
@@ -211,12 +211,12 @@ class Memory:
 
         self._reset()
 
-    def blocks(self) -> "list[MemoryBlock]":
+    def blocks(self) -> 'list[MemoryBlock]':
         """Obtain the list of blocks of the memory.
         """
         return self._blocks.copy()
 
-    def set_blocks(self, blocks: "list[MemoryBlock]"):
+    def set_blocks(self, blocks: 'list[MemoryBlock]', /):
         """Set the list of blocks of the memory.
         """
         if not isinstance(blocks, list) \
@@ -231,7 +231,7 @@ class Memory:
 
         self._reset()
 
-    def size(self) -> "int":
+    def size(self) -> 'int':
         """Obtain the total size of the memory in bytes.
         """
         if self._size is None:
@@ -239,7 +239,7 @@ class Memory:
 
         return self._size
 
-    def padding(self) -> "int":
+    def padding(self) -> 'int':
         """Obtain the total number of padding bytes in the memory.
         """
         if self._padding is None:
@@ -247,7 +247,7 @@ class Memory:
 
         return self._padding
 
-    def alignment(self) -> "int":
+    def alignment(self) -> 'int':
         """Obtain the alignment requirement the memory.
         """
         if self._alignment is None:
@@ -316,7 +316,7 @@ class Memory:
 
         self._reset()
 
-    def fossilize(self, address: "int" = None) -> "bytearray":
+    def fossilize(self, address: 'int' = None, /) -> 'bytearray':
         """Serialize the memory to a new byte array.
         """
         if address is not None:
@@ -345,27 +345,27 @@ class Memory:
             alignment = block.alignment()
             offset = (offset + (alignment - 1)) & ~(alignment - 1)
 
-            src_object = block.value().object()
-            dst_object = type(src_object).from_address(buffer_address + offset)
+            src_value = block.cvalue().value()
+            dst_value = type(src_value).from_address(buffer_address + offset)
 
-            c.memmove(c.addressof(dst_object), c.addressof(src_object), block.size())
+            c.memmove(c.addressof(dst_value), c.addressof(src_value), block.size())
 
-            block._address = address + offset
-            block._object = dst_object
+            block._mem_address = address + offset
+            block._mem_value = dst_value
 
             offset += block.size()
 
         # Call the block callbacks
         for block in blocks:
-            callback = block.value().callback()
+            callback = block.cvalue().callback()
 
             if callback is not None:
-                callback(block._object)
+                callback(block._mem_value)
 
         # Reset block addresses
         for block in blocks:
-            block._address = None
-            block._object = None
+            block._mem_address = None
+            block._mem_value = None
 
         return buffer
 

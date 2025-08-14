@@ -30,7 +30,7 @@ def eprint(*args, **kwargs):
     print(*args, file=sys.stderr, **kwargs)
 
 
-def random_map_address() -> "int":
+def random_map_address() -> 'int':
     """Generate random map address.
     """
     import random
@@ -38,7 +38,7 @@ def random_map_address() -> "int":
     return 0x7f0000000000 + (random.randrange(0, 0x10000000000) & 0xfffffff000)
 
 
-def dump_file(file_object: "File", mapaddr: "int", pathname: "str" = None):
+def dump_file(file_object: 'File', mapaddr: 'int', pathname: 'str' = None):
     """Dump File contents into a file or standard output.
     """
     import sys

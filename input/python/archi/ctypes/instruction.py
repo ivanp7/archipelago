@@ -23,7 +23,7 @@
 
 import ctypes as c
 
-from .common import archi_pointer_flags_t, archi_pointer_t, \
+from .base import archi_pointer_flags_t, archi_pointer_t, \
         archi_parameter_list_t, archi_context_slot_t
 
 
@@ -49,7 +49,7 @@ class archi_exe_registry_instr_init_from_context_t(c.Structure):
     """
     _fields_ = [('base', archi_exe_registry_instr_base_t),
                 ('key', c.c_char_p),
-                ('interface_source_key', c.c_char_p),
+                ('interface_origin_key', c.c_char_p),
                 ('dparams_key', c.c_char_p),
                 ('sparams', c.POINTER(archi_parameter_list_t))]
 
@@ -59,8 +59,8 @@ class archi_exe_registry_instr_init_from_slot_t(c.Structure):
     """
     _fields_ = [('base', archi_exe_registry_instr_base_t),
                 ('key', c.c_char_p),
-                ('interface_source_key', c.c_char_p),
-                ('interface_source_slot', archi_context_slot_t),
+                ('interface_origin_key', c.c_char_p),
+                ('interface_origin_slot', archi_context_slot_t),
                 ('dparams_key', c.c_char_p),
                 ('sparams', c.POINTER(archi_parameter_list_t))]
 

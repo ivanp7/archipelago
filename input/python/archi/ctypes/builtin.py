@@ -19,7 +19,7 @@
  #############################################################################
 
 # @file
-# @brief Extra C types.
+# @brief C types of built-in modules.
 
 import ctypes as c
 

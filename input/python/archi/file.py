@@ -38,7 +38,7 @@ class File:
         """
         self.reset()
 
-    def __getitem__(self, key: "str"):
+    def __getitem__(self, key: 'str'):
         """Get element of the file contents dictionary.
         """
         if not isinstance(key, str):
@@ -46,7 +46,7 @@ class File:
 
         return self._contents.get(key)
 
-    def __setitem__(self, key: "str", value):
+    def __setitem__(self, key: 'str', value):
         """Set element of the file contents dictionary.
         """
         if not isinstance(key, str):
@@ -54,7 +54,7 @@ class File:
 
         self._contents[key] = value
 
-    def __delitem__(self, key: "str"):
+    def __delitem__(self, key: 'str'):
         """Unset element of the file contents dictionary.
         """
         if not isinstance(key, str):
@@ -62,17 +62,17 @@ class File:
 
         del self._contents[key]
 
-    def contents(self) -> "dict[str]":
+    def contents(self) -> 'dict[str]':
         """Get the dictionary of file contents.
         """
         return self._contents.copy()
 
-    def blocks(self) -> "MemoryBlockSet":
+    def blocks(self) -> 'MemoryBlockSet':
         """Get the additional memory block set of the file.
         """
         return self._blocks
 
-    def set_blocks(self, blocks: "MemoryBlockSet"):
+    def set_blocks(self, blocks: 'MemoryBlockSet', /):
         """Set the additional memory block set of the file.
         """
         if not isinstance(blocks, MemoryBlockSet):
@@ -80,7 +80,7 @@ class File:
 
         self._blocks = blocks
 
-    def reset(self, contents: "bool" = True, blocks: "bool" = True):
+    def reset(self, contents: 'bool' = True, blocks: 'bool' = True):
         """Reset the internal state.
         """
         if contents:
@@ -88,14 +88,14 @@ class File:
         if blocks:
             self._blocks = MemoryBlockSet()
 
-    def memory(self) -> "Memory":
+    def memory(self) -> 'Memory':
         """Create a memory representation object of the file.
         """
         import copy
-        from .ctypes.common import archi_exe_input_file_header_t
+        from .ctypes.base import archi_exe_input_file_header_t
 
         blocks = copy.copy(self._blocks)
-        block_contents = FileMarshaller(blocks).marshal(self)
+        block_contents = _FileMarshaller(blocks).marshal(self)
 
         block_header = None
         memory = None
@@ -114,10 +114,10 @@ class File:
 
 ###############################################################################
 
-class Marshaller:
+class _Marshaller:
     """Base class for marshallers of objects of various types.
     """
-    def __init__(self, blocks: "MemoryBlockSet", value_dict: "dict[Any, CValue]" = {}):
+    def __init__(self, blocks: 'MemoryBlockSet', value_dict: 'dict[Any, CValue]' = {}):
         """Initialize the marshaller object.
         """
         if not isinstance(blocks, MemoryBlockSet):
@@ -129,12 +129,12 @@ class Marshaller:
         self._blocks = blocks
         self._value_dict = value_dict
 
-    def marshal(self, obj) -> "MemoryBlock":
+    def marshal(self, obj) -> 'MemoryBlock':
         """Marshal a object of the corresponding type.
         """
         raise NotImplementedError
 
-    def _marshal_value(self, value: "CValue") -> "MemoryBlock":
+    def _marshal_value(self, value: 'CValue') -> 'MemoryBlock':
         if value is None:
             return None
         elif not isinstance(value, CValue):
@@ -142,7 +142,7 @@ class Marshaller:
 
         return self._blocks.add(value)
 
-    def _marshal_string(self, string: "str") -> "MemoryBlock":
+    def _marshal_string(self, string: 'str') -> 'MemoryBlock':
         if string is None:
             return None
         elif not isinstance(string, str):
@@ -156,8 +156,8 @@ class Marshaller:
 
         return self._marshal_value(value)
 
-    def _marshal_parameter_list(self, params: "dict[str, CValue]") -> "MemoryBlock":
-        from .ctypes.common import archi_parameter_list_t
+    def _marshal_parameter_list(self, params: 'dict[str, CValue]') -> 'MemoryBlock':
+        from .ctypes.base import archi_parameter_list_t
 
         if params is None:
             return None
@@ -177,16 +177,13 @@ class Marshaller:
                     block_value = value
                     value = block_value.value()
                 else:
-                    if not isinstance(value, CValue):
-                        value = CValue(value)
-
                     block_value = self._marshal_value(value)
 
-                node.value = Marshaller._init_pointer(value)
+                node.value = _Marshaller._init_pointer(value)
             else:
                 block_value = None
 
-            def callback_node(node: "archi_parameter_list_t",
+            def callback_node(node: 'archi_parameter_list_t',
                               idx=idx, block_key=block_key, block_value=block_value):
                 if idx < len(params) - 1:
                     node.next = c.cast(block_nodes[idx + 1].address(), type(node.next))
@@ -203,8 +200,8 @@ class Marshaller:
         return block_nodes[0] if block_nodes else None
 
     @staticmethod
-    def _init_pointer(value: "CValue") -> "archi_pointer_t":
-        from .ctypes.common import archi_pointer_t
+    def _init_pointer(value: 'CValue') -> 'archi_pointer_t':
+        from .ctypes.base import archi_pointer_t
 
         pointer = archi_pointer_t()
 
@@ -222,10 +219,10 @@ class Marshaller:
         return pointer
 
 
-class FileMarshaller(Marshaller):
+class _FileMarshaller(_Marshaller):
     """File marshaller implementation.
     """
-    def marshal(self, obj: "File") -> "MemoryBlock":
+    def marshal(self, obj: 'File') -> 'MemoryBlock':
         """Marshal an object of type File.
         """
         from .registry import Registry
@@ -237,19 +234,19 @@ class FileMarshaller(Marshaller):
 
         for key, value in contents.items():
             if isinstance(value, Registry):
-                contents[key] = RegistryMarshaller(self._blocks, self._value_dict).marshal(value)
+                contents[key] = _RegistryMarshaller(self._blocks, self._value_dict).marshal(value)
 
         return self._marshal_parameter_list(contents)
 
 
-class RegistryMarshaller(Marshaller):
+class _RegistryMarshaller(_Marshaller):
     """Registry marshaller implementation.
     """
-    def marshal(self, obj: "Registry") -> "MemoryBlock":
+    def marshal(self, obj: 'Registry') -> 'MemoryBlock':
         """Marshal an object of type Registry.
         """
         from .registry import Registry
-        from .ctypes.instructions import archi_exe_registry_instr_list_t
+        from .ctypes.instruction import archi_exe_registry_instr_list_t
 
         if not isinstance(obj, Registry):
             raise TypeError
@@ -261,7 +258,7 @@ class RegistryMarshaller(Marshaller):
         for idx, instruction in enumerate(instructions):
             block_instruction = self._marshal_instruction(instruction)
 
-            def callback_node(node: "archi_exe_registry_instr_list_t",
+            def callback_node(node: 'archi_exe_registry_instr_list_t',
                               idx=idx, block_instruction=block_instruction):
                 if idx < len(instructions) - 1:
                     node.next = c.cast(block_instructions[idx + 1].address(), type(node.next))
@@ -275,9 +272,9 @@ class RegistryMarshaller(Marshaller):
 
         return block_instructions[0] if block_instructions else None
 
-    def _marshal_instruction(self, instruction: "Registry._Instruction") -> "MemoryBlock":
-        from .registry import InstructionType, Registry
-        from .ctypes.instructions import (
+    def _marshal_instruction(self, instruction: 'Registry._Instruction') -> 'MemoryBlock':
+        from .registry import Registry
+        from .ctypes.instruction import (
                 archi_exe_registry_instr_base_t,
                 archi_exe_registry_instr_init_from_context_t,
                 archi_exe_registry_instr_init_from_slot_t,
@@ -291,6 +288,8 @@ class RegistryMarshaller(Marshaller):
                 archi_exe_registry_instr_act_t,
                 )
 
+        InstructionType = Registry._Instruction.Type
+
         if instruction.type() == InstructionType.NOOP.value:
             instr = archi_exe_registry_instr_base_t()
             instr.type = instruction.type()
@@ -302,14 +301,14 @@ class RegistryMarshaller(Marshaller):
             instr.base.type = instruction.type()
 
             block_key = self._marshal_string(instruction['key'])
-            block_interface_source_key = self._marshal_string(instruction['interface_source_key'])
+            block_interface_origin_key = self._marshal_string(instruction['interface_origin_key'])
             block_dparams_key = self._marshal_string(instruction['dparams_key'])
             block_sparams = self._marshal_parameter_list(instruction['sparams'])
 
             def callback_instr(instr):
                 instr.key = block_key.address()
-                if block_interface_source_key is not None:
-                    instr.interface_source_key = block_interface_source_key.address()
+                if block_interface_origin_key is not None:
+                    instr.interface_origin_key = block_interface_origin_key.address()
                 if block_dparams_key is not None:
                     instr.dparams_key = block_dparams_key.address()
                 if block_sparams is not None:
@@ -318,22 +317,22 @@ class RegistryMarshaller(Marshaller):
         elif instruction.type() == InstructionType.INIT_FROM_SLOT.value:
             instr = archi_exe_registry_instr_init_from_slot_t()
             instr.base.type = instruction.type()
-            instr.interface_source_slot.num_indices = len(instruction['interface_source_slot_indices'])
+            instr.interface_origin_slot.num_indices = len(instruction['interface_origin_slot_indices'])
 
             block_key = self._marshal_string(instruction['key'])
-            block_interface_source_key = self._marshal_string(instruction['interface_source_key'])
-            block_interface_source_slot_name = self._marshal_string(instruction['interface_source_slot_name'])
-            block_interface_source_slot_indices = self._marshal_index_array(instruction['interface_source_slot_indices'])
+            block_interface_origin_key = self._marshal_string(instruction['interface_origin_key'])
+            block_interface_origin_slot_name = self._marshal_string(instruction['interface_origin_slot_name'])
+            block_interface_origin_slot_indices = self._marshal_index_array(instruction['interface_origin_slot_indices'])
             block_dparams_key = self._marshal_string(instruction['dparams_key'])
             block_sparams = self._marshal_parameter_list(instruction['sparams'])
 
             def callback_instr(instr):
                 instr.key = block_key.address()
-                instr.interface_source_key = block_interface_source_key.address()
-                instr.interface_source_slot.name = block_interface_source_slot_name.address()
-                if block_interface_source_slot_indices is not None:
-                    instr.interface_source_slot.index = c.cast(block_interface_source_slot_indices.address(),
-                                                               type(instr.interface_source_slot.index))
+                instr.interface_origin_key = block_interface_origin_key.address()
+                instr.interface_origin_slot.name = block_interface_origin_slot_name.address()
+                if block_interface_origin_slot_indices is not None:
+                    instr.interface_origin_slot.index = c.cast(block_interface_origin_slot_indices.address(),
+                                                               type(instr.interface_origin_slot.index))
                 if block_dparams_key is not None:
                     instr.dparams_key = block_dparams_key.address()
                 if block_sparams is not None:
@@ -343,7 +342,7 @@ class RegistryMarshaller(Marshaller):
             instr = archi_exe_registry_instr_init_pointer_t()
             instr.base.type = instruction.type()
             if instruction['value'] is not None:
-                instr.value = Marshaller._init_pointer(instruction['value'])
+                instr.value = _Marshaller._init_pointer(instruction['value'])
 
             block_key = self._marshal_string(instruction['key'])
             block_value = self._marshal_value(instruction['value'])
@@ -353,8 +352,7 @@ class RegistryMarshaller(Marshaller):
                 if block_value is not None:
                     instr.value.ptr = block_value.address()
 
-        elif instruction.type() == InstructionType.INIT_DATA_ARRAY.value \
-                or instruction.type() == InstructionType.INIT_FUNC_ARRAY.value:
+        elif instruction.type() == InstructionType.INIT_ARRAY.value:
             instr = archi_exe_registry_instr_init_array_t()
             instr.base.type = instruction.type()
             instr.num_elements = instruction['num_elements']
@@ -391,7 +389,7 @@ class RegistryMarshaller(Marshaller):
             instr.base.type = instruction.type()
             instr.slot.num_indices = len(instruction['slot_indices'])
             if instruction['value'] is not None:
-                instr.value = Marshaller._init_pointer(instruction['value'])
+                instr.value = _Marshaller._init_pointer(instruction['value'])
 
             block_key = self._marshal_string(instruction['key'])
             block_slot_name = self._marshal_string(instruction['slot_name'])
@@ -475,7 +473,7 @@ class RegistryMarshaller(Marshaller):
 
         return block_instr
 
-    def _marshal_index_array(self, index_array: "list[int]") -> "MemoryBlock":
+    def _marshal_index_array(self, index_array: 'list[int]') -> 'MemoryBlock':
         if not index_array:
             return None
         elif not isinstance(index_array, list) \
