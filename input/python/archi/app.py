@@ -30,6 +30,21 @@ from .memory import CValue
 class Registry:
     """Representation of an Archipelago executable registry.
     """
+    class TypeHandler:
+        """The base class for handling values of custom type being used to create a context.
+        """
+        @classmethod
+        def context_initializer(cls, entity):
+            """Obtain context initializer for an entity of the handled type.
+            """
+            raise NotImplementedError
+
+        @classmethod
+        def prepare_context(cls, context: "Context", entity):
+            """Prepare the created context.
+            """
+            pass
+
     class _ContextInterfaceOrigin:
         """Representation of an origin (context, slot) of a context interface.
         """
@@ -133,10 +148,20 @@ class Registry:
             raise KeyError(f"Context '{key}' is already in the registry")
 
         context = self._create_context(entity)
-        context._registry = self
-        context._key = key
 
-        self._contexts[key] = context
+        if context is not None:
+            context._registry = self
+            context._key = key
+
+            self._contexts[key] = context
+        else:
+            if type(entity) not in self._type_handlers:
+                raise TypeError(f"Can't create a context from unknown type {type(entity)}")
+
+            handler = self._type_handlers[type(entity)]
+
+            self[key] = handler.context_initializer(entity)
+            handler.prepare_context(self[key], entity)
 
     def __delitem__(self, key: 'str'):
         """Finalize a context and remove it from the registry.
@@ -148,6 +173,11 @@ class Registry:
 
         del self._contexts[key]
         self._delete_context(key)
+
+    def noop(self):
+        """Emit a NOOP instruction.
+        """
+        self._instruct(Registry._Instruction.Type.NOOP)
 
     def require_context(self, key: 'str', cls: 'type' = Context) -> 'Context':
         """Require a context with the specified key to exist in the registry.
@@ -195,15 +225,39 @@ class Registry:
         """
         return {key: value for key, value in self._contexts.items() if isinstance(value, cls)}
 
-    def noop(self):
-        """Emit a NOOP instruction.
+    def register_type_handler(self, value_type: 'type', handler: 'Registry.TypeHandler'):
+        """Register a handler for a value type used to create a context.
         """
-        self._instruct(Registry._Instruction.Type.NOOP)
+        if not isinstance(value_type, type):
+            raise TypeError
+        elif not isinstance(handler, Registry.TypeHandler):
+            raise TypeError
+
+        if value_type in self._type_handlers:
+            raise KeyError
+
+        self._type_handlers[value_type] = handler
+
+    def unregister_type_handler(self, value_type: 'type'):
+        """Unregister a handler for a value type used to create a context.
+        """
+        if not isinstance(value_type, type):
+            raise TypeError
+
+        del self._type_handlers[value_type]
+
+    def type_handlers(self) -> 'dict[type, Registry.TypeHandler]':
+        """Obtain the dictionary of registered type handlers.
+        """
+        from types import MappingProxyType
+
+        return MappingProxyType(self._type_handlers)
 
     def reset(self):
         """Reset the list of instructions.
         """
         self._contexts = {}
+        self._type_handlers = {}
         self._instructions = []
 
     def _instruct(self, type: 'Registry._Instruction.Type', /, **fields):
@@ -262,6 +316,31 @@ class Registry:
 
             return type(entity)()
 
+        elif isinstance(entity, Context._Slot):
+            self._instruct(
+                    Registry._Instruction.Type.INIT_POINTER,
+                    key=key,
+                    value=None)
+
+            self._instruct(
+                    Registry._Instruction.Type.SET_TO_CONTEXT_SLOT,
+                    key=key,
+                    slot_name='value',
+                    slot_indices=[],
+                    source_key=entity._context._key,
+                    source_slot_name=entity._name,
+                    source_slot_indices=entity._indices)
+
+            return PointerContext()
+
+        elif entity is None or isinstance(entity, CValue):
+            self._instruct(
+                    Registry._Instruction.Type.INIT_POINTER,
+                    key=key,
+                    value=entity)
+
+            return PointerContext()
+
         elif isinstance(entity, list):
             self._instruct(
                     Registry._Instruction.Type.INIT_ARRAY,
@@ -275,34 +354,7 @@ class Registry:
             return ArrayContext()
 
         else:
-            if isinstance(entity, Context._Slot):
-                self._instruct(
-                        Registry._Instruction.Type.INIT_POINTER,
-                        key=key,
-                        value=None)
-
-                self._instruct(
-                        Registry._Instruction.Type.SET_TO_CONTEXT_SLOT,
-                        key=key,
-                        slot_name='value',
-                        slot_indices=[],
-                        source_key=entity._context._key,
-                        source_slot_name=entity._name,
-                        source_slot_indices=entity._indices)
-
-            elif entity is None or isinstance(entity, CValue):
-                self._instruct(
-                        Registry._Instruction.Type.INIT_POINTER,
-                        key=key,
-                        value=entity)
-
-            else:
-                self._instruct(
-                        Registry._Instruction.Type.INIT_POINTER,
-                        key=key,
-                        value=CValue(entity))
-
-            return PointerContext()
+            return None
 
     def _delete_context(self, key: 'str'):
         """Append a context deletion instruction to the list.
@@ -803,12 +855,16 @@ class Parameters:
     def dynamic_part(self) -> 'dict':
         """Obtain dictionary of dynamic values (contexts and slots) in the parameter list.
         """
-        return self._params_dynamic.copy()
+        from types import MappingProxyType
+
+        return MappingProxyType(self._params_dynamic)
 
     def static_part(self) -> 'dict':
         """Obtain dictionary of static values (constants) in the parameter list.
         """
-        return self._params_static.copy()
+        from types import MappingProxyType
+
+        return MappingProxyType(self._params_static)
 
     def temp_list_key(self) -> 'str':
         """Obtain key of a temporary parameter list.

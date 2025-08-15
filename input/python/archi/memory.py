@@ -214,7 +214,9 @@ class Memory:
     def blocks(self) -> 'list[MemoryBlock]':
         """Obtain the list of blocks of the memory.
         """
-        return self._blocks.copy()
+        from types import MappingProxyType
+
+        return MappingProxyType(self._blocks)
 
     def set_blocks(self, blocks: 'list[MemoryBlock]', /):
         """Set the list of blocks of the memory.

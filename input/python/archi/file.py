@@ -65,7 +65,9 @@ class File:
     def contents(self) -> 'dict[str]':
         """Get the dictionary of file contents.
         """
-        return self._contents.copy()
+        from types import MappingProxyType
+
+        return MappingProxyType(self._contents)
 
     def blocks(self) -> 'MemoryBlockSet':
         """Get the additional memory block set of the file.
