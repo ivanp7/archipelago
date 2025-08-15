@@ -30,12 +30,12 @@
 #include <string.h> // for strcmp()
 #include <stdalign.h> // for alignof()
 
-struct archi_context_res_thread_group_data {
+struct archi_context_thread_group_data {
     archi_pointer_t context;
     archi_thread_group_start_params_t params;
 };
 
-ARCHI_CONTEXT_INIT_FUNC(archi_context_res_thread_group_init)
+ARCHI_CONTEXT_INIT_FUNC(archi_context_thread_group_init)
 {
     archi_thread_group_start_params_t thread_group_params = {0};
     archi_thread_group_start_params_t thread_group_params_fields = {0};
@@ -76,7 +76,7 @@ ARCHI_CONTEXT_INIT_FUNC(archi_context_res_thread_group_init)
     if (param_num_threads_set)
         thread_group_params.num_threads = thread_group_params_fields.num_threads;
 
-    struct archi_context_res_thread_group_data *context_data = malloc(sizeof(*context_data));
+    struct archi_context_thread_group_data *context_data = malloc(sizeof(*context_data));
     if (context_data == NULL)
         return ARCHI_STATUS_ENOMEMORY;
 
@@ -89,7 +89,7 @@ ARCHI_CONTEXT_INIT_FUNC(archi_context_res_thread_group_init)
         return code;
     }
 
-    *context_data = (struct archi_context_res_thread_group_data){
+    *context_data = (struct archi_context_thread_group_data){
         .context = {
             .ptr = thread_group,
             .element = {
@@ -103,19 +103,19 @@ ARCHI_CONTEXT_INIT_FUNC(archi_context_res_thread_group_init)
     return code;
 }
 
-ARCHI_CONTEXT_FINAL_FUNC(archi_context_res_thread_group_final)
+ARCHI_CONTEXT_FINAL_FUNC(archi_context_thread_group_final)
 {
-    struct archi_context_res_thread_group_data *context_data =
-        (struct archi_context_res_thread_group_data*)context;
+    struct archi_context_thread_group_data *context_data =
+        (struct archi_context_thread_group_data*)context;
 
     archi_thread_group_stop(context_data->context.ptr);
     free(context_data);
 }
 
-ARCHI_CONTEXT_GET_FUNC(archi_context_res_thread_group_get)
+ARCHI_CONTEXT_GET_FUNC(archi_context_thread_group_get)
 {
-    struct archi_context_res_thread_group_data *context_data =
-        (struct archi_context_res_thread_group_data*)context;
+    struct archi_context_thread_group_data *context_data =
+        (struct archi_context_thread_group_data*)context;
 
     if (strcmp("num_threads", slot.name) == 0)
     {
@@ -138,9 +138,9 @@ ARCHI_CONTEXT_GET_FUNC(archi_context_res_thread_group_get)
     return 0;
 }
 
-const archi_context_interface_t archi_context_res_thread_group_interface = {
-    .init_fn = archi_context_res_thread_group_init,
-    .final_fn = archi_context_res_thread_group_final,
-    .get_fn = archi_context_res_thread_group_get,
+const archi_context_interface_t archi_context_thread_group_interface = {
+    .init_fn = archi_context_thread_group_init,
+    .final_fn = archi_context_thread_group_final,
+    .get_fn = archi_context_thread_group_get,
 };
 

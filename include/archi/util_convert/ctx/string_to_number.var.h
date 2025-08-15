@@ -29,11 +29,11 @@
 
 #include "archipelago/context/interface.typ.h"
 
-ARCHI_CONTEXT_INIT_FUNC(archi_context_converter_string_to_number_init);   ///< String-to-number converter initialization function.
-ARCHI_CONTEXT_FINAL_FUNC(archi_context_converter_string_to_number_final); ///< String-to-number converter finalization function.
+ARCHI_CONTEXT_INIT_FUNC(archi_context_convert_string_to_number_init);   ///< String-to-number converter initialization function.
+ARCHI_CONTEXT_FINAL_FUNC(archi_context_convert_string_to_number_final); ///< String-to-number converter finalization function.
 
 extern
-const archi_context_interface_t archi_context_converter_string_to_number_interface; ///< String-to-number converter interface.
+const archi_context_interface_t archi_context_convert_string_to_number_interface; ///< String-to-number converter interface.
 
 #endif // _ARCHI_UTIL_CONVERT_CTX_STRING_TO_NUMBER_VAR_H_
 

@@ -31,12 +31,12 @@
 #include <stdbool.h>
 
 static
-ARCHI_DESTRUCTOR_FUNC(archi_context_ipc_env_destructor)
+ARCHI_DESTRUCTOR_FUNC(archi_context_envvar_destructor)
 {
     free(data);
 }
 
-ARCHI_CONTEXT_INIT_FUNC(archi_context_ipc_env_init)
+ARCHI_CONTEXT_INIT_FUNC(archi_context_envvar_init)
 {
     const char *name = NULL;
     archi_pointer_t default_value = {0};
@@ -83,7 +83,7 @@ ARCHI_CONTEXT_INIT_FUNC(archi_context_ipc_env_init)
     if (var != NULL)
     {
         archi_reference_count_t ref_count =
-            archi_reference_count_alloc(archi_context_ipc_env_destructor, var);
+            archi_reference_count_alloc(archi_context_envvar_destructor, var);
         if (ref_count == NULL)
         {
             free(var);
@@ -116,14 +116,14 @@ ARCHI_CONTEXT_INIT_FUNC(archi_context_ipc_env_init)
     return 0;
 }
 
-ARCHI_CONTEXT_FINAL_FUNC(archi_context_ipc_env_final)
+ARCHI_CONTEXT_FINAL_FUNC(archi_context_envvar_final)
 {
     archi_reference_count_decrement(context->ref_count);
     free(context);
 }
 
-const archi_context_interface_t archi_context_ipc_env_interface = {
-    .init_fn = archi_context_ipc_env_init,
-    .final_fn = archi_context_ipc_env_final,
+const archi_context_interface_t archi_context_envvar_interface = {
+    .init_fn = archi_context_envvar_init,
+    .final_fn = archi_context_envvar_final,
 };
 

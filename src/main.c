@@ -341,7 +341,7 @@ create_context_registry(void)
     archi_status_t code;
 
     archi_process.registry = archi_context_initialize(
-            (archi_pointer_t){.ptr = (void*)&archi_context_ds_hashmap_interface},
+            (archi_pointer_t){.ptr = (void*)&archi_context_hashmap_interface},
             params, &code);
 
     if (archi_process.registry == NULL)
@@ -405,7 +405,7 @@ obtain_handle_of_executable(void)
     archi_status_t code;
 
     archi_process.exe_handle = archi_context_initialize(
-            (archi_pointer_t){.ptr = (void*)&archi_context_res_library_interface},
+            (archi_pointer_t){.ptr = (void*)&archi_context_library_interface},
             NULL, &code);
 
     if (archi_process.exe_handle == NULL)
@@ -481,7 +481,7 @@ open_and_map_input_files(void)
             archi_status_t code;
 
             archi_process.input_file[i] = archi_context_initialize(
-                    (archi_pointer_t){.ptr = (void*)&archi_context_res_file_interface},
+                    (archi_pointer_t){.ptr = (void*)&archi_context_file_interface},
                     params, &code);
 
             if (archi_process.input_file[i] == NULL)
@@ -629,10 +629,10 @@ prepare_signal_management(void)
 #define M "main()"
 
     archi_process.signal_interface = (archi_context_interface_t){
-        .init_fn = archi_context_ipc_signal_management_init,
-        .final_fn = archi_context_ipc_signal_management_final,
-        .get_fn = archi_context_ipc_signal_management_get,
-        .set_fn = archi_context_ipc_signal_management_set,
+        .init_fn = archi_context_signal_management_init,
+        .final_fn = archi_context_signal_management_final,
+        .get_fn = archi_context_signal_management_get,
+        .set_fn = archi_context_signal_management_set,
     };
 
     archi_log_debug(M, "Allocating the signal watch set...");

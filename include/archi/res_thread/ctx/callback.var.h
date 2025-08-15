@@ -29,13 +29,13 @@
 
 #include "archipelago/context/interface.typ.h"
 
-ARCHI_CONTEXT_INIT_FUNC(archi_context_res_thread_group_callback_init);   ///< Thread group callback initialization function.
-ARCHI_CONTEXT_FINAL_FUNC(archi_context_res_thread_group_callback_final); ///< Thread group callback finalization function.
-ARCHI_CONTEXT_GET_FUNC(archi_context_res_thread_group_callback_get);     ///< Thread group callback getter function.
-ARCHI_CONTEXT_SET_FUNC(archi_context_res_thread_group_callback_set);     ///< Thread group callback setter function.
+ARCHI_CONTEXT_INIT_FUNC(archi_context_thread_group_callback_init);   ///< Thread group callback initialization function.
+ARCHI_CONTEXT_FINAL_FUNC(archi_context_thread_group_callback_final); ///< Thread group callback finalization function.
+ARCHI_CONTEXT_GET_FUNC(archi_context_thread_group_callback_get);     ///< Thread group callback getter function.
+ARCHI_CONTEXT_SET_FUNC(archi_context_thread_group_callback_set);     ///< Thread group callback setter function.
 
 extern
-const archi_context_interface_t archi_context_res_thread_group_callback_interface; ///< Thread group callback interface.
+const archi_context_interface_t archi_context_thread_group_callback_interface; ///< Thread group callback interface.
 
 #endif // _ARCHI_RES_THREAD_CTX_CALLBACK_VAR_H_
 

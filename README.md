@@ -29,8 +29,7 @@ Initialization files may contain different instruction types:
 - `INIT_FROM_CONTEXT`: Initialize new context using the interface of another existing one; insert into registry.
 - `INIT_FROM_SLOT`: Get interface from another's slot; initialize new context; insert into registry.
 - `INIT_POINTER`: Initialize new pointer context; insert into registry.
-- `INIT_DATA_ARRAY`: Initialize new data pointer array context; insert into registry.
-- `INIT_FUNC_ARRAY`: Initialize new function pointer array context; insert into registry.
+- `INIT_ARRAY`: Initialize new data pointer array context; insert into registry.
 - `COPY`: Create a context alias.
 - `FINAL`: Finalize/remove specified context from registry.
 - `SET_TO_VALUE`: Set value/data pointer in given slot of specified context.
@@ -61,36 +60,39 @@ processing, data structures, inter-process communication (IPC), resources access
   - `archi_context_pointer_interface`: Copied pointer with custom attributes.
   - `archi_context_array_interface`: Array of pointers to data or functions.
 
-- **Memory Management**
-  - `archi_context_memory_interface`: Generic memory allocation context.
-  - `archi_context_memory_mapping_interface`: Pointer to a mapped region of memory.
-
 - **Hierarchical State Processing (HSP)**
   - `archi_context_hsp_frame_interface`: HSP frame (sequence of states).
   - `archi_context_hsp_transition_interface`: HSP transition (function + data).
   - `archi_context_hsp_branch_state_data_interface`: Data for a HSP branch state.
   - `archi_context_hsp_transition_attachment_data_interface`: Data for a HSP transition attachment data.
 
-- Data Representation
-  - `archi_context_converter_string_to_number_interface`: Conversion of strings to numbers.
-
 - **Data Structures**
-  - `archi_context_ds_hashmap_interface`: Hashmap.
-  - `archi_context_ds_lfqueue_interface`: Lock-free queue.
+  - `archi_context_hashmap_interface`: Hashmap.
+  - `archi_context_lfqueue_interface`: Lock-free queue.
 
 - **Interprocess Communication & Signals**
-  - `archi_context_ipc_env_interface`: Value of an environmental variable.
-  - `archi_context_ipc_signal_handler_interface`: Signal handler (function + data).
+  - `archi_context_envvar_interface`: Value of an environmental variable.
+  - `archi_context_signal_handler_interface`: Signal handler (function + data).
+
+- **Memory Management**
+  - `archi_context_memory_interface`: Generic memory allocation context.
+  - `archi_context_memory_mapping_interface`: Pointer to a mapped region of memory.
 
 - **OS Resources**
-  - `archi_context_res_file_interface`: Open and/or mapped file.
-  - `archi_context_res_library_interface`: Loaded dynamic library handle.
+  - `archi_context_file_interface`: Open and/or mapped file.
+  - `archi_context_library_interface`: Loaded dynamic library handle.
 
 - **Thread Groups**
-  - `archi_context_res_thread_group_interface`: Thread group context.
-  - `archi_context_res_thread_group_work_interface`: Individual task assigned to thread groups.
-  - `archi_context_res_thread_group_callback_interface`: Callback invoked upon completion of thread group tasks.
-  - `archi_context_res_thread_group_dispatch_data_interface`: Data for a HSP state for thread group work dispatch.
+  - `archi_context_thread_group_interface`: Thread group context.
+  - `archi_context_thread_group_work_interface`: Individual task assigned to thread groups.
+  - `archi_context_thread_group_callback_interface`: Callback invoked upon completion of thread group tasks.
+  - `archi_context_thread_group_dispatch_data_interface`: Data for a HSP state for thread group work dispatch.
+
+- Data Representation
+  - `archi_context_convert_string_to_number_interface`: Conversion of strings to numbers.
+
+- Utilities
+  - `archi_context_timer_interface`: Timer.
 
 For comprehensive descriptions see [docs/builtins.md](docs/builtins.md).
 

@@ -29,12 +29,12 @@
 
 #include "archipelago/context/interface.typ.h"
 
-ARCHI_CONTEXT_INIT_FUNC(archi_context_res_thread_group_init);   ///< Thread group context initialization function.
-ARCHI_CONTEXT_FINAL_FUNC(archi_context_res_thread_group_final); ///< Thread group context finalization function.
-ARCHI_CONTEXT_GET_FUNC(archi_context_res_thread_group_get);     ///< Thread group context getter function.
+ARCHI_CONTEXT_INIT_FUNC(archi_context_thread_group_init);   ///< Thread group context initialization function.
+ARCHI_CONTEXT_FINAL_FUNC(archi_context_thread_group_final); ///< Thread group context finalization function.
+ARCHI_CONTEXT_GET_FUNC(archi_context_thread_group_get);     ///< Thread group context getter function.
 
 extern
-const archi_context_interface_t archi_context_res_thread_group_interface; ///< Thread group context interface.
+const archi_context_interface_t archi_context_thread_group_interface; ///< Thread group context interface.
 
 #endif // _ARCHI_RES_THREAD_CTX_THREAD_GROUP_VAR_H_
 

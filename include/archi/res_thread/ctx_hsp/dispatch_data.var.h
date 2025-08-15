@@ -29,13 +29,13 @@
 
 #include "archipelago/context/interface.typ.h"
 
-ARCHI_CONTEXT_INIT_FUNC(archi_context_res_thread_group_dispatch_data_init);   ///< Thread group dispatch data initialization function.
-ARCHI_CONTEXT_FINAL_FUNC(archi_context_res_thread_group_dispatch_data_final); ///< Thread group dispatch data finalization function.
-ARCHI_CONTEXT_GET_FUNC(archi_context_res_thread_group_dispatch_data_get);     ///< Thread group dispatch data getter function.
-ARCHI_CONTEXT_SET_FUNC(archi_context_res_thread_group_dispatch_data_set);     ///< Thread group dispatch data setter function.
+ARCHI_CONTEXT_INIT_FUNC(archi_context_thread_group_dispatch_data_init);   ///< Thread group dispatch data initialization function.
+ARCHI_CONTEXT_FINAL_FUNC(archi_context_thread_group_dispatch_data_final); ///< Thread group dispatch data finalization function.
+ARCHI_CONTEXT_GET_FUNC(archi_context_thread_group_dispatch_data_get);     ///< Thread group dispatch data getter function.
+ARCHI_CONTEXT_SET_FUNC(archi_context_thread_group_dispatch_data_set);     ///< Thread group dispatch data setter function.
 
 extern
-const archi_context_interface_t archi_context_res_thread_group_dispatch_data_interface; ///< Thread group dispatch data interface.
+const archi_context_interface_t archi_context_thread_group_dispatch_data_interface; ///< Thread group dispatch data interface.
 
 #endif // _ARCHI_RES_THREAD_CTX_DISPATCH_DATA_VAR_H_
 

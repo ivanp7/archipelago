@@ -29,10 +29,10 @@
 
 #include "archipelago/context/interface.typ.h"
 
-ARCHI_CONTEXT_INIT_FUNC(archi_context_ipc_signal_management_init);   ///< Signal management context initialization function.
-ARCHI_CONTEXT_FINAL_FUNC(archi_context_ipc_signal_management_final); ///< Signal management context finalization function.
-ARCHI_CONTEXT_GET_FUNC(archi_context_ipc_signal_management_get);     ///< Signal management context slot getter function.
-ARCHI_CONTEXT_SET_FUNC(archi_context_ipc_signal_management_set);     ///< Signal management context slot setter function.
+ARCHI_CONTEXT_INIT_FUNC(archi_context_signal_management_init);   ///< Signal management context initialization function.
+ARCHI_CONTEXT_FINAL_FUNC(archi_context_signal_management_final); ///< Signal management context finalization function.
+ARCHI_CONTEXT_GET_FUNC(archi_context_signal_management_get);     ///< Signal management context slot getter function.
+ARCHI_CONTEXT_SET_FUNC(archi_context_signal_management_set);     ///< Signal management context slot setter function.
 
 // No interface is provided, as the signal management thread has the tight restrictions on its use.
 // There can be only one signal management thread, and it must be created before any other threads.

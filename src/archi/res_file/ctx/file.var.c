@@ -31,12 +31,12 @@
 #include <string.h> // for strcmp()
 #include <stdalign.h> // for alignof()
 
-struct archi_context_res_file_data {
+struct archi_context_file_data {
     archi_pointer_t mapping;
     int fd;
 };
 
-ARCHI_CONTEXT_INIT_FUNC(archi_context_res_file_init)
+ARCHI_CONTEXT_INIT_FUNC(archi_context_file_init)
 {
     archi_file_open_params_t file_open_params = {0};
     archi_file_open_params_t file_open_params_fields = {0};
@@ -221,7 +221,7 @@ ARCHI_CONTEXT_INIT_FUNC(archi_context_res_file_init)
     if (param_mode_set)
         file_open_params.mode = file_open_params_fields.mode;
 
-    struct archi_context_res_file_data *context_data = malloc(sizeof(*context_data));
+    struct archi_context_file_data *context_data = malloc(sizeof(*context_data));
     if (context_data == NULL)
         return ARCHI_STATUS_ENOMEMORY;
 
@@ -232,7 +232,7 @@ ARCHI_CONTEXT_INIT_FUNC(archi_context_res_file_init)
         return ARCHI_STATUS_ERESOURCE;
     }
 
-    *context_data = (struct archi_context_res_file_data){
+    *context_data = (struct archi_context_file_data){
         .fd = fd,
     };
 
@@ -240,20 +240,20 @@ ARCHI_CONTEXT_INIT_FUNC(archi_context_res_file_init)
     return 0;
 }
 
-ARCHI_CONTEXT_FINAL_FUNC(archi_context_res_file_final)
+ARCHI_CONTEXT_FINAL_FUNC(archi_context_file_final)
 {
-    struct archi_context_res_file_data *context_data =
-        (struct archi_context_res_file_data*)context;
+    struct archi_context_file_data *context_data =
+        (struct archi_context_file_data*)context;
 
     archi_file_unmap(context_data->mapping.ptr, context_data->mapping.element.num_of);
     archi_file_close(context_data->fd);
     free(context_data);
 }
 
-ARCHI_CONTEXT_GET_FUNC(archi_context_res_file_get)
+ARCHI_CONTEXT_GET_FUNC(archi_context_file_get)
 {
-    struct archi_context_res_file_data *context_data =
-        (struct archi_context_res_file_data*)context;
+    struct archi_context_file_data *context_data =
+        (struct archi_context_file_data*)context;
 
     if (strcmp("fd", slot.name) == 0)
     {
@@ -283,10 +283,10 @@ ARCHI_CONTEXT_GET_FUNC(archi_context_res_file_get)
     return 0;
 }
 
-ARCHI_CONTEXT_ACT_FUNC(archi_context_res_file_act)
+ARCHI_CONTEXT_ACT_FUNC(archi_context_file_act)
 {
-    struct archi_context_res_file_data *context_data =
-        (struct archi_context_res_file_data*)context;
+    struct archi_context_file_data *context_data =
+        (struct archi_context_file_data*)context;
 
     if (strcmp("map", action.name) == 0)
     {
@@ -473,10 +473,10 @@ ARCHI_CONTEXT_ACT_FUNC(archi_context_res_file_act)
     return 0;
 }
 
-const archi_context_interface_t archi_context_res_file_interface = {
-    .init_fn = archi_context_res_file_init,
-    .final_fn = archi_context_res_file_final,
-    .get_fn = archi_context_res_file_get,
-    .act_fn = archi_context_res_file_act,
+const archi_context_interface_t archi_context_file_interface = {
+    .init_fn = archi_context_file_init,
+    .final_fn = archi_context_file_final,
+    .get_fn = archi_context_file_get,
+    .act_fn = archi_context_file_act,
 };
 

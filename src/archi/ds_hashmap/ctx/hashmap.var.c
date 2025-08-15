@@ -29,7 +29,7 @@
 #include <stdlib.h> // for malloc(), free()
 #include <string.h> // for strcmp()
 
-ARCHI_CONTEXT_INIT_FUNC(archi_context_ds_hashmap_init)
+ARCHI_CONTEXT_INIT_FUNC(archi_context_hashmap_init)
 {
     archi_hashmap_alloc_params_t hashmap_alloc_params = {0};
     archi_hashmap_alloc_params_t hashmap_alloc_params_fields = {0};
@@ -94,13 +94,13 @@ ARCHI_CONTEXT_INIT_FUNC(archi_context_ds_hashmap_init)
     return code;
 }
 
-ARCHI_CONTEXT_FINAL_FUNC(archi_context_ds_hashmap_final)
+ARCHI_CONTEXT_FINAL_FUNC(archi_context_hashmap_final)
 {
     archi_hashmap_free(context->ptr);
     free(context);
 }
 
-ARCHI_CONTEXT_GET_FUNC(archi_context_ds_hashmap_get)
+ARCHI_CONTEXT_GET_FUNC(archi_context_hashmap_get)
 {
     if (slot.num_indices != 0)
         return ARCHI_STATUS_EMISUSE;
@@ -115,7 +115,7 @@ ARCHI_CONTEXT_GET_FUNC(archi_context_ds_hashmap_get)
     return code;
 }
 
-ARCHI_CONTEXT_SET_FUNC(archi_context_ds_hashmap_set)
+ARCHI_CONTEXT_SET_FUNC(archi_context_hashmap_set)
 {
     if (slot.num_indices > 1)
         return ARCHI_STATUS_EMISUSE;
@@ -139,10 +139,10 @@ ARCHI_CONTEXT_SET_FUNC(archi_context_ds_hashmap_set)
     }
 }
 
-const archi_context_interface_t archi_context_ds_hashmap_interface = {
-    .init_fn = archi_context_ds_hashmap_init,
-    .final_fn = archi_context_ds_hashmap_final,
-    .get_fn = archi_context_ds_hashmap_get,
-    .set_fn = archi_context_ds_hashmap_set,
+const archi_context_interface_t archi_context_hashmap_interface = {
+    .init_fn = archi_context_hashmap_init,
+    .final_fn = archi_context_hashmap_final,
+    .get_fn = archi_context_hashmap_get,
+    .set_fn = archi_context_hashmap_set,
 };
 

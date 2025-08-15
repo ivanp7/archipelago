@@ -29,7 +29,7 @@
 #include <stdlib.h> // for malloc(), free()
 #include <string.h> // for strcmp()
 
-ARCHI_CONTEXT_INIT_FUNC(archi_context_util_timer_init)
+ARCHI_CONTEXT_INIT_FUNC(archi_context_timer_init)
 {
     const char *name = NULL;
 
@@ -74,13 +74,13 @@ ARCHI_CONTEXT_INIT_FUNC(archi_context_util_timer_init)
     return 0;
 }
 
-ARCHI_CONTEXT_FINAL_FUNC(archi_context_util_timer_final)
+ARCHI_CONTEXT_FINAL_FUNC(archi_context_timer_final)
 {
     archi_timer_free(context->ptr);
     free(context);
 }
 
-ARCHI_CONTEXT_ACT_FUNC(archi_context_util_timer_act)
+ARCHI_CONTEXT_ACT_FUNC(archi_context_timer_act)
 {
     if (strcmp("reset", action.name) == 0)
     {
@@ -97,9 +97,9 @@ ARCHI_CONTEXT_ACT_FUNC(archi_context_util_timer_act)
     return 0;
 }
 
-const archi_context_interface_t archi_context_util_timer_interface = {
-    .init_fn = archi_context_util_timer_init,
-    .final_fn = archi_context_util_timer_final,
-    .act_fn = archi_context_util_timer_act,
+const archi_context_interface_t archi_context_timer_interface = {
+    .init_fn = archi_context_timer_init,
+    .final_fn = archi_context_timer_final,
+    .act_fn = archi_context_timer_act,
 };
 

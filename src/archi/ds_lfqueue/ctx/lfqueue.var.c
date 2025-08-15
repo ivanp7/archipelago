@@ -30,12 +30,12 @@
 #include <string.h> // for strcmp()
 #include <stdalign.h> // for alignof()
 
-struct archi_context_ds_lfqueue_data {
+struct archi_context_lfqueue_data {
     archi_pointer_t lfqueue;
     archi_lfqueue_alloc_params_t params;
 };
 
-ARCHI_CONTEXT_INIT_FUNC(archi_context_ds_lfqueue_init)
+ARCHI_CONTEXT_INIT_FUNC(archi_context_lfqueue_init)
 {
     archi_lfqueue_alloc_params_t lfqueue_alloc_params = {0};
     archi_lfqueue_alloc_params_t lfqueue_alloc_params_fields = {0};
@@ -108,7 +108,7 @@ ARCHI_CONTEXT_INIT_FUNC(archi_context_ds_lfqueue_init)
     if (param_element_alignment_set)
         lfqueue_alloc_params.element_alignment = lfqueue_alloc_params_fields.element_alignment;
 
-    struct archi_context_ds_lfqueue_data *context_data = malloc(sizeof(*context_data));
+    struct archi_context_lfqueue_data *context_data = malloc(sizeof(*context_data));
     if (context_data == NULL)
         return ARCHI_STATUS_ENOMEMORY;
 
@@ -121,7 +121,7 @@ ARCHI_CONTEXT_INIT_FUNC(archi_context_ds_lfqueue_init)
         return code;
     }
 
-    *context_data = (struct archi_context_ds_lfqueue_data){
+    *context_data = (struct archi_context_lfqueue_data){
         .lfqueue = {
             .ptr = lfqueue,
             .element = {
@@ -135,19 +135,19 @@ ARCHI_CONTEXT_INIT_FUNC(archi_context_ds_lfqueue_init)
     return code;
 }
 
-ARCHI_CONTEXT_FINAL_FUNC(archi_context_ds_lfqueue_final)
+ARCHI_CONTEXT_FINAL_FUNC(archi_context_lfqueue_final)
 {
-    struct archi_context_ds_lfqueue_data *context_data =
-        (struct archi_context_ds_lfqueue_data*)context;
+    struct archi_context_lfqueue_data *context_data =
+        (struct archi_context_lfqueue_data*)context;
 
     archi_lfqueue_free(context_data->lfqueue.ptr);
     free(context_data);
 }
 
-ARCHI_CONTEXT_GET_FUNC(archi_context_ds_lfqueue_get)
+ARCHI_CONTEXT_GET_FUNC(archi_context_lfqueue_get)
 {
-    struct archi_context_ds_lfqueue_data *context_data =
-        (struct archi_context_ds_lfqueue_data*)context;
+    struct archi_context_lfqueue_data *context_data =
+        (struct archi_context_lfqueue_data*)context;
 
     if (strcmp("capacity_log2", slot.name) == 0)
     {
@@ -200,9 +200,9 @@ ARCHI_CONTEXT_GET_FUNC(archi_context_ds_lfqueue_get)
     return 0;
 }
 
-const archi_context_interface_t archi_context_ds_lfqueue_interface = {
-    .init_fn = archi_context_ds_lfqueue_init,
-    .final_fn = archi_context_ds_lfqueue_final,
-    .get_fn = archi_context_ds_lfqueue_get,
+const archi_context_interface_t archi_context_lfqueue_interface = {
+    .init_fn = archi_context_lfqueue_init,
+    .final_fn = archi_context_lfqueue_final,
+    .get_fn = archi_context_lfqueue_get,
 };
 

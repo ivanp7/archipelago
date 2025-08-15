@@ -30,7 +30,7 @@
 #include <string.h> // for strcmp()
 #include <stdalign.h> // for alignof()
 
-struct archi_context_res_thread_group_callback_data {
+struct archi_context_thread_group_callback_data {
     archi_pointer_t callback;
 
     // References
@@ -38,7 +38,7 @@ struct archi_context_res_thread_group_callback_data {
     archi_pointer_t callback_data;
 };
 
-ARCHI_CONTEXT_INIT_FUNC(archi_context_res_thread_group_callback_init)
+ARCHI_CONTEXT_INIT_FUNC(archi_context_thread_group_callback_init)
 {
     archi_pointer_t callback_function = {0};
     archi_pointer_t callback_data = {0};
@@ -74,7 +74,7 @@ ARCHI_CONTEXT_INIT_FUNC(archi_context_res_thread_group_callback_init)
             return ARCHI_STATUS_EKEY;
     }
 
-    struct archi_context_res_thread_group_callback_data *context_data = malloc(sizeof(*context_data));
+    struct archi_context_thread_group_callback_data *context_data = malloc(sizeof(*context_data));
     if (context_data == NULL)
         return ARCHI_STATUS_ENOMEMORY;
 
@@ -90,7 +90,7 @@ ARCHI_CONTEXT_INIT_FUNC(archi_context_res_thread_group_callback_init)
         .data = callback_data.ptr,
     };
 
-    *context_data = (struct archi_context_res_thread_group_callback_data){
+    *context_data = (struct archi_context_thread_group_callback_data){
         .callback = {
             .ptr = callback,
             .element = {
@@ -110,10 +110,10 @@ ARCHI_CONTEXT_INIT_FUNC(archi_context_res_thread_group_callback_init)
     return 0;
 }
 
-ARCHI_CONTEXT_FINAL_FUNC(archi_context_res_thread_group_callback_final)
+ARCHI_CONTEXT_FINAL_FUNC(archi_context_thread_group_callback_final)
 {
-    struct archi_context_res_thread_group_callback_data *context_data =
-        (struct archi_context_res_thread_group_callback_data*)context;
+    struct archi_context_thread_group_callback_data *context_data =
+        (struct archi_context_thread_group_callback_data*)context;
 
     archi_reference_count_decrement(context_data->callback_function.ref_count);
     archi_reference_count_decrement(context_data->callback_data.ref_count);
@@ -121,10 +121,10 @@ ARCHI_CONTEXT_FINAL_FUNC(archi_context_res_thread_group_callback_final)
     free(context_data);
 }
 
-ARCHI_CONTEXT_GET_FUNC(archi_context_res_thread_group_callback_get)
+ARCHI_CONTEXT_GET_FUNC(archi_context_thread_group_callback_get)
 {
-    struct archi_context_res_thread_group_callback_data *context_data =
-        (struct archi_context_res_thread_group_callback_data*)context;
+    struct archi_context_thread_group_callback_data *context_data =
+        (struct archi_context_thread_group_callback_data*)context;
 
     if (strcmp("function", slot.name) == 0)
     {
@@ -146,10 +146,10 @@ ARCHI_CONTEXT_GET_FUNC(archi_context_res_thread_group_callback_get)
     return 0;
 }
 
-ARCHI_CONTEXT_SET_FUNC(archi_context_res_thread_group_callback_set)
+ARCHI_CONTEXT_SET_FUNC(archi_context_thread_group_callback_set)
 {
-    struct archi_context_res_thread_group_callback_data *context_data =
-        (struct archi_context_res_thread_group_callback_data*)context;
+    struct archi_context_thread_group_callback_data *context_data =
+        (struct archi_context_thread_group_callback_data*)context;
 
     archi_thread_group_callback_t *callback = context_data->callback.ptr;
 
@@ -185,10 +185,10 @@ ARCHI_CONTEXT_SET_FUNC(archi_context_res_thread_group_callback_set)
     return 0;
 }
 
-const archi_context_interface_t archi_context_res_thread_group_callback_interface = {
-    .init_fn = archi_context_res_thread_group_callback_init,
-    .final_fn = archi_context_res_thread_group_callback_final,
-    .get_fn = archi_context_res_thread_group_callback_get,
-    .set_fn = archi_context_res_thread_group_callback_set,
+const archi_context_interface_t archi_context_thread_group_callback_interface = {
+    .init_fn = archi_context_thread_group_callback_init,
+    .final_fn = archi_context_thread_group_callback_final,
+    .get_fn = archi_context_thread_group_callback_get,
+    .set_fn = archi_context_thread_group_callback_set,
 };
 

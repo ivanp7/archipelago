@@ -29,12 +29,12 @@
 #include <stdlib.h> // for malloc(), free()
 #include <string.h> // for strcmp()
 
-struct archi_context_res_library_data {
+struct archi_context_library_data {
     archi_pointer_t handle;
     archi_pointer_t symbol;
 };
 
-ARCHI_CONTEXT_INIT_FUNC(archi_context_res_library_init)
+ARCHI_CONTEXT_INIT_FUNC(archi_context_library_init)
 {
     archi_library_load_params_t library_load_params = {0};
     archi_library_load_params_t library_load_params_fields = {0};
@@ -122,7 +122,7 @@ ARCHI_CONTEXT_INIT_FUNC(archi_context_res_library_init)
     if (param_flags_set)
         library_load_params.flags = library_load_params_fields.flags;
 
-    struct archi_context_res_library_data *context_data = malloc(sizeof(*context_data));
+    struct archi_context_library_data *context_data = malloc(sizeof(*context_data));
     if (context_data == NULL)
         return ARCHI_STATUS_ENOMEMORY;
 
@@ -133,7 +133,7 @@ ARCHI_CONTEXT_INIT_FUNC(archi_context_res_library_init)
         return ARCHI_STATUS_ERESOURCE;
     }
 
-    *context_data = (struct archi_context_res_library_data){
+    *context_data = (struct archi_context_library_data){
         .handle = {
             .ptr = handle,
             .element = {
@@ -151,22 +151,22 @@ ARCHI_CONTEXT_INIT_FUNC(archi_context_res_library_init)
     return 0;
 }
 
-ARCHI_CONTEXT_FINAL_FUNC(archi_context_res_library_final)
+ARCHI_CONTEXT_FINAL_FUNC(archi_context_library_final)
 {
-    struct archi_context_res_library_data *context_data =
-        (struct archi_context_res_library_data*)context;
+    struct archi_context_library_data *context_data =
+        (struct archi_context_library_data*)context;
 
     archi_library_unload(context_data->handle.ptr);
     free(context_data);
 }
 
-ARCHI_CONTEXT_GET_FUNC(archi_context_res_library_get)
+ARCHI_CONTEXT_GET_FUNC(archi_context_library_get)
 {
     if (slot.num_indices != 0)
         return ARCHI_STATUS_EMISUSE;
 
-    struct archi_context_res_library_data *context_data =
-        (struct archi_context_res_library_data*)context;
+    struct archi_context_library_data *context_data =
+        (struct archi_context_library_data*)context;
 
     archi_pointer_t symbol = context_data->symbol;
     context_data->symbol = (archi_pointer_t){.element.num_of = 1}; // reset the attributes
@@ -181,13 +181,13 @@ ARCHI_CONTEXT_GET_FUNC(archi_context_res_library_get)
     return 0;
 }
 
-ARCHI_CONTEXT_ACT_FUNC(archi_context_res_library_act)
+ARCHI_CONTEXT_ACT_FUNC(archi_context_library_act)
 {
     if (action.num_indices != 0)
         return ARCHI_STATUS_EMISUSE;
 
-    struct archi_context_res_library_data *context_data =
-        (struct archi_context_res_library_data*)context;
+    struct archi_context_library_data *context_data =
+        (struct archi_context_library_data*)context;
 
     archi_pointer_t attributes = {0};
     bool flag_function = false;
@@ -301,10 +301,10 @@ ARCHI_CONTEXT_ACT_FUNC(archi_context_res_library_act)
     return 0;
 }
 
-const archi_context_interface_t archi_context_res_library_interface = {
-    .init_fn = archi_context_res_library_init,
-    .final_fn = archi_context_res_library_final,
-    .get_fn = archi_context_res_library_get,
-    .act_fn = archi_context_res_library_act,
+const archi_context_interface_t archi_context_library_interface = {
+    .init_fn = archi_context_library_init,
+    .final_fn = archi_context_library_final,
+    .get_fn = archi_context_library_get,
+    .act_fn = archi_context_library_act,
 };
 

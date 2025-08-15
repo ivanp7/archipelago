@@ -30,14 +30,14 @@
 #include <string.h> // for strcmp()
 #include <stdalign.h> // for alignof()
 
-struct archi_context_ipc_signal_handler_data {
+struct archi_context_signal_handler_data {
     archi_pointer_t signal_handler;
 
     archi_pointer_t signal_handler_function;
     archi_pointer_t signal_handler_data;
 };
 
-ARCHI_CONTEXT_INIT_FUNC(archi_context_ipc_signal_handler_init)
+ARCHI_CONTEXT_INIT_FUNC(archi_context_signal_handler_init)
 {
     archi_pointer_t signal_handler_function = {0};
     archi_pointer_t signal_handler_data = {0};
@@ -73,7 +73,7 @@ ARCHI_CONTEXT_INIT_FUNC(archi_context_ipc_signal_handler_init)
             return ARCHI_STATUS_EKEY;
     }
 
-    struct archi_context_ipc_signal_handler_data *context_data = malloc(sizeof(*context_data));
+    struct archi_context_signal_handler_data *context_data = malloc(sizeof(*context_data));
     if (context_data == NULL)
         return ARCHI_STATUS_ENOMEMORY;
 
@@ -89,7 +89,7 @@ ARCHI_CONTEXT_INIT_FUNC(archi_context_ipc_signal_handler_init)
         .data = signal_handler_data.ptr,
     };
 
-    *context_data = (struct archi_context_ipc_signal_handler_data){
+    *context_data = (struct archi_context_signal_handler_data){
         .signal_handler = {
             .ptr = signal_handler,
             .element = {
@@ -109,10 +109,10 @@ ARCHI_CONTEXT_INIT_FUNC(archi_context_ipc_signal_handler_init)
     return 0;
 }
 
-ARCHI_CONTEXT_FINAL_FUNC(archi_context_ipc_signal_handler_final)
+ARCHI_CONTEXT_FINAL_FUNC(archi_context_signal_handler_final)
 {
-    struct archi_context_ipc_signal_handler_data *context_data =
-        (struct archi_context_ipc_signal_handler_data*)context;
+    struct archi_context_signal_handler_data *context_data =
+        (struct archi_context_signal_handler_data*)context;
 
     archi_reference_count_decrement(context_data->signal_handler_function.ref_count);
     archi_reference_count_decrement(context_data->signal_handler_data.ref_count);
@@ -120,10 +120,10 @@ ARCHI_CONTEXT_FINAL_FUNC(archi_context_ipc_signal_handler_final)
     free(context_data);
 }
 
-ARCHI_CONTEXT_GET_FUNC(archi_context_ipc_signal_handler_get)
+ARCHI_CONTEXT_GET_FUNC(archi_context_signal_handler_get)
 {
-    struct archi_context_ipc_signal_handler_data *context_data =
-        (struct archi_context_ipc_signal_handler_data*)context;
+    struct archi_context_signal_handler_data *context_data =
+        (struct archi_context_signal_handler_data*)context;
 
     if (strcmp("function", slot.name) == 0)
     {
@@ -145,10 +145,10 @@ ARCHI_CONTEXT_GET_FUNC(archi_context_ipc_signal_handler_get)
     return 0;
 }
 
-ARCHI_CONTEXT_SET_FUNC(archi_context_ipc_signal_handler_set)
+ARCHI_CONTEXT_SET_FUNC(archi_context_signal_handler_set)
 {
-    struct archi_context_ipc_signal_handler_data *context_data =
-        (struct archi_context_ipc_signal_handler_data*)context;
+    struct archi_context_signal_handler_data *context_data =
+        (struct archi_context_signal_handler_data*)context;
 
     archi_signal_handler_t *signal_handler = context_data->signal_handler.ptr;
 
@@ -184,10 +184,10 @@ ARCHI_CONTEXT_SET_FUNC(archi_context_ipc_signal_handler_set)
     return 0;
 }
 
-const archi_context_interface_t archi_context_ipc_signal_handler_interface = {
-    .init_fn = archi_context_ipc_signal_handler_init,
-    .final_fn = archi_context_ipc_signal_handler_final,
-    .get_fn = archi_context_ipc_signal_handler_get,
-    .set_fn = archi_context_ipc_signal_handler_set,
+const archi_context_interface_t archi_context_signal_handler_interface = {
+    .init_fn = archi_context_signal_handler_init,
+    .final_fn = archi_context_signal_handler_final,
+    .get_fn = archi_context_signal_handler_get,
+    .set_fn = archi_context_signal_handler_set,
 };
 

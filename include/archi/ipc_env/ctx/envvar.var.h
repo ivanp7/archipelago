@@ -29,11 +29,11 @@
 
 #include "archipelago/context/interface.typ.h"
 
-ARCHI_CONTEXT_INIT_FUNC(archi_context_ipc_env_init);   ///< Environmental variable context initialization function.
-ARCHI_CONTEXT_FINAL_FUNC(archi_context_ipc_env_final); ///< Environmental variable context finalization function.
+ARCHI_CONTEXT_INIT_FUNC(archi_context_envvar_init);   ///< Environmental variable context initialization function.
+ARCHI_CONTEXT_FINAL_FUNC(archi_context_envvar_final); ///< Environmental variable context finalization function.
 
 extern
-const archi_context_interface_t archi_context_ipc_env_interface; ///< Environmental variable context interface.
+const archi_context_interface_t archi_context_envvar_interface; ///< Environmental variable context interface.
 
 #endif // _ARCHI_IPC_ENV_CTX_ENVVAR_VAR_H_
 

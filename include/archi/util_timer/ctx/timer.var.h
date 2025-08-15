@@ -29,12 +29,12 @@
 
 #include "archipelago/context/interface.typ.h"
 
-ARCHI_CONTEXT_INIT_FUNC(archi_context_util_timer_init);   ///< Timer initialization function.
-ARCHI_CONTEXT_FINAL_FUNC(archi_context_util_timer_final); ///< Timer finalization function.
-ARCHI_CONTEXT_ACT_FUNC(archi_context_util_timer_act);     ///< Timer action function.
+ARCHI_CONTEXT_INIT_FUNC(archi_context_timer_init);   ///< Timer initialization function.
+ARCHI_CONTEXT_FINAL_FUNC(archi_context_timer_final); ///< Timer finalization function.
+ARCHI_CONTEXT_ACT_FUNC(archi_context_timer_act);     ///< Timer action function.
 
 extern
-const archi_context_interface_t archi_context_util_timer_interface; ///< Timer interface.
+const archi_context_interface_t archi_context_timer_interface; ///< Timer interface.
 
 #endif // _ARCHI_UTIL_TIMER_CTX_TIMER_VAR_H_
 

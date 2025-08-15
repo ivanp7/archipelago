@@ -32,7 +32,7 @@
 /**
  * @brief State function for calling archi_thread_group_dispatch().
  *
- * This state function expects archi_context_res_thread_group_dispatch_data_t
+ * This state function expects archi_context_thread_group_dispatch_data_t
  * object as function data.
  */
 ARCHI_HSP_STATE_FUNCTION(archi_hsp_state_res_thread_group_dispatch);

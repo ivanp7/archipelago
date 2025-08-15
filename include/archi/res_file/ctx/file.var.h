@@ -29,13 +29,13 @@
 
 #include "archipelago/context/interface.typ.h"
 
-ARCHI_CONTEXT_INIT_FUNC(archi_context_res_file_init);   ///< File context initialization function.
-ARCHI_CONTEXT_FINAL_FUNC(archi_context_res_file_final); ///< File context finalization function.
-ARCHI_CONTEXT_GET_FUNC(archi_context_res_file_get);     ///< File context slot getter function.
-ARCHI_CONTEXT_ACT_FUNC(archi_context_res_file_act);     ///< File context action function.
+ARCHI_CONTEXT_INIT_FUNC(archi_context_file_init);   ///< File context initialization function.
+ARCHI_CONTEXT_FINAL_FUNC(archi_context_file_final); ///< File context finalization function.
+ARCHI_CONTEXT_GET_FUNC(archi_context_file_get);     ///< File context slot getter function.
+ARCHI_CONTEXT_ACT_FUNC(archi_context_file_act);     ///< File context action function.
 
 extern
-const archi_context_interface_t archi_context_res_file_interface; ///< File context interface.
+const archi_context_interface_t archi_context_file_interface; ///< File context interface.
 
 #endif // _ARCHI_RES_FILE_CTX_FILE_VAR_H_
 

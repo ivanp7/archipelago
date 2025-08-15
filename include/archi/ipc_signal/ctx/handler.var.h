@@ -29,13 +29,13 @@
 
 #include "archipelago/context/interface.typ.h"
 
-ARCHI_CONTEXT_INIT_FUNC(archi_context_ipc_signal_handler_init);   ///< Signal handler initialization function.
-ARCHI_CONTEXT_FINAL_FUNC(archi_context_ipc_signal_handler_final); ///< Signal handler finalization function.
-ARCHI_CONTEXT_GET_FUNC(archi_context_ipc_signal_handler_get);     ///< Signal handler slot getter function.
-ARCHI_CONTEXT_SET_FUNC(archi_context_ipc_signal_handler_set);     ///< Signal handler slot setter function.
+ARCHI_CONTEXT_INIT_FUNC(archi_context_signal_handler_init);   ///< Signal handler initialization function.
+ARCHI_CONTEXT_FINAL_FUNC(archi_context_signal_handler_final); ///< Signal handler finalization function.
+ARCHI_CONTEXT_GET_FUNC(archi_context_signal_handler_get);     ///< Signal handler slot getter function.
+ARCHI_CONTEXT_SET_FUNC(archi_context_signal_handler_set);     ///< Signal handler slot setter function.
 
 extern
-const archi_context_interface_t archi_context_ipc_signal_handler_interface; ///< Signal handler interface.
+const archi_context_interface_t archi_context_signal_handler_interface; ///< Signal handler interface.
 
 #endif // _ARCHI_IPC_SIGNAL_CTX_HANDLER_VAR_H_
 

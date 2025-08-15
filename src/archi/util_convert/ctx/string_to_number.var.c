@@ -32,7 +32,7 @@
 #include <stdbool.h>
 #include <stdalign.h>
 
-ARCHI_CONTEXT_INIT_FUNC(archi_context_converter_string_to_number_init)
+ARCHI_CONTEXT_INIT_FUNC(archi_context_convert_string_to_number_init)
 {
     archi_pointer_t value = {0};
 
@@ -177,14 +177,14 @@ ARCHI_CONTEXT_INIT_FUNC(archi_context_converter_string_to_number_init)
     return 0;
 }
 
-ARCHI_CONTEXT_FINAL_FUNC(archi_context_converter_string_to_number_final)
+ARCHI_CONTEXT_FINAL_FUNC(archi_context_convert_string_to_number_final)
 {
     free(context->ptr);
     free(context);
 }
 
-const archi_context_interface_t archi_context_converter_string_to_number_interface = {
-    .init_fn = archi_context_converter_string_to_number_init,
-    .final_fn = archi_context_converter_string_to_number_final,
+const archi_context_interface_t archi_context_convert_string_to_number_interface = {
+    .init_fn = archi_context_convert_string_to_number_init,
+    .final_fn = archi_context_convert_string_to_number_final,
 };
 

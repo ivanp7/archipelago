@@ -35,14 +35,14 @@
 
 #define ARCHI_CONTEXT_IPC_SIGNAL_HANDLERS_CAPACITY  32 // larger capacity isn't needed, probably
 
-struct archi_context_ipc_signal_management_data {
+struct archi_context_signal_management_data {
     archi_pointer_t context; ///< Signal management context.
 
     archi_hashmap_t signal_handlers; ///< Hashmap of signal handlers.
     mtx_t mutex_signal_handlers; ///< Mutex for the hashmap.
 };
 
-struct archi_context_ipc_signal_handler_args {
+struct archi_context_signal_handler_args {
     int signo;
     void *siginfo;
     archi_signal_flags_t *flags;
@@ -51,12 +51,12 @@ struct archi_context_ipc_signal_handler_args {
 };
 
 static
-ARCHI_HASHMAP_TRAV_KV_FUNC(archi_context_ipc_signal_management_hashmap_traverse)
+ARCHI_HASHMAP_TRAV_KV_FUNC(archi_context_signal_management_hashmap_traverse)
 {
     (void) key;
     (void) index;
 
-    struct archi_context_ipc_signal_handler_args *args = data;
+    struct archi_context_signal_handler_args *args = data;
     archi_signal_handler_t *signal_handler = value.ptr;
 
     if (signal_handler->function != NULL)
@@ -71,11 +71,11 @@ ARCHI_HASHMAP_TRAV_KV_FUNC(archi_context_ipc_signal_management_hashmap_traverse)
 }
 
 static
-ARCHI_SIGNAL_HANDLER_FUNC(archi_context_ipc_signal_management_handler)
+ARCHI_SIGNAL_HANDLER_FUNC(archi_context_signal_management_handler)
 {
-    struct archi_context_ipc_signal_management_data *context_data = data;
+    struct archi_context_signal_management_data *context_data = data;
 
-    struct archi_context_ipc_signal_handler_args args = {
+    struct archi_context_signal_handler_args args = {
         .signo = signo,
         .siginfo = siginfo,
         .flags = flags,
@@ -87,7 +87,7 @@ ARCHI_SIGNAL_HANDLER_FUNC(archi_context_ipc_signal_management_handler)
         mtx_lock(&context_data->mutex_signal_handlers);
 
         archi_hashmap_traverse(context_data->signal_handlers, true,
-                archi_context_ipc_signal_management_hashmap_traverse, &args);
+                archi_context_signal_management_hashmap_traverse, &args);
 
         mtx_unlock(&context_data->mutex_signal_handlers);
     }
@@ -95,7 +95,7 @@ ARCHI_SIGNAL_HANDLER_FUNC(archi_context_ipc_signal_management_handler)
     return args.set_signal_flag;
 }
 
-ARCHI_CONTEXT_INIT_FUNC(archi_context_ipc_signal_management_init)
+ARCHI_CONTEXT_INIT_FUNC(archi_context_signal_management_init)
 {
     archi_signal_watch_set_t *signals = NULL;
 
@@ -120,7 +120,7 @@ ARCHI_CONTEXT_INIT_FUNC(archi_context_ipc_signal_management_init)
 
     archi_status_t code;
 
-    struct archi_context_ipc_signal_management_data *context_data = malloc(sizeof(*context_data));
+    struct archi_context_signal_management_data *context_data = malloc(sizeof(*context_data));
     if (context_data == NULL)
         return ARCHI_STATUS_ENOMEMORY;
 
@@ -144,7 +144,7 @@ ARCHI_CONTEXT_INIT_FUNC(archi_context_ipc_signal_management_init)
             (archi_signal_management_start_params_t){
                 .signals = signals,
                 .signal_handler = {
-                    .function = archi_context_ipc_signal_management_handler,
+                    .function = archi_context_signal_management_handler,
                     .data = context_data,
                 },
             },
@@ -157,7 +157,7 @@ ARCHI_CONTEXT_INIT_FUNC(archi_context_ipc_signal_management_init)
         return code;
     }
 
-    *context_data = (struct archi_context_ipc_signal_management_data){
+    *context_data = (struct archi_context_signal_management_data){
         .context = {
             .ptr = signal_management,
             .element = {
@@ -172,10 +172,10 @@ ARCHI_CONTEXT_INIT_FUNC(archi_context_ipc_signal_management_init)
     return code;
 }
 
-ARCHI_CONTEXT_FINAL_FUNC(archi_context_ipc_signal_management_final)
+ARCHI_CONTEXT_FINAL_FUNC(archi_context_signal_management_final)
 {
-    struct archi_context_ipc_signal_management_data *context_data =
-        (struct archi_context_ipc_signal_management_data*)context;
+    struct archi_context_signal_management_data *context_data =
+        (struct archi_context_signal_management_data*)context;
 
     archi_signal_management_stop(context_data->context.ptr);
     archi_hashmap_free(context_data->signal_handlers);
@@ -183,10 +183,10 @@ ARCHI_CONTEXT_FINAL_FUNC(archi_context_ipc_signal_management_final)
     free(context_data);
 }
 
-ARCHI_CONTEXT_GET_FUNC(archi_context_ipc_signal_management_get)
+ARCHI_CONTEXT_GET_FUNC(archi_context_signal_management_get)
 {
-    struct archi_context_ipc_signal_management_data *context_data =
-        (struct archi_context_ipc_signal_management_data*)context;
+    struct archi_context_signal_management_data *context_data =
+        (struct archi_context_signal_management_data*)context;
 
     if (strcmp("flags", slot.name) == 0)
     {
@@ -227,10 +227,10 @@ ARCHI_CONTEXT_GET_FUNC(archi_context_ipc_signal_management_get)
     return 0;
 }
 
-ARCHI_CONTEXT_SET_FUNC(archi_context_ipc_signal_management_set)
+ARCHI_CONTEXT_SET_FUNC(archi_context_signal_management_set)
 {
-    struct archi_context_ipc_signal_management_data *context_data =
-        (struct archi_context_ipc_signal_management_data*)context;
+    struct archi_context_signal_management_data *context_data =
+        (struct archi_context_signal_management_data*)context;
 
     if (strncmp("handler.", slot.name, 8) == 0)
     {

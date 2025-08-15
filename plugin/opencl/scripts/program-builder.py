@@ -164,10 +164,10 @@ app = Registry()
 
 # Prepare used built-in interfaces
 builtin = app[Registry.KEY_EXECUTABLE]
-library_interface = ContextInterface(builtin) # or builtin.archi_context_res_library_interface
-file_interface = ContextInterface(builtin.archi_context_res_file_interface)
-hashmap_interface = ContextInterface(builtin.archi_context_ds_hashmap_interface)
-envvar_interface = ContextInterface(builtin.archi_context_ipc_env_interface)
+library_interface = ContextInterface(builtin) # or builtin.archi_context_library_interface
+file_interface = ContextInterface(builtin.archi_context_file_interface)
+hashmap_interface = ContextInterface(builtin.archi_context_hashmap_interface)
+envvar_interface = ContextInterface(builtin.archi_context_envvar_interface)
 
 # Load OpenCL plugin
 with app.temp_context(library_interface(pathname=PLUGIN_OPENCL_PATHNAME), key='plugin.opencl') as plugin_opencl:
