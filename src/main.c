@@ -476,7 +476,8 @@ open_and_map_input_files(void)
                     .value.ptr = &value_true,
                 },
             };
-            params[0].next = &params[1];
+            for (size_t i = 0; i < (sizeof(params) / sizeof(params[0])) - 1; i++)
+                params[i].next = &params[i + 1];
 
             archi_status_t code;
 
@@ -509,8 +510,8 @@ open_and_map_input_files(void)
                     .value.ptr = &value_true,
                 },
             };
-            params[0].next = &params[1];
-            params[1].next = &params[2];
+            for (size_t i = 0; i < (sizeof(params) / sizeof(params[0])) - 1; i++)
+                params[i].next = &params[i + 1];
 
             archi_status_t code = archi_context_act(archi_process.input_file[i],
                     (archi_context_slot_t){.name = "map"},
@@ -522,25 +523,38 @@ open_and_map_input_files(void)
                 exit(EXIT_FAILURE);
             }
 
-            archi_pointer_t file = archi_context_data(archi_process.input_file[i]);
+            archi_pointer_t current_file = archi_context_data(archi_process.input_file[i]);
 
-            if (file.element.num_of < sizeof(archi_exe_input_file_header_t))
+            if (current_file.element.num_of < sizeof(archi_exe_input_file_header_t))
             {
                 archi_log_error(M, "Input file #%zu is invalid (file size is smaller than the header structure size).", i);
                 exit(EXIT_FAILURE);
             }
 
-            const archi_exe_input_file_header_t *input = file.ptr;
-            if (strncmp(ARCHI_EXE_INPUT_MAGIC, input->magic, sizeof(input->magic)) != 0)
+            const archi_exe_input_file_header_t *current_input = current_file.ptr;
+            if (strncmp(ARCHI_EXE_INPUT_MAGIC, current_input->magic, sizeof(current_input->magic)) != 0)
             {
                 archi_log_error(M, "Input file #%zu is invalid (magic bytes are incorrect).", i);
                 exit(EXIT_FAILURE);
             }
 
+            ptrdiff_t contents_size = (intptr_t)current_input->header.end - (intptr_t)current_input->header.addr;
+
+            if (contents_size < 0)
             {
-                ptrdiff_t size = (uintptr_t)input->header.end - (uintptr_t)input->header.addr;
+                archi_log_error(M, "Input file #%zu is invalid (size of contents is negative).", i);
+                exit(EXIT_FAILURE);
+            }
+            else if ((size_t)contents_size != current_file.element.num_of)
+            {
+                archi_log_error(M, "Input file #%zu is invalid (file size is not equal to size of contents).", i);
+                exit(EXIT_FAILURE);
+            }
+
+            {
                 archi_log_debug(M, "    address = %p, size = %tu B (%.2f KiB, %.2f MiB, %.2f GiB)",
-                        input->header.addr, size, size / 1024.0, size / (1024.0 * 1024.0), size / (1024.0 * 1024.0 * 1024.0));
+                        current_input->header.addr, contents_size, contents_size / 1024.0,
+                        contents_size / (1024.0 * 1024.0), contents_size / (1024.0 * 1024.0 * 1024.0));
             }
         }
     }
@@ -559,9 +573,9 @@ preliminary_pass_of_input_files(void)
     {
         archi_log_debug(M, " * file #%zu ('%s')", i, archi_process.args.input[i]);
 
-        const archi_exe_input_file_header_t *input = archi_context_data(archi_process.input_file[i]).ptr;
+        const archi_exe_input_file_header_t *current_input = archi_context_data(archi_process.input_file[i]).ptr;
 
-        for (archi_parameter_list_t *contents = input->contents; contents != NULL; contents = contents->next)
+        for (archi_parameter_list_t *contents = current_input->contents; contents != NULL; contents = contents->next)
         {
             if (strcmp(ARCHI_EXE_INPUT_FILE_CONTENTS_KEY_SIGNALS, contents->name) == 0)
             {
@@ -746,72 +760,81 @@ execute_instructions(void)
 
     for (size_t i = 0; i < archi_process.args.num_inputs; i++)
     {
-        archi_pointer_t file = archi_context_data(archi_process.input_file[i]);
-        const archi_exe_input_file_header_t *input = file.ptr;
+        archi_pointer_t current_file = archi_context_data(archi_process.input_file[i]);
 
-        archi_log_debug(M, " * inserting mapped memory of file #%zu into the registry...", i);
+        archi_exe_registry_instr_list_t *instructions = NULL;
         {
-            // Insert the context into the registry, which also increments the reference count
-            ptrdiff_t slot_index = 0;
+            const archi_exe_input_file_header_t *current_input = current_file.ptr;
 
-            archi_status_t code = archi_context_set_slot(archi_process.registry,
-                    (archi_context_slot_t){
+            for (archi_parameter_list_t *contents = current_input->contents;
+                    contents != NULL; contents = contents->next)
+            {
+                if (strcmp(ARCHI_EXE_INPUT_FILE_CONTENTS_KEY_INSTRUCTIONS, contents->name) == 0)
+                {
+                    instructions = contents->value.ptr;
+                    break;
+                }
+            }
+        }
+
+        if (instructions != NULL)
+        {
+            archi_log_debug(M, " * inserting mapped memory of file #%zu into the registry...", i);
+            {
+                // Insert the context into the registry, which also increments the reference count
+                ptrdiff_t slot_index = 0;
+
+                archi_status_t code = archi_context_set_slot(archi_process.registry,
+                        (archi_context_slot_t){
                         .name = ARCHI_EXE_REGISTRY_KEY_INPUT_FILE,
                         .index = &slot_index,
                         .num_indices = 1, // allow updating value for the existing key in the hashmap
-                    },
-                    (archi_pointer_t){
-                        .ptr = archi_process.input_file[i],
-                        .ref_count = file.ref_count,
-                        .element = {
-                            .num_of = 1,
                         },
-                    });
+                        (archi_pointer_t){
+                        .ptr = archi_process.input_file[i],
+                        .ref_count = current_file.ref_count,
+                        .element = {
+                        .num_of = 1,
+                        },
+                        });
 
-            if (code != 0)
+                if (code != 0)
+                {
+                    archi_log_error(M, "Couldn't insert mapped memory of file #%zu into the registry (error %i).", i, code);
+                    exit(EXIT_FAILURE);
+                }
+            }
+
+            archi_log_debug(M, " * executing instructions in file #%zu ('%s')", i, archi_process.args.input[i]);
+
+            for (archi_exe_registry_instr_list_t *instr_list = instructions;
+                    instr_list != NULL; instr_list = instr_list->next)
             {
-                archi_log_error(M, "Couldn't insert mapped memory of file #%zu into the registry (error %i).", i, code);
-                exit(EXIT_FAILURE);
+                /***********************************************************************************/
+                archi_status_t code = archi_exe_registry_instr_execute(archi_process.registry,
+                        instr_list->instruction, current_file.ref_count, archi_process.args.dry_run);
+                /***********************************************************************************/
+
+                if (code > 0)
+                    archi_log_warning(M, "Got non-zero instruction execution status %i, attempting to continue...", code);
+                else if (code < 0)
+                {
+                    archi_log_error(M, "Couldn't execute the instruction (error %i).", code);
+                    exit(EXIT_FAILURE);
+                }
+            }
+
+            if (archi_print_lock(ARCHI_LOG_VERBOSITY_DEBUG))
+            {
+                archi_print("\n");
+                archi_print_unlock();
             }
         }
-
-        archi_log_debug(M, " * executing instructions in file #%zu ('%s')", i, archi_process.args.input[i]);
-
-        archi_exe_registry_instr_list_t *instructions = NULL;
-        for (archi_parameter_list_t *contents = input->contents; contents != NULL; contents = contents->next)
-        {
-            if (strcmp(ARCHI_EXE_INPUT_FILE_CONTENTS_KEY_INSTRUCTIONS, contents->name) == 0)
-            {
-                instructions = contents->value.ptr;
-                break;
-            }
-        }
-
-        for (archi_exe_registry_instr_list_t *instr_list = instructions;
-                instr_list != NULL; instr_list = instr_list->next)
-        {
-            /****************************************************************************/
-            archi_status_t code = archi_exe_registry_instr_execute(archi_process.registry,
-                    instr_list->instruction, file.ref_count, archi_process.args.dry_run);
-            /****************************************************************************/
-
-            if (code > 0)
-                archi_log_warning(M, "Got non-zero instruction execution status %i, attempting to continue...", code);
-            else if (code < 0)
-            {
-                archi_log_error(M, "Couldn't execute the instruction (error %i).", code);
-                exit(EXIT_FAILURE);
-            }
-        }
-
-        if (archi_print_lock(ARCHI_LOG_VERBOSITY_DEBUG))
-        {
-            archi_print("\n");
-            archi_print_unlock();
-        }
+        else
+            archi_log_debug(M, " * no instructions in file #%zu ('%s'), skipping...", i, archi_process.args.input[i]);
 
         // Decrement the reference count back to 1
-        archi_reference_count_decrement(file.ref_count);
+        archi_reference_count_decrement(current_file.ref_count);
 
         // Forget the file context
         archi_process.input_file[i] = NULL;
