@@ -21,6 +21,7 @@
 # @file
 # @brief Representation of the essential Archipelago application entities.
 
+import ctypes as c
 import enum
 from contextlib import contextmanager
 
@@ -57,7 +58,7 @@ class Registry:
         def __call__(self, _: 'Context' = None, /, **params) -> 'Registry._ContextSpec':
             """Create a context specification instance.
             """
-            return Registry._ContextSpec(self, self._cls.InitParametersClass(_, **params))
+            return Registry._ContextSpec(self, self._cls.INIT_PARAMETERS_CLASS(_, **params))
 
     class _ContextSpec:
         """Representation of a created context specification.
@@ -547,7 +548,7 @@ class Context:
             return Context._Slot(self._context, name=self._name, indices=self._indices, is_action=True)
 
     INTERFACE_SYMBOL = None
-    InitParametersClass = Parameters
+    INIT_PARAMETERS_CLASS = Parameters
 
     def __init_subclass__(cls):
         """Initialize a context interface subclass.
@@ -556,8 +557,8 @@ class Context:
             raise TypeError
         elif cls.INTERFACE_SYMBOL is not None and not cls.INTERFACE_SYMBOL:
             raise ValueError
-        elif not isinstance(cls.InitParametersClass, type) \
-                or not issubclass(cls.InitParametersClass, Parameters):
+        elif not isinstance(cls.INIT_PARAMETERS_CLASS, type) \
+                or not issubclass(cls.INIT_PARAMETERS_CLASS, Parameters):
             raise TypeError
 
     @classmethod
@@ -748,10 +749,91 @@ class Context:
 
         self._registry._invoke_action(parameter_list, action_name, action_indices)
 
+
+class ContextTemplate(Context):
+    """Representation of a context with the fixed set of recognized slots and actions.
+    """
+    CONTEXT_TYPE = ...
+    GETTER_SLOT_TYPES = {}
+    SETTER_SLOT_TYPES = {}
+    ACTION_PARAMETER_CLASSES = {}
+
+    def __init_subclass__(cls):
+        """Initialize a subclass.
+        """
+        if cls.CONTEXT_TYPE is not Ellipsis and not isinstance(cls.CONTEXT_TYPE, str) \
+                and not isinstance(cls.CONTEXT_TYPE, type):
+            raise TypeError
+
+        if not isinstance(cls.GETTER_SLOT_TYPES, dict):
+            raise TypeError
+        elif not all(isinstance(key, str) for key in cls.GETTER_SLOT_TYPES.keys()):
+            raise TypeError
+        elif not all(isinstance(value, tuple) for value in cls.GETTER_SLOT_TYPES.values()):
+            raise TypeError
+
+        if not isinstance(cls.SETTER_SLOT_TYPES, dict):
+            raise TypeError
+        elif not all(isinstance(key, str) for key in cls.SETTER_SLOT_TYPES.keys()):
+            raise TypeError
+        elif not all(isinstance(value, tuple) for value in cls.SETTER_SLOT_TYPES.values()):
+            raise TypeError
+
+        if not isinstance(cls.ACTION_PARAMETER_CLASSES, dict):
+            raise TypeError
+        elif not all(isinstance(key, str) for key in cls.ACTION_PARAMETER_CLASSES.keys()):
+            raise TypeError
+        elif not all(isinstance(value, tuple) for value in cls.ACTION_PARAMETER_CLASSES.values()):
+            raise TypeError
+
+    @classmethod
+    def context_type(cls):
+        """Obtain type of the context value.
+        """
+        return cls.CONTEXT_TYPE
+
+    @classmethod
+    def getter_slot_type(cls, name: 'str', indices: 'list[int]'):
+        """Obtain type of a getter slot.
+        """
+        descr = cls.GETTER_SLOT_TYPES[name]
+
+        if len(indices) not in descr[0]:
+            raise KeyError
+
+        return descr[1]
+
+    @classmethod
+    def setter_slot_type(cls, name: 'str', indices: 'list[int]'):
+        """Obtain type of a setter slot.
+        """
+        descr = cls.SETTER_SLOT_TYPES[name]
+
+        if len(indices) not in descr[0]:
+            raise KeyError
+
+        if len(descr) > 2:
+            return (descr[1], descr[2])
+        else:
+            return (descr[1], None)
+
+    @classmethod
+    def action_parameters_class(cls, name: 'str', indices: 'list[int]'):
+        """Obtain parameter list class of an action.
+        """
+        descr = cls.ACTION_PARAMETER_CLASSES[name]
+
+        if len(indices) not in descr[0]:
+            raise KeyError
+
+        return descr[1]
+
 ###############################################################################
 
 class Parameters:
     """Representation of a parameter list.
+
+    This base class does not impose any restrictions on parameters.
     """
     class Context(Context):
         """Built-in context type for parameter lists.
@@ -773,7 +855,7 @@ class Parameters:
             if indices:
                 raise KeyError
 
-            return cls.InitParametersClass.parameter_type(name)[0]
+            return cls.INIT_PARAMETERS_CLASS.parameter_type(name)[0]
 
         @classmethod
         def setter_slot_type(cls, name: 'str', indices: 'list[int]'):
@@ -782,7 +864,7 @@ class Parameters:
             if indices:
                 raise KeyError
 
-            return cls.InitParametersClass.parameter_type(name)
+            return cls.INIT_PARAMETERS_CLASS.parameter_type(name)
 
         @classmethod
         def action_parameters_class(cls, name: 'str', indices: 'list[int]'):
@@ -791,7 +873,7 @@ class Parameters:
             if name == '_':
                 if indices:
                     raise KeyError
-                return cls.InitParametersClass
+                return cls.INIT_PARAMETERS_CLASS
             else:
                 raise KeyError
 
@@ -799,7 +881,7 @@ class Parameters:
         """Initialize a subclass.
         """
         class context_class(cls.Context):
-            InitParametersClass = cls
+            INIT_PARAMETERS_CLASS = cls
 
         cls.Context = context_class
 
@@ -871,8 +953,8 @@ class Parameters:
         """
         return self._temp_key
 
-    @staticmethod
-    def parameter_type(name: 'str'):
+    @classmethod
+    def parameter_type(cls, name: 'str'):
         """Obtain type of a parameter.
 
         This method is to be overridden in derived classes.
@@ -888,176 +970,115 @@ class Parameters:
         """
         return ..., None # all parameters are recognized by default, no types are known
 
+
+class ParametersTemplate(Parameters):
+    """Representation of a parameter list with the fixed set of recognized parameters.
+    """
+    PARAMETERS = {}
+
+    def __init_subclass__(cls):
+        """Initialize a subclass.
+        """
+        if not isinstance(cls.PARAMETERS, dict):
+            raise TypeError
+        elif not all(isinstance(key, str) for key in cls.PARAMETERS.keys()):
+            raise TypeError
+        elif not all(isinstance(value, tuple) and len(value) == 2 \
+                for value in cls.PARAMETERS.values()):
+            raise TypeError
+
+    @classmethod
+    def parameter_type(cls, name: 'str'):
+        """Obtain type of a parameter.
+        """
+        descr = cls.PARAMETERS[name]
+
+        if len(descr) > 1:
+            return (descr[0], descr[1])
+        else:
+            return (descr[0], None)
+
 ###############################################################################
 
-class PointerContext(Context):
+class PointerContext(ContextTemplate):
     """Built-in context type for pointers.
     """
-    INTERFACE_SYMBOL = 'archi_context_pointer_interface'
+    from .ctypes.base import archi_array_layout_t, archi_pointer_flags_t
 
-    class InitParameters(Parameters):
+    class InitParameters(ParametersTemplate):
         """Pointer context initialization parameters.
         """
-        @staticmethod
-        def parameter_type(name: 'str'):
-            """Obtain type of a parameter.
-            """
-            import ctypes as c
-            from .ctypes.base import archi_array_layout_t, archi_pointer_flags_t
+        PARAMETERS = {
+                'value': (..., None),
+                'flags': (archi_pointer_flags_t, lambda v: archi_pointer_flags_t(v)),
+                'layout': (archi_array_layout_t, lambda v: archi_array_layout_t(*v)),
+                'num_elements': (c.c_size_t, lambda v: c.c_size_t(v)),
+                'element_size': (c.c_size_t, lambda v: c.c_size_t(v)),
+                'element_alignment': (c.c_size_t, lambda v: c.c_size_t(v)),
+                }
 
-            if name == 'value':
-                return ..., None
-            elif name == 'flags':
-                return archi_pointer_flags_t, \
-                        lambda value: archi_pointer_flags_t(value)
-            elif name == 'layout':
-                return archi_array_layout_t, \
-                        lambda value: archi_array_layout_t(*value)
-            elif name in ['num_elements', 'element_size', 'element_alignment']:
-                return c.c_size_t, lambda value: c.c_size_t(value)
-            else:
-                raise KeyError
-
-    InitParametersClass = PointerContext.InitParameters
-
-    class ActionCopyParameters(Parameters):
+    class ActionCopyParameters(ParametersTemplate):
         """Pointer 'copy' action parameters.
         """
-        @staticmethod
-        def parameter_type(name: 'str'):
-            """Obtain type of a parameter.
-            """
-            import ctypes as c
+        PARAMETERS = {
+                'source': (..., None),
+                'source_offset': (c.c_size_t, lambda v: c.c_size_t(v)),
+                'num_elements': (c.c_size_t, lambda v: c.c_size_t(v)),
+                }
 
-            if name == 'source':
-                return ..., None
-            elif name in ['source_offset', 'num_elements']:
-                return c.c_size_t, lambda value: c.c_size_t(value)
-            else:
-                raise KeyError
+    INTERFACE_SYMBOL = 'archi_context_pointer_interface'
 
-    @classmethod
-    def getter_slot_type(cls, name: 'str', indices: 'list[int]'):
-        """Obtain type of a getter slot.
-        """
-        import ctypes as c
-        from .ctypes.base import archi_array_layout_t, archi_pointer_flags_t
+    INIT_PARAMETERS_CLASS = PointerContext.InitParameters
 
-        if name == '':
-            if len(indices) != 1:
-                raise KeyError
-            return ...
-        elif name == 'flags':
-            if indices:
-                raise KeyError
-            return archi_pointer_flags_t
-        elif name == 'layout':
-            if indices:
-                raise KeyError
-            return archi_array_layout_t
-        elif name in ['num_elements', 'element_size', 'element_alignment', 'full_size']:
-            if indices:
-                raise KeyError
-            return c.c_size_t
-        else:
-            raise KeyError
+    GETTER_SLOT_TYPES = {
+            '': ([1], ...),
+            'flags': ([0], archi_pointer_flags_t),
+            'layout': ([0], archi_array_layout_t),
+            'num_elements': ([0], c.c_size_t),
+            'element_size': ([0], c.c_size_t),
+            'element_alignment': ([0], c.c_size_t),
+            'full_size': ([0], c.c_size_t),
+            }
 
-    @classmethod
-    def setter_slot_type(cls, name: 'str', indices: 'list[int]'):
-        """Obtain type of a setter slot.
-        """
-        if name == 'value':
-            if indices:
-                raise KeyError
-            return ..., None
-        elif name == '':
-            if len(indices) != 1:
-                raise KeyError
-            return ..., None
-        else:
-            raise KeyError
+    SETTER_SLOT_TYPES = {
+            'value': ([0], ...),
+            '': ([1], ...),
+            }
 
-    @classmethod
-    def action_parameters_class(cls, name: 'str', indices: 'list[int]'):
-        """Obtain parameter list class of an action.
-        """
-        if name == 'update':
-            if indices:
-                raise KeyError
-            return cls.InitParameters
-        elif name == 'copy':
-            if len(indices) > 1:
-                raise KeyError
-            return cls.ActionCopyParameters
-        else:
-            raise KeyError
+    ACTION_PARAMETER_CLASSES = {
+            'update': ([0], PointerContext.InitParameters),
+            'copy': ([0, 1], PointerContext.ActionCopyParameters),
+            }
 
 
-class ArrayContext(Context):
+class ArrayContext(ContextTemplate):
     """Built-in context type for arrays of pointers.
     """
-    INTERFACE_SYMBOL = 'archi_context_array_interface'
+    from .ctypes.base import archi_pointer_flags_t, archi_pointer_t
 
-    class InitParameters(Parameters):
+    class InitParameters(ParametersTemplate):
         """Array context initialization parameters.
         """
-        @staticmethod
-        def parameter_type(name: 'str'):
-            """Obtain type of a parameter.
-            """
-            import ctypes as c
-            from .ctypes.base import archi_pointer_flags_t
+        PARAMETERS = {
+                'num_elements': (c.c_size_t, lambda v: c.c_size_t(v)),
+                'flags': (archi_pointer_flags_t, lambda v: archi_pointer_flags_t(v)),
+                }
 
-            if name == 'num_elements':
-                return c.c_size_t, lambda value: c.c_size_t(value)
-            elif name == 'flags':
-                return archi_pointer_flags_t, \
-                        lambda value: archi_pointer_flags_t(value)
-            else:
-                raise KeyError
+    INTERFACE_SYMBOL = 'archi_context_array_interface'
 
-    InitParametersClass = ArrayContext.InitParameters
+    CONTEXT_TYPE = c.c_void_p
 
-    @classmethod
-    def context_type(cls):
-        """Obtain type of the context value.
-        """
-        import ctypes as c
+    INIT_PARAMETERS_CLASS = ArrayContext.InitParameters
 
-        return c.c_void_p
+    GETTER_SLOT_TYPES = {
+            '': ([1], ...),
+            'elements': ([0], archi_pointer_t),
+            'num_elements': ([0], c.c_size_t),
+            }
 
-    @classmethod
-    def getter_slot_type(cls, name: 'str', indices: 'list[int]'):
-        """Obtain type of a getter slot.
-        """
-        import ctypes as c
-        from .ctypes.base import archi_pointer_t
-
-        if name == '':
-            if len(indices) != 1:
-                raise KeyError
-            return ...
-        elif name == 'elements':
-            if indices:
-                raise KeyError
-            return c.POINTER(archi_pointer_t)
-        elif name == 'num_elements':
-            if indices:
-                raise KeyError
-            return c.c_size_t
-        else:
-            raise KeyError
-
-    @classmethod
-    def setter_slot_type(cls, name: 'str', indices: 'list[int]'):
-        """Obtain type of a setter slot.
-        """
-        if name == '':
-            if len(indices) != 1:
-                raise KeyError
-            return ..., None
-        else:
-            raise KeyError
+    SETTER_SLOT_TYPES = {
+            '': ([1], ...),
+            }
 
 ###############################################################################
 
