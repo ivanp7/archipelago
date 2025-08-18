@@ -22,7 +22,7 @@ typedef struct archi_opencl_kernel_enqueue_data {
     archi_opencl_work_vector_t *local_work_size;    ///< Local work size (or NULL).
 
     archi_opencl_event_array_t *wait_list; ///< List of events to wait before execution.
-    archi_opencl_event_ptr_list_t *event_target_list; ///< List of pointers to assign the event to.
+    archi_opencl_event_ptr_list_t *output_event_list; ///< List of pointers to return the created event to.
 
     const char *name; ///< Name of the operation (for logging).
 } archi_opencl_kernel_enqueue_data_t;

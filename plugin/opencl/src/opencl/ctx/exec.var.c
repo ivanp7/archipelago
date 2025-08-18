@@ -11,10 +11,10 @@
 #include <string.h> // for strcmp(), strlen()
 #include <stdalign.h> // for alignof()
 
-struct archi_opencl_kernel_enqueue_data_data_event_target_list;
+struct archi_opencl_kernel_enqueue_data_data_output_event_list;
 
-struct archi_opencl_kernel_enqueue_data_data_event_target_list {
-    struct archi_opencl_kernel_enqueue_data_data_event_target_list *next;
+struct archi_opencl_kernel_enqueue_data_data_output_event_list {
+    struct archi_opencl_kernel_enqueue_data_data_output_event_list *next;
     archi_pointer_t event_ptr;
 };
 
@@ -30,7 +30,7 @@ struct archi_opencl_kernel_enqueue_data_data {
     archi_pointer_t local_work_size;
 
     archi_pointer_t wait_list;
-    struct archi_opencl_kernel_enqueue_data_data_event_target_list *event_target_list;
+    struct archi_opencl_kernel_enqueue_data_data_output_event_list *output_event_list;
 };
 
 ARCHI_CONTEXT_INIT_FUNC(archi_opencl_kernel_enqueue_data_init)
@@ -202,17 +202,17 @@ ARCHI_CONTEXT_FINAL_FUNC(archi_opencl_kernel_enqueue_data_final)
         (struct archi_opencl_kernel_enqueue_data_data*)context;
 
     {
-        struct archi_opencl_kernel_enqueue_data_data_event_target_list *event_target_list =
-            context_data->event_target_list;
-        while (event_target_list != NULL)
+        struct archi_opencl_kernel_enqueue_data_data_output_event_list *output_event_list =
+            context_data->output_event_list;
+        while (output_event_list != NULL)
         {
-            struct archi_opencl_kernel_enqueue_data_data_event_target_list *next =
-                event_target_list->next;
+            struct archi_opencl_kernel_enqueue_data_data_output_event_list *next =
+                output_event_list->next;
 
-            archi_reference_count_decrement(event_target_list->event_ptr.ref_count);
-            free(event_target_list);
+            archi_reference_count_decrement(output_event_list->event_ptr.ref_count);
+            free(output_event_list);
 
-            event_target_list = next;
+            output_event_list = next;
         }
     }
 
@@ -226,14 +226,14 @@ ARCHI_CONTEXT_FINAL_FUNC(archi_opencl_kernel_enqueue_data_final)
     archi_opencl_kernel_enqueue_data_t *enqueue_data = context_data->enqueue_data.ptr;
 
     {
-        archi_opencl_event_ptr_list_t *event_target_list = enqueue_data->event_target_list;
-        while (event_target_list != NULL)
+        archi_opencl_event_ptr_list_t *output_event_list = enqueue_data->output_event_list;
+        while (output_event_list != NULL)
         {
-            archi_opencl_event_ptr_list_t *next = event_target_list->next;
+            archi_opencl_event_ptr_list_t *next = output_event_list->next;
 
-            free(event_target_list);
+            free(output_event_list);
 
-            event_target_list = next;
+            output_event_list = next;
         }
     }
 
@@ -400,39 +400,39 @@ ARCHI_CONTEXT_SET_FUNC(archi_opencl_kernel_enqueue_data_set)
         enqueue_data->wait_list = value.ptr;
         context_data->wait_list = value;
     }
-    else if (strcmp("event_target_ptr", slot.name) == 0)
+    else if (strcmp("output_event_ptr", slot.name) == 0)
     {
         if (slot.num_indices != 0)
             return ARCHI_STATUS_EMISUSE;
         else if (value.flags & ARCHI_POINTER_FLAG_FUNCTION)
             return ARCHI_STATUS_EVALUE;
 
-        archi_opencl_event_ptr_list_t *event_target_list = malloc(sizeof(*event_target_list));
-        if (event_target_list == NULL)
+        archi_opencl_event_ptr_list_t *output_event_list = malloc(sizeof(*output_event_list));
+        if (output_event_list == NULL)
             return ARCHI_STATUS_ENOMEMORY;
 
-        *event_target_list = (archi_opencl_event_ptr_list_t){
-            .next = enqueue_data->event_target_list,
+        *output_event_list = (archi_opencl_event_ptr_list_t){
+            .next = enqueue_data->output_event_list,
             .event_ptr = value.ptr,
         };
 
-        struct archi_opencl_kernel_enqueue_data_data_event_target_list *event_target_list_ref =
-            malloc(sizeof(*event_target_list_ref));
-        if (event_target_list_ref == NULL)
+        struct archi_opencl_kernel_enqueue_data_data_output_event_list *output_event_list_ref =
+            malloc(sizeof(*output_event_list_ref));
+        if (output_event_list_ref == NULL)
         {
-            free(event_target_list);
+            free(output_event_list);
             return ARCHI_STATUS_ENOMEMORY;
         }
 
-        *event_target_list_ref = (struct archi_opencl_kernel_enqueue_data_data_event_target_list){
-            .next = context_data->event_target_list,
+        *output_event_list_ref = (struct archi_opencl_kernel_enqueue_data_data_output_event_list){
+            .next = context_data->output_event_list,
             .event_ptr = value,
         };
 
         archi_reference_count_increment(value.ref_count);
 
-        enqueue_data->event_target_list = event_target_list;
-        context_data->event_target_list = event_target_list_ref;
+        enqueue_data->output_event_list = output_event_list;
+        context_data->output_event_list = output_event_list_ref;
     }
     else
         return ARCHI_STATUS_EKEY;

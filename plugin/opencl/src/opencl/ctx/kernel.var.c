@@ -120,9 +120,9 @@ ARCHI_CONTEXT_INIT_FUNC(archi_context_opencl_kernel_init_new)
 #undef M
 }
 
-ARCHI_CONTEXT_INIT_FUNC(archi_context_opencl_kernel_init_copy)
+ARCHI_CONTEXT_INIT_FUNC(archi_context_opencl_kernel_init_clone)
 {
-#define M "archi_context_opencl_kernel_init_copy"
+#define M "archi_context_opencl_kernel_init_clone"
 
     archi_pointer_t source_kernel = {0};
 
@@ -265,7 +265,7 @@ ARCHI_CONTEXT_GET_FUNC(archi_context_opencl_kernel_get)
 
         *value = program;
     }
-    else if (strcmp("kernel_name", slot.name) == 0)
+    else if (strcmp("name", slot.name) == 0)
     {
         if (slot.num_indices != 0)
             return ARCHI_STATUS_EMISUSE;
@@ -382,8 +382,8 @@ const archi_context_interface_t archi_context_opencl_kernel_new_interface = {
     .set_fn = archi_context_opencl_kernel_set,
 };
 
-const archi_context_interface_t archi_context_opencl_kernel_copy_interface = {
-    .init_fn = archi_context_opencl_kernel_init_copy,
+const archi_context_interface_t archi_context_opencl_kernel_clone_interface = {
+    .init_fn = archi_context_opencl_kernel_init_clone,
     .final_fn = archi_context_opencl_kernel_final,
     .get_fn = archi_context_opencl_kernel_get,
     .set_fn = archi_context_opencl_kernel_set,

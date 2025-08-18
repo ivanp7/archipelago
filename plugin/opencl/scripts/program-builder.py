@@ -11,10 +11,24 @@ import random
 import subprocess
 import sys
 
-from archi.memory import CValue
-from archi.registry import Registry, ContextInterface, Parameters
-from archi.file import File
-from archi.script import eprint, random_map_address, dump_file
+from archi.base.memory import CValue
+from archi.base.app import Registry
+from archi.base.file import File
+from archi.base.aux.script import eprint, random_map_address, dump_file
+
+from archi.builtin.context import (
+        REGISTRY_BUILTIN_EXECUTABLE,
+        LibraryContext,
+        HashmapContext,
+        EnvVarContext,
+        FileContext,
+        )
+from archi.opencl.context import (
+        OpenCLPluginContext,
+        OpenCLContextContext,
+        OpenCLProgramFromSourcesContext,
+        OpenCLProgramFromBinariesContext,
+        )
 
 ###############################################################################
 # Parse command line arguments
@@ -157,32 +171,33 @@ content_libraries = read_binaries(args.lib_map)
 
 PLUGIN_OPENCL_PATHNAME = "libarchi_opencl.so"
 
-HASHMAP_CAPACITY = CValue(c.c_size_t(1024))
-TRUE = CValue(c.c_bool(True))
+HASHMAP_CAPACITY = 1024
+TRUE = CValue(c.c_byte(True))
 
 app = Registry()
+executable = app.require_context(*REGISTRY_BUILTIN_EXECUTABLE)
 
-# Prepare used built-in interfaces
-builtin = app[Registry.KEY_EXECUTABLE]
-library_interface = ContextInterface(builtin) # or builtin.archi_context_library_interface
-file_interface = ContextInterface(builtin.archi_context_file_interface)
-hashmap_interface = ContextInterface(builtin.archi_context_hashmap_interface)
-envvar_interface = ContextInterface(builtin.archi_context_envvar_interface)
+# Prepare built-in interfaces
+library_interface = LibraryContext.interface(executable)
+file_interface = FileContext.interface(executable)
+hashmap_interface = HashmapContext.interface(executable)
+envvar_interface = EnvVarContext.interface(executable)
 
 # Load OpenCL plugin
-with app.temp_context(library_interface(pathname=PLUGIN_OPENCL_PATHNAME), key='plugin.opencl') as plugin_opencl:
-    # Prepare used OpenCL plugin interfaces
-    opencl_context_interface = ContextInterface(plugin_opencl.archi_context_opencl_context_interface)
-    opencl_program_src_interface = ContextInterface(plugin_opencl.archi_context_opencl_program_src_interface)
-    opencl_program_bin_interface = ContextInterface(plugin_opencl.archi_context_opencl_program_bin_interface)
+with app.temp_context(library_interface(pathname=PLUGIN_OPENCL_PATHNAME).is_a(OpenCLPluginContext),
+                      key='plugin.opencl') as plugin_opencl:
+    # Prepare OpenCL plugin interfaces
+    opencl_context_interface = OpenCLContextContext.interface(plugin_opencl)
+    opencl_program_src_interface = OpenCLProgramFromSourcesContext.interface(plugin_opencl)
+    opencl_program_bin_interface = OpenCLProgramFromBinariesContext.interface(plugin_opencl)
 
     # Create the OpenCL context
-    with app.temp_context(opencl_context_interface(platform_idx=c.c_uint(args.platform),
-                                                   device_idx=(c.c_uint * len(args.devices))(*args.devices)),
-                     key='context.opencl') as opencl_context:
+    with app.temp_context(opencl_context_interface(platform_idx=args.platform, device_idx=args.devices),
+                          key='context.opencl') as opencl_context:
         # Prepare the list of dependency libraries of the program
         map_libraries = {}
-        with app.temp_context(Parameters(context=opencl_context, device_id=opencl_context.device_id),
+        with app.temp_context(OpenCLProgramFromBinariesContext.InitParameters( \
+                context=opencl_context, device_id=opencl_context.device_id),
                               key='params.library') as params_library:
             for i, binary in enumerate(content_libraries):
                 with app.temp_context([CValue(binary)], key='array.binary') as array_binary:
@@ -228,7 +243,7 @@ with app.temp_context(library_interface(pathname=PLUGIN_OPENCL_PATHNAME), key='p
                                                  size=opencl_program.binary_size[i],
                                                  create=TRUE, truncate=TRUE,
                                                  readable=TRUE, writable=TRUE,
-                                                 mode=c.c_int(0o644)), key='file.out') as file, \
+                                                 mode=0o644), key='file.out') as file, \
                     app.temp_context(file.map(writable=TRUE, shared=TRUE), key='file.memory') as file_memory:
                 # Write the program binary for the current device into the output file
                 file_memory.copy(source=opencl_program.binary[i])

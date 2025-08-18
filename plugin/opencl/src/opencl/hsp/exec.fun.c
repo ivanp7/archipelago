@@ -83,7 +83,7 @@ ARCHI_HSP_STATE_FUNCTION(archi_opencl_hsp_state_kernel_enqueue)
             num_work_dimensions, global_work_offset,
             global_work_size, local_work_size,
             num_wait_events, wait_events,
-            (enqueue_data->event_target_list != NULL) ? &event : NULL);
+            (enqueue_data->output_event_list != NULL) ? &event : NULL);
 
     if (ret != CL_SUCCESS)
     {
@@ -97,9 +97,9 @@ ARCHI_HSP_STATE_FUNCTION(archi_opencl_hsp_state_kernel_enqueue)
 
     archi_opencl_event_array_reset(enqueue_data->wait_list);
 
-    if (enqueue_data->event_target_list != NULL)
+    if (enqueue_data->output_event_list != NULL)
     {
-        for (archi_opencl_event_ptr_list_t *node = enqueue_data->event_target_list;
+        for (archi_opencl_event_ptr_list_t *node = enqueue_data->output_event_list;
                 node != NULL; node = node->next)
         {
             if (node->event_ptr == NULL)

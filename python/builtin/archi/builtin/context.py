@@ -24,7 +24,7 @@
 import ctypes as c
 
 from archi.base.app import (
-        Context, ContextTemplate, Parameters, ParametersTemplate,
+        Context, ContextWhitelistable, Parameters, ParametersWhitelistable,
         PointerContext, ArrayContext
         )
 from archi.base.ctypes.base import archi_array_layout_t, archi_pointer_flags_t
@@ -33,15 +33,15 @@ from archi.base.ctypes.context import archi_context_interface_t
 from .ctypes.signal import archi_signal_watch_set_t
 
 
-class HSPFrameContext(ContextTemplate):
+class HSPFrameContext(ContextWhitelistable):
     """Context type for HSP frames.
     """
-    class InitParameters(ParametersTemplate):
+    class InitParameters(ParametersWhitelistable):
         PARAMETERS = {
                 'num_states': (c.c_size_t, lambda v: c.c_size_t(v)),
                 }
 
-    class ActionExecuteParameters(ParametersTemplate):
+    class ActionExecuteParameters(ParametersWhitelistable):
         PARAMETERS = {
                 'transition_function': ...,
                 'transition_data': ...,
@@ -72,10 +72,10 @@ class HSPFrameContext(ContextTemplate):
             }
 
 
-class HSPTransitionContext(ContextTemplate):
+class HSPTransitionContext(ContextWhitelistable):
     """Context type for HSP transitions.
     """
-    class InitParameters(ParametersTemplate):
+    class InitParameters(ParametersWhitelistable):
         PARAMETERS = {
                 'function': ...,
                 'data': ...,
@@ -98,10 +98,10 @@ class HSPTransitionContext(ContextTemplate):
             }
 
 
-class HSPBranchStateDataContext(ContextTemplate):
+class HSPBranchStateDataContext(ContextWhitelistable):
     """Context type for HSP branch state data.
     """
-    class InitParameters(ParametersTemplate):
+    class InitParameters(ParametersWhitelistable):
         PARAMETERS = {
                 'num_branches': (c.c_size_t, lambda v: c.c_size_t(v)),
                 'selector_fn': ...,
@@ -128,10 +128,10 @@ class HSPBranchStateDataContext(ContextTemplate):
             }
 
 
-class HSPTransitionAttachmentDataContext(ContextTemplate):
+class HSPTransitionAttachmentDataContext(ContextWhitelistable):
     """Context type for HSP transition attachment data.
     """
-    class InitParameters(ParametersTemplate):
+    class InitParameters(ParametersWhitelistable):
         PARAMETERS = {
                 'pre_function': ...,
                 'pre_data': ...,
@@ -164,7 +164,7 @@ class HSPTransitionAttachmentDataContext(ContextTemplate):
 class HashmapContext(Context):
     """Context type for hashmaps.
     """
-    class InitParameters(ParametersTemplate):
+    class InitParameters(ParametersWhitelistable):
         PARAMETERS = {
                 'params': 'archi.hashmap.alloc_params',
                 'capacity': (c.c_size_t, lambda v: c.c_size_t(v)),
@@ -196,10 +196,10 @@ class HashmapContext(Context):
 
 ###############################################################################
 
-class LockFreeQueueContext(ContextTemplate):
+class LockFreeQueueContext(ContextWhitelistable):
     """Context type for lock-free queues.
     """
-    class InitParameters(ParametersTemplate):
+    class InitParameters(ParametersWhitelistable):
         PARAMETERS = {
                 'params': 'archi.lfqueue.alloc_params',
                 'capacity_log2': (c.c_size_t, lambda v: c.c_size_t(v)),
@@ -221,10 +221,10 @@ class LockFreeQueueContext(ContextTemplate):
 
 ###############################################################################
 
-class EnvVarContext(ContextTemplate):
+class EnvVarContext(ContextWhitelistable):
     """Context type for environmental variables.
     """
-    class InitParameters(ParametersTemplate):
+    class InitParameters(ParametersWhitelistable):
         PARAMETERS = {
                 'name': (str, lambda v: str(v)),
                 'default_value': (str, lambda v: str(v)),
@@ -238,10 +238,10 @@ class EnvVarContext(ContextTemplate):
 
 ###############################################################################
 
-class SignalHandlerContext(ContextTemplate):
+class SignalHandlerContext(ContextWhitelistable):
     """Context type for signal handlers.
     """
-    class InitParameters(ParametersTemplate):
+    class InitParameters(ParametersWhitelistable):
         PARAMETERS = {
                 'function': ...,
                 'data': ...,
@@ -267,7 +267,7 @@ class SignalHandlerContext(ContextTemplate):
 class SignalManagementContext(Context):
     """Context type for signal management contexts.
     """
-    class InitParameters(ParametersTemplate):
+    class InitParameters(ParametersWhitelistable):
         PARAMETERS = {
                 'signals': archi_signal_watch_set_t,
                 }
@@ -302,10 +302,10 @@ class SignalManagementContext(Context):
 
 ###############################################################################
 
-class MemoryContext(ContextTemplate):
+class MemoryContext(ContextWhitelistable):
     """Context type for memory objects.
     """
-    class InitParameters(ParametersTemplate):
+    class InitParameters(ParametersWhitelistable):
         PARAMETERS = {
                 'interface': 'archi.memory.interface',
                 'alloc_data': ...,
@@ -332,10 +332,10 @@ class MemoryContext(ContextTemplate):
             }
 
 
-class MemoryMappingContext(ContextTemplate):
+class MemoryMappingContext(ContextWhitelistable):
     """Context type for memory mappings.
     """
-    class InitParameters(ParametersTemplate):
+    class InitParameters(ParametersWhitelistable):
         PARAMETERS = {
                 'memory': 'archi.memory',
                 'map_data': ...,
@@ -344,7 +344,7 @@ class MemoryMappingContext(ContextTemplate):
                 'writeable': (c.c_byte, lambda v: c.c_byte(bool(v))),
                 }
 
-    class ActionCopyParameters(ParametersTemplate):
+    class ActionCopyParameters(ParametersWhitelistable):
         PARAMETERS = {
                 'source': ...,
                 'source_offset': (c.c_size_t, lambda v: c.c_size_t(v)),
@@ -372,10 +372,10 @@ class MemoryMappingContext(ContextTemplate):
 
 ###############################################################################
 
-class FileContext(ContextTemplate):
+class FileContext(ContextWhitelistable):
     """Context type for files.
     """
-    class InitParameters(ParametersTemplate):
+    class InitParameters(ParametersWhitelistable):
         PARAMETERS = {
                 'params': 'archi.file.open_params',
                 'size': (c.c_size_t, lambda v: c.c_size_t(v)),
@@ -390,7 +390,7 @@ class FileContext(ContextTemplate):
                 'mode': (c.c_int, lambda v: c.c_int(v)),
                 }
 
-    class ActionMapParameters(ParametersTemplate):
+    class ActionMapParameters(ParametersWhitelistable):
         PARAMETERS = {
                 'params': 'archi.file.map_params',
                 'size': (c.c_size_t, lambda v: c.c_size_t(v)),
@@ -421,7 +421,7 @@ class FileContext(ContextTemplate):
 class LibraryContext(Context):
     """Context type for shared libraries.
     """
-    class InitParameters(ParametersTemplate):
+    class InitParameters(ParametersWhitelistable):
         PARAMETERS = {
                 'params': 'archi.library.load_params',
                 'pathname': (str, lambda v: str(v)),
@@ -430,7 +430,7 @@ class LibraryContext(Context):
                 'flags': (c.c_int, lambda v: c.c_int(v)),
                 }
 
-    class ActionSymbolParameters(ParametersTemplate):
+    class ActionSymbolParameters(ParametersWhitelistable):
         PARAMETERS = {
                 'function': (c.c_byte, lambda v: c.c_byte(bool(v))),
                 'flags': (archi_pointer_flags_t, lambda v: archi_pointer_flags_t(v)),
@@ -474,10 +474,10 @@ class LibraryContext(Context):
 
 ###############################################################################
 
-class ThreadGroupContext(ContextTemplate):
+class ThreadGroupContext(ContextWhitelistable):
     """Context type for thread groups.
     """
-    class InitParameters(ParametersTemplate):
+    class InitParameters(ParametersWhitelistable):
         PARAMETERS = {
                 'params': 'archi.thread_group.start_params',
                 'num_threads': (c.c_size_t, lambda v: c.c_size_t(v)),
@@ -494,10 +494,10 @@ class ThreadGroupContext(ContextTemplate):
             }
 
 
-class ThreadGroupWorkContext(ContextTemplate):
+class ThreadGroupWorkContext(ContextWhitelistable):
     """Context type for thread group work description.
     """
-    class InitParameters(ParametersTemplate):
+    class InitParameters(ParametersWhitelistable):
         PARAMETERS = {
                 'function': ...,
                 'data': ...,
@@ -523,10 +523,10 @@ class ThreadGroupWorkContext(ContextTemplate):
             }
 
 
-class ThreadGroupCallbackContext(ContextTemplate):
+class ThreadGroupCallbackContext(ContextWhitelistable):
     """Context type for thread group callback description.
     """
-    class InitParameters(ParametersTemplate):
+    class InitParameters(ParametersWhitelistable):
         PARAMETERS = {
                 'function': ...,
                 'data': ...,
@@ -549,10 +549,10 @@ class ThreadGroupCallbackContext(ContextTemplate):
             }
 
 
-class ThreadGroupDispatchDataContext(ContextTemplate):
+class ThreadGroupDispatchDataContext(ContextWhitelistable):
     """Context type for thread group dispatch data.
     """
-    class InitParameters(ParametersTemplate):
+    class InitParameters(ParametersWhitelistable):
         PARAMETERS = {
                 'context': 'archi.thread_group',
                 'work': 'archi.thread_group.work',
@@ -585,10 +585,10 @@ class ThreadGroupDispatchDataContext(ContextTemplate):
 
 ###############################################################################
 
-class StringToNumberConverterContext(ContextTemplate):
+class StringToNumberConverterContext(ContextWhitelistable):
     """Context type for string-to-number converters.
     """
-    class InitParameters(ParametersTemplate):
+    class InitParameters(ParametersWhitelistable):
         PARAMETERS = {
                 'as_uchar': (str, lambda v: str(v)),
                 'as_ushort': (str, lambda v: str(v)),
@@ -611,15 +611,15 @@ class StringToNumberConverterContext(ContextTemplate):
 
 ###############################################################################
 
-class TimerContext(ContextTemplate):
+class TimerContext(ContextWhitelistable):
     """Context type for timers.
     """
-    class InitParameters(ParametersTemplate):
+    class InitParameters(ParametersWhitelistable):
         PARAMETERS = {
                 'name': (str, lambda v: str(v)),
                 }
 
-    class ActionResetParameters(ParametersTemplate):
+    class ActionResetParameters(ParametersWhitelistable):
         PARAMETERS = {}
 
     INTERFACE_SYMBOL = 'archi_context_timer_interface'

@@ -459,7 +459,7 @@ Context.INIT_PARAMETERS_CLASS = Parameters
 
 ###############################################################################
 
-class ParametersTemplate(Parameters):
+class ParametersWhitelistable(Parameters):
     """Representation of a parameter list with the fixed set of recognized parameters.
     """
     PARAMETERS = {}
@@ -482,7 +482,7 @@ class ParametersTemplate(Parameters):
         return descr if isinstance(descr, tuple) else (descr, None)
 
 
-class ContextTemplate(Context):
+class ContextWhitelistable(Context):
     """Representation of a context with the fixed set of recognized slots and actions.
     """
     CONTEXT_TYPE = ...
@@ -557,10 +557,10 @@ class ContextTemplate(Context):
 
 ###############################################################################
 
-class PointerContext(ContextTemplate):
+class PointerContext(ContextWhitelistable):
     """Built-in context type for pointers.
     """
-    class InitParameters(ParametersTemplate):
+    class InitParameters(ParametersWhitelistable):
         """Pointer context initialization parameters.
         """
         PARAMETERS = {
@@ -572,7 +572,7 @@ class PointerContext(ContextTemplate):
                 'element_alignment': (c.c_size_t, lambda v: c.c_size_t(v)),
                 }
 
-    class ActionCopyParameters(ParametersTemplate):
+    class ActionCopyParameters(ParametersWhitelistable):
         """Pointer 'copy' action parameters.
         """
         PARAMETERS = {
@@ -607,10 +607,10 @@ class PointerContext(ContextTemplate):
             }
 
 
-class ArrayContext(ContextTemplate):
+class ArrayContext(ContextWhitelistable):
     """Built-in context type for arrays of pointers.
     """
-    class InitParameters(ParametersTemplate):
+    class InitParameters(ParametersWhitelistable):
         """Array context initialization parameters.
         """
         PARAMETERS = {

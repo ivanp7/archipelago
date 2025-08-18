@@ -85,7 +85,7 @@ ARCHI_CONTEXT_GET_FUNC(archi_context_opencl_event_array_get)
             },
         };
     }
-    else if (strcmp("event", slot.name) == 0)
+    else if (strcmp("event_ptr", slot.name) == 0)
     {
         if (slot.num_indices != 1)
             return ARCHI_STATUS_EMISUSE;
