@@ -19,42 +19,5 @@
  #############################################################################
 
 # @file
-# @brief Built-in context types in Archipelago executable.
-
-from ..app import Context, Parameters
-
-
-BUILTIN_CONTEXT_REGISTRY = ('archi.registry', HashmapContext)
-BUILTIN_CONTEXT_EXECUTABLE = ('archi.executable', ExecutableContext)
-BUILTIN_CONTEXT_INPUT_FILE = ('archi.input_file', FileContext)
-BUILTIN_CONTEXT_SIGNAL = ('archi.signal', SignalManagementContext)
-
-# TODO
-
-# archi_context_memory_interface
-# archi_context_memory_mapping_interface
-
-# archi_context_hsp_frame_interface
-# archi_context_hsp_transition_interface
-# archi_context_hsp_branch_state_data_interface
-# archi_context_hsp_transition_attachment_data_interface
-
-# archi_context_convert_string_to_number_interface
-
-# archi_context_timer_interface
-
-# archi_context_hashmap_interface
-# archi_context_lfqueue_interface
-
-# archi_context_envvar_interface
-# archi_context_signal_handler_interface
-# archi_context_signal_management_interface
-
-# archi_context_file_interface
-# archi_context_library_interface
-
-# archi_context_thread_group_interface
-# archi_context_thread_group_work_interface
-# archi_context_thread_group_callback_interface
-# archi_context_thread_group_dispatch_data_interface
+# @brief Python package initialization file.
 

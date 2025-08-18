@@ -19,55 +19,29 @@
  #############################################################################
 
 # @file
-# @brief Utilities for file generation scripts.
+# @brief C types for Archipelago executable input files.
+
+import ctypes as c
+
+from .base import archi_parameter_list_t
 
 
-def eprint(*args, **kwargs):
-    """Print to standard error.
+class archi_file_header_t(c.Structure):
+    """Header of a memory-mapped file.
     """
-    import sys
+    _fields_ = [('addr', c.c_void_p),
+                ('end', c.c_void_p)]
 
-    print(*args, file=sys.stderr, **kwargs)
 
-
-def random_map_address() -> 'int':
-    """Generate random map address.
+class archi_exe_input_file_header_t(c.Structure):
+    """Description of an input file for the executable.
     """
-    import random
+    MAGIC = "[archi]"
 
-    return 0x7f0000000000 + (random.randrange(0, 0x10000000000) & 0xfffffff000)
+    _fields_ = [('header', archi_file_header_t),
+                ('magic', c.c_char * 8),
+                ('contents', c.POINTER(archi_parameter_list_t))]
 
-
-def dump_file(file_object: 'File', mapaddr: 'int', pathname: 'str' = None):
-    """Dump File contents into a file or standard output.
-    """
-    import sys
-
-    file_memory = file_object.memory()
-    file_memory.pack() # get rid of padding bytes where possible
-
-    file_memory_buffer = file_memory.fossilize(mapaddr)
-
-    # Write the file
-    if pathname is not None:
-        with open(pathname, mode='wb') as file:
-            file.write(file_memory_buffer)
-    else:
-        sys.stdout.buffer.write(file_memory_buffer)
-        sys.stdout.flush()
-
-    # Report the sizes
-    file_size_b = file_memory.size()
-    file_size_kib = file_size_b / 1024
-    file_size_mib = file_size_kib / 1024
-    file_size_gib = file_size_mib / 1024
-
-    file_padding_b = file_memory.padding()
-    file_padding_kib = file_padding_b / 1024
-    file_padding_mib = file_padding_kib / 1024
-
-    eprint(f"Wrote {file_size_b} bytes ({file_size_kib:.1f} KiB, {file_size_mib:.1f} MiB, \
-{file_size_gib:.1f} GiB) to {f"'{pathname}'" if pathname is not None else "<stdout>"},")
-    eprint(f"including {file_padding_b} padding bytes ({file_padding_kib:.1f} KiB, {file_padding_mib:.1f} MiB)")
-    eprint()
+    def __init__(self):
+        self.magic = type(self).MAGIC.encode() + b'\x00'
 
