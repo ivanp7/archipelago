@@ -806,6 +806,12 @@ class Registry:
         self._contexts[key] = context
         return context
 
+    def new_context(self, value, /, key: 'str') -> 'Context':
+        """Create a new context and return it.
+        """
+        self[key] = value
+        return self[key]
+
     @contextmanager
     def del_context(self, key: 'str'):
         """Context manager for automatically deleting an existing context.
