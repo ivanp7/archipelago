@@ -61,35 +61,38 @@ archi_exe_registry_instr_sizeof(
 
     switch (instruction->type)
     {
-        case ARCHI_EXE_REGISTRY_INSTR_INIT_FROM_CONTEXT:
-            return sizeof(archi_exe_registry_instr_init_from_context_t);
+        case ARCHI_EXE_REGISTRY_INSTR__DELETE:
+            return sizeof(archi_exe_registry_instr__delete_t);
 
-        case ARCHI_EXE_REGISTRY_INSTR_INIT_FROM_SLOT:
-            return sizeof(archi_exe_registry_instr_init_from_slot_t);
+        case ARCHI_EXE_REGISTRY_INSTR__COPY:
+            return sizeof(archi_exe_registry_instr__copy_t);
 
-        case ARCHI_EXE_REGISTRY_INSTR_INIT_POINTER:
-            return sizeof(archi_exe_registry_instr_init_pointer_t);
+        case ARCHI_EXE_REGISTRY_INSTR__INIT_PARAMETERS:
+            return sizeof(archi_exe_registry_instr__init_parameters_t);
 
-        case ARCHI_EXE_REGISTRY_INSTR_INIT_ARRAY:
-            return sizeof(archi_exe_registry_instr_init_array_t);
+        case ARCHI_EXE_REGISTRY_INSTR__INIT_POINTER:
+            return sizeof(archi_exe_registry_instr__init_pointer_t);
 
-        case ARCHI_EXE_REGISTRY_INSTR_COPY:
-            return sizeof(archi_exe_registry_instr_copy_t);
+        case ARCHI_EXE_REGISTRY_INSTR__INIT_ARRAY:
+            return sizeof(archi_exe_registry_instr__init_array_t);
 
-        case ARCHI_EXE_REGISTRY_INSTR_DELETE:
-            return sizeof(archi_exe_registry_instr_delete_t);
+        case ARCHI_EXE_REGISTRY_INSTR__INIT_FROM_CONTEXT:
+            return sizeof(archi_exe_registry_instr__init_from_context_t);
 
-        case ARCHI_EXE_REGISTRY_INSTR_SET_TO_VALUE:
-            return sizeof(archi_exe_registry_instr_set_to_value_t);
+        case ARCHI_EXE_REGISTRY_INSTR__INIT_FROM_SLOT:
+            return sizeof(archi_exe_registry_instr__init_from_slot_t);
 
-        case ARCHI_EXE_REGISTRY_INSTR_SET_TO_CONTEXT_DATA:
-            return sizeof(archi_exe_registry_instr_set_to_context_data_t);
+        case ARCHI_EXE_REGISTRY_INSTR__SET_TO_VALUE:
+            return sizeof(archi_exe_registry_instr__set_to_value_t);
 
-        case ARCHI_EXE_REGISTRY_INSTR_SET_TO_CONTEXT_SLOT:
-            return sizeof(archi_exe_registry_instr_set_to_context_slot_t);
+        case ARCHI_EXE_REGISTRY_INSTR__SET_TO_CONTEXT_DATA:
+            return sizeof(archi_exe_registry_instr__set_to_context_data_t);
 
-        case ARCHI_EXE_REGISTRY_INSTR_ACT:
-            return sizeof(archi_exe_registry_instr_act_t);
+        case ARCHI_EXE_REGISTRY_INSTR__SET_TO_CONTEXT_SLOT:
+            return sizeof(archi_exe_registry_instr__set_to_context_slot_t);
+
+        case ARCHI_EXE_REGISTRY_INSTR__ACT:
+            return sizeof(archi_exe_registry_instr__act_t);
 
         default:
             return sizeof(archi_exe_registry_instr_base_t);
@@ -476,12 +479,95 @@ archi_exe_registry_instr_prepare_params(
 }
 
 ///////////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////
 
 static
 archi_status_t
-archi_exe_registry_instr_execute_init_from_context(
+archi_exe_registry_instr_execute__delete(
         archi_context_t registry,
-        const archi_exe_registry_instr_init_from_context_t *instruction,
+        const archi_exe_registry_instr__delete_t *instruction,
+        archi_reference_count_t ref_count,
+        bool dry_run,
+        bool logging)
+{
+    (void) ref_count;
+
+    // Print the instruction details
+    if (logging)
+    {
+        archi_print_key("key", instruction->key);
+
+        archi_print_color(ARCHI_COLOR_RESET);
+        archi_print_unlock();
+    }
+
+    if (dry_run)
+        return 0;
+
+    if ((instruction->key == NULL) || (instruction->key[0] == '\0'))
+        return ARCHI_STATUS_EMISUSE;
+
+    // Remove the context from the registry, which also decrements the reference count
+    archi_status_t code = archi_context_set_slot(registry,
+            (archi_context_slot_t){.name = instruction->key}, (archi_pointer_t){0});
+    if (code != 1)
+        code = ARCHI_STATUS_TO_ERROR(code);
+
+    return code;
+}
+
+static
+archi_status_t
+archi_exe_registry_instr_execute__copy(
+        archi_context_t registry,
+        const archi_exe_registry_instr__copy_t *instruction,
+        archi_reference_count_t ref_count,
+        bool dry_run,
+        bool logging)
+{
+    (void) ref_count;
+
+    // Print the instruction details
+    if (logging)
+    {
+        archi_print_key("key", instruction->key);
+        archi_print_key("original_key", instruction->original_key);
+
+        archi_print_color(ARCHI_COLOR_RESET);
+        archi_print_unlock();
+    }
+
+    if (dry_run)
+        return 0;
+
+    if ((instruction->key == NULL) || (instruction->key[0] == '\0'))
+        return ARCHI_STATUS_EMISUSE;
+    else if ((instruction->original_key == NULL) || (instruction->original_key[0] == '\0'))
+        return ARCHI_STATUS_EMISUSE;
+
+    archi_status_t code;
+
+    // Obtain the context from the registry
+    archi_pointer_t context_value = archi_exe_registry_instr_get_context(
+            registry, instruction->original_key, &code);
+    if (code != 0)
+        return code;
+
+    // Insert the context to the registry, which also increments the reference count
+    code = archi_context_set_slot(registry,
+            (archi_context_slot_t){.name = instruction->key}, context_value);
+    code = ARCHI_STATUS_TO_ERROR(code);
+
+    return code;
+}
+
+///////////////////////////////////////////////////////////////////////////////
+
+static
+archi_status_t
+archi_exe_registry_instr_execute__init_parameters(
+        archi_context_t registry,
+        const archi_exe_registry_instr__init_parameters_t *instruction,
         archi_reference_count_t ref_count,
         bool dry_run,
         bool logging)
@@ -490,7 +576,6 @@ archi_exe_registry_instr_execute_init_from_context(
     if (logging)
     {
         archi_print_key("key", instruction->key);
-        archi_print_key("interface_origin_key", instruction->interface_origin_key);
         archi_print_key("dparams_key", instruction->dparams_key);
         archi_print_params("sparams", instruction->sparams);
 
@@ -512,28 +597,12 @@ archi_exe_registry_instr_execute_init_from_context(
         return code;
 
     // Obtain the context interface
-    archi_pointer_t interface_value;
-
-    if (instruction->interface_origin_key != NULL)
-    {
-        // Obtain the origin context from the registry
-        archi_pointer_t src_context_value = archi_exe_registry_instr_get_context(
-                registry, instruction->interface_origin_key, &code);
-        if (code != 0)
-            return code;
-
-        // Get context interface from the origin context
-        interface_value = archi_context_interface(src_context_value.ptr);
-    }
-    else // parameter list
-    {
-        interface_value = (archi_pointer_t){
-            .ptr = (void*)&archi_context_parameters_interface,
+    archi_pointer_t interface_value = {
+        .ptr = (void*)&archi_context_parameters_interface,
             .element = {
                 .num_of = 1,
             },
-        };
-    }
+    };
 
     // Prepare the context initialization parameter list
     struct archi_exe_registry_instr_params params = archi_exe_registry_instr_prepare_params(
@@ -551,75 +620,9 @@ archi_exe_registry_instr_execute_init_from_context(
 
 static
 archi_status_t
-archi_exe_registry_instr_execute_init_from_slot(
+archi_exe_registry_instr_execute__init_pointer(
         archi_context_t registry,
-        const archi_exe_registry_instr_init_from_slot_t *instruction,
-        archi_reference_count_t ref_count,
-        bool dry_run,
-        bool logging)
-{
-    // Print the instruction details
-    if (logging)
-    {
-        archi_print_key("key", instruction->key);
-        archi_print_key("interface_origin_key", instruction->interface_origin_key);
-        archi_print_slot("interface_origin_slot", instruction->interface_origin_slot);
-        archi_print_key("dparams_key", instruction->dparams_key);
-        archi_print_params("sparams", instruction->sparams);
-
-        archi_print_color(ARCHI_COLOR_RESET);
-        archi_print_unlock();
-    }
-
-    if (dry_run)
-        return 0;
-
-    if ((instruction->key == NULL) || (instruction->key[0] == '\0'))
-        return ARCHI_STATUS_EMISUSE;
-
-    archi_status_t code;
-
-    // Check early if the context key exists already
-    code = archi_exe_registry_instr_check_context(registry, instruction->key);
-    if (code != 0)
-        return code;
-
-    // Obtain the context interface
-    archi_pointer_t interface_value;
-    {
-        // Obtain the origin context from the registry
-        archi_pointer_t src_context_value = archi_exe_registry_instr_get_context(
-                registry, instruction->interface_origin_key, &code);
-        if (code != 0)
-            return code;
-
-        // Get context interface from the origin context slot
-        interface_value = archi_context_get_slot(src_context_value.ptr,
-                instruction->interface_origin_slot, &code);
-
-        if (code != 0)
-            return ARCHI_STATUS_TO_ERROR(code);
-    }
-
-    // Prepare the context initialization parameter list
-    struct archi_exe_registry_instr_params params = archi_exe_registry_instr_prepare_params(
-            registry, instruction->dparams_key, instruction->sparams, ref_count, &code);
-    if (code != 0)
-        return code;
-
-    // Initialize the context and add it to the registry
-    code = archi_exe_registry_instr_add_context(registry, instruction->key, interface_value, params);
-
-    archi_exe_registry_instr_params_free(params.params, params.dparams);
-
-    return code;
-}
-
-static
-archi_status_t
-archi_exe_registry_instr_execute_init_pointer(
-        archi_context_t registry,
-        const archi_exe_registry_instr_init_pointer_t *instruction,
+        const archi_exe_registry_instr__init_pointer_t *instruction,
         archi_reference_count_t ref_count,
         bool dry_run,
         bool logging)
@@ -678,9 +681,9 @@ archi_exe_registry_instr_execute_init_pointer(
 
 static
 archi_status_t
-archi_exe_registry_instr_execute_init_array(
+archi_exe_registry_instr_execute__init_array(
         archi_context_t registry,
-        const archi_exe_registry_instr_init_array_t *instruction,
+        const archi_exe_registry_instr__init_array_t *instruction,
         archi_reference_count_t ref_count,
         bool dry_run,
         bool logging)
@@ -742,22 +745,24 @@ archi_exe_registry_instr_execute_init_array(
     return code;
 }
 
+///////////////////////////////////////////////////////////////////////////////
+
 static
 archi_status_t
-archi_exe_registry_instr_execute_copy(
+archi_exe_registry_instr_execute__init_from_context(
         archi_context_t registry,
-        const archi_exe_registry_instr_copy_t *instruction,
+        const archi_exe_registry_instr__init_from_context_t *instruction,
         archi_reference_count_t ref_count,
         bool dry_run,
         bool logging)
 {
-    (void) ref_count;
-
     // Print the instruction details
     if (logging)
     {
         archi_print_key("key", instruction->key);
-        archi_print_key("original_key", instruction->original_key);
+        archi_print_key("interface_origin_key", instruction->interface_origin_key);
+        archi_print_key("dparams_key", instruction->dparams_key);
+        archi_print_params("sparams", instruction->sparams);
 
         archi_print_color(ARCHI_COLOR_RESET);
         archi_print_unlock();
@@ -767,41 +772,59 @@ archi_exe_registry_instr_execute_copy(
         return 0;
 
     if ((instruction->key == NULL) || (instruction->key[0] == '\0'))
-        return ARCHI_STATUS_EMISUSE;
-    else if ((instruction->original_key == NULL) || (instruction->original_key[0] == '\0'))
         return ARCHI_STATUS_EMISUSE;
 
     archi_status_t code;
 
-    // Obtain the context from the registry
-    archi_pointer_t context_value = archi_exe_registry_instr_get_context(
-            registry, instruction->original_key, &code);
+    // Check early if the context key exists already
+    code = archi_exe_registry_instr_check_context(registry, instruction->key);
     if (code != 0)
         return code;
 
-    // Insert the context to the registry, which also increments the reference count
-    code = archi_context_set_slot(registry,
-            (archi_context_slot_t){.name = instruction->key}, context_value);
-    code = ARCHI_STATUS_TO_ERROR(code);
+    // Obtain the context interface
+    archi_pointer_t interface_value;
+    {
+        // Obtain the origin context from the registry
+        archi_pointer_t src_context_value = archi_exe_registry_instr_get_context(
+                registry, instruction->interface_origin_key, &code);
+        if (code != 0)
+            return code;
+
+        // Get context interface from the origin context
+        interface_value = archi_context_interface(src_context_value.ptr);
+    }
+
+    // Prepare the context initialization parameter list
+    struct archi_exe_registry_instr_params params = archi_exe_registry_instr_prepare_params(
+            registry, instruction->dparams_key, instruction->sparams, ref_count, &code);
+    if (code != 0)
+        return code;
+
+    // Initialize the context and add it to the registry
+    code = archi_exe_registry_instr_add_context(registry, instruction->key, interface_value, params);
+
+    archi_exe_registry_instr_params_free(params.params, params.dparams);
 
     return code;
 }
 
 static
 archi_status_t
-archi_exe_registry_instr_execute_delete(
+archi_exe_registry_instr_execute__init_from_slot(
         archi_context_t registry,
-        const archi_exe_registry_instr_delete_t *instruction,
+        const archi_exe_registry_instr__init_from_slot_t *instruction,
         archi_reference_count_t ref_count,
         bool dry_run,
         bool logging)
 {
-    (void) ref_count;
-
     // Print the instruction details
     if (logging)
     {
         archi_print_key("key", instruction->key);
+        archi_print_key("interface_origin_key", instruction->interface_origin_key);
+        archi_print_slot("interface_origin_slot", instruction->interface_origin_slot);
+        archi_print_key("dparams_key", instruction->dparams_key);
+        archi_print_params("sparams", instruction->sparams);
 
         archi_print_color(ARCHI_COLOR_RESET);
         archi_print_unlock();
@@ -813,20 +836,51 @@ archi_exe_registry_instr_execute_delete(
     if ((instruction->key == NULL) || (instruction->key[0] == '\0'))
         return ARCHI_STATUS_EMISUSE;
 
-    // Remove the context from the registry, which also decrements the reference count
-    archi_status_t code = archi_context_set_slot(registry,
-            (archi_context_slot_t){.name = instruction->key}, (archi_pointer_t){0});
-    if (code != 1)
-        code = ARCHI_STATUS_TO_ERROR(code);
+    archi_status_t code;
+
+    // Check early if the context key exists already
+    code = archi_exe_registry_instr_check_context(registry, instruction->key);
+    if (code != 0)
+        return code;
+
+    // Obtain the context interface
+    archi_pointer_t interface_value;
+    {
+        // Obtain the origin context from the registry
+        archi_pointer_t src_context_value = archi_exe_registry_instr_get_context(
+                registry, instruction->interface_origin_key, &code);
+        if (code != 0)
+            return code;
+
+        // Get context interface from the origin context slot
+        interface_value = archi_context_get_slot(src_context_value.ptr,
+                instruction->interface_origin_slot, &code);
+
+        if (code != 0)
+            return ARCHI_STATUS_TO_ERROR(code);
+    }
+
+    // Prepare the context initialization parameter list
+    struct archi_exe_registry_instr_params params = archi_exe_registry_instr_prepare_params(
+            registry, instruction->dparams_key, instruction->sparams, ref_count, &code);
+    if (code != 0)
+        return code;
+
+    // Initialize the context and add it to the registry
+    code = archi_exe_registry_instr_add_context(registry, instruction->key, interface_value, params);
+
+    archi_exe_registry_instr_params_free(params.params, params.dparams);
 
     return code;
 }
 
+///////////////////////////////////////////////////////////////////////////////
+
 static
 archi_status_t
-archi_exe_registry_instr_execute_set_to_value(
+archi_exe_registry_instr_execute__set_to_value(
         archi_context_t registry,
-        const archi_exe_registry_instr_set_to_value_t *instruction,
+        const archi_exe_registry_instr__set_to_value_t *instruction,
         archi_reference_count_t ref_count,
         bool dry_run,
         bool logging)
@@ -872,9 +926,9 @@ archi_exe_registry_instr_execute_set_to_value(
 
 static
 archi_status_t
-archi_exe_registry_instr_execute_set_to_context_data(
+archi_exe_registry_instr_execute__set_to_context_data(
         archi_context_t registry,
-        const archi_exe_registry_instr_set_to_context_data_t *instruction,
+        const archi_exe_registry_instr__set_to_context_data_t *instruction,
         archi_reference_count_t ref_count,
         bool dry_run,
         bool logging)
@@ -924,9 +978,9 @@ archi_exe_registry_instr_execute_set_to_context_data(
 
 static
 archi_status_t
-archi_exe_registry_instr_execute_set_to_context_slot(
+archi_exe_registry_instr_execute__set_to_context_slot(
         archi_context_t registry,
-        const archi_exe_registry_instr_set_to_context_slot_t *instruction,
+        const archi_exe_registry_instr__set_to_context_slot_t *instruction,
         archi_reference_count_t ref_count,
         bool dry_run,
         bool logging)
@@ -975,11 +1029,13 @@ archi_exe_registry_instr_execute_set_to_context_slot(
     return code;
 }
 
+///////////////////////////////////////////////////////////////////////////////
+
 static
 archi_status_t
-archi_exe_registry_instr_execute_act(
+archi_exe_registry_instr_execute__act(
         archi_context_t registry,
-        const archi_exe_registry_instr_act_t *instruction,
+        const archi_exe_registry_instr__act_t *instruction,
         archi_reference_count_t ref_count,
         bool dry_run,
         bool logging)
@@ -1026,6 +1082,7 @@ archi_exe_registry_instr_execute_act(
 }
 
 ///////////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////
 
 archi_status_t
 archi_exe_registry_instr_execute(
@@ -1044,7 +1101,7 @@ archi_exe_registry_instr_execute(
 
     archi_print("\n");
 
-    if ((instruction == NULL) || (instruction->type == ARCHI_EXE_REGISTRY_INSTR_NOOP))
+    if ((instruction == NULL) || (instruction->type == ARCHI_EXE_REGISTRY_INSTR__NOOP))
     {
         if (logging)
         {
@@ -1060,23 +1117,24 @@ archi_exe_registry_instr_execute(
     archi_status_t code;
 
 #define INSTRUCTION(type, name)                                                 \
-        case ARCHI_EXE_REGISTRY_INSTR_##type:                                   \
+        case ARCHI_EXE_REGISTRY_INSTR__##type:                                  \
             if (logging)                                                        \
                 archi_print(" [" #type "]\n");                                  \
                                                                                 \
-            code = archi_exe_registry_instr_execute_##name(registry,            \
-                    (const archi_exe_registry_instr_##name##_t*)instruction,    \
+            code = archi_exe_registry_instr_execute__##name(registry,           \
+                    (const archi_exe_registry_instr__##name##_t*)instruction,   \
                     ref_count, dry_run, logging);                               \
             break
 
     switch (instruction->type)
     {
-        INSTRUCTION(INIT_FROM_CONTEXT, init_from_context);
-        INSTRUCTION(INIT_FROM_SLOT, init_from_slot);
+        INSTRUCTION(DELETE, delete);
+        INSTRUCTION(COPY, copy);
+        INSTRUCTION(INIT_PARAMETERS, init_parameters);
         INSTRUCTION(INIT_POINTER, init_pointer);
         INSTRUCTION(INIT_ARRAY, init_array);
-        INSTRUCTION(COPY, copy);
-        INSTRUCTION(DELETE, delete);
+        INSTRUCTION(INIT_FROM_CONTEXT, init_from_context);
+        INSTRUCTION(INIT_FROM_SLOT, init_from_slot);
         INSTRUCTION(SET_TO_VALUE, set_to_value);
         INSTRUCTION(SET_TO_CONTEXT_DATA, set_to_context_data);
         INSTRUCTION(SET_TO_CONTEXT_SLOT, set_to_context_slot);

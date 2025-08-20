@@ -278,16 +278,17 @@ class _RegistryMarshaller(_Marshaller):
         from .app import Registry
         from .ctypes.instruction import (
                 archi_exe_registry_instr_base_t,
-                archi_exe_registry_instr_init_from_context_t,
-                archi_exe_registry_instr_init_from_slot_t,
-                archi_exe_registry_instr_init_pointer_t,
-                archi_exe_registry_instr_init_array_t,
-                archi_exe_registry_instr_copy_t,
-                archi_exe_registry_instr_delete_t,
-                archi_exe_registry_instr_set_to_value_t,
-                archi_exe_registry_instr_set_to_context_data_t,
-                archi_exe_registry_instr_set_to_context_slot_t,
-                archi_exe_registry_instr_act_t,
+                archi_exe_registry_instr__delete_t,
+                archi_exe_registry_instr__copy_t,
+                archi_exe_registry_instr__init_parameters_t,
+                archi_exe_registry_instr__init_pointer_t,
+                archi_exe_registry_instr__init_array_t,
+                archi_exe_registry_instr__init_from_context_t,
+                archi_exe_registry_instr__init_from_slot_t,
+                archi_exe_registry_instr__set_to_value_t,
+                archi_exe_registry_instr__set_to_context_data_t,
+                archi_exe_registry_instr__set_to_context_slot_t,
+                archi_exe_registry_instr__act_t,
                 )
 
         InstructionType = Registry._Instruction.Type
@@ -298,8 +299,69 @@ class _RegistryMarshaller(_Marshaller):
 
             callback_instr = None
 
+        elif instruction.type() == InstructionType.DELETE.value:
+            instr = archi_exe_registry_instr__delete_t()
+            instr.base.type = instruction.type()
+
+            block_key = self._marshal_string(instruction['key'])
+
+            def callback_instr(instr):
+                instr.key = block_key.memory_address()
+
+        elif instruction.type() == InstructionType.COPY.value:
+            instr = archi_exe_registry_instr__copy_t()
+            instr.base.type = instruction.type()
+
+            block_key = self._marshal_string(instruction['key'])
+            block_original_key = self._marshal_string(instruction['original_key'])
+
+            def callback_instr(instr):
+                instr.key = block_key.memory_address()
+                instr.original_key = block_original_key.memory_address()
+
+        elif instruction.type() == InstructionType.INIT_PARAMETERS.value:
+            instr = archi_exe_registry_instr__init_parameters_t()
+            instr.base.type = instruction.type()
+
+            block_key = self._marshal_string(instruction['key'])
+            block_dparams_key = self._marshal_string(instruction['dparams_key'])
+            block_sparams = self._marshal_parameter_list(instruction['sparams'])
+
+            def callback_instr(instr):
+                instr.key = block_key.memory_address()
+                if block_dparams_key is not None:
+                    instr.dparams_key = block_dparams_key.memory_address()
+                if block_sparams is not None:
+                    instr.sparams = c.cast(block_sparams.memory_address(), type(instr.sparams))
+
+        elif instruction.type() == InstructionType.INIT_POINTER.value:
+            instr = archi_exe_registry_instr__init_pointer_t()
+            instr.base.type = instruction.type()
+            if instruction['value'] is not None:
+                instr.value = _Marshaller._init_pointer(instruction['value'])
+
+            block_key = self._marshal_string(instruction['key'])
+            block_value = self._marshal_value(instruction['value'])
+
+            def callback_instr(instr):
+                instr.key = block_key.memory_address()
+                if block_value is not None:
+                    instr.value.ptr = block_value.memory_address()
+
+        elif instruction.type() == InstructionType.INIT_ARRAY.value:
+            instr = archi_exe_registry_instr__init_array_t()
+            instr.base.type = instruction.type()
+            instr.num_elements = instruction['num_elements']
+            if instruction['flags'] is not None:
+                instr.flags = instruction['flags']
+
+            block_key = self._marshal_string(instruction['key'])
+
+            def callback_instr(instr):
+                instr.key = block_key.memory_address()
+
         elif instruction.type() == InstructionType.INIT_FROM_CONTEXT.value:
-            instr = archi_exe_registry_instr_init_from_context_t()
+            instr = archi_exe_registry_instr__init_from_context_t()
             instr.base.type = instruction.type()
 
             block_key = self._marshal_string(instruction['key'])
@@ -309,15 +371,14 @@ class _RegistryMarshaller(_Marshaller):
 
             def callback_instr(instr):
                 instr.key = block_key.memory_address()
-                if block_interface_origin_key is not None:
-                    instr.interface_origin_key = block_interface_origin_key.memory_address()
+                instr.interface_origin_key = block_interface_origin_key.memory_address()
                 if block_dparams_key is not None:
                     instr.dparams_key = block_dparams_key.memory_address()
                 if block_sparams is not None:
                     instr.sparams = c.cast(block_sparams.memory_address(), type(instr.sparams))
 
         elif instruction.type() == InstructionType.INIT_FROM_SLOT.value:
-            instr = archi_exe_registry_instr_init_from_slot_t()
+            instr = archi_exe_registry_instr__init_from_slot_t()
             instr.base.type = instruction.type()
             instr.interface_origin_slot.num_indices = len(instruction['interface_origin_slot_indices'])
 
@@ -340,54 +401,8 @@ class _RegistryMarshaller(_Marshaller):
                 if block_sparams is not None:
                     instr.sparams = c.cast(block_sparams.memory_address(), type(instr.sparams))
 
-        elif instruction.type() == InstructionType.INIT_POINTER.value:
-            instr = archi_exe_registry_instr_init_pointer_t()
-            instr.base.type = instruction.type()
-            if instruction['value'] is not None:
-                instr.value = _Marshaller._init_pointer(instruction['value'])
-
-            block_key = self._marshal_string(instruction['key'])
-            block_value = self._marshal_value(instruction['value'])
-
-            def callback_instr(instr):
-                instr.key = block_key.memory_address()
-                if block_value is not None:
-                    instr.value.ptr = block_value.memory_address()
-
-        elif instruction.type() == InstructionType.INIT_ARRAY.value:
-            instr = archi_exe_registry_instr_init_array_t()
-            instr.base.type = instruction.type()
-            instr.num_elements = instruction['num_elements']
-            if instruction['flags'] is not None:
-                instr.flags = instruction['flags']
-
-            block_key = self._marshal_string(instruction['key'])
-
-            def callback_instr(instr):
-                instr.key = block_key.memory_address()
-
-        elif instruction.type() == InstructionType.COPY.value:
-            instr = archi_exe_registry_instr_copy_t()
-            instr.base.type = instruction.type()
-
-            block_key = self._marshal_string(instruction['key'])
-            block_original_key = self._marshal_string(instruction['original_key'])
-
-            def callback_instr(instr):
-                instr.key = block_key.memory_address()
-                instr.original_key = block_original_key.memory_address()
-
-        elif instruction.type() == InstructionType.DELETE.value:
-            instr = archi_exe_registry_instr_delete_t()
-            instr.base.type = instruction.type()
-
-            block_key = self._marshal_string(instruction['key'])
-
-            def callback_instr(instr):
-                instr.key = block_key.memory_address()
-
         elif instruction.type() == InstructionType.SET_TO_VALUE.value:
-            instr = archi_exe_registry_instr_set_to_value_t()
+            instr = archi_exe_registry_instr__set_to_value_t()
             instr.base.type = instruction.type()
             instr.slot.num_indices = len(instruction['slot_indices'])
             if instruction['value'] is not None:
@@ -407,7 +422,7 @@ class _RegistryMarshaller(_Marshaller):
                     instr.value.ptr = block_value.memory_address()
 
         elif instruction.type() == InstructionType.SET_TO_CONTEXT_DATA.value:
-            instr = archi_exe_registry_instr_set_to_context_data_t()
+            instr = archi_exe_registry_instr__set_to_context_data_t()
             instr.base.type = instruction.type()
             instr.slot.num_indices = len(instruction['slot_indices'])
 
@@ -424,7 +439,7 @@ class _RegistryMarshaller(_Marshaller):
                 instr.source_key = block_source_key.memory_address()
 
         elif instruction.type() == InstructionType.SET_TO_CONTEXT_SLOT.value:
-            instr = archi_exe_registry_instr_set_to_context_slot_t()
+            instr = archi_exe_registry_instr__set_to_context_slot_t()
             instr.base.type = instruction.type()
             instr.slot.num_indices = len(instruction['slot_indices'])
             instr.source_slot.num_indices = len(instruction['source_slot_indices'])
@@ -447,7 +462,7 @@ class _RegistryMarshaller(_Marshaller):
                     instr.source_slot.index = c.cast(block_source_slot_indices.memory_address(), type(instr.source_slot.index))
 
         elif instruction.type() == InstructionType.ACT.value:
-            instr = archi_exe_registry_instr_act_t()
+            instr = archi_exe_registry_instr__act_t()
             instr.base.type = instruction.type()
             instr.action.num_indices = len(instruction['action_indices'])
 

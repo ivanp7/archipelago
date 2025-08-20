@@ -709,12 +709,13 @@ class Registry:
             """Enumeration of supported instruction types.
             """
             NOOP = 0
-            INIT_FROM_CONTEXT = enum.auto()
-            INIT_FROM_SLOT = enum.auto()
+            DELETE = enum.auto()
+            COPY = enum.auto()
+            INIT_PARAMETERS = enum.auto()
             INIT_POINTER = enum.auto()
             INIT_ARRAY = enum.auto()
-            COPY = enum.auto()
-            DELETE = enum.auto()
+            INIT_FROM_CONTEXT = enum.auto()
+            INIT_FROM_SLOT = enum.auto()
             SET_TO_VALUE = enum.auto()
             SET_TO_CONTEXT_DATA = enum.auto()
             SET_TO_CONTEXT_SLOT = enum.auto()
@@ -897,9 +898,8 @@ class Registry:
         if isinstance(entity, Parameters):
             self._with_params(entity, lambda dparams_key, sparams:
                               self._instruct(
-                                  Registry._Instruction.Type.INIT_FROM_CONTEXT,
+                                  Registry._Instruction.Type.INIT_PARAMETERS,
                                   key=key,
-                                  interface_origin_key=None,
                                   dparams_key=dparams_key,
                                   sparams=sparams))
 
@@ -1041,9 +1041,8 @@ class Registry:
 
         else:
             self._instruct(
-                    Registry._Instruction.Type.INIT_FROM_CONTEXT,
+                    Registry._Instruction.Type.INIT_PARAMETERS,
                     key=params.temp_list_key(),
-                    interface_origin_key=None,
                     dparams_key=params.parent_list_key(),
                     sparams=params._params_static)
 

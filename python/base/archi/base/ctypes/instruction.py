@@ -44,7 +44,48 @@ archi_exe_registry_instr_list_t._fields_ = \
 
 ###############################################################################
 
-class archi_exe_registry_instr_init_from_context_t(c.Structure):
+class archi_exe_registry_instr__delete_t(c.Structure):
+    """Context registry instruction: delete a context from registry.
+    """
+    _fields_ = [('base', archi_exe_registry_instr_base_t),
+                ('key', c.c_char_p)]
+
+
+class archi_exe_registry_instr__copy_t(c.Structure):
+    """Context registry instruction: create a context alias.
+    """
+    _fields_ = [('base', archi_exe_registry_instr_base_t),
+                ('key', c.c_char_p),
+                ('original_key', c.c_char_p)]
+
+
+class archi_exe_registry_instr__init_parameters_t(c.Structure):
+    """Context registry instruction: initialize a new parameter list context.
+    """
+    _fields_ = [('base', archi_exe_registry_instr_base_t),
+                ('key', c.c_char_p),
+                ('dparams_key', c.c_char_p),
+                ('sparams', c.POINTER(archi_parameter_list_t))]
+
+
+class archi_exe_registry_instr__init_pointer_t(c.Structure):
+    """Context registry instruction: initialize a new pointer context.
+    """
+    _fields_ = [('base', archi_exe_registry_instr_base_t),
+                ('key', c.c_char_p),
+                ('value', archi_pointer_t)]
+
+
+class archi_exe_registry_instr__init_array_t(c.Structure):
+    """Context registry instruction: initialize a new array context.
+    """
+    _fields_ = [('base', archi_exe_registry_instr_base_t),
+                ('key', c.c_char_p),
+                ('num_elements', c.c_size_t),
+                ('flags', archi_pointer_flags_t)]
+
+
+class archi_exe_registry_instr__init_from_context_t(c.Structure):
     """Context registry instruction: initialize a new context using interface of a source context.
     """
     _fields_ = [('base', archi_exe_registry_instr_base_t),
@@ -54,7 +95,7 @@ class archi_exe_registry_instr_init_from_context_t(c.Structure):
                 ('sparams', c.POINTER(archi_parameter_list_t))]
 
 
-class archi_exe_registry_instr_init_from_slot_t(c.Structure):
+class archi_exe_registry_instr__init_from_slot_t(c.Structure):
     """Context registry instruction: initialize a new context using interface from a context slot.
     """
     _fields_ = [('base', archi_exe_registry_instr_base_t),
@@ -65,39 +106,7 @@ class archi_exe_registry_instr_init_from_slot_t(c.Structure):
                 ('sparams', c.POINTER(archi_parameter_list_t))]
 
 
-class archi_exe_registry_instr_init_pointer_t(c.Structure):
-    """Context registry instruction: initialize a new pointer context.
-    """
-    _fields_ = [('base', archi_exe_registry_instr_base_t),
-                ('key', c.c_char_p),
-                ('value', archi_pointer_t)]
-
-
-class archi_exe_registry_instr_init_array_t(c.Structure):
-    """Context registry instruction: initialize a new array context.
-    """
-    _fields_ = [('base', archi_exe_registry_instr_base_t),
-                ('key', c.c_char_p),
-                ('num_elements', c.c_size_t),
-                ('flags', archi_pointer_flags_t)]
-
-
-class archi_exe_registry_instr_copy_t(c.Structure):
-    """Context registry instruction: create a context alias.
-    """
-    _fields_ = [('base', archi_exe_registry_instr_base_t),
-                ('key', c.c_char_p),
-                ('original_key', c.c_char_p)]
-
-
-class archi_exe_registry_instr_delete_t(c.Structure):
-    """Context registry instruction: delete a context from registry.
-    """
-    _fields_ = [('base', archi_exe_registry_instr_base_t),
-                ('key', c.c_char_p)]
-
-
-class archi_exe_registry_instr_set_to_value_t(c.Structure):
+class archi_exe_registry_instr__set_to_value_t(c.Structure):
     """Context registry instruction: set context slot to pointer to a value.
     """
     _fields_ = [('base', archi_exe_registry_instr_base_t),
@@ -106,7 +115,7 @@ class archi_exe_registry_instr_set_to_value_t(c.Structure):
                 ('value', archi_pointer_t)]
 
 
-class archi_exe_registry_instr_set_to_context_data_t(c.Structure):
+class archi_exe_registry_instr__set_to_context_data_t(c.Structure):
     """Context registry instruction: set context slot to pointer to a source context.
     """
     _fields_ = [('base', archi_exe_registry_instr_base_t),
@@ -115,7 +124,7 @@ class archi_exe_registry_instr_set_to_context_data_t(c.Structure):
                 ('source_key', c.c_char_p)]
 
 
-class archi_exe_registry_instr_set_to_context_slot_t(c.Structure):
+class archi_exe_registry_instr__set_to_context_slot_t(c.Structure):
     """Context registry instruction: set context slot to a source context slot.
     """
     _fields_ = [('base', archi_exe_registry_instr_base_t),
@@ -125,7 +134,7 @@ class archi_exe_registry_instr_set_to_context_slot_t(c.Structure):
                 ('source_slot', archi_context_slot_t)]
 
 
-class archi_exe_registry_instr_act_t(c.Structure):
+class archi_exe_registry_instr__act_t(c.Structure):
     """Context registry instruction: invoke context action.
     """
     _fields_ = [('base', archi_exe_registry_instr_base_t),
