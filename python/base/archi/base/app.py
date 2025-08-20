@@ -24,6 +24,7 @@
 import ctypes as c
 import enum
 from contextlib import contextmanager
+from types import SimpleNamespace
 
 from .memory import CValue
 from .ctypes.base import archi_array_layout_t, archi_pointer_flags_t, archi_pointer_t
@@ -37,37 +38,43 @@ class Context:
     class _Slot:
         """Representation of a context slot/action.
         """
-        def __init__(self, context: 'Context', *,
-                     name: 'str' = '', indices: 'list[int]' = [], is_action: 'bool' = False):
+        def __init__(self, context: 'Context', *, name: 'str' = '',
+                     indices: 'list[int]' = [], is_action: 'bool' = False):
             """Initialize a context slot representation instance.
             """
-            object.__setattr__(self, '_context', context)
-            object.__setattr__(self, '_name', name)
-            object.__setattr__(self, '_indices', indices)
-            object.__setattr__(self, '_is_action', is_action)
+            fields = SimpleNamespace()
+
+            fields.context = context
+            fields.name = name
+            fields.indices = indices
+            fields.is_action = is_action
+
+            object.__setattr__(self, '_', fields)
 
         def __getattr__(self, name: 'str') -> 'Context._Slot':
             """Obtain a context slot object.
             """
-            if self._is_action or self._indices:
+            if self._.is_action or self._.indices:
                 raise AttributeError
 
-            return Context._Slot(self._context, name=f'{self._name}.{name}')
+            return Context._Slot(self._.context, name=f'{self._.name}.{name}')
 
         def __getitem__(self, index: 'int') -> 'Context._Slot':
             """Obtain a context slot object.
             """
-            if self._is_action:
+            if self._.is_action:
                 raise AttributeError
 
             if isinstance(index, int):
-                return Context._Slot(self._context, name=self._name, indices=self._indices + [index])
+                return Context._Slot(self._.context, name=self._.name,
+                                     indices=self._.indices + [index])
 
             elif isinstance(index, tuple):
                 if not all(isinstance(elt, int) for elt in index):
                     raise TypeError
 
-                return Context._Slot(self._context, name=self._name, indices=self._indices + list(index))
+                return Context._Slot(self._.context, name=self._.name,
+                                     indices=self._.indices + list(index))
 
             else:
                 raise TypeError
@@ -75,40 +82,40 @@ class Context:
         def __setattr__(self, name: 'str', value):
             """Perform a slot setting operation.
             """
-            if self._is_action or self._indices:
+            if self._.is_action or self._.indices:
                 raise AttributeError
 
-            self._context._set(f'{self._name}.{name}', self._indices, value)
+            self._.context._set(f'{self._.name}.{name}', self._.indices, value)
 
         def __setitem__(self, index: 'int', value):
             """Perform a slot setting operation.
             """
-            if self._is_action:
+            if self._.is_action:
                 raise AttributeError
 
             if isinstance(index, int):
-                indices = self._indices + [index]
+                indices = self._.indices + [index]
 
             elif isinstance(index, tuple):
                 if not all(isinstance(elt, int) for elt in index):
                     raise TypeError
 
-                indices = self._indices + list(index)
+                indices = self._.indices + list(index)
 
             else:
                 raise TypeError
 
-            self._context._set(self._name, indices, value)
+            self._.context._set(self._.name, indices, value)
 
         def __call__(self, _: 'Context' = None, /, **params) -> 'Context._Slot':
             """Perform an action.
             """
-            if _ is not None and not isinstance(_, Parameters.Context):
+            if not isinstance(_, (type(None), Parameters.Context)):
                 raise TypeError
 
-            self._context._act(self._name, self._indices, _, params)
+            self._.context._act(self._.name, self._.indices, _, params)
 
-            return Context._Slot(self._context, name=self._name, indices=self._indices, is_action=True)
+            return Context._Slot(self._.context, name=self._.name, indices=self._.indices, is_action=True)
 
     INTERFACE_SYMBOL = None
     INIT_PARAMETERS_CLASS = None # will be set to Parameters later
@@ -116,7 +123,7 @@ class Context:
     def __init_subclass__(cls):
         """Initialize a context interface subclass.
         """
-        if cls.INTERFACE_SYMBOL is not None and not isinstance(cls.INTERFACE_SYMBOL, str):
+        if not isinstance(cls.INTERFACE_SYMBOL, (type(None), str)):
             raise TypeError
         elif cls.INTERFACE_SYMBOL is not None and not cls.INTERFACE_SYMBOL:
             raise ValueError
@@ -135,16 +142,16 @@ class Context:
             return Registry._ContextInterfaceOrigin(getattr(origin, cls.INTERFACE_SYMBOL), cls)
 
         elif isinstance(origin, Context._Slot):
-            if origin._is_action:
+            if origin._.is_action:
                 raise ValueError
 
             try:
-                slot_type = type(origin._context).getter_slot_type(origin._name, origin._indices)
+                slot_type = type(origin._.context).getter_slot_type(origin._.name, origin._.indices)
             except KeyError:
-                raise KeyError(f"Slot '{origin._name}'[{']['.join([str(i) for i in origin._indices])}] is not recognized")
+                raise KeyError(f"Slot '{origin._.name}'[{']['.join([str(i) for i in origin._.indices])}] is not recognized")
 
             if not compatible_types(archi_context_interface_t, slot_type):
-                raise TypeError(f"Slot '{origin._name}'[{']['.join([str(i) for i in origin._indices])}] type is not compatible to a context interface")
+                raise TypeError(f"Slot '{origin._.name}'[{']['.join([str(i) for i in origin._.indices])}] type is not compatible to a context interface")
 
             return Registry._ContextInterfaceOrigin(origin, cls)
 
@@ -206,8 +213,12 @@ class Context:
     def __init__(self):
         """Initialize a context representation instance.
         """
-        object.__setattr__(self, '_registry', None)
-        object.__setattr__(self, '_key', None)
+        fields = SimpleNamespace()
+
+        fields.registry = None
+        fields.key = None
+
+        object.__setattr__(self, '_', fields)
 
     def __getattr__(self, name: 'str') -> 'Context._Slot':
         """Obtain a context slot object.
@@ -254,7 +265,7 @@ class Context:
     def __call__(self, _: 'Context' = None, /, **params) -> 'Context':
         """Perform an action.
         """
-        if _ is not None and not isinstance(_, Parameters.Context):
+        if not isinstance(_, (type(None), Parameters.Context)):
             raise TypeError
 
         self._act('', [], _, params)
@@ -264,7 +275,7 @@ class Context:
     def _set(self, slot_name: 'str', slot_indices: 'list[int]', value):
         """Append a set() instruction to the list.
         """
-        if self._registry is None:
+        if self._.registry is None:
             raise RuntimeError
 
         try:
@@ -276,9 +287,9 @@ class Context:
             value_type = type(value).context_type()
         elif isinstance(value, Context._Slot):
             try:
-                value_type = type(value._context).getter_slot_type(value._name, value._indices)
+                value_type = type(value._.context).getter_slot_type(value._.name, value._.indices)
             except KeyError:
-                raise KeyError(f"Slot '{value._name}'[{']['.join([str(i) for i in value._indices])}] is not recognized")
+                raise KeyError(f"Slot '{value._.name}'[{']['.join([str(i) for i in value._.indices])}] is not recognized")
         else:
             if value is None:
                 value_type = ...
@@ -292,13 +303,13 @@ class Context:
         if not compatible_types(slot_type, value_type):
             raise TypeError(f"Slot '{slot_name}'[{']['.join([str(i) for i in slot_indices])}] type constraint is violated (want = {slot_type}, got = {value_type})")
 
-        self._registry._set_slot(self._key, slot_name, slot_indices, value)
+        self._.registry._set_slot(self._.key, slot_name, slot_indices, value)
 
     def _act(self, action_name: 'str', action_indices: 'list[int]',
              parent_params: 'Context', params: 'dict'):
         """Append an act() instruction to the list.
         """
-        if self._registry is None:
+        if self._.registry is None:
             raise RuntimeError
 
         try:
@@ -311,7 +322,7 @@ class Context:
 
         parameter_list = parameters_class(parent_params, **params)
 
-        self._registry._invoke_action(self._key, parameter_list, action_name, action_indices)
+        self._.registry._invoke_action(self._.key, parameter_list, action_name, action_indices)
 
 
 class Parameters:
@@ -372,7 +383,7 @@ class Parameters:
     def __init__(self, _: 'Context' = None, /, **params):
         """Initialize a context parameter list representation instance.
         """
-        if _ is not None and not isinstance(_, type(self).Context):
+        if not isinstance(_, (type(None), type(self).Context)):
             raise TypeError
 
         self._parent = _
@@ -390,7 +401,7 @@ class Parameters:
                 value_type = type(value).context_type()
                 self._params_dynamic[name] = value
             elif isinstance(value, Context._Slot):
-                value_type = type(value._context).getter_slot_type(value._name, value._indices)
+                value_type = type(value._.context).getter_slot_type(value._.name, value._.indices)
                 self._params_dynamic[name] = value
             elif value is None:
                 value_type = ...
@@ -416,7 +427,7 @@ class Parameters:
     def parent_list_key(self) -> 'str':
         """Obtain key of the parent parameter list.
         """
-        return self._parent._key if self._parent is not None else None
+        return self._parent._.key if self._parent is not None else None
 
     def dynamic_part(self) -> 'dict':
         """Obtain dictionary of dynamic values (contexts and slots) in the parameter list.
@@ -759,8 +770,8 @@ class Registry:
         context = self._create_context(key, entity)
 
         if context is not None:
-            object.__setattr__(context, '_registry', self)
-            object.__setattr__(context, '_key', key)
+            context._.registry = self
+            context._.key = key
 
             self._contexts[key] = context
         else:
@@ -800,8 +811,8 @@ class Registry:
             raise KeyError(f"Context '{key}' is already in the registry")
 
         context = cls()
-        object.__setattr__(context, '_registry', self)
-        object.__setattr__(context, '_key', key)
+        context._.registry = self
+        context._.key = key
 
         self._contexts[key] = context
         return context
@@ -902,7 +913,7 @@ class Registry:
                     self._instruct(
                             Registry._Instruction.Type.INIT_FROM_CONTEXT,
                             key=key,
-                            interface_origin_key=interface_origin._key,
+                            interface_origin_key=interface_origin._.key,
                             dparams_key=dparams_key,
                             sparams=sparams)
 
@@ -910,9 +921,9 @@ class Registry:
                     self._instruct(
                             Registry._Instruction.Type.INIT_FROM_SLOT,
                             key=key,
-                            interface_origin_key=interface_origin._context._key,
-                            interface_origin_slot_name=interface_origin._name,
-                            interface_origin_slot_indices=interface_origin._indices,
+                            interface_origin_key=interface_origin._.context._.key,
+                            interface_origin_slot_name=interface_origin._.name,
+                            interface_origin_slot_indices=interface_origin._.indices,
                             dparams_key=dparams_key,
                             sparams=sparams)
 
@@ -927,7 +938,7 @@ class Registry:
             self._instruct(
                     Registry._Instruction.Type.COPY,
                     key=key,
-                    original_key=entity._key)
+                    original_key=entity._.key)
 
             return type(entity)()
 
@@ -942,9 +953,9 @@ class Registry:
                     key=key,
                     slot_name='value',
                     slot_indices=[],
-                    source_key=entity._context._key,
-                    source_slot_name=entity._name,
-                    source_slot_indices=entity._indices)
+                    source_key=entity._.context._.key,
+                    source_slot_name=entity._.name,
+                    source_slot_indices=entity._.indices)
 
             return PointerContext()
 
@@ -987,7 +998,7 @@ class Registry:
                     key=context_key,
                     slot_name=slot_name,
                     slot_indices=slot_indices,
-                    source_key=value._key)
+                    source_key=value._.key)
 
         elif isinstance(value, Context._Slot):
             self._instruct(
@@ -995,12 +1006,12 @@ class Registry:
                     key=context_key,
                     slot_name=slot_name,
                     slot_indices=slot_indices,
-                    source_key=value._context._key,
-                    source_slot_name=value._name,
-                    source_slot_indices=value._indices)
+                    source_key=value._.context._.key,
+                    source_slot_name=value._.name,
+                    source_slot_indices=value._.indices)
 
         else:
-            if value is not None and not isinstance(value, CValue):
+            if not isinstance(value, (type(None), CValue)):
                 value = CValue(value)
 
             self._instruct(
@@ -1052,7 +1063,7 @@ class Registry:
         if not isinstance(context, Context):
             raise TypeError
 
-        return context._registry
+        return context._.registry
 
     @staticmethod
     def key_of(context: 'Context') -> 'str':
@@ -1061,7 +1072,7 @@ class Registry:
         if not isinstance(context, Context):
             raise TypeError
 
-        return context._key
+        return context._.key
 
     @staticmethod
     def interface_of(context: 'Context') -> 'Registry._ContextInterfaceOrigin':
