@@ -65,7 +65,7 @@ ARCHI_CONTEXT_INIT_FUNC(archi_context_hsp_branch_state_data_init)
 
             num_branches = *(size_t*)params->value.ptr;
         }
-        else if (strcmp("selector_fn", params->name) == 0)
+        else if (strcmp("selector_function", params->name) == 0)
         {
             if (param_selector_fn_set)
                 continue;
@@ -186,14 +186,14 @@ ARCHI_CONTEXT_GET_FUNC(archi_context_hsp_branch_state_data_get)
 
         *value = context_data->branch_frame[slot.index[0]];
     }
-    else if (strcmp("selector_fn", slot.name) == 0)
+    else if (strcmp("selector.function", slot.name) == 0)
     {
         if (slot.num_indices != 0)
             return ARCHI_STATUS_EMISUSE;
 
         *value = context_data->branch_selector_fn;
     }
-    else if (strcmp("selector_data", slot.name) == 0)
+    else if (strcmp("selector.data", slot.name) == 0)
     {
         if (slot.num_indices != 0)
             return ARCHI_STATUS_EMISUSE;
@@ -228,7 +228,7 @@ ARCHI_CONTEXT_SET_FUNC(archi_context_hsp_branch_state_data_set)
         branch_state_data->branch[slot.index[0]] = value.ptr;
         context_data->branch_frame[slot.index[0]] = value;
     }
-    else if (strcmp("selector_fn", slot.name) == 0)
+    else if (strcmp("selector.function", slot.name) == 0)
     {
         if (slot.num_indices != 0)
             return ARCHI_STATUS_EMISUSE;
@@ -241,7 +241,7 @@ ARCHI_CONTEXT_SET_FUNC(archi_context_hsp_branch_state_data_set)
         branch_state_data->selector_fn = (archi_hsp_branch_selector_func_t)value.fptr;
         context_data->branch_selector_fn = value;
     }
-    else if (strcmp("selector_data", slot.name) == 0)
+    else if (strcmp("selector.data", slot.name) == 0)
     {
         if (slot.num_indices != 0)
             return ARCHI_STATUS_EMISUSE;
