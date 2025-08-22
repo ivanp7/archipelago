@@ -4,32 +4,66 @@
 import ctypes as c
 
 from archi.base.app import (
+        PrivateType, PublicType,
         ContextWhitelistable, ParametersWhitelistable,
         )
 from archi.base.ctypes.base import archi_pointer_t
 from archi.base.ctypes.context import archi_context_interface_t
 from archi.builtin.context import LibraryContext
 
+###############################################################################
+
+_TYPE_BOOL = PublicType(c.c_byte, lambda v: c.c_byte(bool(v)))
+_TYPE_SIZE = PublicType(c.c_size_t)
+_TYPE_SIZE_ARRAY = PublicType(c.c_size_t, lambda v: (c.c_size_t * len(v))(*v) \
+        if isinstance(v, (list, tuple)) else c.c_size_t(v))
+_TYPE_UINT32 = PublicType(c.c_uint32)
+_TYPE_UINT32_ARRAY = PublicType(c.c_uint32, lambda v: (c.c_uint32 * len(v))(*v) \
+        if isinstance(v, (list, tuple)) else c.c_uint32(v))
+_TYPE_UINT64 = PublicType(c.c_uint64)
+_TYPE_STR = PublicType(str)
+_TYPE_VOID_P = PublicType(c.c_void_p)
+_TYPE_UBYTE_P = PublicType(c.POINTER(c.c_ubyte))
+_TYPE_UBYTE_P_P = PublicType(c.POINTER(c.POINTER(c.c_ubyte)))
+_TYPE_POINTER = PublicType(archi_pointer_t)
+
+_TYPE_HASHMAP = PrivateType('archi.hashmap')
+
+_TYPE_OPENCL_PLATFORM_ID = PrivateType('opencl.platform_id')
+_TYPE_OPENCL_DEVICE_ID = PrivateType('opencl.device_id')
+_TYPE_OPENCL_CONTEXT = PrivateType('opencl.context')
+_TYPE_OPENCL_COMMAND_QUEUE = PrivateType('opencl.command_queue')
+_TYPE_OPENCL_PROGRAM = PrivateType('opencl.program')
+_TYPE_OPENCL_KERNEL = PrivateType('opencl.kernel')
+_TYPE_OPENCL_SVM_ALLOC_DATA = PrivateType('opencl.svm.alloc_data')
+_TYPE_OPENCL_SVM_MAP_DATA = PrivateType('opencl.svm.map_data')
+_TYPE_OPENCL_EVENT_ARRAY = PrivateType('opencl.event_array')
+_TYPE_OPENCL_WORK_VECTOR = PrivateType('opencl.work_vector')
+_TYPE_OPENCL_KERNEL_ENQUEUE_DATA = PrivateType('opencl.kernel.enqueue_data')
+
+_TYPE_CONTEXT_INTERFACE = PublicType(archi_context_interface_t)
+
+###############################################################################
 
 class OpenCLContextContext(ContextWhitelistable):
     """Context type for OpenCL contexts.
     """
     class InitParameters(ParametersWhitelistable):
         PARAMETERS = {
-                'platform_idx': (c.c_uint32, lambda v: c.c_uint32(v)),
-                'device_idx': (..., lambda v: (c.c_uint32 * len(v))(*v)),
+                'platform_idx': _TYPE_UINT32,
+                'device_idx': _TYPE_UINT32_ARRAY,
                 }
 
     INTERFACE_SYMBOL = 'archi_context_opencl_context_interface'
 
-    CONTEXT_TYPE = 'opencl.context'
+    DATA_TYPE = _TYPE_OPENCL_CONTEXT
 
     INIT_PARAMETERS_CLASS = InitParameters
 
     GETTER_SLOT_TYPES = {
-            'platform_id': {0: 'opencl.platform_id'},
-            'device_id': {0: c.c_void_p,
-                          1: 'opencl.device_id'},
+            'platform_id': {0: _TYPE_OPENCL_PLATFORM_ID},
+            'device_id': {0: _TYPE_VOID_P,
+                          1: _TYPE_OPENCL_DEVICE_ID},
             }
 
 ###############################################################################
@@ -39,23 +73,23 @@ class OpenCLCommandQueueContext(ContextWhitelistable):
     """
     class InitParameters(ParametersWhitelistable):
         PARAMETERS = {
-                'context': 'opencl.context',
-                'device_id': 'opencl.device_id',
-                'out_of_order_exec': (c.c_byte, lambda v: c.c_byte(bool(v))),
-                'profiling': (c.c_byte, lambda v: c.c_byte(bool(v))),
-                'priority_hint': (c.c_uint32, lambda v: c.c_uint32(v)),
-                'throttle_hint': (c.c_uint32, lambda v: c.c_uint32(v)),
+                'context': _TYPE_OPENCL_CONTEXT,
+                'device_id': _TYPE_OPENCL_DEVICE_ID,
+                'out_of_order_exec': _TYPE_BOOL,
+                'profiling': _TYPE_BOOL,
+                'priority_hint': _TYPE_UINT32,
+                'throttle_hint': _TYPE_UINT32,
                 }
 
     INTERFACE_SYMBOL = 'archi_context_opencl_command_queue_interface'
 
-    CONTEXT_TYPE = 'opencl.command_queue'
+    DATA_TYPE = _TYPE_OPENCL_COMMAND_QUEUE
 
     INIT_PARAMETERS_CLASS = InitParameters
 
     GETTER_SLOT_TYPES = {
-            'context': {0: 'opencl.context'},
-            'device_id': {0: 'opencl.device_id'},
+            'context': {0: _TYPE_OPENCL_CONTEXT},
+            'device_id': {0: _TYPE_OPENCL_DEVICE_ID},
             }
 
 ###############################################################################
@@ -63,17 +97,17 @@ class OpenCLCommandQueueContext(ContextWhitelistable):
 class _OpenCLProgramContext(ContextWhitelistable):
     """The base class for context types for OpenCL programs.
     """
-    CONTEXT_TYPE = 'opencl.program'
+    DATA_TYPE = _TYPE_OPENCL_PROGRAM
 
     GETTER_SLOT_TYPES = {
-            'context': {0: 'opencl.context'},
-            'platform_id': {0: 'opencl.platform_id'},
-            'device_id': {0: c.c_void_p,
-                          1: 'opencl.device_id'},
-            'binary_size': {0: c.c_size_t,
-                            1: c.c_size_t},
-            'binary': {0: c.POINTER(c.POINTER(c.c_ubyte)),
-                       1: c.POINTER(c.c_ubyte)},
+            'context': {0: _TYPE_OPENCL_CONTEXT},
+            'platform_id': {0: _TYPE_OPENCL_PLATFORM_ID},
+            'device_id': {0: _TYPE_VOID_P,
+                          1: _TYPE_OPENCL_DEVICE_ID},
+            'binary_size': {0: _TYPE_SIZE,
+                            1: _TYPE_SIZE},
+            'binary': {0: _TYPE_UBYTE_P_P,
+                       1: _TYPE_UBYTE_P},
             }
 
 
@@ -82,13 +116,13 @@ class OpenCLProgramFromSourcesContext(_OpenCLProgramContext):
     """
     class InitParameters(ParametersWhitelistable):
         PARAMETERS = {
-                'context': 'opencl.context',
-                'device_id': c.c_void_p,
-                'headers': 'archi.hashmap',
-                'sources': 'archi.hashmap',
-                'libraries': c.c_void_p,
-                'cflags': (str, lambda v: str(v)),
-                'lflags': (str, lambda v: str(v)),
+                'context': _TYPE_OPENCL_CONTEXT,
+                'device_id': _TYPE_VOID_P,
+                'headers': _TYPE_HASHMAP,
+                'sources': _TYPE_HASHMAP,
+                'libraries': _TYPE_VOID_P,
+                'cflags': _TYPE_STR,
+                'lflags': _TYPE_STR,
                 }
 
     INTERFACE_SYMBOL = 'archi_context_opencl_program_src_interface'
@@ -101,9 +135,9 @@ class OpenCLProgramFromBinariesContext(_OpenCLProgramContext):
     """
     class InitParameters(ParametersWhitelistable):
         PARAMETERS = {
-                'context': 'opencl.context',
-                'device_id': c.c_void_p,
-                'binaries': archi_pointer_t,
+                'context': _TYPE_OPENCL_CONTEXT,
+                'device_id': _TYPE_VOID_P,
+                'binaries': _TYPE_POINTER,
                 }
 
     INTERFACE_SYMBOL = 'archi_context_opencl_program_bin_interface'
@@ -115,18 +149,18 @@ class OpenCLProgramFromBinariesContext(_OpenCLProgramContext):
 class _OpenCLKernelContext(ContextWhitelistable):
     """The base class for context types for OpenCL kernels.
     """
-    CONTEXT_TYPE = 'opencl.kernel'
+    DATA_TYPE = _TYPE_OPENCL_KERNEL
 
     GETTER_SLOT_TYPES = {
-            'program': {0: 'opencl.program'},
-            'name': {0: str},
-            'num_arguments': {0: c.c_uint32},
+            'program': {0: _TYPE_OPENCL_PROGRAM},
+            'name': {0: _TYPE_STR},
+            'num_arguments': {0: _TYPE_UINT32},
             }
 
     SETTER_SLOT_TYPES = {
-            'arg.value': {1: ...},
-            'arg.svm_ptr': {1: ...},
-            'exec_info.svm_ptrs': {0: c.c_void_p},
+            'arg.value': {1: None},
+            'arg.svm_ptr': {1: None},
+            'exec_info.svm_ptrs': {0: _TYPE_VOID_P},
             }
 
 
@@ -135,8 +169,8 @@ class OpenCLKernelNewContext(_OpenCLKernelContext):
     """
     class InitParameters(ParametersWhitelistable):
         PARAMETERS = {
-                'program': 'opencl.program',
-                'name': (str, lambda v: str(v)),
+                'program': _TYPE_OPENCL_PROGRAM,
+                'name': _TYPE_STR,
                 }
 
     INTERFACE_SYMBOL = 'archi_context_opencl_kernel_new_interface'
@@ -149,7 +183,7 @@ class OpenCLKernelCloneContext(_OpenCLKernelContext):
     """
     class InitParameters(ParametersWhitelistable):
         PARAMETERS = {
-                'kernel': 'opencl.kernel',
+                'kernel': _TYPE_OPENCL_KERNEL,
                 }
 
     INTERFACE_SYMBOL = 'archi_context_opencl_kernel_clone_interface'
@@ -163,19 +197,19 @@ class OpenCLSVMAllocDataContext(ContextWhitelistable):
     """
     class InitParameters(ParametersWhitelistable):
         PARAMETERS = {
-                'context': 'opencl.context',
-                'mem_flags': (c.c_uint64, lambda v: c.c_uint64(v)),
+                'context': _TYPE_OPENCL_CONTEXT,
+                'mem_flags': _TYPE_UINT64,
                 }
 
     INTERFACE_SYMBOL = 'archi_context_opencl_svm_alloc_data_interface'
 
-    CONTEXT_TYPE = 'opencl.svm.alloc_data'
+    DATA_TYPE = _TYPE_OPENCL_SVM_ALLOC_DATA
 
     INIT_PARAMETERS_CLASS = InitParameters
 
     GETTER_SLOT_TYPES = {
-            'context': {0: 'opencl.context'},
-            'mem_flags': {0: c.c_uint64},
+            'context': {0: _TYPE_OPENCL_CONTEXT},
+            'mem_flags': {0: _TYPE_UINT64},
             }
 
 
@@ -184,19 +218,19 @@ class OpenCLSVMMapDataContext(ContextWhitelistable):
     """
     class InitParameters(ParametersWhitelistable):
         PARAMETERS = {
-                'command_queue': 'opencl.command_queue',
-                'map_flags': (c.c_uint64, lambda v: c.c_uint64(v)),
+                'command_queue': _TYPE_OPENCL_COMMAND_QUEUE,
+                'map_flags': _TYPE_UINT64,
                 }
 
     INTERFACE_SYMBOL = 'archi_context_opencl_svm_map_data_interface'
 
-    CONTEXT_TYPE = 'opencl.svm.map_data'
+    DATA_TYPE = _TYPE_OPENCL_SVM_MAP_DATA
 
     INIT_PARAMETERS_CLASS = InitParameters
 
     GETTER_SLOT_TYPES = {
-            'command_queue': {0: 'opencl.command_queue'},
-            'map_flags': {0: c.c_uint64},
+            'command_queue': {0: _TYPE_OPENCL_COMMAND_QUEUE},
+            'map_flags': {0: _TYPE_UINT64},
             }
 
 ###############################################################################
@@ -206,18 +240,18 @@ class OpenCLEventArrayContext(ContextWhitelistable):
     """
     class InitParameters(ParametersWhitelistable):
         PARAMETERS = {
-                'num_events': (c.c_uint32, lambda v: c.c_uint32(v)),
+                'num_events': _TYPE_UINT32,
                 }
 
     INTERFACE_SYMBOL = 'archi_context_opencl_event_array_interface'
 
-    CONTEXT_TYPE = 'opencl.event_array'
+    DATA_TYPE = _TYPE_OPENCL_EVENT_ARRAY
 
     INIT_PARAMETERS_CLASS = InitParameters
 
     GETTER_SLOT_TYPES = {
-            'num_events': {0: c.c_uint32},
-            'event_ptr': {1: c.c_void_p},
+            'num_events': {0: _TYPE_UINT32},
+            'event_ptr': {1: _TYPE_VOID_P},
             }
 
 ###############################################################################
@@ -227,23 +261,23 @@ class OpenCLWorkVectorContext(ContextWhitelistable):
     """
     class InitParameters(ParametersWhitelistable):
         PARAMETERS = {
-                'num_dimensions': (c.c_uint32, lambda v: c.c_uint32(v)),
-                'dimensions': (..., lambda v: (c.c_size_t * len(v))(*v)),
+                'num_dimensions': _TYPE_UINT32,
+                'dimensions': _TYPE_SIZE_ARRAY,
                 }
 
     INTERFACE_SYMBOL = 'archi_context_opencl_work_vector_interface'
 
-    CONTEXT_TYPE = 'opencl.work_vector'
+    DATA_TYPE = _TYPE_OPENCL_WORK_VECTOR
 
     INIT_PARAMETERS_CLASS = InitParameters
 
     GETTER_SLOT_TYPES = {
-            'num_dimensions': {0: c.c_uint32},
-            'dimension': {1: c.c_size_t},
+            'num_dimensions': {0: _TYPE_UINT32},
+            'dimension': {1: _TYPE_SIZE},
             }
 
     SETTER_SLOT_TYPES = {
-            'dimension': {1: (c.c_size_t, lambda v: c.c_size_t(v))},
+            'dimension': {1: _TYPE_SIZE},
             }
 
 ###############################################################################
@@ -253,39 +287,39 @@ class OpenCLKernelEnqueueData(ContextWhitelistable):
     """
     class InitParameters(ParametersWhitelistable):
         PARAMETERS = {
-                'command_queue': 'opencl.command_queue',
-                'kernel': 'opencl.kernel',
-                'global_work_offset': 'opencl.work_vector',
-                'global_work_size': 'opencl.work_vector',
-                'local_work_size': 'opencl.work_vector',
-                'wait_list': 'opencl.event_array',
-                'name': (str, lambda v: str(v)),
+                'command_queue': _TYPE_OPENCL_COMMAND_QUEUE,
+                'kernel': _TYPE_OPENCL_KERNEL,
+                'global_work_offset': _TYPE_OPENCL_WORK_VECTOR,
+                'global_work_size': _TYPE_OPENCL_WORK_VECTOR,
+                'local_work_size': _TYPE_OPENCL_WORK_VECTOR,
+                'wait_list': _TYPE_OPENCL_EVENT_ARRAY,
+                'name': _TYPE_STR,
                 }
 
     INTERFACE_SYMBOL = 'archi_opencl_kernel_enqueue_data_interface'
 
-    CONTEXT_TYPE = 'opencl.kernel.enqueue_data'
+    DATA_TYPE = _TYPE_OPENCL_KERNEL_ENQUEUE_DATA
 
     INIT_PARAMETERS_CLASS = InitParameters
 
     GETTER_SLOT_TYPES = {
-            'command_queue': {0: 'opencl.command_queue'},
-            'kernel': {0: 'opencl.kernel'},
-            'global_work_offset': {0: 'opencl.work_vector'},
-            'global_work_size': {0: 'opencl.work_vector'},
-            'local_work_size': {0: 'opencl.work_vector'},
-            'wait_list': {0: 'opencl.event_array'},
-            'name': {0: str},
+            'command_queue': {0: _TYPE_OPENCL_COMMAND_QUEUE},
+            'kernel': {0: _TYPE_OPENCL_KERNEL},
+            'global_work_offset': {0: _TYPE_OPENCL_WORK_VECTOR},
+            'global_work_size': {0: _TYPE_OPENCL_WORK_VECTOR},
+            'local_work_size': {0: _TYPE_OPENCL_WORK_VECTOR},
+            'wait_list': {0: _TYPE_OPENCL_EVENT_ARRAY},
+            'name': {0: _TYPE_STR},
             }
 
     SETTER_SLOT_TYPES = {
-            'command_queue': {0: 'opencl.command_queue'},
-            'kernel': {0: 'opencl.kernel'},
-            'global_work_offset': {0: 'opencl.work_vector'},
-            'global_work_size': {0: 'opencl.work_vector'},
-            'local_work_size': {0: 'opencl.work_vector'},
-            'wait_list': {0: 'opencl.event_array'},
-            'output_event_ptr': {0: c.c_void_p},
+            'command_queue': {0: _TYPE_OPENCL_COMMAND_QUEUE},
+            'kernel': {0: _TYPE_OPENCL_KERNEL},
+            'global_work_offset': {0: _TYPE_OPENCL_WORK_VECTOR},
+            'global_work_size': {0: _TYPE_OPENCL_WORK_VECTOR},
+            'local_work_size': {0: _TYPE_OPENCL_WORK_VECTOR},
+            'wait_list': {0: _TYPE_OPENCL_EVENT_ARRAY},
+            'output_event_ptr': {0: _TYPE_VOID_P},
             }
 
 ###############################################################################
@@ -304,5 +338,5 @@ CONTEXT_CLASSES = [
 class OpenCLPluginContext(LibraryContext):
     """Library context type for the OpenCL plugin.
     """
-    SYMBOLS = {cls.INTERFACE_SYMBOL: archi_context_interface_t for cls in CONTEXT_CLASSES}
+    SYMBOLS = {cls.INTERFACE_SYMBOL: _TYPE_CONTEXT_INTERFACE for cls in CONTEXT_CLASSES}
 

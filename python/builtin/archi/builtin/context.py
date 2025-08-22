@@ -24,6 +24,7 @@
 import ctypes as c
 
 from archi.base.app import (
+        TypeDescriptor, PrivateType, PublicType,
         Context, ContextWhitelistable, Parameters, ParametersWhitelistable,
         PointerContext, ArrayContext
         )
@@ -32,39 +33,87 @@ from archi.base.ctypes.context import archi_context_interface_t
 
 from .ctypes.signal import archi_signal_watch_set_t
 
+###############################################################################
+
+_TYPE_BOOL = PublicType(c.c_byte, lambda v: c.c_byte(bool(v)))
+_TYPE_INT = PublicType(c.c_int)
+_TYPE_SIZE = PublicType(c.c_size_t)
+_TYPE_ARRAY_LAYOUT = PublicType(archi_array_layout_t, lambda v: archi_array_layout_t(*v))
+_TYPE_POINTER_FLAGS = PublicType(archi_pointer_flags_t)
+_TYPE_FUNC = PublicType(c.CFUNCTYPE(None))
+_TYPE_STR = PublicType(str)
+
+_TYPE_HSP_STATE = PrivateType('archi.hsp.state')
+_TYPE_HSP_FRAME = PrivateType('archi.hsp.frame')
+_TYPE_HSP_TRANSITION = PrivateType('archi.hsp.transition')
+_TYPE_HSP_BRANCH_STATE_DATA = PrivateType('archi.hsp.state.branch.data')
+_TYPE_HSP_TRANSITION_ATTACHMENT_DATA = PrivateType('archi.hsp.transition.attachment.data')
+
+_TYPE_HASHMAP = PrivateType('archi.hashmap')
+_TYPE_HASHMAP_ALLOC_PARAMS = PrivateType('archi.hashmap.alloc_params')
+
+_TYPE_LFQUEUE = PrivateType('archi.lfqueue')
+_TYPE_LFQUEUE_ALLOC_PARAMS = PrivateType('archi.lfqueue.alloc_params')
+
+_TYPE_SIGNAL_WATCH_SET = PublicType(archi_signal_watch_set_t)
+_TYPE_SIGNAL_FLAGS = PrivateType('archi.signal.flags')
+_TYPE_SIGNAL_HANDLER = PrivateType('archi.signal.handler')
+_TYPE_SIGNAL_MANAGEMENT_CONTEXT = PrivateType('archi.signal.management')
+
+_TYPE_MEMORY = PrivateType('archi.memory')
+_TYPE_MEMORY_INTERFACE = PrivateType('archi.memory.interface')
+
+_TYPE_FILE_OPEN_PARAMS = PrivateType('archi.file.open_params')
+_TYPE_FILE_MAP_PARAMS = PrivateType('archi.file.map_params')
+
+_TYPE_LIBRARY_HANDLE = PrivateType('archi.library')
+_TYPE_LIBRARY_LOAD_PARAMS = PrivateType('archi.library.load_params')
+
+_TYPE_THREAD_GROUP = PrivateType('archi.thread_group')
+_TYPE_THREAD_GROUP_START_PARAMS = PrivateType('archi.thread_group.start_params')
+_TYPE_THREAD_GROUP_DISPATCH_PARAMS = PrivateType('archi.thread_group.dispatch_params')
+_TYPE_THREAD_GROUP_WORK = PrivateType('archi.thread_group.work')
+_TYPE_THREAD_GROUP_CALLBACK = PrivateType('archi.thread_group.callback')
+_TYPE_THREAD_GROUP_DISPATCH_DATA = PrivateType('archi.thread_group.dispatch_data')
+
+_TYPE_TIMER = PrivateType('archi.timer')
+
+_TYPE_CONTEXT_INTERFACE = PublicType(archi_context_interface_t)
+
+###############################################################################
 
 class HSPFrameContext(ContextWhitelistable):
     """Context type for HSP frames.
     """
     class InitParameters(ParametersWhitelistable):
         PARAMETERS = {
-                'num_states': (c.c_size_t, lambda v: c.c_size_t(v)),
+                'num_states': _TYPE_SIZE,
                 }
 
     class ActionExecuteParameters(ParametersWhitelistable):
         PARAMETERS = {
-                'transition_function': ...,
-                'transition_data': ...,
+                'transition_function': _TYPE_FUNC,
+                'transition_data': None,
                 }
 
     INTERFACE_SYMBOL = 'archi_context_hsp_frame_interface'
 
-    CONTEXT_TYPE = 'archi.hsp.frame'
+    DATA_TYPE = _TYPE_HSP_FRAME
 
     INIT_PARAMETERS_CLASS = InitParameters
 
     GETTER_SLOT_TYPES = {
-            'num_states': {0: c.c_size_t},
-            'state': {1: 'archi.hsp.state'},
-            'state.function': {1: ...},
-            'state.data': {1: ...},
-            'state.metadata': {1: ...},
+            'num_states': {0: _TYPE_SIZE},
+            'state': {1: _TYPE_HSP_STATE},
+            'state.function': {1: _TYPE_FUNC},
+            'state.data': {1: None},
+            'state.metadata': {1: None},
             }
 
     SETTER_SLOT_TYPES = {
-            'state.function': {1: ...},
-            'state.data': {1: ...},
-            'state.metadata': {1: ...},
+            'state.function': {1: _TYPE_FUNC},
+            'state.data': {1: None},
+            'state.metadata': {1: None},
             }
 
     ACTION_PARAMETER_CLASSES = {
@@ -77,24 +126,24 @@ class HSPTransitionContext(ContextWhitelistable):
     """
     class InitParameters(ParametersWhitelistable):
         PARAMETERS = {
-                'function': ...,
-                'data': ...,
+                'function': _TYPE_FUNC,
+                'data': None,
                 }
 
     INTERFACE_SYMBOL = 'archi_context_hsp_transition_interface'
 
-    CONTEXT_TYPE = 'archi.hsp.transition'
+    DATA_TYPE = _TYPE_HSP_TRANSITION
 
     INIT_PARAMETERS_CLASS = InitParameters
 
     GETTER_SLOT_TYPES = {
-            'function': {0: ...},
-            'data': {0: ...},
+            'function': {0: _TYPE_FUNC},
+            'data': {0: None},
             }
 
     SETTER_SLOT_TYPES = {
-            'function': {0: ...},
-            'data': {0: ...},
+            'function': {0: _TYPE_FUNC},
+            'data': {0: None},
             }
 
 
@@ -103,28 +152,28 @@ class HSPBranchStateDataContext(ContextWhitelistable):
     """
     class InitParameters(ParametersWhitelistable):
         PARAMETERS = {
-                'num_branches': (c.c_size_t, lambda v: c.c_size_t(v)),
-                'selector_fn': ...,
-                'selector_data': ...,
+                'num_branches': _TYPE_SIZE,
+                'selector_function': _TYPE_FUNC,
+                'selector_data': None,
                 }
 
     INTERFACE_SYMBOL = 'archi_context_hsp_branch_state_data_interface'
 
-    CONTEXT_TYPE = 'archi.hsp.state.branch.data'
+    DATA_TYPE = _TYPE_HSP_BRANCH_STATE_DATA
 
     INIT_PARAMETERS_CLASS = InitParameters
 
     GETTER_SLOT_TYPES = {
-            'num_branches': {0: c.c_size_t},
-            'branch': {1: 'archi.hsp.frame'},
-            'selector_fn': {0: ...},
-            'selector_data': {0: ...},
+            'num_branches': {0: _TYPE_SIZE},
+            'branch': {1: _TYPE_HSP_FRAME},
+            'selector.function': {0: _TYPE_FUNC},
+            'selector.data': {0: None},
             }
 
     SETTER_SLOT_TYPES = {
-            'branch': {1: 'archi.hsp.frame'},
-            'selector_fn': {0: ...},
-            'selector_data': {0: ...},
+            'branch': {1: _TYPE_HSP_FRAME},
+            'selector.function': {0: _TYPE_FUNC},
+            'selector.data': {0: None},
             }
 
 
@@ -133,30 +182,30 @@ class HSPTransitionAttachmentDataContext(ContextWhitelistable):
     """
     class InitParameters(ParametersWhitelistable):
         PARAMETERS = {
-                'pre_function': ...,
-                'pre_data': ...,
-                'post_function': ...,
-                'post_data': ...,
+                'pre_function': _TYPE_FUNC,
+                'pre_data': None,
+                'post_function': _TYPE_FUNC,
+                'post_data': None,
                 }
 
     INTERFACE_SYMBOL = 'archi_context_hsp_transition_attachment_data_interface'
 
-    CONTEXT_TYPE = 'archi.hsp.transition.attachment.data'
+    DATA_TYPE = _TYPE_HSP_TRANSITION_ATTACHMENT_DATA
 
     INIT_PARAMETERS_CLASS = InitParameters
 
     GETTER_SLOT_TYPES = {
-            'pre.function': {0: ...},
-            'pre.data': {0: ...},
-            'post.function': {0: ...},
-            'post.data': {0: ...},
+            'pre.function': {0: _TYPE_FUNC},
+            'pre.data': {0: None},
+            'post.function': {0: _TYPE_FUNC},
+            'post.data': {0: None},
             }
 
     SETTER_SLOT_TYPES = {
-            'pre.function': {0: ...},
-            'pre.data': {0: ...},
-            'post.function': {0: ...},
-            'post.data': {0: ...},
+            'pre.function': {0: _TYPE_FUNC},
+            'pre.data': {0: None},
+            'post.function': {0: _TYPE_FUNC},
+            'post.data': {0: None},
             }
 
 ###############################################################################
@@ -166,29 +215,27 @@ class HashmapContext(Context):
     """
     class InitParameters(ParametersWhitelistable):
         PARAMETERS = {
-                'params': 'archi.hashmap.alloc_params',
-                'capacity': (c.c_size_t, lambda v: c.c_size_t(v)),
+                'params': _TYPE_HASHMAP_ALLOC_PARAMS,
+                'capacity': _TYPE_SIZE,
                 }
 
     INTERFACE_SYMBOL = 'archi_context_hashmap_interface'
 
-    INIT_PARAMETERS_CLASS = InitParameters
+    DATA_TYPE = _TYPE_HASHMAP
 
-    @classmethod
-    def context_type(cls):
-        return 'archi.hashmap'
+    INIT_PARAMETERS_CLASS = InitParameters
 
     @classmethod
     def getter_slot_type(cls, name: 'str', indices: 'list[int]'):
         if indices:
             raise KeyError
-        return ...
+        return None
 
     @classmethod
     def setter_slot_type(cls, name: 'str', indices: 'list[int]'):
         if len(indices) > 1:
             raise KeyError
-        return ..., None
+        return None
 
     @classmethod
     def action_parameters_class(cls, name: 'str', indices: 'list[int]'):
@@ -201,22 +248,22 @@ class LockFreeQueueContext(ContextWhitelistable):
     """
     class InitParameters(ParametersWhitelistable):
         PARAMETERS = {
-                'params': 'archi.lfqueue.alloc_params',
-                'capacity_log2': (c.c_size_t, lambda v: c.c_size_t(v)),
-                'element_size': (c.c_size_t, lambda v: c.c_size_t(v)),
-                'element_alignment': (c.c_size_t, lambda v: c.c_size_t(v)),
+                'params': _TYPE_LFQUEUE_ALLOC_PARAMS,
+                'capacity_log2': _TYPE_SIZE,
+                'element_size': _TYPE_SIZE,
+                'element_alignment': _TYPE_SIZE,
                 }
 
     INTERFACE_SYMBOL = 'archi_context_lfqueue_interface'
 
-    CONTEXT_TYPE = 'archi.lfqueue'
+    DATA_TYPE = _TYPE_LFQUEUE
 
     INIT_PARAMETERS_CLASS = InitParameters
 
     GETTER_SLOT_TYPES = {
-            'capacity_log2': {0: c.c_size_t},
-            'element_size': {0: c.c_size_t},
-            'element_alignment': {0: c.c_size_t},
+            'capacity_log2': {0: _TYPE_SIZE},
+            'element_size': {0: _TYPE_SIZE},
+            'element_alignment': {0: _TYPE_SIZE},
             }
 
 ###############################################################################
@@ -226,13 +273,13 @@ class EnvVarContext(ContextWhitelistable):
     """
     class InitParameters(ParametersWhitelistable):
         PARAMETERS = {
-                'name': (str, lambda v: str(v)),
-                'default_value': (str, lambda v: str(v)),
+                'name': _TYPE_STR,
+                'default_value': _TYPE_STR,
                 }
 
     INTERFACE_SYMBOL = 'archi_context_envvar_interface'
 
-    CONTEXT_TYPE = str
+    DATA_TYPE = _TYPE_STR
 
     INIT_PARAMETERS_CLASS = InitParameters
 
@@ -243,24 +290,24 @@ class SignalHandlerContext(ContextWhitelistable):
     """
     class InitParameters(ParametersWhitelistable):
         PARAMETERS = {
-                'function': ...,
-                'data': ...,
+                'function': _TYPE_FUNC,
+                'data': None,
                 }
 
     INTERFACE_SYMBOL = 'archi_context_signal_handler_interface'
 
-    CONTEXT_TYPE = 'archi.signal.handler'
+    DATA_TYPE = _TYPE_SIGNAL_HANDLER
 
     INIT_PARAMETERS_CLASS = InitParameters
 
     GETTER_SLOT_TYPES = {
-            'function': {0: ...},
-            'data': {0: ...},
+            'function': {0: _TYPE_FUNC},
+            'data': {0: None},
             }
 
     SETTER_SLOT_TYPES = {
-            'function': {0: ...},
-            'data': {0: ...},
+            'function': {0: _TYPE_FUNC},
+            'data': {0: None},
             }
 
 
@@ -269,25 +316,23 @@ class SignalManagementContext(Context):
     """
     class InitParameters(ParametersWhitelistable):
         PARAMETERS = {
-                'signals': archi_signal_watch_set_t,
+                'signals': _TYPE_SIGNAL_WATCH_SET,
                 }
 
-    INIT_PARAMETERS_CLASS = InitParameters
+    DATA_TYPE = _TYPE_SIGNAL_MANAGEMENT_CONTEXT
 
-    @classmethod
-    def context_type(cls):
-        return 'archi.signal.management'
+    INIT_PARAMETERS_CLASS = InitParameters
 
     @classmethod
     def getter_slot_type(cls, name: 'str', indices: 'list[int]'):
         if name == 'flags':
             if indices:
                 raise KeyError
-            return 'archi.signal.flags'
+            return _TYPE_SIGNAL_FLAGS
         elif name[:8] == 'handler.':
             if indices:
                 raise KeyError
-            return 'archi.signal.handler'
+            return _TYPE_SIGNAL_HANDLER
         else:
             raise KeyError
 
@@ -296,7 +341,7 @@ class SignalManagementContext(Context):
         if name[:8] == 'handler.':
             if indices:
                 raise KeyError
-            return ('archi.signal.handler', None)
+            return _TYPE_SIGNAL_HANDLER
         else:
             raise KeyError
 
@@ -307,28 +352,28 @@ class MemoryContext(ContextWhitelistable):
     """
     class InitParameters(ParametersWhitelistable):
         PARAMETERS = {
-                'interface': 'archi.memory.interface',
-                'alloc_data': ...,
-                'layout': (archi_array_layout_t, lambda v: archi_array_layout_t(*v)),
-                'num_elements': (c.c_size_t, lambda v: c.c_size_t(v)),
-                'element_size': (c.c_size_t, lambda v: c.c_size_t(v)),
-                'element_alignment': (c.c_size_t, lambda v: c.c_size_t(v)),
+                'interface': _TYPE_MEMORY_INTERFACE,
+                'alloc_data': None,
+                'layout': _TYPE_ARRAY_LAYOUT,
+                'num_elements': _TYPE_SIZE,
+                'element_size': _TYPE_SIZE,
+                'element_alignment': _TYPE_SIZE,
                 }
 
     INTERFACE_SYMBOL = 'archi_context_memory_interface'
 
-    CONTEXT_TYPE = 'archi.memory'
+    DATA_TYPE = _TYPE_MEMORY
 
     INIT_PARAMETERS_CLASS = InitParameters
 
     GETTER_SLOT_TYPES = {
-            'interface': {0: 'archi.memory.interface'},
-            'allocation': {0: ...},
-            'layout': {0: archi_array_layout_t},
-            'num_elements': {0: c.c_size_t},
-            'element_size': {0: c.c_size_t},
-            'element_alignment': {0: c.c_size_t},
-            'full_size': {0: c.c_size_t},
+            'interface': {0: _TYPE_MEMORY_INTERFACE},
+            'allocation': {0: None},
+            'layout': {0: _TYPE_ARRAY_LAYOUT},
+            'num_elements': {0: _TYPE_SIZE},
+            'element_size': {0: _TYPE_SIZE},
+            'element_alignment': {0: _TYPE_SIZE},
+            'full_size': {0: _TYPE_SIZE},
             }
 
 
@@ -337,18 +382,18 @@ class MemoryMappingContext(ContextWhitelistable):
     """
     class InitParameters(ParametersWhitelistable):
         PARAMETERS = {
-                'memory': 'archi.memory',
-                'map_data': ...,
-                'offset': (c.c_size_t, lambda v: c.c_size_t(v)),
-                'num_elements': (c.c_size_t, lambda v: c.c_size_t(v)),
-                'writeable': (c.c_byte, lambda v: c.c_byte(bool(v))),
+                'memory': _TYPE_MEMORY,
+                'map_data': None,
+                'offset': _TYPE_SIZE,
+                'num_elements': _TYPE_SIZE,
+                'writeable': _TYPE_BOOL,
                 }
 
     class ActionCopyParameters(ParametersWhitelistable):
         PARAMETERS = {
-                'source': ...,
-                'source_offset': (c.c_size_t, lambda v: c.c_size_t(v)),
-                'num_elements': (c.c_size_t, lambda v: c.c_size_t(v)),
+                'source': None,
+                'source_offset': _TYPE_SIZE,
+                'num_elements': _TYPE_SIZE,
                 }
 
     INTERFACE_SYMBOL = 'archi_context_memory_mapping_interface'
@@ -356,13 +401,13 @@ class MemoryMappingContext(ContextWhitelistable):
     INIT_PARAMETERS_CLASS = InitParameters
 
     GETTER_SLOT_TYPES = {
-            'memory': {0: 'archi.memory'},
-            '': {0: ..., 1: ...},
-            'layout': {0: archi_array_layout_t},
-            'num_elements': {0: c.c_size_t},
-            'element_size': {0: c.c_size_t},
-            'element_alignment': {0: c.c_size_t},
-            'full_size': {0: c.c_size_t},
+            'memory': {0: _TYPE_MEMORY},
+            '': {0: None, 1: None},
+            'layout': {0: _TYPE_ARRAY_LAYOUT},
+            'num_elements': {0: _TYPE_SIZE},
+            'element_size': {0: _TYPE_SIZE},
+            'element_alignment': {0: _TYPE_SIZE},
+            'full_size': {0: _TYPE_SIZE},
             }
 
     ACTION_PARAMETER_CLASSES = {
@@ -377,30 +422,30 @@ class FileContext(ContextWhitelistable):
     """
     class InitParameters(ParametersWhitelistable):
         PARAMETERS = {
-                'params': 'archi.file.open_params',
-                'size': (c.c_size_t, lambda v: c.c_size_t(v)),
-                'pathname': (str, lambda v: str(v)),
-                'create': (c.c_byte, lambda v: c.c_byte(bool(v))),
-                'exclusive': (c.c_byte, lambda v: c.c_byte(bool(v))),
-                'truncate': (c.c_byte, lambda v: c.c_byte(bool(v))),
-                'readable': (c.c_byte, lambda v: c.c_byte(bool(v))),
-                'writable': (c.c_byte, lambda v: c.c_byte(bool(v))),
-                'nonblock': (c.c_byte, lambda v: c.c_byte(bool(v))),
-                'flags': (c.c_int, lambda v: c.c_int(v)),
-                'mode': (c.c_int, lambda v: c.c_int(v)),
+                'params': _TYPE_FILE_OPEN_PARAMS,
+                'size': _TYPE_SIZE,
+                'pathname': _TYPE_STR,
+                'create': _TYPE_BOOL,
+                'exclusive': _TYPE_BOOL,
+                'truncate': _TYPE_BOOL,
+                'readable': _TYPE_BOOL,
+                'writable': _TYPE_BOOL,
+                'nonblock': _TYPE_BOOL,
+                'flags': _TYPE_INT,
+                'mode': _TYPE_INT,
                 }
 
     class ActionMapParameters(ParametersWhitelistable):
         PARAMETERS = {
-                'params': 'archi.file.map_params',
-                'size': (c.c_size_t, lambda v: c.c_size_t(v)),
-                'offset': (c.c_size_t, lambda v: c.c_size_t(v)),
-                'has_header': (c.c_byte, lambda v: c.c_byte(bool(v))),
-                'readable': (c.c_byte, lambda v: c.c_byte(bool(v))),
-                'writable': (c.c_byte, lambda v: c.c_byte(bool(v))),
-                'shared': (c.c_byte, lambda v: c.c_byte(bool(v))),
-                'flags': (c.c_int, lambda v: c.c_int(v)),
-                'close_fd': (c.c_byte, lambda v: c.c_byte(bool(v))),
+                'params': _TYPE_FILE_MAP_PARAMS,
+                'size': _TYPE_SIZE,
+                'offset': _TYPE_SIZE,
+                'has_header': _TYPE_BOOL,
+                'readable': _TYPE_BOOL,
+                'writable': _TYPE_BOOL,
+                'shared': _TYPE_BOOL,
+                'flags': _TYPE_INT,
+                'close_fd': _TYPE_BOOL,
                 }
 
     INTERFACE_SYMBOL = 'archi_context_file_interface'
@@ -408,8 +453,8 @@ class FileContext(ContextWhitelistable):
     INIT_PARAMETERS_CLASS = InitParameters
 
     GETTER_SLOT_TYPES = {
-            'fd': {0: c.c_int},
-            'map': {0: ...},
+            'fd': {0: _TYPE_INT},
+            'map': {0: None},
             }
 
     ACTION_PARAMETER_CLASSES = {
@@ -423,24 +468,26 @@ class LibraryContext(Context):
     """
     class InitParameters(ParametersWhitelistable):
         PARAMETERS = {
-                'params': 'archi.library.load_params',
-                'pathname': (str, lambda v: str(v)),
-                'lazy': (c.c_byte, lambda v: c.c_byte(bool(v))),
-                'global': (c.c_byte, lambda v: c.c_byte(bool(v))),
-                'flags': (c.c_int, lambda v: c.c_int(v)),
+                'params': _TYPE_LIBRARY_LOAD_PARAMS,
+                'pathname': _TYPE_STR,
+                'lazy': _TYPE_BOOL,
+                'global': _TYPE_BOOL,
+                'flags': _TYPE_INT,
                 }
 
     class ActionSymbolParameters(ParametersWhitelistable):
         PARAMETERS = {
-                'function': (c.c_byte, lambda v: c.c_byte(bool(v))),
-                'flags': (archi_pointer_flags_t, lambda v: archi_pointer_flags_t(v)),
-                'layout': (archi_array_layout_t, lambda v: archi_array_layout_t(*v)),
-                'num_elements': (c.c_size_t, lambda v: c.c_size_t(v)),
-                'element_size': (c.c_size_t, lambda v: c.c_size_t(v)),
-                'element_alignment': (c.c_size_t, lambda v: c.c_size_t(v)),
+                'function': _TYPE_BOOL,
+                'flags': _TYPE_POINTER_FLAGS,
+                'layout': _TYPE_ARRAY_LAYOUT,
+                'num_elements': _TYPE_SIZE,
+                'element_size': _TYPE_SIZE,
+                'element_alignment': _TYPE_SIZE,
                 }
 
     INTERFACE_SYMBOL = 'archi_context_library_interface'
+
+    DATA_TYPE = _TYPE_LIBRARY_HANDLE
 
     INIT_PARAMETERS_CLASS = InitParameters
 
@@ -453,18 +500,16 @@ class LibraryContext(Context):
             raise TypeError
         elif not all(isinstance(key, str) for key in cls.SYMBOLS.keys()):
             raise TypeError
+        elif not all(isinstance(value, (type(None), TypeDescriptor)) for value in cls.SYMBOLS.values()):
+            raise TypeError
 
         super().__init_subclass__()
-
-    @classmethod
-    def context_type(cls):
-        return 'archi.library'
 
     @classmethod
     def getter_slot_type(cls, name: 'str', indices: 'list[int]'):
         if indices:
             raise KeyError
-        return cls.SYMBOLS.get(name, ...)
+        return cls.SYMBOLS.get(name, None)
 
     @classmethod
     def action_parameters_class(cls, name: 'str', indices: 'list[int]'):
@@ -479,18 +524,18 @@ class ThreadGroupContext(ContextWhitelistable):
     """
     class InitParameters(ParametersWhitelistable):
         PARAMETERS = {
-                'params': 'archi.thread_group.start_params',
-                'num_threads': (c.c_size_t, lambda v: c.c_size_t(v)),
+                'params': _TYPE_THREAD_GROUP_START_PARAMS,
+                'num_threads': _TYPE_SIZE,
                 }
 
     INTERFACE_SYMBOL = 'archi_context_thread_group_interface'
 
-    CONTEXT_TYPE = 'archi.thread_group'
+    DATA_TYPE = _TYPE_THREAD_GROUP
 
     INIT_PARAMETERS_CLASS = InitParameters
 
     GETTER_SLOT_TYPES = {
-            'num_threads': {0: c.c_size_t},
+            'num_threads': {0: _TYPE_SIZE},
             }
 
 
@@ -499,27 +544,27 @@ class ThreadGroupWorkContext(ContextWhitelistable):
     """
     class InitParameters(ParametersWhitelistable):
         PARAMETERS = {
-                'function': ...,
-                'data': ...,
-                'size': (c.c_size_t, lambda v: c.c_size_t(v)),
+                'function': _TYPE_FUNC,
+                'data': None,
+                'size': _TYPE_SIZE,
                 }
 
     INTERFACE_SYMBOL = 'archi_context_thread_group_work_interface'
 
-    CONTEXT_TYPE = 'archi.thread_group.work'
+    DATA_TYPE = _TYPE_THREAD_GROUP_WORK
 
     INIT_PARAMETERS_CLASS = InitParameters
 
     GETTER_SLOT_TYPES = {
-            'function': {0: ...},
-            'data': {0: ...},
-            'size': {0: c.c_size_t},
+            'function': {0: _TYPE_FUNC},
+            'data': {0: None},
+            'size': {0: _TYPE_SIZE},
             }
 
     SETTER_SLOT_TYPES = {
-            'function': {0: ...},
-            'data': {0: ...},
-            'size': {0: (c.c_size_t, lambda v: c.c_size_t(v))},
+            'function': {0: _TYPE_FUNC},
+            'data': {0: None},
+            'size': {0: _TYPE_SIZE},
             }
 
 
@@ -528,24 +573,24 @@ class ThreadGroupCallbackContext(ContextWhitelistable):
     """
     class InitParameters(ParametersWhitelistable):
         PARAMETERS = {
-                'function': ...,
-                'data': ...,
+                'function': _TYPE_FUNC,
+                'data': None,
                 }
 
     INTERFACE_SYMBOL = 'archi_context_thread_group_callback_interface'
 
-    CONTEXT_TYPE = 'archi.thread_group.callback'
+    DATA_TYPE = _TYPE_THREAD_GROUP_CALLBACK
 
     INIT_PARAMETERS_CLASS = InitParameters
 
     GETTER_SLOT_TYPES = {
-            'function': {0: ...},
-            'data': {0: ...},
+            'function': {0: _TYPE_FUNC},
+            'data': {0: None},
             }
 
     SETTER_SLOT_TYPES = {
-            'function': {0: ...},
-            'data': {0: ...},
+            'function': {0: _TYPE_FUNC},
+            'data': {0: None},
             }
 
 
@@ -554,33 +599,33 @@ class ThreadGroupDispatchDataContext(ContextWhitelistable):
     """
     class InitParameters(ParametersWhitelistable):
         PARAMETERS = {
-                'context': 'archi.thread_group',
-                'work': 'archi.thread_group.work',
-                'callback': 'archi.thread_group.callback',
-                'params': 'archi.thread_group.dispatch_params',
-                'batch_size': (c.c_size_t, lambda v: c.c_size_t(v)),
-                'name': (str, lambda v: str(v)),
+                'context': _TYPE_THREAD_GROUP,
+                'work': _TYPE_THREAD_GROUP_WORK,
+                'callback': _TYPE_THREAD_GROUP_CALLBACK,
+                'params': _TYPE_THREAD_GROUP_DISPATCH_PARAMS,
+                'batch_size': _TYPE_SIZE,
+                'name': _TYPE_STR,
                 }
 
     INTERFACE_SYMBOL = 'archi_context_thread_group_dispatch_data_interface'
 
-    CONTEXT_TYPE = 'archi.thread_group.dispatch_data'
+    DATA_TYPE = _TYPE_THREAD_GROUP_DISPATCH_DATA
 
     INIT_PARAMETERS_CLASS = InitParameters
 
     GETTER_SLOT_TYPES = {
-            'context': {0: 'archi.thread_group'},
-            'work': {0: 'archi.thread_group.work'},
-            'callback': {0: 'archi.thread_group.callback'},
-            'batch_size': {0: c.c_size_t},
-            'name': {0: str},
+            'context': {0: _TYPE_THREAD_GROUP},
+            'work': {0: _TYPE_THREAD_GROUP_WORK},
+            'callback': {0: _TYPE_THREAD_GROUP_CALLBACK},
+            'batch_size': {0: _TYPE_SIZE},
+            'name': {0: _TYPE_STR},
             }
 
     SETTER_SLOT_TYPES = {
-            'context': {0: 'archi.thread_group'},
-            'work': {0: 'archi.thread_group.work'},
-            'callback': {0: 'archi.thread_group.callback'},
-            'batch_size': {0: (c.c_size_t, lambda v: c.c_size_t(v))},
+            'context': {0: _TYPE_THREAD_GROUP},
+            'work': {0: _TYPE_THREAD_GROUP_WORK},
+            'callback': {0: _TYPE_THREAD_GROUP_CALLBACK},
+            'batch_size': {0: _TYPE_SIZE},
             }
 
 ###############################################################################
@@ -590,19 +635,19 @@ class StringToNumberConverterContext(ContextWhitelistable):
     """
     class InitParameters(ParametersWhitelistable):
         PARAMETERS = {
-                'as_uchar': (str, lambda v: str(v)),
-                'as_ushort': (str, lambda v: str(v)),
-                'as_uint': (str, lambda v: str(v)),
-                'as_ulong': (str, lambda v: str(v)),
-                'as_ulonglong': (str, lambda v: str(v)),
-                'as_schar': (str, lambda v: str(v)),
-                'as_sshort': (str, lambda v: str(v)),
-                'as_sint': (str, lambda v: str(v)),
-                'as_slong': (str, lambda v: str(v)),
-                'as_slonglong': (str, lambda v: str(v)),
-                'as_float': (str, lambda v: str(v)),
-                'as_double': (str, lambda v: str(v)),
-                'as_longdouble': (str, lambda v: str(v)),
+                'as_uchar': _TYPE_STR,
+                'as_ushort': _TYPE_STR,
+                'as_uint': _TYPE_STR,
+                'as_ulong': _TYPE_STR,
+                'as_ulonglong': _TYPE_STR,
+                'as_schar': _TYPE_STR,
+                'as_sshort': _TYPE_STR,
+                'as_sint': _TYPE_STR,
+                'as_slong': _TYPE_STR,
+                'as_slonglong': _TYPE_STR,
+                'as_float': _TYPE_STR,
+                'as_double': _TYPE_STR,
+                'as_longdouble': _TYPE_STR,
                 }
 
     INTERFACE_SYMBOL = 'archi_context_convert_string_to_number_interface'
@@ -616,7 +661,7 @@ class TimerContext(ContextWhitelistable):
     """
     class InitParameters(ParametersWhitelistable):
         PARAMETERS = {
-                'name': (str, lambda v: str(v)),
+                'name': _TYPE_STR,
                 }
 
     class ActionResetParameters(ParametersWhitelistable):
@@ -624,7 +669,7 @@ class TimerContext(ContextWhitelistable):
 
     INTERFACE_SYMBOL = 'archi_context_timer_interface'
 
-    CONTEXT_TYPE = 'archi.timer'
+    DATA_TYPE = _TYPE_TIMER
 
     INIT_PARAMETERS_CLASS = InitParameters
 
@@ -648,7 +693,7 @@ CONTEXT_CLASSES = [
 class ExecutableContext(LibraryContext):
     """Library context type for the executable itself.
     """
-    SYMBOLS = {cls.INTERFACE_SYMBOL: archi_context_interface_t for cls in CONTEXT_CLASSES}
+    SYMBOLS = {cls.INTERFACE_SYMBOL: _TYPE_CONTEXT_INTERFACE for cls in CONTEXT_CLASSES}
 
 
 REGISTRY_BUILTIN_REGISTRY = ('archi.registry', HashmapContext)
