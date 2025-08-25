@@ -43,22 +43,21 @@ def dump_file(file_object: 'File', mapaddr: 'int', pathname: 'str' = None, repor
     """
     import sys
 
+    from ..memory import MemoryBlockCache, MemoryCluster
     from ..file import File
 
     if not isinstance(file_object, File):
         raise TypeError
 
-    file_memory = file_object.memory()
-    file_memory.pack() # get rid of padding bytes where possible
-
-    file_memory_buffer = file_memory.fossilize(mapaddr)
+    file_memory = file_object.encode()
+    file_buffer = file_memory.marshal(mapaddr)
 
     # Write the file
     if pathname is not None:
         with open(pathname, mode='wb') as file:
-            file.write(file_memory_buffer)
+            file.write(file_buffer)
     else:
-        sys.stdout.buffer.write(file_memory_buffer)
+        sys.stdout.buffer.write(file_buffer)
         sys.stdout.flush()
 
     if report:
@@ -73,7 +72,8 @@ def dump_file(file_object: 'File', mapaddr: 'int', pathname: 'str' = None, repor
         file_padding_mib = file_padding_kib / 1024
 
         eprint(f"Wrote {file_size_b} bytes ({file_size_kib:.1f} KiB, {file_size_mib:.1f} MiB, \
-    {file_size_gib:.1f} GiB) to {f"'{pathname}'" if pathname is not None else "<stdout>"},")
-        eprint(f"including {file_padding_b} padding bytes ({file_padding_kib:.1f} KiB, {file_padding_mib:.1f} MiB)")
+{file_size_gib:.1f} GiB) to {f"'{pathname}'" if pathname is not None else "<stdout>"},")
+        eprint(f"including {file_padding_b} padding bytes ({file_padding_kib:.1f} KiB, \
+{file_padding_mib:.1f} MiB)")
         eprint()
 

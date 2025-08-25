@@ -30,7 +30,7 @@ class archi_context_slot_t(c.Structure):
     """Context slot designator.
     """
     _fields_ = [('name', c.c_char_p),
-                ('index', c.POINTER(c.c_size_t)),
+                ('index', c.POINTER(c.c_ssize_t)),
                 ('num_indices', c.c_size_t)]
 
 

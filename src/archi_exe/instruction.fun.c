@@ -1091,15 +1091,18 @@ archi_exe_registry_instr_execute(
         archi_reference_count_t ref_count,
         bool dry_run)
 {
+#define M  "archi_exe_registry_instr_execute"
+
     if (registry == NULL)
         return ARCHI_STATUS_EMISUSE;
 
     bool logging = archi_print_lock(ARCHI_LOG_VERBOSITY_DEBUG);
 
     if (logging)
+    {
         archi_print_color(ARCHI_LOG_COLOR_DEBUG);
-
-    archi_print("\n");
+        archi_print("\n");
+    }
 
     if ((instruction == NULL) || (instruction->type == ARCHI_EXE_REGISTRY_INSTR__NOOP))
     {
@@ -1143,15 +1146,16 @@ archi_exe_registry_instr_execute(
         default:
             if (logging)
             {
-                archi_print(" <unknown instruction type>\n");
-
                 archi_print_color(ARCHI_COLOR_RESET);
                 archi_print_unlock();
             }
 
+            archi_log_warning(M, "unknown instruction type %i", instruction->type);
             code = !dry_run ? ARCHI_STATUS_EMISUSE : 0;
     }
 
     return code;
+
+#undef M
 }
 

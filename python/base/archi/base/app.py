@@ -26,7 +26,7 @@ import enum
 from contextlib import contextmanager
 from types import SimpleNamespace
 
-from .memory import CValue
+from .memory import CValue, MemoryBlock, Encoder, StringEncoder
 from .ctypes.base import (
         archi_array_layout_t,
         archi_pointer_flags_t,
@@ -166,6 +166,14 @@ class Context:
 
             return Context._Slot(self._.context, name=f'{self._.name}.{name}')
 
+        def __setattr__(self, name: 'str', value):
+            """Perform a slot setting operation.
+            """
+            if self._.is_action or self._.indices:
+                raise AttributeError
+
+            self._.context._set(f'{self._.name}.{name}', self._.indices, value)
+
         def __getitem__(self, index: 'int') -> 'Context._Slot':
             """Obtain a context slot object.
             """
@@ -185,14 +193,6 @@ class Context:
 
             else:
                 raise TypeError
-
-        def __setattr__(self, name: 'str', value):
-            """Perform a slot setting operation.
-            """
-            if self._.is_action or self._.indices:
-                raise AttributeError
-
-            self._.context._set(f'{self._.name}.{name}', self._.indices, value)
 
         def __setitem__(self, index: 'int', value):
             """Perform a slot setting operation.
@@ -326,6 +326,11 @@ class Context:
         """
         return Context._Slot(self, name=name)
 
+    def __setattr__(self, name: 'str', value):
+        """Perform a slot setting operation.
+        """
+        self._set(name, [], value)
+
     def __getitem__(self, index: 'int') -> 'Context._Slot':
         """Obtain a context slot object.
         """
@@ -340,11 +345,6 @@ class Context:
 
         else:
             raise TypeError
-
-    def __setattr__(self, name: 'str', value):
-        """Perform a slot setting operation.
-        """
-        self._set(name, [], value)
 
     def __setitem__(self, index: 'int', value):
         """Perform a slot setting operation.
@@ -398,8 +398,8 @@ class Context:
                 value_type = type(value.value())
             else:
                 value_type = None
-                value = CValue(slot_type.construct_value(value) \
-                        if slot_type is not None else value)
+                if slot_type is not None:
+                    value = slot_type.construct_value(value)
 
         if slot_type is not None and value_type is not None \
                 and not slot_type.is_type_compatible(value_type):
@@ -727,22 +727,6 @@ class ArrayContext(ContextWhitelistable):
 class Registry:
     """Representation of an Archipelago executable registry.
     """
-    class InitializerTypeHandler:
-        """The base class for handling initializers of custom types.
-        """
-        @classmethod
-        def replace_initializer(cls, initializer):
-            """Replace context initializer of the handled type.
-            Returns an initializer of another type.
-            """
-            raise NotImplementedError
-
-        @classmethod
-        def prepare_context(cls, context: 'Context', initializer):
-            """Prepare the created context using the original initializer.
-            """
-            pass
-
     class _ContextInterfaceOrigin:
         """Representation of an origin (context, slot) of a context interface.
         """
@@ -854,13 +838,8 @@ class Registry:
 
             self._contexts[key] = context
         else:
-            if type(initializer) not in self._initializer_types:
-                raise TypeError(f"Can't create a context from unknown type {type(initializer)}")
-
-            handler = self._initializer_types[type(initializer)]
-
-            self[key] = handler.replace_initializer(initializer)
-            handler.prepare_context(self[key], initializer)
+            self[key] = self._replace_initializer(initializer)
+            self._prepare_context(self[key], initializer)
 
     def __delitem__(self, key: 'str'):
         """Finalize a context and remove it from the registry.
@@ -869,9 +848,33 @@ class Registry:
             return
         elif not isinstance(key, str):
             raise TypeError
+        elif key not in self._contexts:
+            raise KeyError(f"Context '{key}' is not in the registry")
+
+        context = self._contexts[key]
+        context._.registry = None
+        context._.key = None
+
+        del self._contexts[key]
 
         self._delete_context(key)
-        del self._contexts[key]
+
+    def __contains__(self, item) -> 'bool':
+        """Check if a context (key) is in the registry.
+        """
+        if isinstance(item, str):
+            return item in self._contexts
+        elif isinstance(item, Context):
+            return item._.registry is self \
+                    and item._.key in self._contexts \
+                    and isinstance(self._contexts[item._.key], type(item))
+        else:
+            raise TypeError
+
+    def __iter__(self):
+        """Return an iterator.
+        """
+        return iter(self._contexts)
 
     def noop(self):
         """Emit a NOOP instruction.
@@ -930,40 +933,27 @@ class Registry:
         """
         return {key: value for key, value in self._contexts.items() if isinstance(value, cls)}
 
-    def register_initializer_type(self, initializer_type: 'type', handler: 'Registry.InitializerTypeHandler'):
-        """Register an initializer type handler.
-        """
-        if not isinstance(initializer_type, type):
-            raise TypeError
-        elif not isinstance(handler, Registry.InitializerTypeHandler):
-            raise TypeError
-
-        if initializer_type in self._initializer_types:
-            raise KeyError
-
-        self._initializer_types[initializer_type] = handler
-
-    def unregister_initializer_type(self, initializer_type: 'type'):
-        """Unregister an initializer type handler.
-        """
-        if not isinstance(initializer_type, type):
-            raise TypeError
-
-        del self._initializer_types[initializer_type]
-
-    def initializer_types(self) -> 'dict[type, Registry.InitializerTypeHandler]':
-        """Obtain the dictionary of registered initializer type handlers.
-        """
-        from types import MappingProxyType
-
-        return MappingProxyType(self._initializer_types)
-
     def reset(self):
         """Reset the list of instructions.
         """
         self._contexts = {}
-        self._initializer_types = {}
         self._instructions = []
+
+    def _replace_initializer(self, initializer):
+        """Replace context initializer of the handled type.
+        Returns an initializer of another type.
+        Raises TypeError if the initializer type is not recognized.
+
+        This method is to be redefined in derived classes.
+        """
+        raise TypeError
+
+    def _prepare_context(self, context: 'Context', initializer):
+        """Prepare the created context using the original initializer.
+
+        This method is to be redefined in derived classes.
+        """
+        pass
 
     def _instruct(self, type: 'Registry._Instruction.Type', /, **fields):
         """Append an instruction to the list.
@@ -1167,6 +1157,333 @@ class Registry:
 
 ###############################################################################
 
+class ParametersEncoder(Encoder):
+    """Encoder class for parameter lists.
+    """
+    @classmethod
+    def check_type(cls, obj) -> 'bool':
+        """Check type of an encoded object.
+        """
+        return isinstance(obj, dict) and all(isinstance(key, str) \
+                and isinstance(value, CValue) for key, value in obj.items())
+
+    @classmethod
+    def _cache_key(cls, obj):
+        """Get a cache key for an object.
+        """
+        return None
+
+    @classmethod
+    def _encode(cls, obj, cache: 'MemoryBlockCache', /) -> 'MemoryBlock':
+        """Encode a parameter list.
+        """
+        block_nodes = [None] * len(obj)
+
+        for idx, (key, value) in enumerate(obj.items()):
+            block_key = StringEncoder.encode(key, cache)
+            block_value = Encoder.encode(value, cache)
+
+            node = archi_parameter_list_t()
+
+            if block_value is not None:
+                node.value = _init_pointer(value)
+
+            def callback_node(node: 'archi_parameter_list_t',
+                              num_nodes=len(obj), idx=idx,
+                              block_key=block_key, block_value=block_value):
+                if idx < num_nodes - 1:
+                    node.next = c.cast(block_nodes[idx + 1].address(), type(node.next))
+
+                node.name = block_key.address()
+
+                if block_value is not None:
+                    node.value.ptr = block_value.address()
+
+            block_node = MemoryBlock(CValue(node), callback=callback_node)
+            cache[block_node] = block_node
+
+            block_nodes[idx] = block_node
+
+        return block_nodes[0] if block_nodes else None
+
+
+class SlotIndicesEncoder(Encoder):
+    """Encoder class for lists of slot indices.
+    """
+    @classmethod
+    def check_type(cls, obj) -> 'bool':
+        """Check type of an encoded object.
+        """
+        return isinstance(obj, list) and all(isinstance(index, int) for index in obj)
+
+    @classmethod
+    def _cache_key(cls, obj):
+        """Get a cache key for an object.
+        """
+        return tuple(obj)
+
+    @classmethod
+    def _encode(cls, obj, cache: 'MemoryBlockCache', /) -> 'MemoryBlock':
+        """Encode a list of slot indices.
+        """
+        return MemoryBlock(CValue((c.c_ssize_t * len(obj))(*obj))) if obj else None
+
+
+class RegistryEncoder(Encoder):
+    """Encoder class for context registries.
+    """
+    @classmethod
+    def check_type(cls, obj) -> 'bool':
+        """Check type of an encoded object.
+        """
+        return isinstance(obj, Registry)
+
+    @classmethod
+    def _encode(cls, obj, cache: 'MemoryBlockCache', /) -> 'MemoryBlock':
+        """Encode a context registry.
+        """
+        from .ctypes.instruction import archi_exe_registry_instr_list_t
+
+        block_instructions = [None] * len(obj._instructions)
+
+        for idx, instruction in enumerate(obj._instructions):
+            block_instruction = cls._encode_instruction(instruction, cache)
+
+            def callback_node(node: 'archi_exe_registry_instr_list_t',
+                              num_instructions=len(obj._instructions), idx=idx,
+                              block_instruction=block_instruction):
+                if idx < num_instructions - 1:
+                    node.next = c.cast(block_instructions[idx + 1].address(), type(node.next))
+
+                node.instruction = c.cast(block_instruction.address(), type(node.instruction))
+
+            block_node = MemoryBlock(CValue(archi_exe_registry_instr_list_t()), callback=callback_node)
+            cache[block_node] = block_node
+
+            block_instructions[idx] = block_node
+
+        return block_instructions[0] if block_instructions else None
+
+    @classmethod
+    def _encode_instruction(cls, instruction: 'Registry._Instruction', cache: 'MemoryBlockCache') -> 'MemoryBlock':
+        """Encode a registry instruction.
+        """
+        from .ctypes.instruction import (
+                archi_exe_registry_instr_base_t,
+                archi_exe_registry_instr__delete_t,
+                archi_exe_registry_instr__copy_t,
+                archi_exe_registry_instr__init_parameters_t,
+                archi_exe_registry_instr__init_pointer_t,
+                archi_exe_registry_instr__init_array_t,
+                archi_exe_registry_instr__init_from_context_t,
+                archi_exe_registry_instr__init_from_slot_t,
+                archi_exe_registry_instr__set_to_value_t,
+                archi_exe_registry_instr__set_to_context_data_t,
+                archi_exe_registry_instr__set_to_context_slot_t,
+                archi_exe_registry_instr__act_t,
+                )
+
+        InstructionType = Registry._Instruction.Type
+
+        if instruction.type() == InstructionType.NOOP.value:
+            instr = archi_exe_registry_instr_base_t()
+            instr.type = instruction.type()
+
+            callback_instr = None
+
+        elif instruction.type() == InstructionType.DELETE.value:
+            instr = archi_exe_registry_instr__delete_t()
+            instr.base.type = instruction.type()
+
+            block_key = StringEncoder.encode(instruction['key'], cache)
+
+            def callback_instr(instr):
+                instr.key = block_key.address()
+
+        elif instruction.type() == InstructionType.COPY.value:
+            instr = archi_exe_registry_instr__copy_t()
+            instr.base.type = instruction.type()
+
+            block_key = StringEncoder.encode(instruction['key'], cache)
+            block_original_key = StringEncoder.encode(instruction['original_key'], cache)
+
+            def callback_instr(instr):
+                instr.key = block_key.address()
+                instr.original_key = block_original_key.address()
+
+        elif instruction.type() == InstructionType.INIT_PARAMETERS.value:
+            instr = archi_exe_registry_instr__init_parameters_t()
+            instr.base.type = instruction.type()
+
+            block_key = StringEncoder.encode(instruction['key'], cache)
+            block_dparams_key = StringEncoder.encode(instruction['dparams_key'], cache)
+            block_sparams = ParametersEncoder.encode(instruction['sparams'], cache)
+
+            def callback_instr(instr):
+                instr.key = block_key.address()
+                if block_dparams_key is not None:
+                    instr.dparams_key = block_dparams_key.address()
+                if block_sparams is not None:
+                    instr.sparams = c.cast(block_sparams.address(), type(instr.sparams))
+
+        elif instruction.type() == InstructionType.INIT_POINTER.value:
+            instr = archi_exe_registry_instr__init_pointer_t()
+            instr.base.type = instruction.type()
+            if instruction['value'] is not None:
+                instr.value = _init_pointer(instruction['value'])
+
+            block_key = StringEncoder.encode(instruction['key'], cache)
+            block_value = Encoder.encode(instruction['value'], cache)
+
+            def callback_instr(instr):
+                instr.key = block_key.address()
+                if block_value is not None:
+                    instr.value.ptr = block_value.address()
+
+        elif instruction.type() == InstructionType.INIT_ARRAY.value:
+            instr = archi_exe_registry_instr__init_array_t()
+            instr.base.type = instruction.type()
+            instr.num_elements = instruction['num_elements']
+            if instruction['flags'] is not None:
+                instr.flags = instruction['flags']
+
+            block_key = StringEncoder.encode(instruction['key'], cache)
+
+            def callback_instr(instr):
+                instr.key = block_key.address()
+
+        elif instruction.type() == InstructionType.INIT_FROM_CONTEXT.value:
+            instr = archi_exe_registry_instr__init_from_context_t()
+            instr.base.type = instruction.type()
+
+            block_key = StringEncoder.encode(instruction['key'], cache)
+            block_interface_origin_key = StringEncoder.encode(instruction['interface_origin_key'], cache)
+            block_dparams_key = StringEncoder.encode(instruction['dparams_key'], cache)
+            block_sparams = ParametersEncoder.encode(instruction['sparams'], cache)
+
+            def callback_instr(instr):
+                instr.key = block_key.address()
+                instr.interface_origin_key = block_interface_origin_key.address()
+                if block_dparams_key is not None:
+                    instr.dparams_key = block_dparams_key.address()
+                if block_sparams is not None:
+                    instr.sparams = c.cast(block_sparams.address(), type(instr.sparams))
+
+        elif instruction.type() == InstructionType.INIT_FROM_SLOT.value:
+            instr = archi_exe_registry_instr__init_from_slot_t()
+            instr.base.type = instruction.type()
+            instr.interface_origin_slot.num_indices = len(instruction['interface_origin_slot_indices'])
+
+            block_key = StringEncoder.encode(instruction['key'], cache)
+            block_interface_origin_key = StringEncoder.encode(instruction['interface_origin_key'], cache)
+            block_interface_origin_slot_name = StringEncoder.encode(instruction['interface_origin_slot_name'], cache)
+            block_interface_origin_slot_indices = SlotIndicesEncoder.encode(instruction['interface_origin_slot_indices'], cache)
+            block_dparams_key = StringEncoder.encode(instruction['dparams_key'], cache)
+            block_sparams = ParametersEncoder.encode(instruction['sparams'], cache)
+
+            def callback_instr(instr):
+                instr.key = block_key.address()
+                instr.interface_origin_key = block_interface_origin_key.address()
+                instr.interface_origin_slot.name = block_interface_origin_slot_name.address()
+                if block_interface_origin_slot_indices is not None:
+                    instr.interface_origin_slot.index = c.cast(block_interface_origin_slot_indices.address(),
+                                                               type(instr.interface_origin_slot.index))
+                if block_dparams_key is not None:
+                    instr.dparams_key = block_dparams_key.address()
+                if block_sparams is not None:
+                    instr.sparams = c.cast(block_sparams.address(), type(instr.sparams))
+
+        elif instruction.type() == InstructionType.SET_TO_VALUE.value:
+            instr = archi_exe_registry_instr__set_to_value_t()
+            instr.base.type = instruction.type()
+            instr.slot.num_indices = len(instruction['slot_indices'])
+            if instruction['value'] is not None:
+                instr.value = _init_pointer(instruction['value'])
+
+            block_key = StringEncoder.encode(instruction['key'], cache)
+            block_slot_name = StringEncoder.encode(instruction['slot_name'], cache)
+            block_slot_indices = SlotIndicesEncoder.encode(instruction['slot_indices'], cache)
+            block_value = Encoder.encode(instruction['value'], cache)
+
+            def callback_instr(instr):
+                instr.key = block_key.address()
+                instr.slot.name = block_slot_name.address()
+                if block_slot_indices is not None:
+                    instr.slot.index = c.cast(block_slot_indices.address(), type(instr.slot.index))
+                if block_value is not None:
+                    instr.value.ptr = block_value.address()
+
+        elif instruction.type() == InstructionType.SET_TO_CONTEXT_DATA.value:
+            instr = archi_exe_registry_instr__set_to_context_data_t()
+            instr.base.type = instruction.type()
+            instr.slot.num_indices = len(instruction['slot_indices'])
+
+            block_key = StringEncoder.encode(instruction['key'], cache)
+            block_slot_name = StringEncoder.encode(instruction['slot_name'], cache)
+            block_slot_indices = SlotIndicesEncoder.encode(instruction['slot_indices'], cache)
+            block_source_key = StringEncoder.encode(instruction['source_key'], cache)
+
+            def callback_instr(instr):
+                instr.key = block_key.address()
+                instr.slot.name = block_slot_name.address()
+                if block_slot_indices is not None:
+                    instr.slot.index = c.cast(block_slot_indices.address(), type(instr.slot.index))
+                instr.source_key = block_source_key.address()
+
+        elif instruction.type() == InstructionType.SET_TO_CONTEXT_SLOT.value:
+            instr = archi_exe_registry_instr__set_to_context_slot_t()
+            instr.base.type = instruction.type()
+            instr.slot.num_indices = len(instruction['slot_indices'])
+            instr.source_slot.num_indices = len(instruction['source_slot_indices'])
+
+            block_key = StringEncoder.encode(instruction['key'], cache)
+            block_slot_name = StringEncoder.encode(instruction['slot_name'], cache)
+            block_slot_indices = SlotIndicesEncoder.encode(instruction['slot_indices'], cache)
+            block_source_key = StringEncoder.encode(instruction['source_key'], cache)
+            block_source_slot_name = StringEncoder.encode(instruction['source_slot_name'], cache)
+            block_source_slot_indices = SlotIndicesEncoder.encode(instruction['source_slot_indices'], cache)
+
+            def callback_instr(instr):
+                instr.key = block_key.address()
+                instr.slot.name = block_slot_name.address()
+                if block_slot_indices is not None:
+                    instr.slot.index = c.cast(block_slot_indices.address(), type(instr.slot.index))
+                instr.source_key = block_source_key.address()
+                instr.source_slot.name = block_source_slot_name.address()
+                if block_source_slot_indices is not None:
+                    instr.source_slot.index = c.cast(block_source_slot_indices.address(), type(instr.source_slot.index))
+
+        elif instruction.type() == InstructionType.ACT.value:
+            instr = archi_exe_registry_instr__act_t()
+            instr.base.type = instruction.type()
+            instr.action.num_indices = len(instruction['action_indices'])
+
+            block_key = StringEncoder.encode(instruction['key'], cache)
+            block_action_name = StringEncoder.encode(instruction['action_name'], cache)
+            block_action_indices = SlotIndicesEncoder.encode(instruction['action_indices'], cache)
+            block_dparams_key = StringEncoder.encode(instruction['dparams_key'], cache)
+            block_sparams = ParametersEncoder.encode(instruction['sparams'], cache)
+
+            def callback_instr(instr):
+                instr.key = block_key.address()
+                instr.action.name = block_action_name.address()
+                if block_action_indices is not None:
+                    instr.action.index = c.cast(block_action_indices.address(), type(instr.action.index))
+                if block_dparams_key is not None:
+                    instr.dparams_key = block_dparams_key.address()
+                if block_sparams is not None:
+                    instr.sparams = c.cast(block_sparams.address(), type(instr.sparams))
+
+        else:
+            raise ValueError(f"Unknown instruction type {instruction.type()}")
+
+        block_instr = MemoryBlock(CValue(instr), callback=callback_instr)
+        cache[block_instr] = block_instr
+
+        return block_instr
+
+###############################################################################
+
 def _random_string(length: 'int' = 8) -> 'str':
     """Generate a random string.
     """
@@ -1181,4 +1498,13 @@ def _error_slot_unrecognized(name, indices, action=False):
     """
     raise KeyError(("Action" if action else "Slot") +
                    f" '{name}[{']['.join([str(i) for i in indices])}]' is not recognized")
+
+
+def _init_pointer(cvalue: 'CValue') -> 'archi_pointer_t':
+    """Create a C pointer wrapper structure from a CValue.
+    """
+    return archi_pointer_t(archi_array_layout_t(cvalue.num_elements(),
+                                                cvalue.element_size(),
+                                                cvalue.element_alignment()),
+                           cvalue.attributes().get('flags', 0))
 
