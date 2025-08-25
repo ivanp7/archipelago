@@ -43,22 +43,21 @@ def dump_file(file_object: 'File', mapaddr: 'int', pathname: 'str' = None, repor
     """
     import sys
 
+    from ..memory import MemoryBlockCache, MemoryCluster
     from ..file import File
 
     if not isinstance(file_object, File):
         raise TypeError
 
-    file_memory = file_object.memory()
-    file_memory.pack() # get rid of padding bytes where possible
-
-    file_memory_buffer = file_memory.fossilize(mapaddr)
+    file_memory = file_object.encode()
+    file_buffer = file_memory.marshal(mapaddr)
 
     # Write the file
     if pathname is not None:
         with open(pathname, mode='wb') as file:
-            file.write(file_memory_buffer)
+            file.write(file_buffer)
     else:
-        sys.stdout.buffer.write(file_memory_buffer)
+        sys.stdout.buffer.write(file_buffer)
         sys.stdout.flush()
 
     if report:

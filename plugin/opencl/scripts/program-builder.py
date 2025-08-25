@@ -14,7 +14,7 @@ import sys
 from archi.base.memory import CValue
 from archi.base.app import Registry
 from archi.base.file import File
-from archi.base.aux.script import eprint, random_map_address, dump_file
+from archi.base.misc.script import eprint, random_map_address, dump_file
 
 from archi.builtin.context import (
         REGISTRY_BUILTIN_EXECUTABLE,
@@ -23,6 +23,7 @@ from archi.builtin.context import (
         EnvVarContext,
         FileContext,
         )
+from archi.builtin.file import FILE_BUILTIN_REGISTRY
 from archi.opencl.context import (
         OpenCLPluginContext,
         OpenCLContextContext,
@@ -252,7 +253,7 @@ with app.temp_context(library_interface(pathname=PLUGIN_OPENCL_PATHNAME).is_a(Op
 # Generate the .archi file
 
 file = File()
-file[File.KEY_REGISTRY] = app
+file[FILE_BUILTIN_REGISTRY[0]] = FILE_BUILTIN_REGISTRY[1](app)
 
 dump_file(file, args.mapaddr, args.file)
 

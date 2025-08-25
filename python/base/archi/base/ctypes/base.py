@@ -34,10 +34,13 @@ class archi_array_layout_t(c.Structure):
                 ('size', c.c_size_t),
                 ('alignment', c.c_size_t)]
 
-    def __init__(self, num_of: 'int' = 0, size: 'int' = 0, alignment: 'int' = 0, /):
+    def __init__(self, num_of: 'int' = 0, size: 'int' = 0, alignment: 'int' = 0):
         """Initialize an instance.
         """
         super().__init__()
+
+        if not isinstance(num_of, int) or not isinstance(size, int) or not isinstance(alignment, int):
+            raise TypeError
 
         if num_of < 0 or size < 0 or alignment < 0:
             raise ValueError
@@ -70,6 +73,21 @@ class archi_pointer_t(c.Structure):
                 ('ref_count', c.c_void_p),
                 ('flags', archi_pointer_flags_t),
                 ('element', archi_array_layout_t)]
+
+    def __init__(self, layout: 'archi_array_layout_t', flags: 'int' = 0):
+        """Initialize an instance.
+        """
+        super().__init__()
+
+        if not isinstance(layout, archi_array_layout_t):
+            raise TypeError
+        elif not isinstance(flags, int):
+            raise TypeError
+        elif (flags < 0) or (flags >= 1 << type(self).NUM_FLAG_BITS):
+            raise ValueError(f"Pointer flags must fit into {type(self).NUM_FLAG_BITS} lowest bits")
+
+        self.flags = flags
+        self.element = layout
 
 
 class archi_parameter_list_t(c.Structure):
