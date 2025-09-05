@@ -856,6 +856,8 @@ class Registry:
         context._.key = None
 
         del self._contexts[key]
+        if key in self._required:
+            self._required.remove(key)
 
         self._delete_context(key)
 
@@ -881,6 +883,19 @@ class Registry:
         """
         self._instruct(Registry._Instruction.Type.NOOP)
 
+    def is_required(self, item) -> 'bool':
+        """Check if a context (key) was added to the registry by require_context().
+        """
+        if item not in self:
+            return False
+
+        if isinstance(item, str):
+            return item in self._required
+        elif isinstance(item, Context):
+            return item._.key in self._required
+        else:
+            raise TypeError
+
     def require_context(self, key: 'str', cls: 'type' = Context) -> 'Context':
         """Require a context with the specified key to exist in the registry.
         """
@@ -897,6 +912,8 @@ class Registry:
         context._.key = key
 
         self._contexts[key] = context
+        self._required.add(key)
+
         return context
 
     def new_context(self, value, /, key: 'str') -> 'Context':
@@ -928,15 +945,19 @@ class Registry:
         with self.del_context(key) as context:
             yield context
 
-    def contexts(self, cls: 'type' = Context) -> 'dict[str, Context]':
+    def contexts(self, cls: 'type' = Context, /,
+                 required: 'bool' = True, new: 'bool' = True) -> 'dict[str, Context]':
         """Obtain the dictionary of known contexts of the specified type.
         """
-        return {key: value for key, value in self._contexts.items() if isinstance(value, cls)}
+        return {key: value for key, value in self._contexts.items() if isinstance(value, cls) \
+                and ((required and key in self._required) or (new and key not in self._required))}
 
     def reset(self):
         """Reset the list of instructions.
         """
         self._contexts = {}
+        self._required = set()
+
         self._instructions = []
 
     def _replace_initializer(self, initializer):
