@@ -161,7 +161,7 @@ class Context:
         def __getattr__(self, name: 'str') -> 'Context._Slot':
             """Obtain a context slot object.
             """
-            if self._.is_action or self._.indices:
+            if self._.is_action:
                 raise AttributeError
 
             return Context._Slot(self._.context, name=f'{self._.name}.{name}')
@@ -169,7 +169,7 @@ class Context:
         def __setattr__(self, name: 'str', value):
             """Perform a slot setting operation.
             """
-            if self._.is_action or self._.indices:
+            if self._.is_action:
                 raise AttributeError
 
             self._.context._set(f'{self._.name}.{name}', self._.indices, value)
