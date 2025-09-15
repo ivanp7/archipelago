@@ -247,7 +247,7 @@ with app.temp_context(library_interface(pathname=PLUGIN_OPENCL_PATHNAME).is_a(Op
                                                  mode=0o644), key='file.out') as file, \
                     app.temp_context(file.map(writable=TRUE, shared=TRUE), key='file.memory') as file_memory:
                 # Write the program binary for the current device into the output file
-                file_memory.copy(source=opencl_program.binary[i])
+                app[None] = file_memory.copy(source=opencl_program.binary[i])
 
 ###############################################################################
 # Generate the .archi file

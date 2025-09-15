@@ -34,7 +34,9 @@ struct archi_memory {
     archi_pointer_t interface; ///< Memory interface.
 
     archi_pointer_t allocation; ///< Current memory allocation.
-    archi_pointer_t mapping;    ///< Current memory mapping.
+    void *metadata; ///< Metadata for the current memory allocation.
+
+    archi_pointer_t mapping; ///< Current memory mapping.
 };
 
 archi_pointer_t
@@ -122,7 +124,7 @@ archi_memory_allocate(
     // Allocate the memory itself
     archi_status_t code_alloc = 0;
 
-    void *allocation = interface_ptr->alloc_fn(
+    archi_memory_alloc_info_t alloc_info = interface_ptr->alloc_fn(
             num_bytes, layout.alignment, alloc_data, &code_alloc);
 
     if (code_alloc < 0)
@@ -133,7 +135,7 @@ archi_memory_allocate(
         free(memory);
         return NULL;
     }
-    else if (allocation == NULL)
+    else if (alloc_info.allocation == NULL)
     {
         if (code != NULL)
             *code = (code_alloc > 0) ? code_alloc : ARCHI_STATUS_ENOMEMORY;
@@ -147,9 +149,11 @@ archi_memory_allocate(
 
     // Store the allocation into the object
     memory->allocation = (archi_pointer_t){
-        .ptr = allocation,
+        .ptr = alloc_info.allocation,
         .element = layout,
     };
+
+    memory->metadata = alloc_info.metadata;
 
     if (code != NULL)
         *code = code_alloc;
@@ -170,7 +174,14 @@ archi_memory_free(
     const archi_memory_interface_t *interface_ptr = memory->interface.ptr;
 
     if (interface_ptr->free_fn != NULL)
-        interface_ptr->free_fn(memory->allocation.ptr);
+    {
+        archi_memory_alloc_info_t alloc_info = {
+            .allocation = memory->allocation.ptr,
+            .metadata = memory->metadata,
+        };
+
+        interface_ptr->free_fn(alloc_info);
+    }
 
     archi_reference_count_decrement(memory->interface.ref_count);
 
@@ -185,7 +196,14 @@ ARCHI_DESTRUCTOR_FUNC(archi_memory_mapping_destructor)
     const archi_memory_interface_t *interface_ptr = memory->interface.ptr;
 
     if (interface_ptr->unmap_fn != NULL)
-        interface_ptr->unmap_fn(memory->allocation.ptr, memory->mapping.ptr);
+    {
+        archi_memory_alloc_info_t alloc_info = {
+            .allocation = memory->allocation.ptr,
+            .metadata = memory->metadata,
+        };
+
+        interface_ptr->unmap_fn(alloc_info, memory->mapping.ptr);
+    }
 
     memory->mapping = (archi_pointer_t){0};
 }
@@ -246,7 +264,12 @@ archi_memory_map(
 
     const archi_memory_interface_t *interface_ptr = memory->interface.ptr;
 
-    void *mapping = interface_ptr->map_fn(memory->allocation.ptr,
+    archi_memory_alloc_info_t alloc_info = {
+        .allocation = memory->allocation.ptr,
+        .metadata = memory->metadata,
+    };
+
+    void *mapping = interface_ptr->map_fn(alloc_info,
             offset * element_size, num_bytes, writeable, map_data, &code_map);
 
     if (code_map < 0)

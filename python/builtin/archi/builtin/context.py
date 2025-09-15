@@ -35,18 +35,20 @@ from .ctypes.signal import archi_signal_watch_set_t
 
 ###############################################################################
 
-_TYPE_BOOL = PublicType(c.c_byte, lambda v: c.c_byte(bool(v)))
+_TYPE_BOOL = PublicType(c.c_byte, constr=lambda v: c.c_byte(bool(v)))
 _TYPE_INT = PublicType(c.c_int)
 _TYPE_SIZE = PublicType(c.c_size_t)
-_TYPE_ARRAY_LAYOUT = PublicType(archi_array_layout_t, lambda v: archi_array_layout_t(*v))
+_TYPE_ARRAY_LAYOUT = PublicType(archi_array_layout_t, constr=lambda v: archi_array_layout_t(*v))
 _TYPE_POINTER_FLAGS = PublicType(archi_pointer_flags_t)
-_TYPE_FUNC = PublicType(c.CFUNCTYPE(None))
-_TYPE_STR = PublicType(str)
+_TYPE_STR = PublicType(c.c_char, array=True, constr=lambda v: c.create_string_buffer(v.encode()))
 
 _TYPE_HSP_STATE = PrivateType('archi.hsp.state')
+_TYPE_HSP_STATE_FUNC = PrivateType('archi.hsp.state.function')
 _TYPE_HSP_FRAME = PrivateType('archi.hsp.frame')
 _TYPE_HSP_TRANSITION = PrivateType('archi.hsp.transition')
+_TYPE_HSP_TRANSITION_FUNC = PrivateType('archi.hsp.transition.function')
 _TYPE_HSP_BRANCH_STATE_DATA = PrivateType('archi.hsp.state.branch.data')
+_TYPE_HSP_BRANCH_STATE_SELECTOR_FUNC = PrivateType('archi.hsp.state.branch.selector_func')
 _TYPE_HSP_TRANSITION_ATTACHMENT_DATA = PrivateType('archi.hsp.transition.attachment.data')
 
 _TYPE_HASHMAP = PrivateType('archi.hashmap')
@@ -58,6 +60,7 @@ _TYPE_LFQUEUE_ALLOC_PARAMS = PrivateType('archi.lfqueue.alloc_params')
 _TYPE_SIGNAL_WATCH_SET = PublicType(archi_signal_watch_set_t)
 _TYPE_SIGNAL_FLAGS = PrivateType('archi.signal.flags')
 _TYPE_SIGNAL_HANDLER = PrivateType('archi.signal.handler')
+_TYPE_SIGNAL_HANDLER_FUNC = PrivateType('archi.signal.handler.function')
 _TYPE_SIGNAL_MANAGEMENT_CONTEXT = PrivateType('archi.signal.management')
 
 _TYPE_MEMORY = PrivateType('archi.memory')
@@ -73,7 +76,9 @@ _TYPE_THREAD_GROUP = PrivateType('archi.thread_group')
 _TYPE_THREAD_GROUP_START_PARAMS = PrivateType('archi.thread_group.start_params')
 _TYPE_THREAD_GROUP_DISPATCH_PARAMS = PrivateType('archi.thread_group.dispatch_params')
 _TYPE_THREAD_GROUP_WORK = PrivateType('archi.thread_group.work')
+_TYPE_THREAD_GROUP_WORK_FUNC = PrivateType('archi.thread_group.work.function')
 _TYPE_THREAD_GROUP_CALLBACK = PrivateType('archi.thread_group.callback')
+_TYPE_THREAD_GROUP_CALLBACK_FUNC = PrivateType('archi.thread_group.callback.function')
 _TYPE_THREAD_GROUP_DISPATCH_DATA = PrivateType('archi.thread_group.dispatch_data')
 
 _TYPE_TIMER = PrivateType('archi.timer')
@@ -92,7 +97,7 @@ class HSPFrameContext(ContextWhitelistable):
 
     class ActionExecuteParameters(ParametersWhitelistable):
         PARAMETERS = {
-                'transition_function': _TYPE_FUNC,
+                'transition_function': _TYPE_HSP_TRANSITION_FUNC,
                 'transition_data': None,
                 }
 
@@ -105,13 +110,13 @@ class HSPFrameContext(ContextWhitelistable):
     GETTER_SLOT_TYPES = {
             'num_states': {0: _TYPE_SIZE},
             'state': {1: _TYPE_HSP_STATE},
-            'state.function': {1: _TYPE_FUNC},
+            'state.function': {1: _TYPE_HSP_STATE_FUNC},
             'state.data': {1: None},
             'state.metadata': {1: None},
             }
 
     SETTER_SLOT_TYPES = {
-            'state.function': {1: _TYPE_FUNC},
+            'state.function': {1: _TYPE_HSP_STATE_FUNC},
             'state.data': {1: None},
             'state.metadata': {1: None},
             }
@@ -126,7 +131,7 @@ class HSPTransitionContext(ContextWhitelistable):
     """
     class InitParameters(ParametersWhitelistable):
         PARAMETERS = {
-                'function': _TYPE_FUNC,
+                'function': _TYPE_HSP_TRANSITION_FUNC,
                 'data': None,
                 }
 
@@ -137,12 +142,12 @@ class HSPTransitionContext(ContextWhitelistable):
     INIT_PARAMETERS_CLASS = InitParameters
 
     GETTER_SLOT_TYPES = {
-            'function': {0: _TYPE_FUNC},
+            'function': {0: _TYPE_HSP_TRANSITION_FUNC},
             'data': {0: None},
             }
 
     SETTER_SLOT_TYPES = {
-            'function': {0: _TYPE_FUNC},
+            'function': {0: _TYPE_HSP_TRANSITION_FUNC},
             'data': {0: None},
             }
 
@@ -153,7 +158,7 @@ class HSPBranchStateDataContext(ContextWhitelistable):
     class InitParameters(ParametersWhitelistable):
         PARAMETERS = {
                 'num_branches': _TYPE_SIZE,
-                'selector_function': _TYPE_FUNC,
+                'selector_function': _TYPE_HSP_BRANCH_STATE_SELECTOR_FUNC,
                 'selector_data': None,
                 }
 
@@ -166,13 +171,13 @@ class HSPBranchStateDataContext(ContextWhitelistable):
     GETTER_SLOT_TYPES = {
             'num_branches': {0: _TYPE_SIZE},
             'branch': {1: _TYPE_HSP_FRAME},
-            'selector.function': {0: _TYPE_FUNC},
+            'selector.function': {0: _TYPE_HSP_BRANCH_STATE_SELECTOR_FUNC},
             'selector.data': {0: None},
             }
 
     SETTER_SLOT_TYPES = {
             'branch': {1: _TYPE_HSP_FRAME},
-            'selector.function': {0: _TYPE_FUNC},
+            'selector.function': {0: _TYPE_HSP_BRANCH_STATE_SELECTOR_FUNC},
             'selector.data': {0: None},
             }
 
@@ -182,9 +187,9 @@ class HSPTransitionAttachmentDataContext(ContextWhitelistable):
     """
     class InitParameters(ParametersWhitelistable):
         PARAMETERS = {
-                'pre_function': _TYPE_FUNC,
+                'pre_function': _TYPE_HSP_TRANSITION_FUNC,
                 'pre_data': None,
-                'post_function': _TYPE_FUNC,
+                'post_function': _TYPE_HSP_TRANSITION_FUNC,
                 'post_data': None,
                 }
 
@@ -195,16 +200,16 @@ class HSPTransitionAttachmentDataContext(ContextWhitelistable):
     INIT_PARAMETERS_CLASS = InitParameters
 
     GETTER_SLOT_TYPES = {
-            'pre.function': {0: _TYPE_FUNC},
+            'pre.function': {0: _TYPE_HSP_TRANSITION_FUNC},
             'pre.data': {0: None},
-            'post.function': {0: _TYPE_FUNC},
+            'post.function': {0: _TYPE_HSP_TRANSITION_FUNC},
             'post.data': {0: None},
             }
 
     SETTER_SLOT_TYPES = {
-            'pre.function': {0: _TYPE_FUNC},
+            'pre.function': {0: _TYPE_HSP_TRANSITION_FUNC},
             'pre.data': {0: None},
-            'post.function': {0: _TYPE_FUNC},
+            'post.function': {0: _TYPE_HSP_TRANSITION_FUNC},
             'post.data': {0: None},
             }
 
@@ -290,7 +295,7 @@ class SignalHandlerContext(ContextWhitelistable):
     """
     class InitParameters(ParametersWhitelistable):
         PARAMETERS = {
-                'function': _TYPE_FUNC,
+                'function': _TYPE_SIGNAL_HANDLER_FUNC,
                 'data': None,
                 }
 
@@ -301,12 +306,12 @@ class SignalHandlerContext(ContextWhitelistable):
     INIT_PARAMETERS_CLASS = InitParameters
 
     GETTER_SLOT_TYPES = {
-            'function': {0: _TYPE_FUNC},
+            'function': {0: _TYPE_SIGNAL_HANDLER_FUNC},
             'data': {0: None},
             }
 
     SETTER_SLOT_TYPES = {
-            'function': {0: _TYPE_FUNC},
+            'function': {0: _TYPE_SIGNAL_HANDLER_FUNC},
             'data': {0: None},
             }
 
@@ -515,7 +520,7 @@ class LibraryContext(Context):
     def action_parameters_class(cls, name: 'str', indices: 'list[int]'):
         if indices:
             raise KeyError
-        return ActionSymbolParameters
+        return cls.ActionSymbolParameters
 
 ###############################################################################
 
@@ -544,7 +549,7 @@ class ThreadGroupWorkContext(ContextWhitelistable):
     """
     class InitParameters(ParametersWhitelistable):
         PARAMETERS = {
-                'function': _TYPE_FUNC,
+                'function': _TYPE_THREAD_GROUP_WORK_FUNC,
                 'data': None,
                 'size': _TYPE_SIZE,
                 }
@@ -556,13 +561,13 @@ class ThreadGroupWorkContext(ContextWhitelistable):
     INIT_PARAMETERS_CLASS = InitParameters
 
     GETTER_SLOT_TYPES = {
-            'function': {0: _TYPE_FUNC},
+            'function': {0: _TYPE_THREAD_GROUP_WORK_FUNC},
             'data': {0: None},
             'size': {0: _TYPE_SIZE},
             }
 
     SETTER_SLOT_TYPES = {
-            'function': {0: _TYPE_FUNC},
+            'function': {0: _TYPE_THREAD_GROUP_WORK_FUNC},
             'data': {0: None},
             'size': {0: _TYPE_SIZE},
             }
@@ -573,7 +578,7 @@ class ThreadGroupCallbackContext(ContextWhitelistable):
     """
     class InitParameters(ParametersWhitelistable):
         PARAMETERS = {
-                'function': _TYPE_FUNC,
+                'function': _TYPE_THREAD_GROUP_CALLBACK_FUNC,
                 'data': None,
                 }
 
@@ -584,12 +589,12 @@ class ThreadGroupCallbackContext(ContextWhitelistable):
     INIT_PARAMETERS_CLASS = InitParameters
 
     GETTER_SLOT_TYPES = {
-            'function': {0: _TYPE_FUNC},
+            'function': {0: _TYPE_THREAD_GROUP_CALLBACK_FUNC},
             'data': {0: None},
             }
 
     SETTER_SLOT_TYPES = {
-            'function': {0: _TYPE_FUNC},
+            'function': {0: _TYPE_THREAD_GROUP_CALLBACK_FUNC},
             'data': {0: None},
             }
 

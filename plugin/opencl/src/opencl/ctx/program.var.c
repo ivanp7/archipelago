@@ -197,10 +197,12 @@ ARCHI_CONTEXT_INIT_FUNC(archi_context_opencl_program_init_bin)
     archi_pointer_t opencl_context = {0};
     archi_pointer_t device_id = {0};
     archi_pointer_t array_binaries = {0};
+    bool build_program = false;
 
     bool param_opencl_context_set = false;
     bool param_device_ids_set = false;
     bool param_binaries_set = false;
+    bool param_build_set = false;
 
     for (; params != NULL; params = params->next)
     {
@@ -238,6 +240,18 @@ ARCHI_CONTEXT_INIT_FUNC(archi_context_opencl_program_init_bin)
                 return ARCHI_STATUS_EVALUE;
 
             array_binaries = params->value;
+        }
+        else if (strcmp("build", params->name) == 0)
+        {
+            if (param_build_set)
+                continue;
+            param_build_set = true;
+
+            if ((params->value.flags & ARCHI_POINTER_FLAG_FUNCTION) ||
+                    (params->value.ptr == NULL))
+                return ARCHI_STATUS_EVALUE;
+
+            build_program = *(char*)params->value.ptr;
         }
         else
             return ARCHI_STATUS_EKEY;
@@ -281,7 +295,7 @@ ARCHI_CONTEXT_INIT_FUNC(archi_context_opencl_program_init_bin)
 
     archi_status_t code;
     cl_program program = archi_opencl_program_create(
-            opencl_context.ptr, binaries, true, &code);
+            opencl_context.ptr, binaries, build_program, true, &code);
 
     if (code != 0)
     {

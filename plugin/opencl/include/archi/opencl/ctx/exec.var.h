@@ -13,6 +13,7 @@ ARCHI_CONTEXT_INIT_FUNC(archi_opencl_kernel_enqueue_data_init);   ///< OpenCL ke
 ARCHI_CONTEXT_FINAL_FUNC(archi_opencl_kernel_enqueue_data_final); ///< OpenCL kernel enqueue data finalization function.
 ARCHI_CONTEXT_GET_FUNC(archi_opencl_kernel_enqueue_data_get);     ///< OpenCL kernel enqueue data getter function.
 ARCHI_CONTEXT_SET_FUNC(archi_opencl_kernel_enqueue_data_set);     ///< OpenCL kernel enqueue data setter function.
+ARCHI_CONTEXT_ACT_FUNC(archi_opencl_kernel_enqueue_data_act);     ///< OpenCL kernel enqueue data action function.
 
 extern
 const archi_context_interface_t archi_opencl_kernel_enqueue_data_interface; ///< OpenCL kernel enqueue data interface.

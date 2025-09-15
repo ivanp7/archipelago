@@ -25,13 +25,17 @@
 
 #include "archi/res_library/ctx/library.var.h"
 #include "archi/res_library/api/handle.fun.h"
+#include "archipelago/util/alloc.fun.h"
 
 #include <stdlib.h> // for malloc(), free()
 #include <string.h> // for strcmp()
 
 struct archi_context_library_data {
     archi_pointer_t handle;
-    archi_pointer_t symbol;
+
+    archi_pointer_t default_attributes;
+    archi_pointer_t current_attributes;
+    char *current_symbol_name;
 };
 
 ARCHI_CONTEXT_INIT_FUNC(archi_context_library_init)
@@ -140,7 +144,12 @@ ARCHI_CONTEXT_INIT_FUNC(archi_context_library_init)
                 .num_of = 1,
             },
         },
-        .symbol = {
+        .default_attributes = {
+            .element = {
+                .num_of = 1,
+            }
+        },
+        .current_attributes = {
             .element = {
                 .num_of = 1,
             }
@@ -157,6 +166,7 @@ ARCHI_CONTEXT_FINAL_FUNC(archi_context_library_final)
         (struct archi_context_library_data*)context;
 
     archi_library_unload(context_data->handle.ptr);
+    free(context_data->current_symbol_name);
     free(context_data);
 }
 
@@ -168,8 +178,18 @@ ARCHI_CONTEXT_GET_FUNC(archi_context_library_get)
     struct archi_context_library_data *context_data =
         (struct archi_context_library_data*)context;
 
-    archi_pointer_t symbol = context_data->symbol;
-    context_data->symbol = (archi_pointer_t){.element.num_of = 1}; // reset the attributes
+    archi_pointer_t symbol;
+
+    if ((context_data->current_symbol_name != NULL) &&
+            (strcmp(slot.name, context_data->current_symbol_name) == 0))
+        symbol = context_data->current_attributes;
+    else
+        symbol = context_data->default_attributes;
+
+    context_data->current_attributes = context_data->default_attributes;
+
+    free(context_data->current_symbol_name);
+    context_data->current_symbol_name = NULL;
 
     symbol.ptr = archi_library_get_symbol(context_data->handle.ptr, slot.name);
     if (symbol.ptr == NULL)
@@ -189,7 +209,11 @@ ARCHI_CONTEXT_ACT_FUNC(archi_context_library_act)
     struct archi_context_library_data *context_data =
         (struct archi_context_library_data*)context;
 
-    archi_pointer_t attributes = {0};
+    archi_pointer_t attributes = {
+        .element = {
+            .num_of = 1,
+        },
+    };
     bool flag_function = false;
     archi_array_layout_t layout_fields = {0};
 
@@ -252,6 +276,9 @@ ARCHI_CONTEXT_ACT_FUNC(archi_context_library_act)
                 return ARCHI_STATUS_EVALUE;
 
             layout_fields.num_of = *(size_t*)params->value.ptr;
+
+            if (layout_fields.num_of == 0)
+                return ARCHI_STATUS_EVALUE;
         }
         else if (strcmp("element_size", params->name) == 0)
         {
@@ -276,6 +303,9 @@ ARCHI_CONTEXT_ACT_FUNC(archi_context_library_act)
                 return ARCHI_STATUS_EVALUE;
 
             layout_fields.alignment = *(size_t*)params->value.ptr;
+
+            if ((layout_fields.alignment & (layout_fields.alignment - 1)) != 0)
+                return ARCHI_STATUS_EVALUE;
         }
         else
             return ARCHI_STATUS_EKEY;
@@ -292,12 +322,19 @@ ARCHI_CONTEXT_ACT_FUNC(archi_context_library_act)
     if (param_element_alignment_set)
         attributes.element.alignment = layout_fields.alignment;
 
-    if (attributes.element.num_of == 0)
-        return ARCHI_STATUS_EVALUE;
-    else if ((attributes.element.alignment & (attributes.element.alignment - 1)) != 0)
-        return ARCHI_STATUS_EVALUE;
+    if (action.name[0] != '\0')
+    {
+        context_data->current_attributes = attributes;
 
-    context_data->symbol = attributes;
+        free(context_data->current_symbol_name);
+
+        context_data->current_symbol_name = archi_copy_string(action.name);
+        if (context_data->current_symbol_name == NULL)
+            return ARCHI_STATUS_ENOMEMORY;
+    }
+    else
+        context_data->default_attributes = attributes;
+
     return 0;
 }
 

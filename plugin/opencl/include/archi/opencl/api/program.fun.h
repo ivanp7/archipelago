@@ -98,6 +98,7 @@ archi_opencl_program_create(
         cl_context context, ///< [in] Valid OpenCL context.
 
         archi_opencl_program_binaries_t binaries, ///< [in] Binaries of an OpenCL program.
+        bool build, ///< [in] Whether the building step should be performed.
 
         bool logging, ///< [in] Enable progress logging.
         archi_status_t *code ///< [out] Status code.

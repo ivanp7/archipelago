@@ -400,12 +400,65 @@ ARCHI_CONTEXT_SET_FUNC(archi_opencl_kernel_enqueue_data_set)
         enqueue_data->wait_list = value.ptr;
         context_data->wait_list = value;
     }
-    else if (strcmp("output_event_ptr", slot.name) == 0)
+    else if (strcmp("name", slot.name) == 0)
     {
         if (slot.num_indices != 0)
             return ARCHI_STATUS_EMISUSE;
         else if (value.flags & ARCHI_POINTER_FLAG_FUNCTION)
             return ARCHI_STATUS_EVALUE;
+
+        free((char*)enqueue_data->name);
+
+        if (value.ptr != NULL)
+        {
+            enqueue_data->name = archi_copy_string(value.ptr);
+            if (enqueue_data->name == NULL)
+                return ARCHI_STATUS_ENOMEMORY;
+        }
+        else
+            enqueue_data->name = NULL;
+    }
+    else
+        return ARCHI_STATUS_EKEY;
+
+    return 0;
+}
+
+ARCHI_CONTEXT_ACT_FUNC(archi_opencl_kernel_enqueue_data_act)
+{
+    struct archi_opencl_kernel_enqueue_data_data *context_data =
+        (struct archi_opencl_kernel_enqueue_data_data*)context;
+
+    archi_opencl_kernel_enqueue_data_t *enqueue_data = context_data->enqueue_data.ptr;
+
+    if (strcmp("add_output_event", action.name) == 0)
+    {
+        if (action.num_indices != 0)
+            return ARCHI_STATUS_EMISUSE;
+
+        archi_pointer_t output_event = {0};
+
+        bool param_output_event_ptr_set = false;
+
+        for (; params != NULL; params = params->next)
+        {
+            if (strcmp("ptr", params->name) == 0)
+            {
+                if (param_output_event_ptr_set)
+                    continue;
+                param_output_event_ptr_set = true;
+
+                if (params->value.flags & ARCHI_POINTER_FLAG_FUNCTION)
+                    return ARCHI_STATUS_EVALUE;
+
+                output_event = params->value;
+            }
+            else
+                return ARCHI_STATUS_EKEY;
+        }
+
+        if (output_event.ptr == NULL)
+            return 0;
 
         archi_opencl_event_ptr_list_t *output_event_list = malloc(sizeof(*output_event_list));
         if (output_event_list == NULL)
@@ -413,7 +466,7 @@ ARCHI_CONTEXT_SET_FUNC(archi_opencl_kernel_enqueue_data_set)
 
         *output_event_list = (archi_opencl_event_ptr_list_t){
             .next = enqueue_data->output_event_list,
-            .event_ptr = value.ptr,
+            .event_ptr = output_event.ptr,
         };
 
         struct archi_opencl_kernel_enqueue_data_data_output_event_list *output_event_list_ref =
@@ -426,13 +479,44 @@ ARCHI_CONTEXT_SET_FUNC(archi_opencl_kernel_enqueue_data_set)
 
         *output_event_list_ref = (struct archi_opencl_kernel_enqueue_data_data_output_event_list){
             .next = context_data->output_event_list,
-            .event_ptr = value,
+            .event_ptr = output_event,
         };
 
-        archi_reference_count_increment(value.ref_count);
+        archi_reference_count_increment(output_event.ref_count);
 
         enqueue_data->output_event_list = output_event_list;
         context_data->output_event_list = output_event_list_ref;
+    }
+    else if (strcmp("reset_output_events", action.name) == 0)
+    {
+        if (action.num_indices != 0)
+            return ARCHI_STATUS_EMISUSE;
+        else if (params != NULL)
+            return ARCHI_STATUS_EKEY;
+
+        for (archi_opencl_event_ptr_list_t *output_event_list = enqueue_data->output_event_list;
+                output_event_list != NULL;)
+        {
+            archi_opencl_event_ptr_list_t *next = output_event_list->next;
+
+            free(output_event_list);
+
+            output_event_list = next;
+        }
+        enqueue_data->output_event_list = NULL;
+
+        for (struct archi_opencl_kernel_enqueue_data_data_output_event_list *output_event_list =
+                context_data->output_event_list; output_event_list != NULL;)
+        {
+            struct archi_opencl_kernel_enqueue_data_data_output_event_list *next =
+                output_event_list->next;
+
+            archi_reference_count_decrement(output_event_list->event_ptr.ref_count);
+            free(output_event_list);
+
+            output_event_list = next;
+        }
+        context_data->output_event_list = NULL;
     }
     else
         return ARCHI_STATUS_EKEY;
@@ -445,5 +529,6 @@ const archi_context_interface_t archi_opencl_kernel_enqueue_data_interface = {
     .final_fn = archi_opencl_kernel_enqueue_data_final,
     .get_fn = archi_opencl_kernel_enqueue_data_get,
     .set_fn = archi_opencl_kernel_enqueue_data_set,
+    .act_fn = archi_opencl_kernel_enqueue_data_act,
 };
 

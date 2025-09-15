@@ -314,7 +314,7 @@ archi_opencl_program_build_log(
         cl_uint num_devices,
         const cl_device_id device_id[])
 {
-#define M "archi_opencl_program_build"
+#define M "archi_opencl_program_build_log"
 
     char *build_log = NULL;
     size_t build_log_length = 0;
@@ -575,6 +575,7 @@ archi_opencl_program_create(
         cl_context context,
 
         archi_opencl_program_binaries_t binaries,
+        bool build,
 
         bool logging,
         archi_status_t *code)
@@ -591,41 +592,70 @@ archi_opencl_program_create(
         return NULL;
     }
 
-    cl_int ret;
-    cl_int *binary_status = NULL;
+    cl_program program;
 
-    if (logging)
+    // Create the program from binary
     {
-        binary_status = malloc(sizeof(*binary_status) * binaries.ids->num_devices);
-        if (binary_status == NULL)
+        cl_int ret;
+        cl_int *binary_status = NULL;
+
+        if (logging)
+        {
+            binary_status = malloc(sizeof(*binary_status) * binaries.ids->num_devices);
+            if (binary_status == NULL)
+            {
+                if (code != NULL)
+                    *code = ARCHI_STATUS_ENOMEMORY;
+
+                return NULL;
+            }
+        }
+
+        program = clCreateProgramWithBinary(context,
+                binaries.ids->num_devices, binaries.ids->device_id,
+                binaries.sizes, (const unsigned char**)binaries.contents, binary_status, &ret);
+
+        if (logging)
+        {
+            archi_log_debug(M, "clCreateProgramWithBinary() -> %s", archi_opencl_error_string(ret));
+
+            for (cl_uint i = 0; i < binaries.ids->num_devices; i++)
+                archi_log_debug(M, "[device #%u] status: %s", i, archi_opencl_error_string(binary_status[i]));
+
+            free(binary_status);
+        }
+
+        if (ret != CL_SUCCESS)
         {
             if (code != NULL)
-                *code = ARCHI_STATUS_ENOMEMORY;
+                *code = ARCHI_STATUS_ERESOURCE;
 
             return NULL;
         }
     }
 
-    cl_program program = clCreateProgramWithBinary(context,
-            binaries.ids->num_devices, binaries.ids->device_id,
-            binaries.sizes, (const unsigned char**)binaries.contents, binary_status, &ret);
-
-    if (logging)
+    if (build)
     {
-        archi_log_debug(M, "clCreateProgramWithBinary() -> %s", archi_opencl_error_string(ret));
+        // Build the program
+        cl_int ret;
 
-        for (cl_uint i = 0; i < binaries.ids->num_devices; i++)
-            archi_log_debug(M, "[device #%u] status: %s", i, archi_opencl_error_string(binary_status[i]));
+        ret = clBuildProgram(program, 0, NULL, NULL, NULL, NULL);
 
-        free(binary_status);
-    }
+        if (logging)
+        {
+            archi_log_debug(M, "clBuildProgram() -> %s", archi_opencl_error_string(ret));
 
-    if (ret != CL_SUCCESS)
-    {
-        if (code != NULL)
-            *code = ARCHI_STATUS_ERESOURCE;
+            archi_opencl_program_build_log(program,
+                    binaries.ids->num_devices, binaries.ids->device_id);
+        }
 
-        return NULL;
+        if (ret != CL_SUCCESS)
+        {
+            if (code != NULL)
+                *code = ARCHI_STATUS_ERESOURCE;
+
+            return NULL;
+        }
     }
 
     if (code != NULL)

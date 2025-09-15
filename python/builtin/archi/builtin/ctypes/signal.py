@@ -19,7 +19,7 @@
  #############################################################################
 
 # @file
-# @brief C types of built-in modules.
+# @brief C types for Archipelago signal management.
 
 import ctypes as c
 

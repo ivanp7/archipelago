@@ -32,15 +32,19 @@ ARCHI_MEMORY_ALLOC_FUNC(archi_memory_heap_alloc)
     (void) alloc_data;
     (void) code;
 
+    void *allocation;
+
     if (alignment != 0)
-        return aligned_alloc(alignment, num_bytes);
+        allocation = aligned_alloc(alignment, num_bytes);
     else
-        return malloc(num_bytes);
+        allocation = malloc(num_bytes);
+
+    return (archi_memory_alloc_info_t){.allocation = allocation};
 }
 
 ARCHI_MEMORY_FREE_FUNC(archi_memory_heap_free)
 {
-    free(allocation);
+    free(alloc_info.allocation);
 }
 
 ARCHI_MEMORY_MAP_FUNC(archi_memory_heap_map)
@@ -50,7 +54,7 @@ ARCHI_MEMORY_MAP_FUNC(archi_memory_heap_map)
     (void) map_data;
     (void) code;
 
-    return (char*)allocation + offset;
+    return (char*)alloc_info.allocation + offset;
 }
 
 const archi_memory_interface_t archi_memory_heap_interface = {

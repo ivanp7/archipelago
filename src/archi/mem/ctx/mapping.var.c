@@ -147,7 +147,7 @@ ARCHI_CONTEXT_FINAL_FUNC(archi_context_memory_mapping_final)
     struct archi_context_memory_mapping_data *context_data =
         (struct archi_context_memory_mapping_data*)context;
 
-    archi_memory_unmap(context_data->mapping.ptr);
+    archi_memory_unmap(context_data->memory.ptr);
     archi_reference_count_decrement(context_data->memory.ref_count);
     free(context_data);
 }

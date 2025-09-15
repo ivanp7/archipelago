@@ -297,8 +297,6 @@ archi_hsp_execute(
         .transition = transition,
 
         .stack_capacity = ARCHI_HSP_INITIAL_STACK_CAPACITY,
-        .stack_size = 1,
-        .num_stack_frames = 1,
 
         .mode = J_TRANSITION,
     };

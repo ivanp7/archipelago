@@ -19,13 +19,22 @@
  #############################################################################
 
 # @file
-# @brief Built-in file content types in Archipelago executable.
+# @brief C types for Archipelago hierarchical state processing.
 
-from archi.base.memory import Encoder
-from archi.base.app import RegistryEncoder
+import ctypes as c
 
 
-FILE_BUILTIN_REGISTRY = ('archi.instructions', RegistryEncoder)
+class archi_hsp_branch_select_loop_data_t(c.Structure):
+    """Data for the simple loop selector function.
+    """
+    _fields_ = [('num_iterations', c.c_size_t),
+                ('iteration', c.c_size_t)]
 
-FILE_BUILTIN_SIGNALS  = ('archi.signals', Encoder)
+    def __init__(self, num_iterations, /):
+        if not isinstance(num_iterations, int):
+            raise TypeError
+        elif num_iterations < 0:
+            raise ValueError
+
+        self.num_iterations = num_iterations
 

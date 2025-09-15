@@ -13,10 +13,10 @@ from archi.builtin.context import LibraryContext
 
 ###############################################################################
 
-_TYPE_BOOL = PublicType(c.c_byte, lambda v: c.c_byte(bool(v)))
+_TYPE_BOOL = PublicType(c.c_byte, constr=lambda v: c.c_byte(bool(v)))
 _TYPE_INT = PublicType(c.c_int)
 _TYPE_UINT32 = PublicType(c.c_uint32)
-_TYPE_STR = PublicType(str)
+_TYPE_STR = PublicType(c.c_char, array=True, constr=lambda v: c.create_string_buffer(v.encode()))
 
 _TYPE_FONT_PSF_V2 = PrivateType('font.psf_v2')
 

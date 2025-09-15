@@ -33,6 +33,21 @@
 #include <stdbool.h>
 
 /**
+ * @structarchi_memory_alloc_info_t
+ * @brief Memory allocation description.
+ *
+ * Groups together pointers to the allocated memory and its metadata.
+ *
+ * @note
+ *   - The allocation pointer (allocation) is mandatory.
+ *   - The metadata pointer (metadata) is optional.
+ */
+typedef struct archi_memory_alloc_info {
+    void *allocation; ///< Allocated memory.
+    void *metadata;   ///< Metadata for allocated memory.
+} archi_memory_alloc_info_t;
+
+/**
  * @def ARCHI_MEMORY_ALLOC_FUNC(func_name)
  * @brief Declare or define a memory allocator function.
  *
@@ -55,8 +70,8 @@
  *     - positive on an interface-specific condition (either success or failure).
  *
  * @return
- *     Pointer to the object representing allocated memory on success,
- *     or NULL on failure.
+ *     Memory allocation structure with non-NULL memory pointer on success,
+ *     or NULL memory pointer on failure.
  *
  * The allocator must satisfy the following contract:
  *  1. On success: return a non-NULL pointer and set *code >= 0.
@@ -67,7 +82,7 @@
  *
  * @see archi_memory_alloc_func_t
  */
-#define ARCHI_MEMORY_ALLOC_FUNC(func_name)  void* func_name( \
+#define ARCHI_MEMORY_ALLOC_FUNC(func_name)  archi_memory_alloc_info_t func_name( \
         size_t num_bytes, \
         size_t alignment, \
         void *alloc_data, \
@@ -87,15 +102,15 @@ typedef ARCHI_MEMORY_ALLOC_FUNC((*archi_memory_alloc_func_t));
  *
  * Expands to the signature required for any memory deallocator:
  *
- * @param[in] allocation
- *   Pointer to the object representing memory previously allocated
- *   by a matching allocation function.
- *   May be NULL, in which case no operation is to be performed.
+ * @param[in] alloc_info
+ *   Memory allocation info.
+ *   Pointer to the allocated memory may be NULL,
+ *   in which case no operation is to be performed.
  *
  * @see archi_memory_free_func_t
  */
 #define ARCHI_MEMORY_FREE_FUNC(func_name)   void func_name( \
-        void *allocation)
+        archi_memory_alloc_info_t alloc_info)
 
 /**
  * @brief Function pointer type for a memory deallocator.
@@ -111,9 +126,9 @@ typedef ARCHI_MEMORY_FREE_FUNC((*archi_memory_free_func_t));
  *
  * Expands to the signature required for any memory mapper:
  *
- * @param[in] allocation
- *   Pointer to the object representing memory previously allocated
- *   by a matching allocation function. Must not be NULL.
+ * @param[in] alloc_info
+ *   Memory allocation info.
+ *   Pointer to the allocated memory must not be NULL,
  *
  * @param[in] offset
  *   Offset to the mapped memory area in bytes. Must not be out-of-range.
@@ -140,7 +155,7 @@ typedef ARCHI_MEMORY_FREE_FUNC((*archi_memory_free_func_t));
  * @see archi_memory_map_func_t
  */
 #define ARCHI_MEMORY_MAP_FUNC(func_name)    void* func_name( \
-        void *allocation, \
+        archi_memory_alloc_info_t alloc_info, \
         size_t offset, \
         size_t num_bytes, \
         bool for_writing, \
@@ -161,9 +176,9 @@ typedef ARCHI_MEMORY_MAP_FUNC((*archi_memory_map_func_t));
  *
  * Expands to the signature required for any memory unmapper:
  *
- * @param[in] allocation
- *   Pointer to the object representing memory previously allocated
- *   by a matching allocation function. Must not be NULL.
+ * @param[in] alloc_info
+ *   Memory allocation info.
+ *   Pointer to the allocated memory must not be NULL,
  *
  * @param[in] mapping
  *   Pointer to the memory area previously mapped by a matching mapping function.
@@ -172,7 +187,7 @@ typedef ARCHI_MEMORY_MAP_FUNC((*archi_memory_map_func_t));
  * @see archi_memory_unmap_func_t
  */
 #define ARCHI_MEMORY_UNMAP_FUNC(func_name)  void func_name( \
-        void *allocation, \
+        archi_memory_alloc_info_t alloc_info, \
         void *mapping)
 
 /**

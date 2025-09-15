@@ -88,24 +88,32 @@ class PrivateType(TypeDescriptor):
 class PublicType(TypeDescriptor):
     """Description of public types.
     """
-    def __init__(self, cls: 'type', constr=None):
+    def __init__(self, cls: 'type', /, array=False, constr=None):
         """Create a type descriptor instance.
         """
         if not isinstance(cls, type):
+            raise TypeError
+        elif not isinstance(array, bool):
             raise TypeError
         elif constr is not None and not callable(constr):
             raise TypeError
 
         self._cls = cls
+        self._array = array
         self._constr = constr
 
     def __str__(self):
-        return f"PublicType(cls={self._cls})"
+        return f"PublicType(cls={self._cls}, array={self._array})"
 
     def type_class(self) -> 'type':
         """Get public type class.
         """
         return self._cls
+
+    def type_is_array(self) -> 'bool':
+        """Check if the type is an array.
+        """
+        return self._array
 
     def type_constructor(self):
         """Get value constructor for the type.
@@ -117,9 +125,18 @@ class PublicType(TypeDescriptor):
         Returns True if types are compatible, otherwise False.
         """
         if isinstance(another_type, type):
-            return issubclass(another_type, self.type_class())
+            if issubclass(another_type, c.Array):
+                if not self.type_is_array() and another_type._length_ != 1:
+                    return False
+                else:
+                    return issubclass(another_type._type_, self.type_class())
+            else:
+                return issubclass(another_type, self.type_class())
         elif isinstance(another_type, PublicType):
-            return issubclass(another_type.type_class(), self.type_class())
+            if not self.type_is_array() and another_type.type_is_array():
+                return False
+            else:
+                return issubclass(another_type.type_class(), self.type_class())
         else:
             return False
 
@@ -127,7 +144,7 @@ class PublicType(TypeDescriptor):
         """Construct a value of the target type.
         Returns the value of the target type, or raises TypeError.
         """
-        if isinstance(value, self._cls):
+        if isinstance(value, self._cls) or (isinstance(value, c.Array) and isinstance(value._type_, self._cls)):
             return value
         else:
             return self.type_constructor()(value)
@@ -143,7 +160,8 @@ class Context:
         """Representation of a context slot/action.
         """
         def __init__(self, context: 'Context', *, name: 'str' = '',
-                     indices: 'list[int]' = [], is_action: 'bool' = False):
+                     indices: 'list[int]' = [], is_action: 'bool' = False,
+                     dparams: 'Context' = None, sparams: 'dict[str]' = None):
             """Initialize a context slot representation instance.
             """
             fields = SimpleNamespace()
@@ -152,6 +170,8 @@ class Context:
             fields.name = name
             fields.indices = indices
             fields.is_action = is_action
+            fields.action_dparams = dparams
+            fields.action_sparams = sparams
 
             object.__setattr__(self, '_', fields)
 
@@ -172,7 +192,7 @@ class Context:
             if self._.is_action:
                 raise AttributeError
 
-            self._.context._set(f'{self._.name}.{name}', self._.indices, value)
+            Context._set(self._.context, f'{self._.name}.{name}', self._.indices, value)
 
         def __getitem__(self, index: 'int') -> 'Context._Slot':
             """Obtain a context slot object.
@@ -212,7 +232,7 @@ class Context:
             else:
                 raise TypeError
 
-            self._.context._set(self._.name, indices, value)
+            Context._set(self._.context, self._.name, indices, value)
 
         def __call__(self, _: 'Context' = None, /, **params) -> 'Context._Slot':
             """Perform an action.
@@ -220,10 +240,27 @@ class Context:
             if not isinstance(_, (type(None), Parameters.Context)):
                 raise TypeError
 
-            self._.context._act(self._.name, self._.indices, _, params)
+            return Context._Slot(self._.context, name=self._.name, indices=self._.indices,
+                                 is_action=True, dparams=_, sparams=params)
 
-            return Context._Slot(self._.context, name=self._.name,
-                                 indices=self._.indices, is_action=True)
+        @staticmethod
+        def _action_parameters(slot: 'Context._Slot'):
+            """Obtain the action parameter list.
+            """
+            if not slot._.is_action:
+                return None
+
+            try:
+                parameters_class = type(slot._.context).action_parameters_class(
+                        slot._.name, slot._.indices)
+            except KeyError:
+                _error_slot_unrecognized(slot._.name, slot._.indices, action=True)
+
+            if not isinstance(parameters_class, type) \
+                    or not issubclass(parameters_class, Parameters):
+                raise TypeError
+
+            return parameters_class(slot._.action_dparams, **slot._.action_sparams)
 
     # Name of symbol of the context interface
     INTERFACE_SYMBOL = None
@@ -329,7 +366,7 @@ class Context:
     def __setattr__(self, name: 'str', value):
         """Perform a slot setting operation.
         """
-        self._set(name, [], value)
+        Context._set(self, name, [], value)
 
     def __getitem__(self, index: 'int') -> 'Context._Slot':
         """Obtain a context slot object.
@@ -361,7 +398,7 @@ class Context:
         else:
             raise TypeError
 
-        self._set('', indices, value)
+        Context._set(self, '', indices, value)
 
     def __call__(self, _: 'Context' = None, /, **params) -> 'Context':
         """Perform an action.
@@ -369,18 +406,17 @@ class Context:
         if not isinstance(_, (type(None), Parameters.Context)):
             raise TypeError
 
-        self._act('', [], _, params)
+        return Context._Slot(self, is_action=True, dparams=_, sparams=params)
 
-        return Context._Slot(self._.context, is_action=True)
-
-    def _set(self, slot_name: 'str', slot_indices: 'list[int]', value):
-        """Append a set() instruction to the list.
+    @staticmethod
+    def _set(context, slot_name: 'str', slot_indices: 'list[int]', value):
+        """Append slot setting/action instruction(s) to the list.
         """
-        if self._.registry is None:
+        if context._.registry is None:
             raise RuntimeError
 
         try:
-            slot_type = type(self).setter_slot_type(slot_name, slot_indices)
+            slot_type = type(context).setter_slot_type(slot_name, slot_indices)
         except KeyError:
             _error_slot_unrecognized(slot_name, slot_indices)
 
@@ -405,26 +441,7 @@ class Context:
                 and not slot_type.is_type_compatible(value_type):
             raise TypeError(f"Slot '{slot_name}'[{']['.join([str(i) for i in slot_indices])}] type constraint is violated (want = {slot_type}, got = {value_type})")
 
-        self._.registry._set_slot(self._.key, slot_name, slot_indices, value)
-
-    def _act(self, action_name: 'str', action_indices: 'list[int]',
-             parent_params: 'Context', params: 'dict'):
-        """Append an act() instruction to the list.
-        """
-        if self._.registry is None:
-            raise RuntimeError
-
-        try:
-            parameters_class = type(self).action_parameters_class(action_name, action_indices)
-        except KeyError:
-            _error_slot_unrecognized(action_name, action_indices, action=True)
-
-        if not isinstance(parameters_class, type) or not issubclass(parameters_class, Parameters):
-            raise TypeError
-
-        parameter_list = parameters_class(parent_params, **params)
-
-        self._.registry._invoke_action(self._.key, parameter_list, action_name, action_indices)
+        context._.registry._set_slot(context._.key, slot_name, slot_indices, value)
 
 
 class Parameters:
@@ -640,7 +657,7 @@ class ContextWhitelistable(Context):
 ###############################################################################
 
 _TYPE_SIZE = PublicType(c.c_size_t)
-_TYPE_ARRAY_LAYOUT = PublicType(archi_array_layout_t, lambda v: archi_array_layout_t(*v))
+_TYPE_ARRAY_LAYOUT = PublicType(archi_array_layout_t, constr=lambda v: archi_array_layout_t(*v))
 _TYPE_POINTER_FLAGS = PublicType(archi_pointer_flags_t)
 _TYPE_POINTER = PublicType(archi_pointer_t)
 _TYPE_VOID_P = PublicType(c.c_void_p)
@@ -825,21 +842,26 @@ class Registry:
     def __setitem__(self, key: 'str', initializer):
         """Create a context and insert it to the registry.
         """
-        if not isinstance(key, str):
-            raise TypeError
-        elif key in self._contexts:
-            raise KeyError(f"Context '{key}' is already in the registry")
+        if key is not None:
+            if not isinstance(key, str):
+                raise TypeError
+            elif key in self._contexts:
+                raise KeyError(f"Context '{key}' is already in the registry")
 
-        context = self._create_context(key, initializer)
+            context = self._create_context(key, initializer)
 
-        if context is not None:
-            context._.registry = self
-            context._.key = key
+            if context is not ...:
+                context._.registry = self
+                context._.key = key
 
-            self._contexts[key] = context
+                self._contexts[key] = context
+            else:
+                self[key] = self._replace_initializer(initializer)
+                self._prepare_context(self[key], initializer)
+
         else:
-            self[key] = self._replace_initializer(initializer)
-            self._prepare_context(self[key], initializer)
+            if self._create_context(None, initializer) is ...:
+                self._perform_side_effects(initializer)
 
     def __delitem__(self, key: 'str'):
         """Finalize a context and remove it from the registry.
@@ -976,6 +998,11 @@ class Registry:
         """
         pass
 
+    def _perform_side_effects(self, initializer):
+        """Emit instructions for performing side effects.
+        """
+        pass
+
     def _instruct(self, type: 'Registry._Instruction.Type', /, **fields):
         """Append an instruction to the list.
         """
@@ -986,6 +1013,9 @@ class Registry:
         Return a context representation object of the corresponding type.
         """
         if isinstance(initializer, Parameters):
+            if key is None:
+                return None
+
             self._with_params(initializer, lambda dparams_key, sparams:
                               self._instruct(
                                   Registry._Instruction.Type.INIT_PARAMETERS,
@@ -996,6 +1026,9 @@ class Registry:
             return type(initializer).Context()
 
         elif isinstance(initializer, Registry._ContextSpec):
+            if key is None:
+                return None
+
             interface_origin = initializer._origin
 
             def func(dparams_key, sparams):
@@ -1025,6 +1058,9 @@ class Registry:
             return initializer._cls()
 
         elif isinstance(initializer, Context):
+            if key is None:
+                return None
+
             self._instruct(
                     Registry._Instruction.Type.COPY,
                     key=key,
@@ -1033,6 +1069,11 @@ class Registry:
             return type(initializer)()
 
         elif isinstance(initializer, Context._Slot):
+            self._invoke_action(initializer)
+
+            if key is None:
+                return None
+
             self._instruct(
                     Registry._Instruction.Type.INIT_POINTER,
                     key=key,
@@ -1050,6 +1091,9 @@ class Registry:
             return PointerContext()
 
         elif isinstance(initializer, (type(None), CValue)):
+            if key is None:
+                return None
+
             self._instruct(
                     Registry._Instruction.Type.INIT_POINTER,
                     key=key,
@@ -1058,6 +1102,9 @@ class Registry:
             return PointerContext()
 
         elif isinstance(initializer, list):
+            if key is None:
+                return None
+
             self._instruct(
                     Registry._Instruction.Type.INIT_ARRAY,
                     key=key,
@@ -1070,7 +1117,7 @@ class Registry:
             return ArrayContext()
 
         else:
-            return None
+            return ...
 
     def _delete_context(self, key: 'str'):
         """Emit instruction for deletion of a context.
@@ -1091,6 +1138,8 @@ class Registry:
                     source_key=value._.key)
 
         elif isinstance(value, Context._Slot):
+            self._invoke_action(value)
+
             self._instruct(
                     Registry._Instruction.Type.SET_TO_CONTEXT_SLOT,
                     key=context_key,
@@ -1111,18 +1160,20 @@ class Registry:
                     slot_indices=slot_indices,
                     value=value)
 
-    def _invoke_action(self, context_key: 'str', parameter_list: 'Parameters',
-                       action_name: 'str', action_indices: 'list[int]'):
+    def _invoke_action(self, action: 'Context._Slot'):
         """Emit instructions for calling a context action.
         """
-        self._with_params(parameter_list, lambda dparams_key, sparams:
-                          self._instruct(
-                              Registry._Instruction.Type.ACT,
-                              key=context_key,
-                              action_name=action_name,
-                              action_indices=action_indices,
-                              dparams_key=dparams_key,
-                              sparams=sparams))
+        action_parameters = Context._Slot._action_parameters(action)
+
+        if action_parameters is not None:
+            self._with_params(action_parameters, lambda dparams_key, sparams:
+                              self._instruct(
+                                  Registry._Instruction.Type.ACT,
+                                  key=action._.context._.key,
+                                  action_name=action._.name,
+                                  action_indices=action._.indices,
+                                  dparams_key=dparams_key,
+                                  sparams=sparams))
 
     def _with_params(self, params: 'Parameters', func):
         """Prepare a temporary parameter list if needed and call a custom function before deleting the list.

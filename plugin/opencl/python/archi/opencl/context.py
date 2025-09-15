@@ -13,19 +13,18 @@ from archi.builtin.context import LibraryContext
 
 ###############################################################################
 
-_TYPE_BOOL = PublicType(c.c_byte, lambda v: c.c_byte(bool(v)))
+_TYPE_BOOL = PublicType(c.c_byte, constr=lambda v: c.c_byte(bool(v)))
 _TYPE_SIZE = PublicType(c.c_size_t)
-_TYPE_SIZE_ARRAY = PublicType(c.c_size_t, lambda v: (c.c_size_t * len(v))(*v) \
-        if isinstance(v, (list, tuple)) else c.c_size_t(v))
+_TYPE_SIZE_ARRAY = PublicType(c.c_size_t, array=True, constr=lambda v: (c.c_size_t * len(v))(*v))
 _TYPE_UINT32 = PublicType(c.c_uint32)
-_TYPE_UINT32_ARRAY = PublicType(c.c_uint32, lambda v: (c.c_uint32 * len(v))(*v) \
-        if isinstance(v, (list, tuple)) else c.c_uint32(v))
+_TYPE_UINT32_ARRAY = PublicType(c.c_uint32, array=True, constr=lambda v: (c.c_uint32 * len(v))(*v))
 _TYPE_UINT64 = PublicType(c.c_uint64)
-_TYPE_STR = PublicType(str)
+_TYPE_STR = PublicType(c.c_char, array=True, constr=lambda v: c.create_string_buffer(v.encode()))
 _TYPE_VOID_P = PublicType(c.c_void_p)
-_TYPE_UBYTE_P = PublicType(c.POINTER(c.c_ubyte))
-_TYPE_UBYTE_P_P = PublicType(c.POINTER(c.POINTER(c.c_ubyte)))
-_TYPE_POINTER = PublicType(archi_pointer_t)
+_TYPE_VOID_P_ARRAY = PublicType(c.c_void_p, array=True)
+_TYPE_CHAR_ARRAY = PublicType(c.c_char, array=True, constr=lambda v: (c.c_char * len(v))(*v))
+_TYPE_CHAR_P_ARRAY = PublicType(c.c_char_p, array=True)
+_TYPE_POINTER_ARRAY = PublicType(archi_pointer_t, array=True)
 
 _TYPE_HASHMAP = PrivateType('archi.hashmap')
 
@@ -62,7 +61,7 @@ class OpenCLContextContext(ContextWhitelistable):
 
     GETTER_SLOT_TYPES = {
             'platform_id': {0: _TYPE_OPENCL_PLATFORM_ID},
-            'device_id': {0: _TYPE_VOID_P,
+            'device_id': {0: _TYPE_VOID_P_ARRAY,
                           1: _TYPE_OPENCL_DEVICE_ID},
             }
 
@@ -102,12 +101,12 @@ class _OpenCLProgramContext(ContextWhitelistable):
     GETTER_SLOT_TYPES = {
             'context': {0: _TYPE_OPENCL_CONTEXT},
             'platform_id': {0: _TYPE_OPENCL_PLATFORM_ID},
-            'device_id': {0: _TYPE_VOID_P,
+            'device_id': {0: _TYPE_VOID_P_ARRAY,
                           1: _TYPE_OPENCL_DEVICE_ID},
-            'binary_size': {0: _TYPE_SIZE,
+            'binary_size': {0: _TYPE_SIZE_ARRAY,
                             1: _TYPE_SIZE},
-            'binary': {0: _TYPE_UBYTE_P_P,
-                       1: _TYPE_UBYTE_P},
+            'binary': {0: _TYPE_CHAR_P_ARRAY,
+                       1: _TYPE_CHAR_ARRAY},
             }
 
 
@@ -117,10 +116,10 @@ class OpenCLProgramFromSourcesContext(_OpenCLProgramContext):
     class InitParameters(ParametersWhitelistable):
         PARAMETERS = {
                 'context': _TYPE_OPENCL_CONTEXT,
-                'device_id': _TYPE_VOID_P,
+                'device_id': _TYPE_VOID_P_ARRAY,
                 'headers': _TYPE_HASHMAP,
                 'sources': _TYPE_HASHMAP,
-                'libraries': _TYPE_VOID_P,
+                'libraries': _TYPE_VOID_P_ARRAY,
                 'cflags': _TYPE_STR,
                 'lflags': _TYPE_STR,
                 }
@@ -136,8 +135,9 @@ class OpenCLProgramFromBinariesContext(_OpenCLProgramContext):
     class InitParameters(ParametersWhitelistable):
         PARAMETERS = {
                 'context': _TYPE_OPENCL_CONTEXT,
-                'device_id': _TYPE_VOID_P,
-                'binaries': _TYPE_POINTER,
+                'device_id': _TYPE_VOID_P_ARRAY,
+                'binaries': _TYPE_POINTER_ARRAY,
+                'build': _TYPE_BOOL,
                 }
 
     INTERFACE_SYMBOL = 'archi_context_opencl_program_bin_interface'
@@ -160,7 +160,7 @@ class _OpenCLKernelContext(ContextWhitelistable):
     SETTER_SLOT_TYPES = {
             'arg.value': {1: None},
             'arg.svm_ptr': {1: None},
-            'exec_info.svm_ptrs': {0: _TYPE_VOID_P},
+            'exec_info.svm_ptrs': {0: _TYPE_VOID_P_ARRAY},
             }
 
 
@@ -296,6 +296,14 @@ class OpenCLKernelEnqueueData(ContextWhitelistable):
                 'name': _TYPE_STR,
                 }
 
+    class ActionAddOutputEventParameters(ParametersWhitelistable):
+        PARAMETERS = {
+                'ptr': _TYPE_VOID_P,
+                }
+
+    class ActionResetOutputEventsParameters(ParametersWhitelistable):
+        PARAMETERS = {}
+
     INTERFACE_SYMBOL = 'archi_opencl_kernel_enqueue_data_interface'
 
     DATA_TYPE = _TYPE_OPENCL_KERNEL_ENQUEUE_DATA
@@ -319,7 +327,12 @@ class OpenCLKernelEnqueueData(ContextWhitelistable):
             'global_work_size': {0: _TYPE_OPENCL_WORK_VECTOR},
             'local_work_size': {0: _TYPE_OPENCL_WORK_VECTOR},
             'wait_list': {0: _TYPE_OPENCL_EVENT_ARRAY},
-            'output_event_ptr': {0: _TYPE_VOID_P},
+            'name': {0: _TYPE_STR},
+            }
+
+    ACTION_PARAMETER_CLASSES = {
+            'add_output_event': {0: ActionAddOutputEventParameters},
+            'reset_output_events': {0: ActionResetOutputEventsParameters},
             }
 
 ###############################################################################
