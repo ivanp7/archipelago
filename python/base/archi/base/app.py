@@ -918,6 +918,11 @@ class Registry:
         else:
             raise TypeError
 
+    def eval(self, value):
+        """Evaluate an expression for side effects only, don't create a context.
+        """
+        self[None] = value
+
     def require_context(self, key: 'str', cls: 'type' = Context) -> 'Context':
         """Require a context with the specified key to exist in the registry.
         """
@@ -966,6 +971,16 @@ class Registry:
 
         with self.del_context(key) as context:
             yield context
+
+    def delete(self, context: 'Context'):
+        """Delete a context from the registry.
+        """
+        if not isinstance(context, Context):
+            raise TypeError
+        elif Registry.registry_of(context) is not self:
+            raise ValueError
+
+        del self[Registry.key_of(context)]
 
     def contexts(self, cls: 'type' = Context, /,
                  required: 'bool' = True, new: 'bool' = True) -> 'dict[str, Context]':
