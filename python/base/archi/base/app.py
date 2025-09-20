@@ -1252,7 +1252,7 @@ class ParametersEncoder(Encoder):
         """Check type of an encoded object.
         """
         return isinstance(obj, dict) and all(isinstance(key, str) \
-                and isinstance(value, CValue) for key, value in obj.items())
+                and isinstance(value, (type(None), CValue)) for key, value in obj.items())
 
     @classmethod
     def _cache_key(cls, obj):
