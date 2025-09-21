@@ -233,6 +233,9 @@ archi_hashmap_set(
             .chrono_prev = hashmap->chrono_last,
         };
 
+        if (node->hash_next != NULL)
+            node->hash_next->hash_prev = node;
+
         if (hashmap->chrono_first == NULL)
             hashmap->chrono_first = node;
         else // hashmap->chrono_last != NULL
