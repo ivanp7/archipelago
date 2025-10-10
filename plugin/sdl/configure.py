@@ -60,7 +60,7 @@ LFLAGS += [f'-L{ARCHI_LDIR}']
 
 CFLAGS += pkgconfig.cflags('sdl2').split(' ')
 
-LIBS = ['-larchipelago-base']
+LIBS = ['-larchipelago-base', '-larchipelago-log', '-larchi-hsp-api', '-larchi-mem-api', '-larchipelago-util']
 LIBS += pkgconfig.libs('sdl2').split(' ')
 
 ## }}}
