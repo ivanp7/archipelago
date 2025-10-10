@@ -26,7 +26,7 @@ from archi.builtin.context import (
 from archi.builtin.file import FILE_BUILTIN_REGISTRY
 from archi.opencl.context import (
         OpenCLPluginContext,
-        OpenCLContextContext,
+        OpenCLContextHandleContext,
         OpenCLProgramFromSourcesContext,
         OpenCLProgramFromBinariesContext,
         )
@@ -188,7 +188,7 @@ envvar_interface = EnvVarContext.interface(executable)
 with app.temp_context(library_interface(pathname=PLUGIN_OPENCL_PATHNAME).is_a(OpenCLPluginContext),
                       key='plugin.opencl') as plugin_opencl:
     # Prepare OpenCL plugin interfaces
-    opencl_context_interface = OpenCLContextContext.interface(plugin_opencl)
+    opencl_context_interface = OpenCLContextHandleContext.interface(plugin_opencl)
     opencl_program_src_interface = OpenCLProgramFromSourcesContext.interface(plugin_opencl)
     opencl_program_bin_interface = OpenCLProgramFromBinariesContext.interface(plugin_opencl)
 

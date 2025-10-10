@@ -44,7 +44,7 @@ _TYPE_CONTEXT_INTERFACE = PublicType(archi_context_interface_t)
 
 ###############################################################################
 
-class OpenCLContextContext(ContextWhitelistable):
+class OpenCLContextHandleContext(ContextWhitelistable):
     """Context type for OpenCL contexts.
     """
     class InitParameters(ParametersWhitelistable):
@@ -339,7 +339,7 @@ class OpenCLKernelEnqueueData(ContextWhitelistable):
 ###############################################################################
 
 CONTEXT_CLASSES = [
-        OpenCLContextContext, OpenCLCommandQueueContext,
+        OpenCLContextHandleContext, OpenCLCommandQueueContext,
         OpenCLProgramFromSourcesContext, OpenCLProgramFromBinariesContext,
         OpenCLKernelNewContext, OpenCLKernelCloneContext,
         OpenCLSVMAllocDataContext, OpenCLSVMMapDataContext,
