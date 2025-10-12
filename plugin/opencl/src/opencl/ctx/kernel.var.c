@@ -332,6 +332,46 @@ ARCHI_CONTEXT_SET_FUNC(archi_context_opencl_kernel_set)
             return ARCHI_STATUS_ERESOURCE;
         }
     }
+    else if (strcmp("arg.mem_ptr", slot.name) == 0)
+    {
+        if (slot.num_indices != 1)
+            return ARCHI_STATUS_EMISUSE;
+        else if (value.flags & ARCHI_POINTER_FLAG_FUNCTION)
+            return ARCHI_STATUS_EMISUSE;
+
+        ptrdiff_t arg_index = slot.index[0];
+        if ((arg_index < 0) || ((cl_uint)arg_index >= context_data->num_arguments))
+            return ARCHI_STATUS_EMISUSE;
+
+        cl_int ret = clSetKernelArg(context_data->kernel.ptr, arg_index, sizeof(cl_mem), value.ptr);
+        if (ret != CL_SUCCESS)
+        {
+            archi_log_error("archi_context_opencl_kernel_set", "clSetKernelArg(%ti) failed with error %i", arg_index, ret);
+            return ARCHI_STATUS_ERESOURCE;
+        }
+    }
+    else if (strcmp("arg.local_mem_size", slot.name) == 0)
+    {
+        if (slot.num_indices != 1)
+            return ARCHI_STATUS_EMISUSE;
+        else if (value.flags & ARCHI_POINTER_FLAG_FUNCTION)
+            return ARCHI_STATUS_EMISUSE;
+        else if (value.ptr == NULL)
+            return ARCHI_STATUS_EMISUSE;
+
+        ptrdiff_t arg_index = slot.index[0];
+        if ((arg_index < 0) || ((cl_uint)arg_index >= context_data->num_arguments))
+            return ARCHI_STATUS_EMISUSE;
+
+        size_t arg_size = *(size_t*)value.ptr;
+
+        cl_int ret = clSetKernelArg(context_data->kernel.ptr, arg_index, arg_size, NULL);
+        if (ret != CL_SUCCESS)
+        {
+            archi_log_error("archi_context_opencl_kernel_set", "clSetKernelArg(%ti) failed with error %i", arg_index, ret);
+            return ARCHI_STATUS_ERESOURCE;
+        }
+    }
     else if (strcmp("arg.svm_ptr", slot.name) == 0)
     {
         if (slot.num_indices != 1)
