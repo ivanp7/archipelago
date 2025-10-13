@@ -63,7 +63,7 @@ ARCHI_HSP_TRANSITION_FUNCTION(archi_hsp_transition_timer_report)
     if (data == NULL)
         return;
 
-    archi_log_debug(archi_timer_name(data),
+    archi_log_info(archi_timer_name(data),
             "last = %.3g, min = %.3g, max = %.3g, average = %.3g, runs-done = %lu, per-second = %.3g",
             archi_timer_time_last(data),
             archi_timer_time_minimum(data),
