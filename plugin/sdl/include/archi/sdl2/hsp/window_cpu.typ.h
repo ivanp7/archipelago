@@ -1,6 +1,6 @@
 /**
  * @file
- * @brief Types for hierarchical state processor states for SDL2 window operations.
+ * @brief Types for hierarchical state processor states for operations on SDL2 windows (CPU renderer).
  */
 
 #pragma once
@@ -11,7 +11,7 @@
 #include "archi/mem/api/interface.fun.h"
 
 /**
- * @brief Parameters for rendering SDL2 window area.
+ * @brief Parameters for rendering SDL2 window (CPU renderer).
  */
 typedef struct archi_sdl2_window_cpu_render_data {
     archi_sdl2_window_cpu_context_t window; ///< Window context.

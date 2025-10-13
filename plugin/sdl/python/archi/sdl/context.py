@@ -18,14 +18,17 @@ _TYPE_INT = PublicType(c.c_int)
 _TYPE_UINT32 = PublicType(c.c_uint32)
 _TYPE_STR = PublicType(c.c_char, array=True, constr=lambda v: c.create_string_buffer(v.encode()))
 
+_TYPE_MEMORY = PrivateType('archi.memory')
+
 _TYPE_FONT_PSF_V2 = PrivateType('font.psf_v2')
 
 _TYPE_SDL2_LIBRARY = PrivateType('sdl2.library')
 _TYPE_SDL2_WINDOW_CPU = PrivateType('sdl2.window_cpu')
 _TYPE_SDL2_WINDOW_CPU_PARAMS = PrivateType('sdl2.window_cpu.params')
 _TYPE_SDL2_WINDOW_CPU_HANDLE = PrivateType('sdl2.window_cpu.handle')
-_TYPE_SDL2_RENDERER = PrivateType('sdl2.renderer')
-_TYPE_SDL2_TEXTURE = PrivateType('sdl2.texture')
+_TYPE_SDL2_RENDERER_HANDLE = PrivateType('sdl2.renderer')
+_TYPE_SDL2_TEXTURE_HANDLE = PrivateType('sdl2.texture')
+_TYPE_SDL2_WINDOW_CPU_RENDER_DATA = PrivateType('sdl2.window_cpu.render_data')
 
 _TYPE_CONTEXT_INTERFACE = PublicType(archi_context_interface_t)
 
@@ -72,7 +75,7 @@ class SDL2LibraryContext(ContextWhitelistable):
 ###############################################################################
 
 class SDL2WindowCPUContext(ContextWhitelistable):
-    """Context type for SDL2 windows.
+    """Context type for SDL2 windows (CPU renderer).
     """
     class InitParameters(ParametersWhitelistable):
         PARAMETERS = {
@@ -85,7 +88,7 @@ class SDL2WindowCPUContext(ContextWhitelistable):
                 'window_title': _TYPE_STR,
                 }
 
-    INTERFACE_SYMBOL = 'archi_context_sdl2_window_interface'
+    INTERFACE_SYMBOL = 'archi_context_sdl2_window_cpu_interface'
 
     DATA_TYPE = _TYPE_SDL2_WINDOW_CPU
 
@@ -93,8 +96,8 @@ class SDL2WindowCPUContext(ContextWhitelistable):
 
     GETTER_SLOT_TYPES = {
             'window': {0: _TYPE_SDL2_WINDOW_CPU_HANDLE},
-            'renderer': {0: _TYPE_SDL2_RENDERER},
-            'texture': {0: _TYPE_SDL2_TEXTURE},
+            'renderer': {0: _TYPE_SDL2_RENDERER_HANDLE},
+            'texture': {0: _TYPE_SDL2_TEXTURE_HANDLE},
             'texture.width': {0: _TYPE_INT},
             'texture.height': {0: _TYPE_INT},
             'texture.lock': {0: _TYPE_UINT32},
@@ -103,6 +106,35 @@ class SDL2WindowCPUContext(ContextWhitelistable):
             'texture.lock.y': {0: _TYPE_INT},
             'texture.lock.width': {0: _TYPE_INT},
             'texture.lock.height': {0: _TYPE_INT},
+            }
+
+
+class SDL2WindowCPURenderDataContext(ContextWhitelistable):
+    """Context type for SDL2 window renderer data (CPU renderer).
+    """
+    class InitParameters(ParametersWhitelistable):
+        PARAMETERS = {
+                'window': _TYPE_SDL2_WINDOW_CPU,
+                'texture': _TYPE_MEMORY,
+                'texture_map_data': None,
+                }
+
+    INTERFACE_SYMBOL = 'archi_context_sdl2_window_cpu_render_data_interface'
+
+    DATA_TYPE = _TYPE_SDL2_WINDOW_CPU_RENDER_DATA
+
+    INIT_PARAMETERS_CLASS = InitParameters
+
+    GETTER_SLOT_TYPES = {
+            'window': {0: _TYPE_SDL2_WINDOW_CPU_HANDLE},
+            'texture': {0: _TYPE_MEMORY},
+            'texture_map_data': {0: None},
+            }
+
+    SETTER_SLOT_TYPES = {
+            'window': {0: _TYPE_SDL2_WINDOW_CPU_HANDLE},
+            'texture': {0: _TYPE_MEMORY},
+            'texture_map_data': {0: None},
             }
 
 ###############################################################################
