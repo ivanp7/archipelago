@@ -1,6 +1,6 @@
 /**
  * @file
- * @brief Types for operations with SDL windows.
+ * @brief Common types for operations with SDL windows.
  */
 
 #pragma once
@@ -10,25 +10,15 @@
 #include <stdint.h> // for uint32_t
 
 /**
- * @brief Parameters for archi_sdl2_window_create().
- *
- * If window width is 0, it is substituted with texture width.
- * If window height is 0, it is substituted with texture height.
+ * @brief Parameters of window creation.
  */
 typedef struct archi_sdl2_window_params {
-    struct {
-        int width;  ///< Texture width in pixels.
-        int height; ///< Texture height in pixels.
-    } texture;
+    int width;  ///< Window width in pixels.
+    int height; ///< Window height in pixels.
 
-    struct {
-        int width;  ///< Window width in pixels.
-        int height; ///< Window height in pixels.
+    uint32_t flags; ///< Window flags.
 
-        uint32_t flags; ///< Window flags.
-
-        const char *title; ///< Window title.
-    } window;
+    const char *title; ///< Window title.
 } archi_sdl2_window_params_t;
 
 #endif // _ARCHI_SDL2_API_WINDOW_TYP_H_

@@ -1,9 +1,9 @@
 /**
  * @file
- * @brief Operations with SDL windows.
+ * @brief Operations with SDL windows (CPU renderer).
  */
 
-#include "archi/sdl2/api/window.fun.h"
+#include "archi/sdl2/api/window_cpu.fun.h"
 
 #include "SDL.h"
 #include "SDL_video.h"
@@ -11,7 +11,7 @@
 
 #include <stdlib.h> // for malloc(), free()
 
-struct archi_sdl2_window_context {
+struct archi_sdl2_window_cpu_context {
     struct {
         SDL_Window *handle; ///< SDL window handle.
     } window;
@@ -35,9 +35,9 @@ struct archi_sdl2_window_context {
     } texture;
 };
 
-archi_sdl2_window_context_t
-archi_sdl2_window_create(
-        archi_sdl2_window_params_t params,
+archi_sdl2_window_cpu_context_t
+archi_sdl2_window_cpu_create(
+        archi_sdl2_window_cpu_params_t params,
 
         archi_status_t *code)
 {
@@ -50,7 +50,7 @@ archi_sdl2_window_create(
     }
 
     // Allocate a context structure object
-    archi_sdl2_window_context_t context = malloc(sizeof(*context));
+    archi_sdl2_window_cpu_context_t context = malloc(sizeof(*context));
     if (context == NULL)
     {
         if (code != NULL)
@@ -58,7 +58,7 @@ archi_sdl2_window_create(
         return NULL;
     }
 
-    *context = (struct archi_sdl2_window_context){0};
+    *context = (struct archi_sdl2_window_cpu_context){0};
 
     // Step 1: create window
     {
@@ -122,14 +122,14 @@ archi_sdl2_window_create(
     return context;
 
 failure:
-    archi_sdl2_window_destroy(context);
+    archi_sdl2_window_cpu_destroy(context);
 
     return NULL;
 }
 
 void
-archi_sdl2_window_destroy(
-        archi_sdl2_window_context_t context)
+archi_sdl2_window_cpu_destroy(
+        archi_sdl2_window_cpu_context_t context)
 {
     if (context == NULL)
         return;
@@ -148,7 +148,7 @@ archi_sdl2_window_destroy(
 
 static
 bool
-archi_sdl2_window_lock_texture(
+archi_sdl2_window_cpu_lock_texture(
         SDL_Texture *texture,
         const SDL_Rect *rectangle,
         archi_sdl2_pixel_t **pixels,
@@ -158,15 +158,15 @@ archi_sdl2_window_lock_texture(
 }
 
 archi_status_t
-archi_sdl2_window_lock_whole_texture(
-        archi_sdl2_window_context_t context)
+archi_sdl2_window_cpu_lock_whole_texture(
+        archi_sdl2_window_cpu_context_t context)
 {
     if (context == NULL)
         return ARCHI_STATUS_EMISUSE;
     else if (context->texture.lock.pixels != NULL)
         return ARCHI_STATUS_EMISUSE;
 
-    if (!archi_sdl2_window_lock_texture(context->texture.handle, NULL,
+    if (!archi_sdl2_window_cpu_lock_texture(context->texture.handle, NULL,
                 &context->texture.lock.pixels, &context->texture.lock.pitch))
         return 1;
 
@@ -180,8 +180,8 @@ archi_sdl2_window_lock_whole_texture(
 }
 
 archi_status_t
-archi_sdl2_window_lock_texture_area(
-        archi_sdl2_window_context_t context,
+archi_sdl2_window_cpu_lock_texture_area(
+        archi_sdl2_window_cpu_context_t context,
 
         int x,
         int y,
@@ -195,7 +195,7 @@ archi_sdl2_window_lock_texture_area(
 
     SDL_Rect rectangle = {.x = x, .y = y, .w = width, .h = height};
 
-    if (!archi_sdl2_window_lock_texture(context->texture.handle, &rectangle,
+    if (!archi_sdl2_window_cpu_lock_texture(context->texture.handle, &rectangle,
                 &context->texture.lock.pixels, &context->texture.lock.pitch))
         return 1;
 
@@ -206,8 +206,8 @@ archi_sdl2_window_lock_texture_area(
 }
 
 archi_status_t
-archi_sdl2_window_unlock_texture_and_render(
-        archi_sdl2_window_context_t context)
+archi_sdl2_window_cpu_unlock_texture_and_render(
+        archi_sdl2_window_cpu_context_t context)
 {
     if (context == NULL)
         return ARCHI_STATUS_EMISUSE;
@@ -231,8 +231,8 @@ archi_sdl2_window_unlock_texture_and_render(
 /*****************************************************************************/
 
 bool
-archi_sdl2_window_texture_draw_glyph(
-        archi_sdl2_window_context_t context,
+archi_sdl2_window_cpu_texture_draw_glyph(
+        archi_sdl2_window_cpu_context_t context,
 
         int x,
         int y,
@@ -326,8 +326,8 @@ archi_sdl2_window_texture_draw_glyph(
 /*****************************************************************************/
 
 SDL_Window*
-archi_sdl2_window_get_handle(
-        archi_sdl2_window_context_t context)
+archi_sdl2_window_cpu_get_handle(
+        archi_sdl2_window_cpu_context_t context)
 {
     if (context == NULL)
         return NULL;
@@ -336,8 +336,8 @@ archi_sdl2_window_get_handle(
 }
 
 SDL_Renderer*
-archi_sdl2_window_get_renderer(
-        archi_sdl2_window_context_t context)
+archi_sdl2_window_cpu_get_renderer(
+        archi_sdl2_window_cpu_context_t context)
 {
     if (context == NULL)
         return NULL;
@@ -346,8 +346,8 @@ archi_sdl2_window_get_renderer(
 }
 
 SDL_Texture*
-archi_sdl2_window_get_texture(
-        archi_sdl2_window_context_t context)
+archi_sdl2_window_cpu_get_texture(
+        archi_sdl2_window_cpu_context_t context)
 {
     if (context == NULL)
         return NULL;
@@ -356,8 +356,8 @@ archi_sdl2_window_get_texture(
 }
 
 void
-archi_sdl2_window_get_texture_size(
-        archi_sdl2_window_context_t context,
+archi_sdl2_window_cpu_get_texture_size(
+        archi_sdl2_window_cpu_context_t context,
 
         int *width,
         int *height)
@@ -373,8 +373,8 @@ archi_sdl2_window_get_texture_size(
 }
 
 archi_sdl2_pixel_t*
-archi_sdl2_window_get_texture_lock(
-        archi_sdl2_window_context_t context,
+archi_sdl2_window_cpu_get_texture_lock(
+        archi_sdl2_window_cpu_context_t context,
 
         int *pitch,
 

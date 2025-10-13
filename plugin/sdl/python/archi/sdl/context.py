@@ -21,9 +21,9 @@ _TYPE_STR = PublicType(c.c_char, array=True, constr=lambda v: c.create_string_bu
 _TYPE_FONT_PSF_V2 = PrivateType('font.psf_v2')
 
 _TYPE_SDL2_LIBRARY = PrivateType('sdl2.library')
-_TYPE_SDL2_WINDOW = PrivateType('sdl2.window')
-_TYPE_SDL2_WINDOW_PARAMS = PrivateType('sdl2.window.params')
-_TYPE_SDL2_WINDOW_HANDLE = PrivateType('sdl2.window.handle')
+_TYPE_SDL2_WINDOW_CPU = PrivateType('sdl2.window_cpu')
+_TYPE_SDL2_WINDOW_CPU_PARAMS = PrivateType('sdl2.window_cpu.params')
+_TYPE_SDL2_WINDOW_CPU_HANDLE = PrivateType('sdl2.window_cpu.handle')
 _TYPE_SDL2_RENDERER = PrivateType('sdl2.renderer')
 _TYPE_SDL2_TEXTURE = PrivateType('sdl2.texture')
 
@@ -71,12 +71,12 @@ class SDL2LibraryContext(ContextWhitelistable):
 
 ###############################################################################
 
-class SDL2WindowContext(ContextWhitelistable):
+class SDL2WindowCPUContext(ContextWhitelistable):
     """Context type for SDL2 windows.
     """
     class InitParameters(ParametersWhitelistable):
         PARAMETERS = {
-                'params': _TYPE_SDL2_WINDOW_PARAMS,
+                'params': _TYPE_SDL2_WINDOW_CPU_PARAMS,
                 'texture_width': _TYPE_INT,
                 'texture_height': _TYPE_INT,
                 'window_width': _TYPE_INT,
@@ -87,12 +87,12 @@ class SDL2WindowContext(ContextWhitelistable):
 
     INTERFACE_SYMBOL = 'archi_context_sdl2_window_interface'
 
-    DATA_TYPE = _TYPE_SDL2_WINDOW
+    DATA_TYPE = _TYPE_SDL2_WINDOW_CPU
 
     INIT_PARAMETERS_CLASS = InitParameters
 
     GETTER_SLOT_TYPES = {
-            'window': {0: _TYPE_SDL2_WINDOW_HANDLE},
+            'window': {0: _TYPE_SDL2_WINDOW_CPU_HANDLE},
             'renderer': {0: _TYPE_SDL2_RENDERER},
             'texture': {0: _TYPE_SDL2_TEXTURE},
             'texture.width': {0: _TYPE_INT},
@@ -110,7 +110,7 @@ class SDL2WindowContext(ContextWhitelistable):
 
 CONTEXT_CLASSES = [
         FontPSFv2Context,
-        SDL2LibraryContext, SDL2WindowContext,
+        SDL2LibraryContext, SDL2WindowCPUContext,
         ]
 
 
