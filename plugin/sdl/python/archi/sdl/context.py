@@ -23,12 +23,16 @@ _TYPE_MEMORY = PrivateType('archi.memory')
 _TYPE_FONT_PSF_V2 = PrivateType('font.psf_v2')
 
 _TYPE_SDL2_LIBRARY = PrivateType('sdl2.library')
+_TYPE_SDL2_WINDOW_HANDLE = PrivateType('sdl2.window.handle')
+_TYPE_SDL2_RENDERER_HANDLE = PrivateType('sdl2.renderer.handle')
+_TYPE_SDL2_TEXTURE_HANDLE = PrivateType('sdl2.texture.handle')
 _TYPE_SDL2_WINDOW_CPU = PrivateType('sdl2.window_cpu')
 _TYPE_SDL2_WINDOW_CPU_PARAMS = PrivateType('sdl2.window_cpu.params')
-_TYPE_SDL2_WINDOW_CPU_HANDLE = PrivateType('sdl2.window_cpu.handle')
-_TYPE_SDL2_RENDERER_HANDLE = PrivateType('sdl2.renderer')
-_TYPE_SDL2_TEXTURE_HANDLE = PrivateType('sdl2.texture')
 _TYPE_SDL2_WINDOW_CPU_RENDER_DATA = PrivateType('sdl2.window_cpu.render_data')
+_TYPE_SDL2_WINDOW_OPENGL = PrivateType('sdl2.window_opengl')
+_TYPE_SDL2_WINDOW_OPENGL_PARAMS = PrivateType('sdl2.window_opengl.params')
+
+_TYPE_OPENGL_CONTEXT = PrivateType('opengl.context')
 
 _TYPE_CONTEXT_INTERFACE = PublicType(archi_context_interface_t)
 
@@ -95,7 +99,7 @@ class SDL2WindowCPUContext(ContextWhitelistable):
     INIT_PARAMETERS_CLASS = InitParameters
 
     GETTER_SLOT_TYPES = {
-            'window': {0: _TYPE_SDL2_WINDOW_CPU_HANDLE},
+            'window': {0: _TYPE_SDL2_WINDOW_HANDLE},
             'renderer': {0: _TYPE_SDL2_RENDERER_HANDLE},
             'texture': {0: _TYPE_SDL2_TEXTURE_HANDLE},
             'texture.width': {0: _TYPE_INT},
@@ -126,15 +130,40 @@ class SDL2WindowCPURenderDataContext(ContextWhitelistable):
     INIT_PARAMETERS_CLASS = InitParameters
 
     GETTER_SLOT_TYPES = {
-            'window': {0: _TYPE_SDL2_WINDOW_CPU_HANDLE},
+            'window': {0: _TYPE_SDL2_WINDOW_CPU},
             'texture': {0: _TYPE_MEMORY},
             'texture_map_data': {0: None},
             }
 
     SETTER_SLOT_TYPES = {
-            'window': {0: _TYPE_SDL2_WINDOW_CPU_HANDLE},
+            'window': {0: _TYPE_SDL2_WINDOW_CPU},
             'texture': {0: _TYPE_MEMORY},
             'texture_map_data': {0: None},
+            }
+
+###############################################################################
+
+class SDL2WindowOpenGLContext(ContextWhitelistable):
+    """Context type for SDL2 windows (OpenGL renderer).
+    """
+    class InitParameters(ParametersWhitelistable):
+        PARAMETERS = {
+                'params': _TYPE_SDL2_WINDOW_OPENGL_PARAMS,
+                'window_width': _TYPE_INT,
+                'window_height': _TYPE_INT,
+                'window_flags': _TYPE_UINT32,
+                'window_title': _TYPE_STR,
+                }
+
+    INTERFACE_SYMBOL = 'archi_context_sdl2_window_opengl_interface'
+
+    DATA_TYPE = _TYPE_SDL2_WINDOW_OPENGL
+
+    INIT_PARAMETERS_CLASS = InitParameters
+
+    GETTER_SLOT_TYPES = {
+            'window': {0: _TYPE_SDL2_WINDOW_OPENGL},
+            'opengl': {0: _TYPE_OPENGL_CONTEXT},
             }
 
 ###############################################################################

@@ -326,7 +326,7 @@ archi_sdl2_window_cpu_texture_draw_glyph(
 /*****************************************************************************/
 
 SDL_Window*
-archi_sdl2_window_cpu_get_handle(
+archi_sdl2_window_cpu_get_window_handle(
         archi_sdl2_window_cpu_context_t context)
 {
     if (context == NULL)

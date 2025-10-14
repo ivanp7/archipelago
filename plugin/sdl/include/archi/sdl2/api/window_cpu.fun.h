@@ -18,7 +18,7 @@ struct SDL_Renderer;
 struct SDL_Texture;
 
 /**
- * @brief Pointer to SDL window context.
+ * @brief Pointer to SDL window context (CPU renderer).
  */
 typedef struct archi_sdl2_window_cpu_context *archi_sdl2_window_cpu_context_t;
 
@@ -42,7 +42,7 @@ archi_sdl2_window_cpu_create(
 );
 
 /**
- * @brief Destroy an SDL window.
+ * @brief Destroy an SDL window with a CPU renderer.
  *
  * Steps:
  * 1. SDL_DestroyTexture()
@@ -129,7 +129,7 @@ archi_sdl2_window_cpu_texture_draw_glyph(
  * @return SDL window handle.
  */
 struct SDL_Window*
-archi_sdl2_window_cpu_get_handle(
+archi_sdl2_window_cpu_get_window_handle(
         archi_sdl2_window_cpu_context_t context ///< [in] Window context.
 );
 

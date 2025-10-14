@@ -198,8 +198,8 @@ ARCHI_CONTEXT_GET_FUNC(archi_context_sdl2_window_cpu_get)
             return ARCHI_STATUS_EMISUSE;
 
         *value = (archi_pointer_t){
-            .ptr = archi_sdl2_window_cpu_get_handle(context_data->context.ptr),
-            .ref_count = context_data->context.ref_count,
+            .ptr = archi_sdl2_window_cpu_get_window_handle(context_data->context.ptr),
+            .ref_count = context->ref_count,
             .element = {
                 .num_of = 1,
             },
@@ -212,7 +212,7 @@ ARCHI_CONTEXT_GET_FUNC(archi_context_sdl2_window_cpu_get)
 
         *value = (archi_pointer_t){
             .ptr = archi_sdl2_window_cpu_get_renderer(context_data->context.ptr),
-            .ref_count = context_data->context.ref_count,
+            .ref_count = context->ref_count,
             .element = {
                 .num_of = 1,
             },
@@ -225,7 +225,7 @@ ARCHI_CONTEXT_GET_FUNC(archi_context_sdl2_window_cpu_get)
 
         *value = (archi_pointer_t){
             .ptr = archi_sdl2_window_cpu_get_texture(context_data->context.ptr),
-            .ref_count = context_data->context.ref_count,
+            .ref_count = context->ref_count,
             .element = {
                 .num_of = 1,
             },
@@ -238,7 +238,7 @@ ARCHI_CONTEXT_GET_FUNC(archi_context_sdl2_window_cpu_get)
 
         *value = (archi_pointer_t){
             .ptr = &context_data->texture.width,
-            .ref_count = context_data->context.ref_count,
+            .ref_count = context->ref_count,
             .element = {
                 .num_of = 1,
                 .size = sizeof(context_data->texture.width),
@@ -253,7 +253,7 @@ ARCHI_CONTEXT_GET_FUNC(archi_context_sdl2_window_cpu_get)
 
         *value = (archi_pointer_t){
             .ptr = &context_data->texture.height,
-            .ref_count = context_data->context.ref_count,
+            .ref_count = context->ref_count,
             .element = {
                 .num_of = 1,
                 .size = sizeof(context_data->texture.height),
@@ -272,7 +272,7 @@ ARCHI_CONTEXT_GET_FUNC(archi_context_sdl2_window_cpu_get)
 
         *value = (archi_pointer_t){
             .ptr = pixels,
-            .ref_count = context_data->context.ref_count,
+            .ref_count = context->ref_count,
             .element = {
                 .num_of = context_data->texture_lock.width, // only `width` pixels are contiguous
                 .size = sizeof(archi_sdl2_pixel_t),
@@ -292,7 +292,7 @@ ARCHI_CONTEXT_GET_FUNC(archi_context_sdl2_window_cpu_get)
 
         *value = (archi_pointer_t){
             .ptr = &context_data->texture_lock.pitch,
-            .ref_count = context_data->context.ref_count,
+            .ref_count = context->ref_count,
             .element = {
                 .num_of = 1,
                 .size = sizeof(context_data->texture_lock.pitch),
@@ -312,7 +312,7 @@ ARCHI_CONTEXT_GET_FUNC(archi_context_sdl2_window_cpu_get)
 
         *value = (archi_pointer_t){
             .ptr = &context_data->texture_lock.x,
-            .ref_count = context_data->context.ref_count,
+            .ref_count = context->ref_count,
             .element = {
                 .num_of = 1,
                 .size = sizeof(context_data->texture_lock.x),
@@ -332,7 +332,7 @@ ARCHI_CONTEXT_GET_FUNC(archi_context_sdl2_window_cpu_get)
 
         *value = (archi_pointer_t){
             .ptr = &context_data->texture_lock.y,
-            .ref_count = context_data->context.ref_count,
+            .ref_count = context->ref_count,
             .element = {
                 .num_of = 1,
                 .size = sizeof(context_data->texture_lock.y),
@@ -352,7 +352,7 @@ ARCHI_CONTEXT_GET_FUNC(archi_context_sdl2_window_cpu_get)
 
         *value = (archi_pointer_t){
             .ptr = &context_data->texture_lock.width,
-            .ref_count = context_data->context.ref_count,
+            .ref_count = context->ref_count,
             .element = {
                 .num_of = 1,
                 .size = sizeof(context_data->texture_lock.width),
@@ -371,7 +371,7 @@ ARCHI_CONTEXT_GET_FUNC(archi_context_sdl2_window_cpu_get)
 
         *value = (archi_pointer_t){
             .ptr = &context_data->texture_lock.height,
-            .ref_count = context_data->context.ref_count,
+            .ref_count = context->ref_count,
             .element = {
                 .num_of = 1,
                 .size = sizeof(context_data->texture_lock.height),
