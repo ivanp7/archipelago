@@ -137,7 +137,7 @@ ARCHI_CONTEXT_INIT_FUNC(archi_context_thread_group_dispatch_data_init)
     if (context_data == NULL)
         return ARCHI_STATUS_ENOMEMORY;
 
-    archi_context_thread_group_dispatch_data_t *dispatch_data = malloc(sizeof(*dispatch_data));
+    archi_thread_group_dispatch_data_t *dispatch_data = malloc(sizeof(*dispatch_data));
     if (dispatch_data == NULL)
     {
         free(context_data);
@@ -157,7 +157,7 @@ ARCHI_CONTEXT_INIT_FUNC(archi_context_thread_group_dispatch_data_init)
         name = name_copy;
     }
 
-    *dispatch_data = (archi_context_thread_group_dispatch_data_t){
+    *dispatch_data = (archi_thread_group_dispatch_data_t){
         .context = thread_group_context.ptr,
         .work = thread_group_work.ptr,
         .callback = thread_group_callback.ptr,
@@ -171,7 +171,7 @@ ARCHI_CONTEXT_INIT_FUNC(archi_context_thread_group_dispatch_data_init)
             .element = {
                 .num_of = 1,
                 .size = sizeof(*dispatch_data),
-                .alignment = alignof(archi_context_thread_group_dispatch_data_t),
+                .alignment = alignof(archi_thread_group_dispatch_data_t),
             },
         },
         .context = thread_group_context,
@@ -192,7 +192,7 @@ ARCHI_CONTEXT_FINAL_FUNC(archi_context_thread_group_dispatch_data_final)
     struct archi_context_thread_group_dispatch_data_data *context_data =
         (struct archi_context_thread_group_dispatch_data_data*)context;
 
-    archi_context_thread_group_dispatch_data_t *dispatch_data = context_data->dispatch_data.ptr;
+    archi_thread_group_dispatch_data_t *dispatch_data = context_data->dispatch_data.ptr;
 
     archi_reference_count_decrement(context_data->context.ref_count);
     archi_reference_count_decrement(context_data->work.ref_count);
@@ -207,7 +207,7 @@ ARCHI_CONTEXT_GET_FUNC(archi_context_thread_group_dispatch_data_get)
     struct archi_context_thread_group_dispatch_data_data *context_data =
         (struct archi_context_thread_group_dispatch_data_data*)context;
 
-    archi_context_thread_group_dispatch_data_t *dispatch_data = context_data->dispatch_data.ptr;
+    archi_thread_group_dispatch_data_t *dispatch_data = context_data->dispatch_data.ptr;
 
     if (strcmp("context", slot.name) == 0)
     {
@@ -274,7 +274,7 @@ ARCHI_CONTEXT_SET_FUNC(archi_context_thread_group_dispatch_data_set)
     struct archi_context_thread_group_dispatch_data_data *context_data =
         (struct archi_context_thread_group_dispatch_data_data*)context;
 
-    archi_context_thread_group_dispatch_data_t *dispatch_data = context_data->dispatch_data.ptr;
+    archi_thread_group_dispatch_data_t *dispatch_data = context_data->dispatch_data.ptr;
 
     if (strcmp("context", slot.name) == 0)
     {

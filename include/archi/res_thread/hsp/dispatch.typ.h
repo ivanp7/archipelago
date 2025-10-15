@@ -32,7 +32,7 @@
 /**
  * @brief Parameters for archi_thread_group_dispatch().
  */
-typedef struct archi_context_thread_group_dispatch_data {
+typedef struct archi_thread_group_dispatch_data {
     archi_thread_group_context_t context; ///< Thread group context.
 
     archi_thread_group_work_t *work; ///< Concurrent work task.
@@ -40,7 +40,7 @@ typedef struct archi_context_thread_group_dispatch_data {
     archi_thread_group_dispatch_params_t params; ///< Dispatch parameters.
 
     const char *name; ///< Name of the operation (for logging).
-} archi_context_thread_group_dispatch_data_t;
+} archi_thread_group_dispatch_data_t;
 
 #endif // _ARCHI_RES_THREAD_HSP_DISPATCH_TYP_H_
 
