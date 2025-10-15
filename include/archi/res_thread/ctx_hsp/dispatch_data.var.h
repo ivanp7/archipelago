@@ -24,8 +24,8 @@
  */
 
 #pragma once
-#ifndef _ARCHI_RES_THREAD_CTX_DISPATCH_DATA_VAR_H_
-#define _ARCHI_RES_THREAD_CTX_DISPATCH_DATA_VAR_H_
+#ifndef _ARCHI_RES_THREAD_CTX_HSP_DISPATCH_DATA_VAR_H_
+#define _ARCHI_RES_THREAD_CTX_HSP_DISPATCH_DATA_VAR_H_
 
 #include "archipelago/context/interface.typ.h"
 
@@ -37,5 +37,5 @@ ARCHI_CONTEXT_SET_FUNC(archi_context_thread_group_dispatch_data_set);     ///< T
 extern
 const archi_context_interface_t archi_context_thread_group_dispatch_data_interface; ///< Thread group dispatch data interface.
 
-#endif // _ARCHI_RES_THREAD_CTX_DISPATCH_DATA_VAR_H_
+#endif // _ARCHI_RES_THREAD_CTX_HSP_DISPATCH_DATA_VAR_H_
 

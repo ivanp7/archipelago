@@ -171,7 +171,9 @@ class SDL2WindowOpenGLContext(ContextWhitelistable):
 
 CONTEXT_CLASSES = [
         FontPSFv2Context,
-        SDL2LibraryContext, SDL2WindowCPUContext,
+        SDL2LibraryContext,
+        SDL2WindowCPUContext, SDL2WindowCPURenderDataContext,
+        SDL2WindowOpenGLContext,
         ]
 
 

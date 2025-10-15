@@ -197,6 +197,7 @@ ARCHI_CONTEXT_FINAL_FUNC(archi_context_thread_group_dispatch_data_final)
     archi_reference_count_decrement(context_data->context.ref_count);
     archi_reference_count_decrement(context_data->work.ref_count);
     archi_reference_count_decrement(context_data->callback.ref_count);
+
     free((char*)dispatch_data->name);
     free(dispatch_data);
     free(context_data);

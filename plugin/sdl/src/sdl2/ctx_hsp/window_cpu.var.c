@@ -7,7 +7,7 @@
 #include "archi/sdl2/hsp/window_cpu.typ.h"
 
 #include <stdlib.h> // for malloc(), free()
-#include <string.h> // for strcmp(), strlen()
+#include <string.h> // for strcmp()
 #include <stdalign.h> // for alignof()
 
 struct archi_context_sdl2_window_cpu_render_data_data {
