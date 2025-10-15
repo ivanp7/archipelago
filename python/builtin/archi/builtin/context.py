@@ -420,6 +420,45 @@ class MemoryMappingContext(ContextWhitelistable):
                      1: ActionCopyParameters},
             }
 
+
+class MemoryMapCopyUnmapDataContext(ContextWhitelistable):
+    """Context type for memory map-copy-unmap operation data.
+    """
+    class InitParameters(ParametersWhitelistable):
+        PARAMETERS = {
+                'memory_dest': _TYPE_MEMORY,
+                'offset_dest': _TYPE_SIZE,
+                'map_data_dest': None,
+                'memory_src': _TYPE_MEMORY,
+                'offset_src': _TYPE_SIZE,
+                'map_data_src': None,
+                'num_of': _TYPE_SIZE,
+                }
+
+    INTERFACE_SYMBOL = 'archi_context_memory_map_copy_unmap_data_interface'
+
+    INIT_PARAMETERS_CLASS = InitParameters
+
+    GETTER_SLOT_TYPES = {
+            'memory_dest': {0: _TYPE_MEMORY},
+            'offset_dest': {0: _TYPE_SIZE},
+            'map_data_dest': {0: None},
+            'memory_src': {0: _TYPE_MEMORY},
+            'offset_src': {0: _TYPE_SIZE},
+            'map_data_src': {0: None},
+            'map_data_src': {0: _TYPE_SIZE},
+            }
+
+    SETTER_SLOT_TYPES = {
+            'memory_dest': {0: _TYPE_MEMORY},
+            'offset_dest': {0: _TYPE_SIZE},
+            'map_data_dest': {0: None},
+            'memory_src': {0: _TYPE_MEMORY},
+            'offset_src': {0: _TYPE_SIZE},
+            'map_data_src': {0: None},
+            'map_data_src': {0: _TYPE_SIZE},
+            }
+
 ###############################################################################
 
 class FileContext(ContextWhitelistable):
@@ -689,7 +728,8 @@ CONTEXT_CLASSES = [
         Parameters.Context, PointerContext, ArrayContext,
         HSPFrameContext, HSPTransitionContext, HSPBranchStateDataContext, HSPTransitionAttachmentDataContext,
         HashmapContext, LockFreeQueueContext, EnvVarContext, SignalHandlerContext,
-        MemoryContext, MemoryMappingContext, FileContext, LibraryContext,
+        MemoryContext, MemoryMappingContext, MemoryMapCopyUnmapDataContext,
+        FileContext, LibraryContext,
         ThreadGroupContext, ThreadGroupWorkContext, ThreadGroupCallbackContext, ThreadGroupDispatchDataContext,
         StringToNumberConverterContext, TimerContext,
         ]
