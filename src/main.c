@@ -758,6 +758,8 @@ execute_instructions(void)
 
     archi_log_debug(M, "Executing instructions in input files...");
 
+    size_t instruction_index = 0;
+
     for (size_t i = 0; i < archi_process.args.num_inputs; i++)
     {
         archi_pointer_t current_file = archi_context_data(archi_process.input_file[i]);
@@ -810,10 +812,13 @@ execute_instructions(void)
             for (archi_exe_registry_instr_list_t *instr_list = instructions;
                     instr_list != NULL; instr_list = instr_list->next)
             {
-                /***********************************************************************************/
+                /****************************************************************************/
                 archi_status_t code = archi_exe_registry_instr_execute(archi_process.registry,
-                        instr_list->instruction, current_file.ref_count, archi_process.args.dry_run);
-                /***********************************************************************************/
+                        instr_list->instruction, instruction_index,
+                        current_file.ref_count, archi_process.args.dry_run);
+                /****************************************************************************/
+
+                instruction_index++;
 
                 if (code > 0)
                     archi_log_warning(M, "Got non-zero instruction execution status %i, attempting to continue...", code);

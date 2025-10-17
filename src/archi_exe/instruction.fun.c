@@ -1088,6 +1088,7 @@ archi_status_t
 archi_exe_registry_instr_execute(
         archi_context_t registry,
         const archi_exe_registry_instr_base_t *instruction,
+        size_t instruction_index,
         archi_reference_count_t ref_count,
         bool dry_run)
 {
@@ -1108,7 +1109,7 @@ archi_exe_registry_instr_execute(
     {
         if (logging)
         {
-            archi_print(" [NOOP]\n");
+            archi_print(" #%zu [NOOP]\n", instruction_index);
 
             archi_print_color(ARCHI_COLOR_RESET);
             archi_print_unlock();
@@ -1122,7 +1123,7 @@ archi_exe_registry_instr_execute(
 #define INSTRUCTION(type, name)                                                 \
         case ARCHI_EXE_REGISTRY_INSTR__##type:                                  \
             if (logging)                                                        \
-                archi_print(" [" #type "]\n");                                  \
+                archi_print(" #%zu [" #type "]\n", instruction_index);          \
                                                                                 \
             code = archi_exe_registry_instr_execute__##name(registry,           \
                     (const archi_exe_registry_instr__##name##_t*)instruction,   \
