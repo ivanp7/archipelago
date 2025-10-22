@@ -62,14 +62,41 @@ ARCHI_HSP_TRANSITION_FUNCTION(archi_hsp_transition_timer_report)
 
     if (data == NULL)
         return;
+    else if (!archi_print_lock(0))
+        return;
 
-    archi_log_info(archi_timer_name(data),
-            "last = %.3g, min = %.3g, max = %.3g, average = %.3g, runs-done = %lu, per-second = %.3g",
-            archi_timer_time_last(data),
-            archi_timer_time_minimum(data),
-            archi_timer_time_maximum(data),
-            archi_timer_time_average(data),
-            archi_timer_runs_done(data),
-            1.0f / archi_timer_time_average(data));
+    archi_print("\n------ TIMER REPORT ------\n");
+
+    {
+        const char *name = archi_timer_name(data);
+        if (name != NULL)
+            archi_print("Name         : %s\n", name);
+    }
+
+    {
+        unsigned long runs_done = archi_timer_runs_done(data);
+        archi_print("Runs done    : %lu\n", runs_done);
+    }
+
+#define PRINT_TIME(name, func) { \
+        float time = func(data); \
+        archi_print(name ": %.3g s (%.3g ms)\n", time, time * 1e+3f); \
+    }
+
+    PRINT_TIME("Minimum time ", archi_timer_time_minimum);
+    PRINT_TIME("Average time ", archi_timer_time_average);
+    PRINT_TIME("Maximum time ", archi_timer_time_maximum);
+    PRINT_TIME("Last time    ", archi_timer_time_last);
+
+#undef PRINT_TIME
+
+    {
+        float runs_per_second = 1.0f / archi_timer_time_average(data);
+        archi_print("Average rate : %.3g runs/s (%.3g runs/ms)\n", runs_per_second, runs_per_second * 1e-3f);
+    }
+
+    archi_print("--- END OF TIMER REPORT ---\n");
+
+    archi_print_unlock();
 }
 
