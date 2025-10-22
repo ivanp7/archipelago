@@ -56,9 +56,22 @@ archi_status_t
 archi_exe_registry_instr_execute(
         archi_context_t registry, ///< [in,out] Application registry.
         const struct archi_exe_registry_instr_base *instruction, ///< [in] Instruction to execute.
-        size_t instruction_index, ///< [in] Number of the instruction.
-        archi_reference_count_t ref_count, ///< [in] Reference count of memory where static objects reside.
-        bool dry_run ///< [in] Whether dry run is done: initialization instructions are logged only, not executed.
+        archi_reference_count_t ref_count ///< [in] Reference count of memory where static objects reside.
+);
+
+/*****************************************************************************/
+
+/**
+ * @brief Print details of an application context registry instruction.
+ *
+ * Instruction fields are printed using archi_print().
+ *
+ * If instruction number is 0, the number is not printed.
+ */
+void
+archi_exe_registry_instr_print(
+        const struct archi_exe_registry_instr_base *instruction, ///< [in] Instruction to execute.
+        size_t instruction_number ///< [in] Number of the instruction.
 );
 
 #endif // _ARCHI_EXE_INSTRUCTION_FUN_H_

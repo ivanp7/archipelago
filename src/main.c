@@ -758,7 +758,7 @@ execute_instructions(void)
 
     archi_log_debug(M, "Executing instructions in input files...");
 
-    size_t instruction_index = 0;
+    size_t instruction_number = 0;
 
     for (size_t i = 0; i < archi_process.args.num_inputs; i++)
     {
@@ -812,27 +812,34 @@ execute_instructions(void)
             for (archi_exe_registry_instr_list_t *instr_list = instructions;
                     instr_list != NULL; instr_list = instr_list->next)
             {
-                /****************************************************************************/
-                archi_status_t code = archi_exe_registry_instr_execute(archi_process.registry,
-                        instr_list->instruction, instruction_index,
-                        current_file.ref_count, archi_process.args.dry_run);
-                /****************************************************************************/
+                instruction_number++;
 
-                instruction_index++;
-
-                if (code > 0)
-                    archi_log_warning(M, "Got non-zero instruction execution status %i, attempting to continue...", code);
-                else if (code < 0)
+                if (archi_print_lock(ARCHI_LOG_VERBOSITY_DEBUG))
                 {
-                    archi_log_error(M, "Couldn't execute the instruction (error %i).", code);
-                    exit(EXIT_FAILURE);
-                }
-            }
+                    archi_print_color(ARCHI_LOG_COLOR_DEBUG);
 
-            if (archi_print_lock(ARCHI_LOG_VERBOSITY_DEBUG))
-            {
-                archi_print("\n");
-                archi_print_unlock();
+                    archi_exe_registry_instr_print(instr_list->instruction, instruction_number);
+
+                    archi_print_color(ARCHI_COLOR_RESET);
+                    archi_print_unlock();
+                }
+
+                if (!archi_process.args.dry_run)
+                {
+                    /*****************************************************/
+                    archi_status_t code = archi_exe_registry_instr_execute(
+                            archi_process.registry, instr_list->instruction,
+                            current_file.ref_count);
+                    /******************************************************/
+
+                    if (code > 0)
+                        archi_log_warning(M, "Got non-zero instruction execution status %i, attempting to continue...", code);
+                    else if (code < 0)
+                    {
+                        archi_log_error(M, "Couldn't execute the instruction (error %i).", code);
+                        exit(EXIT_FAILURE);
+                    }
+                }
             }
         }
         else
