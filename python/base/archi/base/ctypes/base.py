@@ -57,6 +57,9 @@ class archi_array_layout_t(c.Structure):
 archi_pointer_flags_t = c.c_uint64
 
 
+archi_function_t = c.CFUNCTYPE(None)
+
+
 class archi_pointer_t(c.Structure):
     """Generic wrapper for data or function pointers with metadata.
     """
@@ -64,7 +67,7 @@ class archi_pointer_t(c.Structure):
         """Union of a generic pointer to data and a generic pointer to function.
         """
         _fields_ = [('ptr', c.c_void_p),
-                    ('fptr', c.CFUNCTYPE(None))]
+                    ('fptr', archi_function_t)]
 
     NUM_FLAG_BITS = 64 - 2
 
