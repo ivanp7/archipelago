@@ -27,16 +27,16 @@
 #include "archipelago/util/alloc.fun.h"
 
 #include <stdlib.h> // for malloc(), free()
-#include <math.h> // for INFINITY
+#include <math.h> // for INFINITY, NAN, fmin(), fmax()
 #include <sys/time.h> // for gettimeofday(), struct timeval
 
 struct archi_timer {
     char *name; ///< Timer name.
 
     float total_seconds; ///< Total accumulated time.
+    float last_seconds;  ///< Last run time.
     float min_seconds;   ///< Minimum run time.
     float max_seconds;   ///< Maximum run time.
-    float last_seconds;  ///< Last run time.
 
     unsigned long runs_done; ///< Number of runs done.
 
@@ -90,6 +90,9 @@ archi_timer_reset(
 
     *timer = (struct archi_timer){
         .name = name,
+        .last_seconds = NAN,
+        .min_seconds = NAN,
+        .max_seconds = NAN,
     };
 }
 
@@ -113,15 +116,15 @@ archi_timer_stop(
         archi_timer_t timer)
 {
     if ((timer == NULL) || !timer->started)
-        return -INFINITY;
+        return NAN;
 
     struct timeval stop_time;
     int ret = gettimeofday(&stop_time, NULL);
     if (ret != 0)
-        return -INFINITY;
+        return NAN;
 
     if (timer->start_time.tv_sec > stop_time.tv_sec)
-        return -INFINITY;
+        return NAN;
 
     float seconds;
     {
@@ -130,21 +133,12 @@ archi_timer_stop(
     }
 
     if (seconds < 0.0f)
-        return -INFINITY;
+        return NAN;
 
-    timer->last_seconds = seconds;
     timer->total_seconds += seconds;
-
-    if (timer->runs_done > 0)
-    {
-        if (seconds < timer->min_seconds)
-            timer->min_seconds = seconds;
-
-        if (seconds > timer->max_seconds)
-            timer->max_seconds = seconds;
-    }
-    else
-        timer->min_seconds = timer->max_seconds = seconds;
+    timer->last_seconds = seconds;
+    timer->min_seconds = fmin(timer->min_seconds, seconds);
+    timer->max_seconds = fmax(timer->max_seconds, seconds);
 
     timer->runs_done++;
 
@@ -187,7 +181,7 @@ archi_timer_time_average(
         archi_timer_t timer)
 {
     if ((timer == NULL) || (timer->runs_done == 0))
-        return 0.0f;
+        return NAN;
 
     return timer->total_seconds / timer->runs_done;
 }
@@ -197,7 +191,7 @@ archi_timer_time_minimum(
         archi_timer_t timer)
 {
     if (timer == NULL)
-        return 0.0f;
+        return NAN;
 
     return timer->min_seconds;
 }
@@ -207,7 +201,7 @@ archi_timer_time_maximum(
         archi_timer_t timer)
 {
     if (timer == NULL)
-        return 0.0f;
+        return NAN;
 
     return timer->max_seconds;
 }
@@ -217,7 +211,7 @@ archi_timer_time_last(
         archi_timer_t timer)
 {
     if (timer == NULL)
-        return 0.0f;
+        return NAN;
 
     return timer->last_seconds;
 }

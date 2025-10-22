@@ -103,7 +103,7 @@ CFLAGS = ['-march=native', '-pipe', '-std=c17',
           '-pthread', '-fPIC',
           '-fvisibility=default',
           '-fstack-protector-strong']
-LFLAGS = ['-ldl', '-pthread', '-fPIC', '-Wl,--no-gc-sections', '-Wl,--export-dynamic']
+LFLAGS = ['-lm', '-ldl', '-pthread', '-fPIC', '-Wl,--no-gc-sections', '-Wl,--export-dynamic']
 
 CFLAGS += [f'-I{INCLUDE_DIR}']
 
