@@ -20,38 +20,38 @@
 
 /**
  * @file
- * @brief HSP state for thread group dispatch operation.
+ * @brief HSP state for flag barrier operations.
  */
 
-#include "archi/res_thread/hsp/dispatch.fun.h"
-#include "archi/res_thread/hsp/dispatch.typ.h"
-#include "archi/res_thread/api/thread_group.fun.h"
-#include "archi/hsp/api/state.fun.h"
-#include "archipelago/log/print.fun.h"
+#pragma once
+#ifndef _ARCHI_RES_THREAD_HSP_FLAG_BARRIER_FUN_H_
+#define _ARCHI_RES_THREAD_HSP_FLAG_BARRIER_FUN_H_
 
-ARCHI_HSP_STATE_FUNCTION(archi_hsp_state_thread_group_dispatch)
-{
-#define M  "archi_hsp_state_thread_group_dispatch"
+#include "archi/hsp/api/state.typ.h"
 
-    archi_thread_group_dispatch_data_t *dispatch_data = ARCHI_HSP_CURRENT_STATE().data;
-    if ((dispatch_data == NULL) || (dispatch_data->work == NULL))
-        return;
+/**
+ * @brief State function for calling archi_thread_flag_barrier_acquire().
+ *
+ * This state function expects archi_thread_flag_barrier_t
+ * object as function data.
+ */
+ARCHI_HSP_STATE_FUNCTION(archi_hsp_state_thread_flag_barrier_acquire);
 
-    archi_thread_group_callback_t callback = {0};
-    if (dispatch_data->callback != NULL)
-        callback = *dispatch_data->callback;
+/**
+ * @brief State function for calling archi_thread_flag_barrier_release().
+ *
+ * This state function expects archi_thread_flag_barrier_t
+ * object as function data.
+ */
+ARCHI_HSP_STATE_FUNCTION(archi_hsp_state_thread_flag_barrier_release);
 
-    archi_status_t code = archi_thread_group_dispatch(dispatch_data->context,
-            *dispatch_data->work, callback, dispatch_data->params);
+/**
+ * @brief State function for calling archi_thread_flag_barrier_wait().
+ *
+ * This state function expects archi_thread_flag_barrier_t
+ * object as function data.
+ */
+ARCHI_HSP_STATE_FUNCTION(archi_hsp_state_thread_flag_barrier_wait);
 
-    if (code != 0)
-    {
-        if (dispatch_data->name != NULL)
-            archi_log_error(M, "archi_thread_group_dispatch('%s') -> %i", dispatch_data->name, code);
-        else
-            archi_log_error(M, "archi_thread_group_dispatch() -> %i", code);
-    }
-
-#undef M
-}
+#endif // _ARCHI_RES_THREAD_HSP_FLAG_BARRIER_FUN_H_
 

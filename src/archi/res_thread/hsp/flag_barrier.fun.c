@@ -20,37 +20,52 @@
 
 /**
  * @file
- * @brief HSP state for thread group dispatch operation.
+ * @brief HSP state for flag barrier operations.
  */
 
-#include "archi/res_thread/hsp/dispatch.fun.h"
-#include "archi/res_thread/hsp/dispatch.typ.h"
-#include "archi/res_thread/api/thread_group.fun.h"
+#include "archi/res_thread/hsp/flag_barrier.fun.h"
+#include "archi/res_thread/api/flag_barrier.fun.h"
 #include "archi/hsp/api/state.fun.h"
 #include "archipelago/log/print.fun.h"
 
-ARCHI_HSP_STATE_FUNCTION(archi_hsp_state_thread_group_dispatch)
+ARCHI_HSP_STATE_FUNCTION(archi_hsp_state_thread_flag_barrier_acquire)
 {
-#define M  "archi_hsp_state_thread_group_dispatch"
+#define M  "archi_hsp_state_thread_flag_barrier_acquire"
 
-    archi_thread_group_dispatch_data_t *dispatch_data = ARCHI_HSP_CURRENT_STATE().data;
-    if ((dispatch_data == NULL) || (dispatch_data->work == NULL))
-        return;
+    archi_thread_flag_barrier_t barrier = ARCHI_HSP_CURRENT_STATE().data;
 
-    archi_thread_group_callback_t callback = {0};
-    if (dispatch_data->callback != NULL)
-        callback = *dispatch_data->callback;
-
-    archi_status_t code = archi_thread_group_dispatch(dispatch_data->context,
-            *dispatch_data->work, callback, dispatch_data->params);
+    archi_status_t code = archi_thread_flag_barrier_acquire(barrier);
 
     if (code != 0)
-    {
-        if (dispatch_data->name != NULL)
-            archi_log_error(M, "archi_thread_group_dispatch('%s') -> %i", dispatch_data->name, code);
-        else
-            archi_log_error(M, "archi_thread_group_dispatch() -> %i", code);
-    }
+        archi_log_error(M, "archi_thread_flag_barrier_acquire() -> %i", code);
+
+#undef M
+}
+
+ARCHI_HSP_STATE_FUNCTION(archi_hsp_state_thread_flag_barrier_release)
+{
+#define M  "archi_hsp_state_thread_flag_barrier_release"
+
+    archi_thread_flag_barrier_t barrier = ARCHI_HSP_CURRENT_STATE().data;
+
+    archi_status_t code = archi_thread_flag_barrier_release(barrier);
+
+    if (code != 0)
+        archi_log_error(M, "archi_thread_flag_barrier_release() -> %i", code);
+
+#undef M
+}
+
+ARCHI_HSP_STATE_FUNCTION(archi_hsp_state_thread_flag_barrier_wait)
+{
+#define M  "archi_hsp_state_thread_flag_barrier_wait"
+
+    archi_thread_flag_barrier_t barrier = ARCHI_HSP_CURRENT_STATE().data;
+
+    archi_status_t code = archi_thread_flag_barrier_wait(barrier);
+
+    if (code != 0)
+        archi_log_error(M, "archi_thread_flag_barrier_wait() -> %i", code);
 
 #undef M
 }

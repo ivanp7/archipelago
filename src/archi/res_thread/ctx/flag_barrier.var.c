@@ -20,38 +20,49 @@
 
 /**
  * @file
- * @brief HSP state for thread group dispatch operation.
+ * @brief Application context interface for flag barrier contexts.
  */
 
-#include "archi/res_thread/hsp/dispatch.fun.h"
-#include "archi/res_thread/hsp/dispatch.typ.h"
-#include "archi/res_thread/api/thread_group.fun.h"
-#include "archi/hsp/api/state.fun.h"
-#include "archipelago/log/print.fun.h"
+#include "archi/res_thread/ctx/flag_barrier.var.h"
+#include "archi/res_thread/api/flag_barrier.fun.h"
 
-ARCHI_HSP_STATE_FUNCTION(archi_hsp_state_thread_group_dispatch)
+#include <stdlib.h> // for malloc(), free()
+#include <string.h> // for strcmp()
+#include <stdalign.h> // for alignof()
+
+ARCHI_CONTEXT_INIT_FUNC(archi_context_thread_flag_barrier_init)
 {
-#define M  "archi_hsp_state_thread_group_dispatch"
+    if (params != NULL)
+        return ARCHI_STATUS_EKEY;
 
-    archi_thread_group_dispatch_data_t *dispatch_data = ARCHI_HSP_CURRENT_STATE().data;
-    if ((dispatch_data == NULL) || (dispatch_data->work == NULL))
-        return;
+    archi_pointer_t *context_data = malloc(sizeof(*context_data));
+    if (context_data == NULL)
+        return ARCHI_STATUS_ENOMEMORY;
 
-    archi_thread_group_callback_t callback = {0};
-    if (dispatch_data->callback != NULL)
-        callback = *dispatch_data->callback;
+    archi_status_t code;
 
-    archi_status_t code = archi_thread_group_dispatch(dispatch_data->context,
-            *dispatch_data->work, callback, dispatch_data->params);
+    archi_thread_flag_barrier_t barrier = archi_thread_flag_barrier_alloc(&code);
+    if (barrier == NULL)
+        return code;
 
-    if (code != 0)
-    {
-        if (dispatch_data->name != NULL)
-            archi_log_error(M, "archi_thread_group_dispatch('%s') -> %i", dispatch_data->name, code);
-        else
-            archi_log_error(M, "archi_thread_group_dispatch() -> %i", code);
-    }
+    *context_data = (archi_pointer_t){
+        .ptr = barrier,
+        .element = {
+            .num_of = 1,
+        },
+    };
 
-#undef M
+    *context = context_data;
+    return 0;
 }
+
+ARCHI_CONTEXT_FINAL_FUNC(archi_context_thread_flag_barrier_final)
+{
+    archi_thread_flag_barrier_destroy(context->ptr);
+}
+
+const archi_context_interface_t archi_context_thread_flag_barrier_interface = {
+    .init_fn = archi_context_thread_flag_barrier_init,
+    .final_fn = archi_context_thread_flag_barrier_final,
+};
 
