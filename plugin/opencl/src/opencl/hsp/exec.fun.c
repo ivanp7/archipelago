@@ -12,8 +12,6 @@
 
 ARCHI_HSP_STATE_FUNCTION(archi_opencl_hsp_state_wait_for_events)
 {
-#define M "archi_opencl_hsp_state_wait_for_events"
-
     archi_opencl_event_array_t *event_array = ARCHI_HSP_CURRENT_STATE().data;
     if ((event_array == NULL) || (event_array->num_events == 0))
         return;
@@ -21,18 +19,14 @@ ARCHI_HSP_STATE_FUNCTION(archi_opencl_hsp_state_wait_for_events)
     cl_int ret = clWaitForEvents(event_array->num_events, event_array->event);
 
     if (ret != CL_SUCCESS)
-        archi_log_error(M, "clWaitForEvents(<%u events>) -> %s",
+        archi_log_error(__func__, "clWaitForEvents(<%u events>) -> %s",
                 event_array->num_events, archi_opencl_error_string(ret));
 
     archi_opencl_event_array_reset(event_array);
-
-#undef M
 }
 
 ARCHI_HSP_STATE_FUNCTION(archi_opencl_hsp_state_kernel_enqueue)
 {
-#define M "archi_opencl_hsp_state_kernel_enqueue"
-
     archi_opencl_kernel_enqueue_data_t *enqueue_data = ARCHI_HSP_CURRENT_STATE().data;
     if ((enqueue_data == NULL) || (enqueue_data->global_work_size == NULL))
         return;
@@ -47,7 +41,7 @@ ARCHI_HSP_STATE_FUNCTION(archi_opencl_hsp_state_kernel_enqueue)
     {
         if (enqueue_data->global_work_offset->num_dimensions != num_work_dimensions)
         {
-            archi_log_error(M, "Incorrect number of dimensions (%u) in global work offset vector",
+            archi_log_error(__func__, "Incorrect number of dimensions (%u) in global work offset vector",
                     enqueue_data->global_work_offset->num_dimensions);
             return;
         }
@@ -59,7 +53,7 @@ ARCHI_HSP_STATE_FUNCTION(archi_opencl_hsp_state_kernel_enqueue)
     {
         if (enqueue_data->local_work_size->num_dimensions != num_work_dimensions)
         {
-            archi_log_error(M, "Incorrect number of dimensions (%u) in local work size vector",
+            archi_log_error(__func__, "Incorrect number of dimensions (%u) in local work size vector",
                     enqueue_data->local_work_size->num_dimensions);
             return;
         }
@@ -88,10 +82,10 @@ ARCHI_HSP_STATE_FUNCTION(archi_opencl_hsp_state_kernel_enqueue)
     if (ret != CL_SUCCESS)
     {
         if (enqueue_data->name != NULL)
-            archi_log_error(M, "clEnqueueNDRangeKernel('%s') -> %s",
+            archi_log_error(__func__, "clEnqueueNDRangeKernel('%s') -> %s",
                     enqueue_data->name, archi_opencl_error_string(ret));
         else
-            archi_log_error(M, "clEnqueueNDRangeKernel() -> %s",
+            archi_log_error(__func__, "clEnqueueNDRangeKernel() -> %s",
                     archi_opencl_error_string(ret));
     }
 
@@ -111,7 +105,5 @@ ARCHI_HSP_STATE_FUNCTION(archi_opencl_hsp_state_kernel_enqueue)
 
         clReleaseEvent(event);
     }
-
-#undef M
 }
 

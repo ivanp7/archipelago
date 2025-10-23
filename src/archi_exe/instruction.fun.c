@@ -697,8 +697,6 @@ archi_exe_registry_instr_execute(
         const archi_exe_registry_instr_base_t *instruction,
         archi_reference_count_t ref_count)
 {
-#define M  "archi_exe_registry_instr_execute"
-
     if (registry == NULL)
         return ARCHI_STATUS_EMISUSE;
 
@@ -728,11 +726,9 @@ archi_exe_registry_instr_execute(
 #undef INSTRUCTION
 
         default:
-            archi_log_error(M, "Encountered unknown instruction type %i", instruction->type);
+            archi_log_error(__func__, "Encountered unknown instruction type %i", instruction->type);
             return ARCHI_STATUS_EFAILURE;
     }
-
-#undef M
 }
 
 /*****************************************************************************/

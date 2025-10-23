@@ -23,8 +23,6 @@ struct archi_context_opencl_kernel_data {
 
 ARCHI_CONTEXT_INIT_FUNC(archi_context_opencl_kernel_init_new)
 {
-#define M "archi_context_opencl_kernel_init_new"
-
     archi_pointer_t program = {0};
     char *kernel_name = NULL;
 
@@ -81,7 +79,7 @@ ARCHI_CONTEXT_INIT_FUNC(archi_context_opencl_kernel_init_new)
     cl_kernel kernel = clCreateKernel(program.ptr, kernel_name, &ret);
     if (ret != CL_SUCCESS)
     {
-        archi_log_error(M, "clCreateKernel('%s') failed with error %i",
+        archi_log_error(__func__, "clCreateKernel('%s') failed with error %i",
                 kernel_name, ret);
         free(context_data);
         return ARCHI_STATUS_ERESOURCE;
@@ -93,7 +91,7 @@ ARCHI_CONTEXT_INIT_FUNC(archi_context_opencl_kernel_init_new)
                 sizeof(num_arguments), &num_arguments, NULL);
         if (ret != CL_SUCCESS)
         {
-            archi_log_error(M, "clGetKernelInfo(CL_KERNEL_NUM_ARGS) failed with error %i", ret);
+            archi_log_error(__func__, "clGetKernelInfo(CL_KERNEL_NUM_ARGS) failed with error %i", ret);
             clReleaseKernel(kernel);
             free(context_data);
             return ARCHI_STATUS_ERESOURCE;
@@ -116,14 +114,10 @@ ARCHI_CONTEXT_INIT_FUNC(archi_context_opencl_kernel_init_new)
 
     *context = (archi_pointer_t*)context_data;
     return 0;
-
-#undef M
 }
 
 ARCHI_CONTEXT_INIT_FUNC(archi_context_opencl_kernel_init_clone)
 {
-#define M "archi_context_opencl_kernel_init_clone"
-
     archi_pointer_t source_kernel = {0};
 
     bool param_source_kernel_set = false;
@@ -154,7 +148,7 @@ ARCHI_CONTEXT_INIT_FUNC(archi_context_opencl_kernel_init_clone)
     cl_kernel kernel = clCloneKernel(source_kernel.ptr, &ret);
     if (ret != CL_SUCCESS)
     {
-        archi_log_error(M, "clCloneKernel() failed with error %i", ret);
+        archi_log_error(__func__, "clCloneKernel() failed with error %i", ret);
         free(context_data);
         return ARCHI_STATUS_ERESOURCE;
     }
@@ -163,7 +157,7 @@ ARCHI_CONTEXT_INIT_FUNC(archi_context_opencl_kernel_init_clone)
     ret = clGetKernelInfo(kernel, CL_KERNEL_PROGRAM, sizeof(program), &program, NULL);
     if (ret != CL_SUCCESS)
     {
-        archi_log_error(M, "clGetKernelInfo(CL_KERNEL_PROGRAM) failed with error %i", ret);
+        archi_log_error(__func__, "clGetKernelInfo(CL_KERNEL_PROGRAM) failed with error %i", ret);
         clReleaseKernel(kernel);
         free(context_data);
         return ARCHI_STATUS_ERESOURCE;
@@ -175,7 +169,7 @@ ARCHI_CONTEXT_INIT_FUNC(archi_context_opencl_kernel_init_clone)
         ret = clGetKernelInfo(kernel, CL_KERNEL_FUNCTION_NAME, 0, NULL, &name_len);
         if (ret != CL_SUCCESS)
         {
-            archi_log_error(M, "clGetKernelInfo(CL_KERNEL_FUNCTION_NAME) failed with error %i", ret);
+            archi_log_error(__func__, "clGetKernelInfo(CL_KERNEL_FUNCTION_NAME) failed with error %i", ret);
             clReleaseKernel(kernel);
             free(context_data);
             return ARCHI_STATUS_ERESOURCE;
@@ -192,7 +186,7 @@ ARCHI_CONTEXT_INIT_FUNC(archi_context_opencl_kernel_init_clone)
         ret = clGetKernelInfo(kernel, CL_KERNEL_FUNCTION_NAME, name_len, kernel_name, NULL);
         if (ret != CL_SUCCESS)
         {
-            archi_log_error(M, "clGetKernelInfo(CL_KERNEL_FUNCTION_NAME) failed with error %i", ret);
+            archi_log_error(__func__, "clGetKernelInfo(CL_KERNEL_FUNCTION_NAME) failed with error %i", ret);
             free(kernel_name);
             clReleaseKernel(kernel);
             free(context_data);
@@ -206,7 +200,7 @@ ARCHI_CONTEXT_INIT_FUNC(archi_context_opencl_kernel_init_clone)
                 sizeof(num_arguments), &num_arguments, NULL);
         if (ret != CL_SUCCESS)
         {
-            archi_log_error(M, "clGetKernelInfo(CL_KERNEL_NUM_ARGS) failed with error %i", ret);
+            archi_log_error(__func__, "clGetKernelInfo(CL_KERNEL_NUM_ARGS) failed with error %i", ret);
             clReleaseKernel(kernel);
             free(context_data);
             return ARCHI_STATUS_ERESOURCE;
@@ -235,8 +229,6 @@ ARCHI_CONTEXT_INIT_FUNC(archi_context_opencl_kernel_init_clone)
 
     *context = (archi_pointer_t*)context_data;
     return 0;
-
-#undef M
 }
 
 ARCHI_CONTEXT_FINAL_FUNC(archi_context_opencl_kernel_final)

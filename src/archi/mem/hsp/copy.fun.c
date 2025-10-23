@@ -31,8 +31,6 @@
 
 ARCHI_HSP_STATE_FUNCTION(archi_hsp_state_memory_map_copy_unmap)
 {
-#define M "archi_hsp_state_memory_map_copy_unmap"
-
     archi_memory_map_copy_unmap_data_t *copy_data = ARCHI_HSP_CURRENT_STATE().data;
     if (copy_data == NULL)
         return;
@@ -43,8 +41,6 @@ ARCHI_HSP_STATE_FUNCTION(archi_hsp_state_memory_map_copy_unmap)
             copy_data->num_of);
 
     if (code != 0)
-        archi_log_error(M, "archi_memory_map_copy_unmap() -> %i", code);
-
-#undef M
+        archi_log_error(__func__, "archi_memory_map_copy_unmap() -> %i", code);
 }
 

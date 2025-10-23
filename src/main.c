@@ -136,8 +136,6 @@ main(
         int argc,
         char *argv[])
 {
-#define M "main()"
-
     ///////////////////////
     // Preparation phase //
     ///////////////////////
@@ -187,12 +185,12 @@ main(
 
     // Set exit functions
     if (atexit(exit_cleanup) != 0)
-        archi_log_warning(M, "atexit() failed, attempting to continue...");
+        archi_log_warning(__func__, "atexit() failed, attempting to continue...");
 
     if (at_quick_exit(exit_quick) != 0)
-        archi_log_warning(M, "at_quick_exit() failed, attempting to continue...");
+        archi_log_warning(__func__, "at_quick_exit() failed, attempting to continue...");
 
-    archi_log_info(M, "Preparing the application context registry...");
+    archi_log_info(__func__, "Preparing the application context registry...");
 
     // Create the context registry
     create_context_registry();
@@ -216,14 +214,12 @@ main(
     // Initialization & execution phase //
     //////////////////////////////////////
 
-    archi_log_info(M, "Initializing and executing the application...");
+    archi_log_info(__func__, "Initializing and executing the application...");
 
     // Execute instructions in input files
     execute_instructions();
 
     return 0;
-
-#undef M
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -231,13 +227,11 @@ main(
 void
 exit_cleanup(void) // is called on exit() or if main() returns
 {
-#define M "exit()"
-
     ////////////////////////
     // Finalization phase //
     ////////////////////////
 
-    archi_log_info(M, "Finalizing the application...");
+    archi_log_info(__func__, "Finalizing the application...");
 
     // Destroy the context registry
     destroy_context_registry();
@@ -249,19 +243,13 @@ exit_cleanup(void) // is called on exit() or if main() returns
     decrement_refcount_of_signal_management();
 
     // Finalization is done
-    archi_log_info(M, "The application has exited successfully.");
-
-#undef M
+    archi_log_info(__func__, "The application has exited successfully.");
 }
 
 void
 exit_quick(void) // is called on quick_exit()
 {
-#define M "exit()"
-
-    archi_log_info(M, "The application has exited without finalizing contexts and releasing resources.");
-
-#undef M
+    archi_log_info(__func__, "The application has exited without finalizing contexts and releasing resources.");
 }
 
 void
@@ -325,9 +313,7 @@ print_logo(void)
 void
 create_context_registry(void)
 {
-#define M "main()"
-
-    archi_log_debug(M, "Creating the context registry...");
+    archi_log_debug(__func__, "Creating the context registry...");
 
     size_t hashmap_capacity = 1024;
 
@@ -346,11 +332,11 @@ create_context_registry(void)
 
     if (archi_process.registry == NULL)
     {
-        archi_log_error(M, "Couldn't create the context registry (error %i).", code);
+        archi_log_error(__func__, "Couldn't create the context registry (error %i).", code);
         exit(EXIT_FAILURE);
     }
 
-    archi_log_debug(M, "Inserting the context registry into itself...");
+    archi_log_debug(__func__, "Inserting the context registry into itself...");
 
     code = archi_context_set_slot(archi_process.registry,
             (archi_context_slot_t){.name = ARCHI_EXE_REGISTRY_KEY_REGISTRY},
@@ -362,42 +348,34 @@ create_context_registry(void)
 
     if (code != 0)
     {
-        archi_log_error(M, "Couldn't insert the context registry into itself (error %i).", code);
+        archi_log_error(__func__, "Couldn't insert the context registry into itself (error %i).", code);
         exit(EXIT_FAILURE);
     }
-
-#undef M
 }
 
 void
 destroy_context_registry(void)
 {
-#define M "exit()"
-
     if (archi_process.registry != NULL)
     {
-        archi_log_debug(M, "Removing the context registry from itself...");
+        archi_log_debug(__func__, "Removing the context registry from itself...");
 
         archi_context_set_slot(archi_process.registry,
                 (archi_context_slot_t){.name = ARCHI_EXE_REGISTRY_KEY_REGISTRY},
                 (archi_pointer_t){0});
 
-        archi_log_debug(M, "Destroying the context registry...");
+        archi_log_debug(__func__, "Destroying the context registry...");
 
         archi_context_finalize(archi_process.registry);
 
         archi_process.registry = NULL;
     }
-
-#undef M
 }
 
 void
 obtain_handle_of_executable(void)
 {
-#define M "main()"
-
-    archi_log_debug(M, "Obtaining library handle of the executable itself...");
+    archi_log_debug(__func__, "Obtaining library handle of the executable itself...");
 
     if (archi_process.args.dry_run)
         return;
@@ -410,11 +388,11 @@ obtain_handle_of_executable(void)
 
     if (archi_process.exe_handle == NULL)
     {
-        archi_log_error(M, "Couldn't obtain library handle of the executable itself (error %i).", code);
+        archi_log_error(__func__, "Couldn't obtain library handle of the executable itself (error %i).", code);
         exit(EXIT_FAILURE);
     }
 
-    archi_log_debug(M, "Inserting handle of the executable into the registry...");
+    archi_log_debug(__func__, "Inserting handle of the executable into the registry...");
 
     // Insert the context into the registry, which also increments the reference count
     code = archi_context_set_slot(archi_process.registry,
@@ -430,39 +408,35 @@ obtain_handle_of_executable(void)
 
     if (code != 0)
     {
-        archi_log_error(M, "Couldn't insert handle of the executable into the registry (error %i).", code);
+        archi_log_error(__func__, "Couldn't insert handle of the executable into the registry (error %i).", code);
         exit(EXIT_FAILURE);
     }
 
     // Reset the separate context pointer as it isn't needed anymore
     archi_process.exe_handle = NULL;
-
-#undef M
 }
 
 void
 open_and_map_input_files(void)
 {
-#define M "main()"
-
-    archi_log_debug(M, "Allocating the array of input file contexts...");
+    archi_log_debug(__func__, "Allocating the array of input file contexts...");
 
     archi_process.input_file = malloc(sizeof(*archi_process.input_file) * archi_process.args.num_inputs);
 
     if (archi_process.input_file == NULL)
     {
-        archi_log_error(M, "Couldn't allocate the array of input file contexts.");
+        archi_log_error(__func__, "Couldn't allocate the array of input file contexts.");
         exit(EXIT_FAILURE);
     }
 
     for (size_t i = 0; i < archi_process.args.num_inputs; i++)
         archi_process.input_file[i] = NULL;
 
-    archi_log_debug(M, "Opening and mapping input files...");
+    archi_log_debug(__func__, "Opening and mapping input files...");
 
     for (size_t i = 0; i < archi_process.args.num_inputs; i++)
     {
-        archi_log_debug(M, " * opening file #%zu ('%s')", i, archi_process.args.input[i]);
+        archi_log_debug(__func__, " * opening file #%zu ('%s')", i, archi_process.args.input[i]);
         {
             bool value_true = true;
 
@@ -487,12 +461,12 @@ open_and_map_input_files(void)
 
             if (archi_process.input_file[i] == NULL)
             {
-                archi_log_error(M, "Couldn't open the input file (error %i).", code);
+                archi_log_error(__func__, "Couldn't open the input file (error %i).", code);
                 exit(EXIT_FAILURE);
             }
         }
 
-        archi_log_debug(M, " * mapping file #%zu", i);
+        archi_log_debug(__func__, " * mapping file #%zu", i);
         {
             bool value_true = true;
 
@@ -519,7 +493,7 @@ open_and_map_input_files(void)
 
             if (code != 0)
             {
-                archi_log_error(M, "Couldn't map the input file into memory (error %i).", code);
+                archi_log_error(__func__, "Couldn't map the input file into memory (error %i).", code);
                 exit(EXIT_FAILURE);
             }
 
@@ -527,14 +501,14 @@ open_and_map_input_files(void)
 
             if (current_file.element.num_of < sizeof(archi_exe_input_file_header_t))
             {
-                archi_log_error(M, "Input file #%zu is invalid (file size is smaller than the header structure size).", i);
+                archi_log_error(__func__, "Input file #%zu is invalid (file size is smaller than the header structure size).", i);
                 exit(EXIT_FAILURE);
             }
 
             const archi_exe_input_file_header_t *current_input = current_file.ptr;
             if (strncmp(ARCHI_EXE_INPUT_MAGIC, current_input->magic, sizeof(current_input->magic)) != 0)
             {
-                archi_log_error(M, "Input file #%zu is invalid (magic bytes are incorrect).", i);
+                archi_log_error(__func__, "Input file #%zu is invalid (magic bytes are incorrect).", i);
                 exit(EXIT_FAILURE);
             }
 
@@ -542,36 +516,32 @@ open_and_map_input_files(void)
 
             if (contents_size < 0)
             {
-                archi_log_error(M, "Input file #%zu is invalid (size of contents is negative).", i);
+                archi_log_error(__func__, "Input file #%zu is invalid (size of contents is negative).", i);
                 exit(EXIT_FAILURE);
             }
             else if ((size_t)contents_size != current_file.element.num_of)
             {
-                archi_log_error(M, "Input file #%zu is invalid (file size is not equal to size of contents).", i);
+                archi_log_error(__func__, "Input file #%zu is invalid (file size is not equal to size of contents).", i);
                 exit(EXIT_FAILURE);
             }
 
             {
-                archi_log_debug(M, "    address = %p, size = %tu B (%.2f KiB, %.2f MiB, %.2f GiB)",
+                archi_log_debug(__func__, "    address = %p, size = %tu B (%.2f KiB, %.2f MiB, %.2f GiB)",
                         current_input->header.addr, contents_size, contents_size / 1024.0,
                         contents_size / (1024.0 * 1024.0), contents_size / (1024.0 * 1024.0 * 1024.0));
             }
         }
     }
-
-#undef M
 }
 
 void
 preliminary_pass_of_input_files(void)
 {
-#define M "main()"
-
-    archi_log_debug(M, "Passing lists of contents of input files...");
+    archi_log_debug(__func__, "Passing lists of contents of input files...");
 
     for (size_t i = 0; i < archi_process.args.num_inputs; i++)
     {
-        archi_log_debug(M, " * file #%zu ('%s')", i, archi_process.args.input[i]);
+        archi_log_debug(__func__, " * file #%zu ('%s')", i, archi_process.args.input[i]);
 
         const archi_exe_input_file_header_t *current_input = archi_context_data(archi_process.input_file[i]).ptr;
 
@@ -581,7 +551,7 @@ preliminary_pass_of_input_files(void)
             {
                 if (contents->value.flags & ARCHI_POINTER_FLAG_FUNCTION)
                 {
-                    archi_log_error(M, "Signal watch set must not be a function.");
+                    archi_log_error(__func__, "Signal watch set must not be a function.");
                     exit(EXIT_FAILURE);
                 }
 
@@ -605,24 +575,20 @@ preliminary_pass_of_input_files(void)
             {
                 if (contents->value.flags & ARCHI_POINTER_FLAG_FUNCTION)
                 {
-                    archi_log_error(M, "List of instructions must not be a function.");
+                    archi_log_error(__func__, "List of instructions must not be a function.");
                     exit(EXIT_FAILURE);
                 }
             }
         }
     }
-
-#undef M
 }
 
 void
 decrement_refcount_of_input_files(void)
 {
-#define M "exit()"
-
     if (archi_process.input_file != NULL)
     {
-        archi_log_debug(M, "Decrementing reference counts of input file contexts...");
+        archi_log_debug(__func__, "Decrementing reference counts of input file contexts...");
 
         for (size_t i = 0; i < archi_process.args.num_inputs; i++)
         {
@@ -633,15 +599,11 @@ decrement_refcount_of_input_files(void)
         free(archi_process.input_file);
         archi_process.input_file = NULL;
     }
-
-#undef M
 }
 
 void
 prepare_signal_management(void)
 {
-#define M "main()"
-
     archi_process.signal_interface = (archi_context_interface_t){
         .init_fn = archi_context_signal_management_init,
         .final_fn = archi_context_signal_management_final,
@@ -649,27 +611,23 @@ prepare_signal_management(void)
         .set_fn = archi_context_signal_management_set,
     };
 
-    archi_log_debug(M, "Allocating the signal watch set...");
+    archi_log_debug(__func__, "Allocating the signal watch set...");
 
     archi_process.signal_watch_set = archi_signal_watch_set_alloc();
 
     if (archi_process.signal_watch_set == NULL)
     {
-        archi_log_error(M, "Couldn't allocate the signal watch set.");
+        archi_log_error(__func__, "Couldn't allocate the signal watch set.");
         exit(EXIT_FAILURE);
     }
-
-#undef M
 }
 
 void
 start_signal_management(void)
 {
-#define M "main()"
-
     if (archi_signal_watch_set_not_empty(archi_process.signal_watch_set))
     {
-        archi_log_debug(M, "Creating the signal management context...");
+        archi_log_debug(__func__, "Creating the signal management context...");
 
         if (archi_print_lock(ARCHI_LOG_VERBOSITY_DEBUG))
         {
@@ -702,11 +660,11 @@ start_signal_management(void)
 
         if (archi_process.signal == NULL)
         {
-            archi_log_error(M, "Couldn't create the signal management context (error %i).", code);
+            archi_log_error(__func__, "Couldn't create the signal management context (error %i).", code);
             exit(EXIT_FAILURE);
         }
 
-        archi_log_debug(M, "Inserting the signal management context into the registry...");
+        archi_log_debug(__func__, "Inserting the signal management context into the registry...");
 
         // Insert the context into the registry, which also increments the reference count
         code = archi_context_set_slot(archi_process.registry,
@@ -719,44 +677,36 @@ start_signal_management(void)
 
         if (code != 0)
         {
-            archi_log_error(M, "Couldn't insert the signal management context into the registry (error %i).", code);
+            archi_log_error(__func__, "Couldn't insert the signal management context into the registry (error %i).", code);
             exit(EXIT_FAILURE);
         }
 
     }
     else
-        archi_log_debug(M, "No signals in the watch set, skipping the signal management context creation.");
+        archi_log_debug(__func__, "No signals in the watch set, skipping the signal management context creation.");
 
     free(archi_process.signal_watch_set);
     archi_process.signal_watch_set = NULL;
-
-#undef M
 }
 
 void
 decrement_refcount_of_signal_management(void)
 {
-#define M "exit()"
-
     if (archi_process.signal != NULL)
     {
-        archi_log_debug(M, "Decrementing reference count of the signal management context...");
+        archi_log_debug(__func__, "Decrementing reference count of the signal management context...");
 
         archi_reference_count_decrement(archi_context_data(archi_process.signal).ref_count);
         archi_process.signal = NULL;
     }
 
     archi_process.signal_interface = (archi_context_interface_t){0};
-
-#undef M
 }
 
 void
 execute_instructions(void)
 {
-#define M "main()"
-
-    archi_log_debug(M, "Executing instructions in input files...");
+    archi_log_debug(__func__, "Executing instructions in input files...");
 
     size_t instruction_number = 0;
 
@@ -781,7 +731,7 @@ execute_instructions(void)
 
         if (instructions != NULL)
         {
-            archi_log_debug(M, " * inserting mapped memory of file #%zu into the registry...", i);
+            archi_log_debug(__func__, " * inserting mapped memory of file #%zu into the registry...", i);
             {
                 // Insert the context into the registry, which also increments the reference count
                 ptrdiff_t slot_index = 0;
@@ -802,12 +752,12 @@ execute_instructions(void)
 
                 if (code != 0)
                 {
-                    archi_log_error(M, "Couldn't insert mapped memory of file #%zu into the registry (error %i).", i, code);
+                    archi_log_error(__func__, "Couldn't insert mapped memory of file #%zu into the registry (error %i).", i, code);
                     exit(EXIT_FAILURE);
                 }
             }
 
-            archi_log_debug(M, " * executing instructions in file #%zu ('%s')", i, archi_process.args.input[i]);
+            archi_log_debug(__func__, " * executing instructions in file #%zu ('%s')", i, archi_process.args.input[i]);
 
             for (archi_exe_registry_instr_list_t *instr_list = instructions;
                     instr_list != NULL; instr_list = instr_list->next)
@@ -833,17 +783,17 @@ execute_instructions(void)
                     /******************************************************/
 
                     if (code > 0)
-                        archi_log_warning(M, "Got non-zero instruction execution status %i, attempting to continue...", code);
+                        archi_log_warning(__func__, "Got non-zero instruction execution status %i, attempting to continue...", code);
                     else if (code < 0)
                     {
-                        archi_log_error(M, "Couldn't execute the instruction (error %i).", code);
+                        archi_log_error(__func__, "Couldn't execute the instruction (error %i).", code);
                         exit(EXIT_FAILURE);
                     }
                 }
             }
         }
         else
-            archi_log_debug(M, " * no instructions in file #%zu ('%s'), skipping...", i, archi_process.args.input[i]);
+            archi_log_debug(__func__, " * no instructions in file #%zu ('%s'), skipping...", i, archi_process.args.input[i]);
 
         // Decrement the reference count back to 1
         archi_reference_count_decrement(current_file.ref_count);
@@ -851,8 +801,6 @@ execute_instructions(void)
         // Forget the file context
         archi_process.input_file[i] = NULL;
     }
-
-#undef M
 }
 
 ///////////////////////////////////////////////////////////////////////////////

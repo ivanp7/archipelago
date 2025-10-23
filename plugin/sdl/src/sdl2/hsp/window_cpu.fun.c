@@ -12,8 +12,6 @@
 
 ARCHI_HSP_STATE_FUNCTION(archi_sdl2_hsp_state_window_cpu_render)
 {
-#define M "archi_sdl2_hsp_state_window_cpu_render"
-
     archi_sdl2_window_cpu_render_data_t *render_data = ARCHI_HSP_CURRENT_STATE().data;
     if ((render_data == NULL) || (render_data->window == NULL) || (render_data->texture == NULL))
         return;
@@ -25,7 +23,7 @@ ARCHI_HSP_STATE_FUNCTION(archi_sdl2_hsp_state_window_cpu_render)
 
     if (code != 0)
     {
-        archi_log_error(M, "archi_sdl2_window_cpu_lock_whole_texture() -> %i", code);
+        archi_log_error(__func__, "archi_sdl2_window_cpu_lock_whole_texture() -> %i", code);
         return;
     }
 
@@ -40,7 +38,7 @@ ARCHI_HSP_STATE_FUNCTION(archi_sdl2_hsp_state_window_cpu_render)
     {
         archi_sdl2_window_cpu_unlock_texture_and_render(render_data->window);
 
-        archi_log_error(M, "archi_memory_map() -> %i", code);
+        archi_log_error(__func__, "archi_memory_map() -> %i", code);
         return;
     }
 
@@ -55,8 +53,6 @@ ARCHI_HSP_STATE_FUNCTION(archi_sdl2_hsp_state_window_cpu_render)
     code = archi_sdl2_window_cpu_unlock_texture_and_render(render_data->window);
 
     if (code != 0)
-        archi_log_error(M, "archi_sdl2_window_cpu_unlock_texture_and_render() -> %i", code);
-
-#undef M
+        archi_log_error(__func__, "archi_sdl2_window_cpu_unlock_texture_and_render() -> %i", code);
 }
 

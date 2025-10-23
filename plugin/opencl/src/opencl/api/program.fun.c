@@ -314,8 +314,6 @@ archi_opencl_program_build_log(
         cl_uint num_devices,
         const cl_device_id device_id[])
 {
-#define M "archi_opencl_program_build_log"
-
     char *build_log = NULL;
     size_t build_log_length = 0;
 
@@ -329,16 +327,16 @@ archi_opencl_program_build_log(
                     CL_PROGRAM_BUILD_STATUS, sizeof(status), &status, NULL);
             if (error != CL_SUCCESS)
             {
-                archi_log_debug(M, "[device #%u] couldn't obtain build status", i);
+                archi_log_debug(__func__, "[device #%u] couldn't obtain build status", i);
                 continue;
             }
 
             const char *status_str = archi_opencl_build_status_string(status);
 
             if (status_str != NULL)
-                archi_log_debug(M, "[device #%u] build status: %s", i, status_str);
+                archi_log_debug(__func__, "[device #%u] build status: %s", i, status_str);
             else
-                archi_log_debug(M, "[device #%u] build status: code %i", i, status);
+                archi_log_debug(__func__, "[device #%u] build status: code %i", i, status);
         }
 
         // Print program build log
@@ -349,7 +347,7 @@ archi_opencl_program_build_log(
                     CL_PROGRAM_BUILD_LOG, 0, NULL, &length);
             if (error != CL_SUCCESS)
             {
-                archi_log_debug(M, "[device #%u] couldn't obtain length of build log", i);
+                archi_log_debug(__func__, "[device #%u] couldn't obtain length of build log", i);
                 continue;
             }
 
@@ -358,7 +356,7 @@ archi_opencl_program_build_log(
                 char *new_build_log = realloc(build_log, length);
                 if (new_build_log == NULL)
                 {
-                    archi_log_debug(M, "couldn't realloc(%zu bytes) for build log", length);
+                    archi_log_debug(__func__, "couldn't realloc(%zu bytes) for build log", length);
                     continue;
                 }
 
@@ -373,17 +371,15 @@ archi_opencl_program_build_log(
                     CL_PROGRAM_BUILD_LOG, length, build_log, NULL);
             if (error != CL_SUCCESS)
             {
-                archi_log_debug(M, "[device #%u] couldn't obtain build log", i);
+                archi_log_debug(__func__, "[device #%u] couldn't obtain build log", i);
                 continue;
             }
 
-            archi_log_debug(M, "[device #%u] build log: \n%s", i, build_log);
+            archi_log_debug(__func__, "[device #%u] build log: \n%s", i, build_log);
         }
     }
 
     free(build_log);
-
-#undef M
 }
 
 cl_program
@@ -404,8 +400,6 @@ archi_opencl_program_build(
         bool logging,
         archi_status_t *code)
 {
-#define M "archi_opencl_program_build"
-
     if ((context == NULL) || ((num_devices > 0) && (device_id == NULL)) ||
             ((headers.num_files > 0) && ((headers.pathnames == NULL) ||
                 (headers.sizes == NULL) || (headers.contents == NULL))) ||
@@ -465,7 +459,7 @@ archi_opencl_program_build(
                 1, (const char**)&headers.contents[i], &headers.sizes[i], &ret);
 
         if (logging)
-            archi_log_debug(M, "clCreateProgramWithSource('%s') -> %s",
+            archi_log_debug(__func__, "clCreateProgramWithSource('%s') -> %s",
                     headers.pathnames[i], archi_opencl_error_string(ret));
 
         if (ret != CL_SUCCESS)
@@ -485,7 +479,7 @@ archi_opencl_program_build(
                 1, (const char**)&sources.contents[i], &sources.sizes[i], &ret);
 
         if (logging)
-            archi_log_debug(M, "clCreateProgramWithSource('%s') -> %s",
+            archi_log_debug(__func__, "clCreateProgramWithSource('%s') -> %s",
                     sources.pathnames[i], archi_opencl_error_string(ret));
 
         if (ret != CL_SUCCESS)
@@ -505,7 +499,7 @@ archi_opencl_program_build(
 
         if (logging)
         {
-            archi_log_debug(M, "clCompileProgram('%s') -> %s",
+            archi_log_debug(__func__, "clCompileProgram('%s') -> %s",
                     sources.pathnames[i], archi_opencl_error_string(ret));
 
             archi_opencl_program_build_log(program_sources[i], num_devices, device_id);
@@ -529,7 +523,7 @@ archi_opencl_program_build(
 
         if (logging)
         {
-            archi_log_debug(M, "clLinkProgram() -> %s", archi_opencl_error_string(ret));
+            archi_log_debug(__func__, "clLinkProgram() -> %s", archi_opencl_error_string(ret));
 
             archi_opencl_program_build_log(program, num_devices, device_id);
         }
@@ -566,8 +560,6 @@ finish:
     }
 
     return program;
-
-#undef M
 }
 
 cl_program
@@ -580,8 +572,6 @@ archi_opencl_program_create(
         bool logging,
         archi_status_t *code)
 {
-#define M "archi_opencl_program_create"
-
     if ((context == NULL) || (binaries.ids == NULL) ||
             (binaries.ids->num_devices == 0) ||
             (binaries.sizes == NULL) || (binaries.contents == NULL))
@@ -617,10 +607,10 @@ archi_opencl_program_create(
 
         if (logging)
         {
-            archi_log_debug(M, "clCreateProgramWithBinary() -> %s", archi_opencl_error_string(ret));
+            archi_log_debug(__func__, "clCreateProgramWithBinary() -> %s", archi_opencl_error_string(ret));
 
             for (cl_uint i = 0; i < binaries.ids->num_devices; i++)
-                archi_log_debug(M, "[device #%u] status: %s", i, archi_opencl_error_string(binary_status[i]));
+                archi_log_debug(__func__, "[device #%u] status: %s", i, archi_opencl_error_string(binary_status[i]));
 
             free(binary_status);
         }
@@ -643,7 +633,7 @@ archi_opencl_program_create(
 
         if (logging)
         {
-            archi_log_debug(M, "clBuildProgram() -> %s", archi_opencl_error_string(ret));
+            archi_log_debug(__func__, "clBuildProgram() -> %s", archi_opencl_error_string(ret));
 
             archi_opencl_program_build_log(program,
                     binaries.ids->num_devices, binaries.ids->device_id);
@@ -662,8 +652,6 @@ archi_opencl_program_create(
         *code = 0;
 
     return program;
-
-#undef M
 }
 
 archi_opencl_program_binaries_t

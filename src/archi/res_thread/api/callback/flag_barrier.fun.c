@@ -29,16 +29,12 @@
 
 ARCHI_THREAD_GROUP_CALLBACK_FUNC(archi_thread_group_callback_flag_barrier_release)
 {
-#define M  "archi_thread_group_callback_flag_barrier_release"
-
     (void) work_size;
     (void) thread_idx;
 
     archi_status_t code = archi_thread_flag_barrier_release(data);
 
     if (code != 0)
-        archi_log_error(M, "archi_thread_flag_barrier_release() -> %i", code);
-
-#undef M
+        archi_log_error(__func__, "archi_thread_flag_barrier_release() -> %i", code);
 }
 

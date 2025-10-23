@@ -31,8 +31,6 @@
 
 ARCHI_HSP_STATE_FUNCTION(archi_hsp_state_thread_group_dispatch)
 {
-#define M  "archi_hsp_state_thread_group_dispatch"
-
     archi_thread_group_dispatch_data_t *dispatch_data = ARCHI_HSP_CURRENT_STATE().data;
     if ((dispatch_data == NULL) || (dispatch_data->work == NULL))
         return;
@@ -47,11 +45,9 @@ ARCHI_HSP_STATE_FUNCTION(archi_hsp_state_thread_group_dispatch)
     if (code != 0)
     {
         if (dispatch_data->name != NULL)
-            archi_log_error(M, "archi_thread_group_dispatch('%s') -> %i", dispatch_data->name, code);
+            archi_log_error(__func__, "archi_thread_group_dispatch('%s') -> %i", dispatch_data->name, code);
         else
-            archi_log_error(M, "archi_thread_group_dispatch() -> %i", code);
+            archi_log_error(__func__, "archi_thread_group_dispatch() -> %i", code);
     }
-
-#undef M
 }
 
