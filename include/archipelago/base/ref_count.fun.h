@@ -28,7 +28,6 @@
 #define _ARCHIPELAGO_BASE_REF_COUNT_FUN_H_
 
 #include "archipelago/base/ref_count.typ.h"
-#include "archipelago/base/destructor.typ.h"
 
 #include <stdbool.h>
 
