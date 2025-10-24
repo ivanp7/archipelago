@@ -31,6 +31,13 @@
 
 #include <stdbool.h>
 
+struct archi_hashmap;
+
+/**
+ * @brief Pointer to hashmap.
+ */
+typedef struct archi_hashmap *archi_hashmap_t;
+
 /**
  * @brief Parameters for archi_hashmap_alloc().
  */

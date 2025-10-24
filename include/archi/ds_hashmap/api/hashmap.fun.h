@@ -30,13 +30,6 @@
 #include "archi/ds_hashmap/api/hashmap.typ.h"
 #include "archipelago/base/status.typ.h"
 
-struct archi_hashmap;
-
-/**
- * @brief Pointer to hashmap.
- */
-typedef struct archi_hashmap *archi_hashmap_t;
-
 /**
  * @brief Compute hash of a string.
  *
