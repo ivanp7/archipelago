@@ -36,13 +36,13 @@ static
 archi_status_t
 archi_context_parameters_copy(
         archi_pointer_t *base,
-        const archi_parameter_list_t *params)
+        const archi_named_pointer_list_t *params)
 {
-    archi_parameter_list_t *head = NULL, *tail = NULL;
+    archi_named_pointer_list_t *head = NULL, *tail = NULL;
 
     for (; params != NULL; params = params->next)
     {
-        archi_parameter_list_t *node = malloc(sizeof(*node));
+        archi_named_pointer_list_t *node = malloc(sizeof(*node));
         if (node == NULL)
             goto failure;
 
@@ -53,7 +53,7 @@ archi_context_parameters_copy(
             goto failure;
         }
 
-        *node = (archi_parameter_list_t){
+        *node = (archi_named_pointer_list_t){
             .name = name,
             .value = params->value,
         };
@@ -82,7 +82,7 @@ archi_context_parameters_copy(
 failure:
     while (head != NULL)
     {
-        archi_parameter_list_t *next = head->next;
+        archi_named_pointer_list_t *next = head->next;
 
         free((char*)head->name);
         free(head);
@@ -102,8 +102,8 @@ ARCHI_CONTEXT_INIT_FUNC(archi_context_parameters_init)
     *context_data = (archi_pointer_t){
         .element = {
             .num_of = 1,
-            .size = sizeof(archi_parameter_list_t),
-            .alignment = alignof(archi_parameter_list_t),
+            .size = sizeof(archi_named_pointer_list_t),
+            .alignment = alignof(archi_named_pointer_list_t),
         },
     };
 
@@ -120,11 +120,11 @@ ARCHI_CONTEXT_INIT_FUNC(archi_context_parameters_init)
 
 ARCHI_CONTEXT_FINAL_FUNC(archi_context_parameters_final)
 {
-    archi_parameter_list_t *node = context->ptr;
+    archi_named_pointer_list_t *node = context->ptr;
 
     while (node != NULL)
     {
-        archi_parameter_list_t *next = node->next;
+        archi_named_pointer_list_t *next = node->next;
 
         archi_reference_count_decrement(node->value.ref_count);
         free((char*)node->name);
@@ -141,7 +141,7 @@ ARCHI_CONTEXT_GET_FUNC(archi_context_parameters_get)
     if (slot.num_indices != 0)
         return ARCHI_STATUS_EMISUSE;
 
-    for (archi_parameter_list_t *node = context->ptr;
+    for (archi_named_pointer_list_t *node = context->ptr;
             node != NULL; node = node->next)
     {
         if (strcmp(node->name, slot.name) == 0)
@@ -159,7 +159,7 @@ ARCHI_CONTEXT_SET_FUNC(archi_context_parameters_set)
     if (slot.num_indices != 0)
         return ARCHI_STATUS_EMISUSE;
 
-    for (archi_parameter_list_t *node = context->ptr;
+    for (archi_named_pointer_list_t *node = context->ptr;
             node != NULL; node = node->next)
     {
         if (strcmp(node->name, slot.name) == 0)
@@ -172,7 +172,7 @@ ARCHI_CONTEXT_SET_FUNC(archi_context_parameters_set)
         }
     }
 
-    archi_parameter_list_t *node = malloc(sizeof(*node));
+    archi_named_pointer_list_t *node = malloc(sizeof(*node));
     if (node == NULL)
         return ARCHI_STATUS_ENOMEMORY;
 
@@ -185,7 +185,7 @@ ARCHI_CONTEXT_SET_FUNC(archi_context_parameters_set)
 
     archi_reference_count_increment(value.ref_count);
 
-    *node = (archi_parameter_list_t){
+    *node = (archi_named_pointer_list_t){
         .next = context->ptr,
         .name = name,
         .value = value,

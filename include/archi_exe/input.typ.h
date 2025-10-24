@@ -28,7 +28,7 @@
 #define _ARCHI_EXE_INPUT_TYP_H_
 
 #include "archi/res_file/api/header.typ.h"
-#include "archipelago/base/parameters.typ.h"
+#include "archipelago/base/named_pointer_list.typ.h"
 
 #define ARCHI_EXE_INPUT_MAGIC   "[archi]" ///< Magic bytes identifying the format of input files.
 
@@ -41,7 +41,7 @@ typedef struct archi_exe_input_file_header {
     archi_file_header_t header; ///< Header of a memory-mapped file.
     char magic[8]; ///< Magic bytes identifying the file format.
 
-    archi_parameter_list_t *contents; ///< File contents list.
+    archi_named_pointer_list_t *contents; ///< File contents list.
 } archi_exe_input_file_header_t;
 
 #endif // _ARCHI_EXE_INPUT_TYP_H_

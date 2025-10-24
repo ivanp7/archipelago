@@ -20,26 +20,26 @@
 
 /**
  * @file
- * @brief The parameter list type.
+ * @brief The named pointer list type.
  */
 
 #pragma once
-#ifndef _ARCHIPELAGO_BASE_PARAMETERS_TYP_H_
-#define _ARCHIPELAGO_BASE_PARAMETERS_TYP_H_
+#ifndef _ARCHIPELAGO_BASE_NAMED_POINTER_LIST_TYP_H_
+#define _ARCHIPELAGO_BASE_NAMED_POINTER_LIST_TYP_H_
 
 #include "archipelago/base/pointer.typ.h"
 
-struct archi_parameter_list;
+struct archi_named_pointer_list;
 
 /**
- * @brief List of named values.
+ * @brief List of named pointers.
  */
-typedef struct archi_parameter_list {
-    struct archi_parameter_list *next; ///< Pointer to the next list node.
+typedef struct archi_named_pointer_list {
+    struct archi_named_pointer_list *next; ///< Pointer to the next list node.
 
     const char *name;      ///< Parameter name.
     archi_pointer_t value; ///< Parameter value.
-} archi_parameter_list_t;
+} archi_named_pointer_list_t;
 
-#endif // _ARCHIPELAGO_BASE_PARAMETERS_TYP_H_
+#endif // _ARCHIPELAGO_BASE_NAMED_POINTER_LIST_TYP_H_
 

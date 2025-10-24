@@ -31,7 +31,7 @@ from .ctypes.base import (
         archi_array_layout_t,
         archi_pointer_attributes_t,
         archi_pointer_t,
-        archi_parameter_list_t,
+        archi_named_pointer_list_t,
         )
 
 
@@ -454,7 +454,7 @@ class Parameters:
         """
         INTERFACE_SYMBOL = 'archi_context_parameters_interface'
 
-        DATA_TYPE = PublicType(archi_parameter_list_t)
+        DATA_TYPE = PublicType(archi_named_pointer_list_t)
 
         @classmethod
         def getter_slot_type(cls, name: 'str', indices: 'list[int]'):
@@ -1270,12 +1270,12 @@ class ParametersEncoder(Encoder):
             block_key = StringEncoder.encode(key, cache)
             block_value = Encoder.encode(value, cache)
 
-            node = archi_parameter_list_t()
+            node = archi_named_pointer_list_t()
 
             if block_value is not None:
                 node.value = _init_pointer(value)
 
-            def callback_node(node: 'archi_parameter_list_t',
+            def callback_node(node: 'archi_named_pointer_list_t',
                               num_nodes=len(obj), idx=idx,
                               block_key=block_key, block_value=block_value):
                 if idx < num_nodes - 1:

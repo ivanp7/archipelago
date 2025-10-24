@@ -23,7 +23,7 @@
 
 import ctypes as c
 
-from .base import archi_pointer_attributes_t, archi_pointer_t, archi_parameter_list_t
+from .base import archi_pointer_attributes_t, archi_pointer_t, archi_named_pointer_list_t
 from .context import archi_context_slot_t
 
 
@@ -65,7 +65,7 @@ class archi_exe_registry_instr__init_parameters_t(c.Structure):
     _fields_ = [('base', archi_exe_registry_instr_base_t),
                 ('key', c.c_char_p),
                 ('dparams_key', c.c_char_p),
-                ('sparams', c.POINTER(archi_parameter_list_t))]
+                ('sparams', c.POINTER(archi_named_pointer_list_t))]
 
 
 class archi_exe_registry_instr__init_pointer_t(c.Structure):
@@ -92,7 +92,7 @@ class archi_exe_registry_instr__init_from_context_t(c.Structure):
                 ('key', c.c_char_p),
                 ('interface_origin_key', c.c_char_p),
                 ('dparams_key', c.c_char_p),
-                ('sparams', c.POINTER(archi_parameter_list_t))]
+                ('sparams', c.POINTER(archi_named_pointer_list_t))]
 
 
 class archi_exe_registry_instr__init_from_slot_t(c.Structure):
@@ -103,7 +103,7 @@ class archi_exe_registry_instr__init_from_slot_t(c.Structure):
                 ('interface_origin_key', c.c_char_p),
                 ('interface_origin_slot', archi_context_slot_t),
                 ('dparams_key', c.c_char_p),
-                ('sparams', c.POINTER(archi_parameter_list_t))]
+                ('sparams', c.POINTER(archi_named_pointer_list_t))]
 
 
 class archi_exe_registry_instr__set_to_value_t(c.Structure):
@@ -141,5 +141,5 @@ class archi_exe_registry_instr__act_t(c.Structure):
                 ('key', c.c_char_p),
                 ('action', archi_context_slot_t),
                 ('dparams_key', c.c_char_p),
-                ('sparams', c.POINTER(archi_parameter_list_t))]
+                ('sparams', c.POINTER(archi_named_pointer_list_t))]
 

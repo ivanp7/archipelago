@@ -29,7 +29,7 @@
 
 #include "archi/context/api/slot.typ.h"
 #include "archipelago/base/pointer.typ.h"
-#include "archipelago/base/parameters.typ.h"
+#include "archipelago/base/named_pointer_list.typ.h"
 #include "archipelago/base/status.typ.h"
 
 /**
@@ -41,7 +41,7 @@
  */
 #define ARCHI_CONTEXT_INIT_FUNC(func_name) archi_status_t func_name( \
         archi_pointer_t **context, /* [out] Context data. */ \
-        const archi_parameter_list_t *params) /* [in] Initialization parameters. */
+        const archi_named_pointer_list_t *params) /* [in] Initialization parameters. */
 
 /**
  * @brief Context initialization function type.
@@ -105,7 +105,7 @@ typedef ARCHI_CONTEXT_SET_FUNC((*archi_context_set_func_t));
 #define ARCHI_CONTEXT_ACT_FUNC(func_name) archi_status_t func_name( \
         archi_pointer_t *context, /* [in,out] Context data. */ \
         const archi_context_slot_t action, /* [in] Action designator. */ \
-        const archi_parameter_list_t *params) /* [in] Action parameters. */
+        const archi_named_pointer_list_t *params) /* [in] Action parameters. */
 
 /**
  * @brief Context action function type.

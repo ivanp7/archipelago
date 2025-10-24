@@ -93,7 +93,7 @@ class File:
         """Encode a file.
         """
         from .memory import StringEncoder
-        from .ctypes.base import archi_array_layout_t, archi_pointer_t, archi_parameter_list_t
+        from .ctypes.base import archi_array_layout_t, archi_pointer_t, archi_named_pointer_list_t
         from .ctypes.file import archi_exe_input_file_header_t
 
         cache = MemoryBlockCache()
@@ -104,7 +104,7 @@ class File:
             block_key = StringEncoder.encode(key, cache)
             block_value = value(cache)
 
-            node = archi_parameter_list_t()
+            node = archi_named_pointer_list_t()
 
             if block_value is not None:
                 cvalue = block_value.initializer()
@@ -113,7 +113,7 @@ class File:
                                                                   cvalue.element_alignment()),
                                              cvalue.attributes().get('flags', 0))
 
-            def callback_node(node: 'archi_parameter_list_t',
+            def callback_node(node: 'archi_named_pointer_list_t',
                               num_nodes=len(self._contents), idx=idx,
                               block_key=block_key, block_value=block_value):
                 if idx < num_nodes - 1:

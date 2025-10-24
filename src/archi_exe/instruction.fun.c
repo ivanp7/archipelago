@@ -90,8 +90,8 @@ archi_exe_registry_instr_sizeof(
 ///////////////////////////////////////////////////////////////////////////////
 
 struct archi_exe_registry_instr_params {
-    archi_parameter_list_t *params;
-    archi_parameter_list_t *dparams;
+    archi_named_pointer_list_t *params;
+    archi_named_pointer_list_t *dparams;
 };
 
 static
@@ -173,14 +173,14 @@ archi_exe_registry_instr_add_context(
 static
 void
 archi_exe_registry_instr_params_free(
-        archi_parameter_list_t *params,
-        const archi_parameter_list_t *dparams)
+        archi_named_pointer_list_t *params,
+        const archi_named_pointer_list_t *dparams)
 {
-    archi_parameter_list_t *node = params;
+    archi_named_pointer_list_t *node = params;
 
     while (node != dparams)
     {
-        archi_parameter_list_t *next = node->next;
+        archi_named_pointer_list_t *next = node->next;
 
         free((char*)node->name);
         free(node);
@@ -190,18 +190,18 @@ archi_exe_registry_instr_params_free(
 }
 
 static
-archi_parameter_list_t*
+archi_named_pointer_list_t*
 archi_exe_registry_instr_params_alloc(
-        archi_parameter_list_t *dparams,
-        const archi_parameter_list_t *sparams,
+        archi_named_pointer_list_t *dparams,
+        const archi_named_pointer_list_t *sparams,
         archi_reference_count_t ref_count,
         archi_status_t *code)
 {
-    archi_parameter_list_t *head = NULL, *tail = NULL;
+    archi_named_pointer_list_t *head = NULL, *tail = NULL;
 
-    for (const archi_parameter_list_t *params = sparams; params != NULL; params = params->next)
+    for (const archi_named_pointer_list_t *params = sparams; params != NULL; params = params->next)
     {
-        archi_parameter_list_t *node = malloc(sizeof(*node));
+        archi_named_pointer_list_t *node = malloc(sizeof(*node));
         if (node == NULL)
         {
             archi_exe_registry_instr_params_free(head, NULL);
@@ -218,7 +218,7 @@ archi_exe_registry_instr_params_alloc(
             return NULL;
         }
 
-        *node = (archi_parameter_list_t){
+        *node = (archi_named_pointer_list_t){
             .name = name,
             .value = params->value,
         };
@@ -250,7 +250,7 @@ struct archi_exe_registry_instr_params
 archi_exe_registry_instr_prepare_params(
         archi_context_t registry,
         const char *dparams_key,
-        const archi_parameter_list_t *sparams,
+        const archi_named_pointer_list_t *sparams,
         archi_reference_count_t ref_count,
         archi_status_t *code)
 {
@@ -392,7 +392,7 @@ archi_exe_registry_instr_execute__init_pointer(
     };
 
     // Prepare the context initialization parameter list
-    archi_parameter_list_t params_node[] = {
+    archi_named_pointer_list_t params_node[] = {
         {
             .name = "value",
             .value = instruction->value,
@@ -437,7 +437,7 @@ archi_exe_registry_instr_execute__init_array(
     };
 
     // Prepare the context initialization parameter list
-    archi_parameter_list_t params_node[] = {
+    archi_named_pointer_list_t params_node[] = {
         {
             .name = "num_elements",
             .value = (archi_pointer_t){.ptr = (void*)&instruction->num_elements},
@@ -924,7 +924,7 @@ static
 void
 archi_print_params(
         const char *name,
-        const archi_parameter_list_t *params)
+        const archi_named_pointer_list_t *params)
 {
     if (params != NULL)
     {

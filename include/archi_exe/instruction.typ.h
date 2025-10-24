@@ -105,7 +105,7 @@ typedef struct archi_exe_registry_instr__init_parameters {
     const char *key; ///< Key of the new context.
 
     const char *dparams_key; ///< Key of the dynamic parameter list.
-    const archi_parameter_list_t *sparams; ///< Static parameter list.
+    const archi_named_pointer_list_t *sparams; ///< Static parameter list.
 } archi_exe_registry_instr__init_parameters_t;
 
 /**
@@ -141,7 +141,7 @@ typedef struct archi_exe_registry_instr__init_from_context {
     const char *interface_origin_key; ///< Key of the interface origin context.
 
     const char *dparams_key; ///< Key of the dynamic parameter list.
-    const archi_parameter_list_t *sparams; ///< Static parameter list.
+    const archi_named_pointer_list_t *sparams; ///< Static parameter list.
 } archi_exe_registry_instr__init_from_context_t;
 
 /**
@@ -155,7 +155,7 @@ typedef struct archi_exe_registry_instr__init_from_slot {
     archi_context_slot_t interface_origin_slot; ///< Interface origin slot designator.
 
     const char *dparams_key; ///< Key of the dynamic parameter list.
-    const archi_parameter_list_t *sparams; ///< Static parameter list.
+    const archi_named_pointer_list_t *sparams; ///< Static parameter list.
 } archi_exe_registry_instr__init_from_slot_t;
 
 /*****************************************************************************/
@@ -206,7 +206,7 @@ typedef struct archi_exe_registry_instr__act {
     archi_context_slot_t action; ///< Action designator.
 
     const char *dparams_key; ///< Key of the dynamic parameter list.
-    const archi_parameter_list_t *sparams; ///< Static parameter list.
+    const archi_named_pointer_list_t *sparams; ///< Static parameter list.
 } archi_exe_registry_instr__act_t;
 
 #endif // _ARCHI_EXE_INSTRUCTION_TYP_H_

@@ -321,7 +321,7 @@ create_context_registry(void)
 
     size_t hashmap_capacity = 1024;
 
-    archi_parameter_list_t params[] = {
+    archi_named_pointer_list_t params[] = {
         {
             .name = "capacity",
             .value.ptr = &hashmap_capacity,
@@ -444,7 +444,7 @@ open_and_map_input_files(void)
         {
             bool value_true = true;
 
-            archi_parameter_list_t params[] = {
+            archi_named_pointer_list_t params[] = {
                 {
                     .name = "pathname",
                     .value.ptr = archi_process.args.input[i],
@@ -474,7 +474,7 @@ open_and_map_input_files(void)
         {
             bool value_true = true;
 
-            archi_parameter_list_t params[] = {
+            archi_named_pointer_list_t params[] = {
                 {
                     .name = "has_header",
                     .value.ptr = &value_true,
@@ -549,7 +549,7 @@ preliminary_pass_of_input_files(void)
 
         const archi_exe_input_file_header_t *current_input = archi_context_data(archi_process.input_file[i]).ptr;
 
-        for (archi_parameter_list_t *contents = current_input->contents; contents != NULL; contents = contents->next)
+        for (archi_named_pointer_list_t *contents = current_input->contents; contents != NULL; contents = contents->next)
         {
             if (strcmp(ARCHI_EXE_INPUT_FILE_CONTENTS_KEY_SIGNALS, contents->name) == 0)
             {
@@ -649,7 +649,7 @@ start_signal_management(void)
         if (archi_process.args.dry_run)
             return;
 
-        archi_parameter_list_t params[] = {
+        archi_named_pointer_list_t params[] = {
             {
                 .name = "signals",
                 .value.ptr = archi_process.signal_watch_set,
@@ -722,7 +722,7 @@ execute_instructions(void)
         {
             const archi_exe_input_file_header_t *current_input = current_file.ptr;
 
-            for (archi_parameter_list_t *contents = current_input->contents;
+            for (archi_named_pointer_list_t *contents = current_input->contents;
                     contents != NULL; contents = contents->next)
             {
                 if (strcmp(ARCHI_EXE_INPUT_FILE_CONTENTS_KEY_INSTRUCTIONS, contents->name) == 0)

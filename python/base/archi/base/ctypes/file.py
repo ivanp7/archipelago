@@ -23,7 +23,7 @@
 
 import ctypes as c
 
-from .base import archi_parameter_list_t
+from .base import archi_named_pointer_list_t
 
 
 class archi_file_header_t(c.Structure):
@@ -40,7 +40,7 @@ class archi_exe_input_file_header_t(c.Structure):
 
     _fields_ = [('header', archi_file_header_t),
                 ('magic', c.c_char * 8),
-                ('contents', c.POINTER(archi_parameter_list_t))]
+                ('contents', c.POINTER(archi_named_pointer_list_t))]
 
     def __init__(self):
         self.magic = type(self).MAGIC.encode() + b'\x00'

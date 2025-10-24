@@ -23,7 +23,7 @@
 
 import ctypes as c
 
-from .base import archi_status_t, archi_pointer_t, archi_parameter_list_t
+from .base import archi_status_t, archi_pointer_t, archi_named_pointer_list_t
 
 
 class archi_context_slot_t(c.Structure):
@@ -36,7 +36,7 @@ class archi_context_slot_t(c.Structure):
 
 archi_context_init_func_t = c.CFUNCTYPE(archi_status_t,
                                         c.POINTER(c.POINTER(archi_pointer_t)),
-                                        c.POINTER(archi_parameter_list_t))
+                                        c.POINTER(archi_named_pointer_list_t))
 
 archi_context_final_func_t = c.CFUNCTYPE(None,
                                          c.POINTER(archi_pointer_t))
@@ -54,7 +54,7 @@ archi_context_set_func_t = c.CFUNCTYPE(archi_status_t,
 archi_context_act_func_t = c.CFUNCTYPE(archi_status_t,
                                        c.POINTER(archi_pointer_t),
                                        archi_context_slot_t,
-                                       c.POINTER(archi_parameter_list_t))
+                                       c.POINTER(archi_named_pointer_list_t))
 
 
 class archi_context_interface_t(c.Structure):

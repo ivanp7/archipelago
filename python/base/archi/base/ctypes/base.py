@@ -93,13 +93,13 @@ class archi_pointer_t(c.Structure):
         self.element = layout
 
 
-class archi_parameter_list_t(c.Structure):
+class archi_named_pointer_list_t(c.Structure):
     """List of named values.
     """
     pass
 
-archi_parameter_list_t._fields_ = \
-        [('next', c.POINTER(archi_parameter_list_t)),
+archi_named_pointer_list_t._fields_ = \
+        [('next', c.POINTER(archi_named_pointer_list_t)),
          ('name', c.c_char_p),
          ('value', archi_pointer_t)]
 
