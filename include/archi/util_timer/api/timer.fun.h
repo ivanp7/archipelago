@@ -27,14 +27,9 @@
 #ifndef _ARCHI_UTIL_TIMER_API_TIMER_FUN_H_
 #define _ARCHI_UTIL_TIMER_API_TIMER_FUN_H_
 
+#include "archi/util_timer/api/timer.typ.h"
+
 #include <stdbool.h>
-
-struct archi_timer;
-
-/**
- * @brief Pointer to timer context.
- */
-typedef struct archi_timer *archi_timer_t;
 
 /**
  * @brief Allocate a timer.
