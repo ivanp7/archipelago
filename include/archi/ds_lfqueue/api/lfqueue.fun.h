@@ -32,13 +32,6 @@
 
 #include <stdbool.h>
 
-struct archi_lfqueue;
-
-/**
- * @brief Pointer to lock-free queue.
- */
-typedef struct archi_lfqueue *archi_lfqueue_t;
-
 /**
  * @brief Create lock-free queue.
  *

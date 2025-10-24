@@ -29,6 +29,13 @@
 
 #include <stddef.h> // for size_t
 
+struct archi_lfqueue;
+
+/**
+ * @brief Pointer to lock-free queue.
+ */
+typedef struct archi_lfqueue *archi_lfqueue_t;
+
 /**
  * @brief Parameters for archi_lfqueue_alloc().
  *
