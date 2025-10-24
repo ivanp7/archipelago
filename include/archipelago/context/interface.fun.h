@@ -27,14 +27,11 @@
 #ifndef _ARCHIPELAGO_CONTEXT_INTERFACE_FUN_H_
 #define _ARCHIPELAGO_CONTEXT_INTERFACE_FUN_H_
 
-#include "archipelago/context/interface.typ.h"
-
-struct archi_context;
-
-/**
- * @brief Pointer to context.
- */
-typedef struct archi_context *archi_context_t;
+#include "archipelago/context/handle.typ.h"
+#include "archipelago/context/slot.typ.h"
+#include "archipelago/base/pointer.typ.h"
+#include "archipelago/base/parameters.typ.h"
+#include "archipelago/base/status.typ.h"
 
 /**
  * @brief Extract context interface.

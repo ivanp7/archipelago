@@ -20,28 +20,17 @@
 
 /**
  * @file
- * @brief The application context interface.
+ * @brief The application context interface type.
  */
 
 #pragma once
 #ifndef _ARCHIPELAGO_CONTEXT_INTERFACE_TYP_H_
 #define _ARCHIPELAGO_CONTEXT_INTERFACE_TYP_H_
 
+#include "archipelago/context/slot.typ.h"
 #include "archipelago/base/pointer.typ.h"
 #include "archipelago/base/parameters.typ.h"
 #include "archipelago/base/status.typ.h"
-
-/**
- * @brief Context slot designator.
- */
-typedef struct archi_context_slot {
-    const char *name; ///< Name string.
-
-    const ptrdiff_t *index; ///< Array of indices.
-    size_t num_indices;  ///< Size of the array of indices.
-} archi_context_slot_t;
-
-/*****************************************************************************/
 
 /**
  * @brief Declare/define context initialization function.
