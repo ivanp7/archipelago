@@ -56,6 +56,9 @@ MODULES = [
         # memory
         "archi/memory/api",
         "archi/memory/ctx",
+        "archi/memory/hsp",
+        "archi/memory/ctx_hsp",
+        "archi/memory/mem",
 
         # hashmaps
         "archi/ds_hashmap/api",

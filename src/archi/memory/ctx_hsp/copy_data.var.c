@@ -25,6 +25,7 @@
 
 #include "archi/memory/ctx_hsp/copy_data.var.h"
 #include "archi/memory/hsp/copy.typ.h"
+#include "archipelago/base/ref_count.fun.h"
 
 #include <stdlib.h> // for malloc(), free()
 #include <string.h> // for strcmp()
@@ -92,7 +93,7 @@ ARCHI_CONTEXT_INIT_FUNC(archi_context_memory_map_copy_unmap_data_init)
                     (params->value.ptr == NULL))
                 return ARCHI_STATUS_EVALUE;
 
-            copy_offset_dest = *(size_t*)params->value;
+            copy_offset_dest = *(size_t*)params->value.ptr;
         }
         else if (strcmp("memory_src", params->name) == 0)
         {
@@ -126,7 +127,7 @@ ARCHI_CONTEXT_INIT_FUNC(archi_context_memory_map_copy_unmap_data_init)
                     (params->value.ptr == NULL))
                 return ARCHI_STATUS_EVALUE;
 
-            copy_offset_src = *(size_t*)params->value;
+            copy_offset_src = *(size_t*)params->value.ptr;
         }
         else if (strcmp("num_of", params->name) == 0)
         {
@@ -138,7 +139,7 @@ ARCHI_CONTEXT_INIT_FUNC(archi_context_memory_map_copy_unmap_data_init)
                     (params->value.ptr == NULL))
                 return ARCHI_STATUS_EVALUE;
 
-            copy_num_of = *(size_t*)params->value;
+            copy_num_of = *(size_t*)params->value.ptr;
         }
         else
             return ARCHI_STATUS_EKEY;

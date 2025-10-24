@@ -31,6 +31,8 @@
 
 ARCHI_HSP_STATE_FUNCTION(archi_hsp_state_memory_map_copy_unmap)
 {
+    (void) hsp;
+
     archi_memory_map_copy_unmap_data_t *copy_data = data;
     if (copy_data == NULL)
         return;
