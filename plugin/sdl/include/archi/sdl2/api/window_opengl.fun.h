@@ -10,13 +10,7 @@
 #include "archi/sdl2/api/window_opengl.typ.h"
 #include "archipelago/base/status.typ.h"
 
-struct archi_sdl2_window_opengl_context;
 struct SDL_Window;
-
-/**
- * @brief Pointer to SDL window context (OpenGL renderer).
- */
-typedef struct archi_sdl2_window_opengl_context *archi_sdl2_window_opengl_context_t;
 
 /**
  * @brief Create an SDL window with an OpenGL renderer.

@@ -12,15 +12,9 @@
 
 #include <stdbool.h>
 
-struct archi_sdl2_window_cpu_context;
 struct SDL_Window;
 struct SDL_Renderer;
 struct SDL_Texture;
-
-/**
- * @brief Pointer to SDL window context (CPU renderer).
- */
-typedef struct archi_sdl2_window_cpu_context *archi_sdl2_window_cpu_context_t;
 
 /**
  * @brief Create an SDL window with a CPU renderer.

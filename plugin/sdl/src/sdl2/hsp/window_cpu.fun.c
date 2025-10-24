@@ -5,6 +5,7 @@
 
 #include "archi/sdl2/hsp/window_cpu.fun.h"
 #include "archi/sdl2/hsp/window_cpu.typ.h"
+#include "archi/sdl2/api/window_cpu.fun.h"
 #include "archi/hsp/api/state.fun.h"
 #include "archi/memory/api/interface.fun.h"
 #include "archipelago/log/print.fun.h"

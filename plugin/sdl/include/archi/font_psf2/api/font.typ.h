@@ -9,6 +9,13 @@
 
 #include <stdint.h> // for uint32_t
 
+struct archi_font_psf2;
+
+/**
+ * @brief Pointer to PC Screen Font version 2.
+ */
+typedef struct archi_font_psf2 *archi_font_psf2_t;
+
 /**
  * @brief Magic constant of PC Screen Font version 2.
  */

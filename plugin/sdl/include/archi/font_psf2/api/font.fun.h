@@ -12,13 +12,6 @@
 
 #include <stddef.h> // for size_t
 
-struct archi_font_psf2;
-
-/**
- * @brief Pointer to PC Screen Font version 2.
- */
-typedef struct archi_font_psf2 *archi_font_psf2_t;
-
 /**
  * @brief Load PC Screen Font version 2 from buffer.
  *

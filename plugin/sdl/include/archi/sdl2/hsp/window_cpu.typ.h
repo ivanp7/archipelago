@@ -7,7 +7,7 @@
 #ifndef _ARCHI_SDL2_HSP_WINDOW_CPU_TYP_H_
 #define _ARCHI_SDL2_HSP_WINDOW_CPU_TYP_H_
 
-#include "archi/sdl2/api/window_cpu.fun.h"
+#include "archi/sdl2/api/window_cpu.typ.h"
 #include "archi/memory/api/handle.typ.h"
 
 /**
