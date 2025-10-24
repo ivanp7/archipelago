@@ -24,19 +24,13 @@
  */
 
 #pragma once
-#ifndef _ARCHI_MEM_API_INTERFACE_FUN_H_
-#define _ARCHI_MEM_API_INTERFACE_FUN_H_
+#ifndef _ARCHI_MEMORY_API_INTERFACE_FUN_H_
+#define _ARCHI_MEMORY_API_INTERFACE_FUN_H_
 
-#include "archi/mem/api/interface.typ.h"
+#include "archi/memory/api/handle.typ.h"
+#include "archi/memory/api/interface.typ.h"
 #include "archipelago/base/pointer.typ.h"
 #include "archipelago/base/size.typ.h"
-
-struct archi_memory;
-
-/**
- * @brief Pointer to memory object.
- */
-typedef struct archi_memory *archi_memory_t;
 
 /**
  * @brief Extract memory interface.
@@ -168,5 +162,5 @@ archi_memory_map_copy_unmap(
         size_t num_of ///< [in] Number of data elements to copy.
 );
 
-#endif // _ARCHI_MEM_API_INTERFACE_FUN_H_
+#endif // _ARCHI_MEMORY_API_INTERFACE_FUN_H_
 

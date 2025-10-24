@@ -20,22 +20,29 @@
 
 /**
  * @file
- * @brief Application context interface for data of memory copying HSP state.
+ * @brief Types for memory copying HSP state.
  */
 
 #pragma once
-#ifndef _ARCHI_MEM_CTX_HSP_COPY_DATA_VAR_H_
-#define _ARCHI_MEM_CTX_HSP_COPY_DATA_VAR_H_
+#ifndef _ARCHI_MEMORY_HSP_COPY_TYP_H_
+#define _ARCHI_MEMORY_HSP_COPY_TYP_H_
 
-#include "archi/context/api/interface.typ.h"
+#include "archi/memory/api/handle.typ.h"
 
-ARCHI_CONTEXT_INIT_FUNC(archi_context_memory_map_copy_unmap_data_init);   ///< Memory copy data initialization function.
-ARCHI_CONTEXT_FINAL_FUNC(archi_context_memory_map_copy_unmap_data_final); ///< Memory copy data finalization function.
-ARCHI_CONTEXT_GET_FUNC(archi_context_memory_map_copy_unmap_data_get);     ///< Memory copy data getter function.
-ARCHI_CONTEXT_SET_FUNC(archi_context_memory_map_copy_unmap_data_set);     ///< Memory copy data setter function.
+/**
+ * @brief Parameters for archi_memory_map_copy_unmap().
+ */
+typedef struct archi_memory_map_copy_unmap_data {
+    archi_memory_t memory_dest; ///< Destination memory.
+    size_t offset_dest; ///< Offset into destination memory in data elements.
+    void *map_data_dest; ///< Interface-specific data for mapping destination memory.
 
-extern
-const archi_context_interface_t archi_context_memory_map_copy_unmap_data_interface; ///< Memory copy data interface.
+    archi_memory_t memory_src; ///< Source memory.
+    size_t offset_src; ///< Offset into source memory in data elements.
+    void *map_data_src; ///< Interface-specific data for mapping source memory.
 
-#endif // _ARCHI_MEM_CTX_HSP_COPY_DATA_VAR_H_
+    size_t num_of; ///< Number of data elements to copy.
+} archi_memory_map_copy_unmap_data_t;
+
+#endif // _ARCHI_MEMORY_HSP_COPY_TYP_H_
 

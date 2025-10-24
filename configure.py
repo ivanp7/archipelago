@@ -44,11 +44,16 @@ MODULES = [
         ### built-in modules ###
 
         # context interface
-        "archi/context",
+        "archi/context/api",
+        "archi/context/ctx",
 
         # hierarchical state processor
         "archi/hsp/api",
         "archi/hsp/ctx",
+
+        # memory
+        "archi/memory/api",
+        "archi/memory/ctx",
 
         # hashmaps
         "archi/ds_hashmap/api",
@@ -65,10 +70,6 @@ MODULES = [
         # signal management
         "archi/ipc_signal/api",
         "archi/ipc_signal/ctx",
-
-        # memory
-        "archi/mem/api",
-        "archi/mem/ctx",
 
         # files
         "archi/res_file/api",

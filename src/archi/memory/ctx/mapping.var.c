@@ -23,8 +23,8 @@
  * @brief Application context interface for memory mapping.
  */
 
-#include "archi/mem/ctx/mapping.var.h"
-#include "archi/mem/api/interface.fun.h"
+#include "archi/memory/ctx/mapping.var.h"
+#include "archi/memory/api/interface.fun.h"
 #include "archipelago/base/ref_count.fun.h"
 #include "archipelago/util/size.def.h"
 

@@ -23,7 +23,7 @@
  * @brief Memory operations.
  */
 
-#include "archi/mem/api/interface.fun.h"
+#include "archi/memory/api/interface.fun.h"
 #include "archipelago/base/ref_count.fun.h"
 #include "archipelago/util/size.fun.h"
 #include "archipelago/util/size.def.h"

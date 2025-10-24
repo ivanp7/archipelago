@@ -23,43 +23,40 @@
  * @brief Memory interface for heap memory.
  */
 
-#include "archi/mem/api/interface/heap.var.h"
+#pragma once
+#ifndef _ARCHI_MEMORY_API_INTERFACE_HEAP_VAR_H_
+#define _ARCHI_MEMORY_API_INTERFACE_HEAP_VAR_H_
 
-#include <stdlib.h> // for malloc(), aligned_alloc(), free()
+#include "archi/memory/api/interface.typ.h"
 
-ARCHI_MEMORY_ALLOC_FUNC(archi_memory_heap_alloc)
-{
-    (void) alloc_data;
-    (void) code;
+/**
+ * @brief Heap memory allocation function.
+ *
+ * Allocates a block of memory from the heap.
+ * If layout.alignment == 0, malloc() is used; otherwise,
+ * aligned_alloc() is used with the specified alignment.
+ * @p alloc_data is ignored. @p code is never set.
+ */
+ARCHI_MEMORY_ALLOC_FUNC(archi_memory_heap_alloc);
 
-    void *allocation;
+/**
+ * @brief Heap memory deallocation function.
+ */
+ARCHI_MEMORY_FREE_FUNC(archi_memory_heap_free);
 
-    if (alignment != 0)
-        allocation = aligned_alloc(alignment, num_bytes);
-    else
-        allocation = malloc(num_bytes);
+/**
+ * @brief Heap memory mapping function.
+ *
+ * This function does nothing but calculating the pointer targeting the specified area.
+ * @p code is never set.
+ */
+ARCHI_MEMORY_MAP_FUNC(archi_memory_heap_map);
 
-    return (archi_memory_alloc_info_t){.allocation = allocation};
-}
+/**
+ * @brief Heap memory interface.
+ */
+extern
+const archi_memory_interface_t archi_memory_heap_interface;
 
-ARCHI_MEMORY_FREE_FUNC(archi_memory_heap_free)
-{
-    free(alloc_info.allocation);
-}
-
-ARCHI_MEMORY_MAP_FUNC(archi_memory_heap_map)
-{
-    (void) num_bytes;
-    (void) for_writing;
-    (void) map_data;
-    (void) code;
-
-    return (char*)alloc_info.allocation + offset;
-}
-
-const archi_memory_interface_t archi_memory_heap_interface = {
-    .alloc_fn = archi_memory_heap_alloc,
-    .free_fn = archi_memory_heap_free,
-    .map_fn = archi_memory_heap_map,
-};
+#endif // _ARCHI_MEMORY_API_INTERFACE_HEAP_VAR_H_
 

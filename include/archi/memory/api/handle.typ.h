@@ -20,22 +20,19 @@
 
 /**
  * @file
- * @brief Application context interface for memory mapping.
+ * @brief Memory handle type.
  */
 
 #pragma once
-#ifndef _ARCHI_MEM_CTX_MAPPING_VAR_H_
-#define _ARCHI_MEM_CTX_MAPPING_VAR_H_
+#ifndef _ARCHI_MEMORY_API_HANDLE_TYP_H_
+#define _ARCHI_MEMORY_API_HANDLE_TYP_H_
 
-#include "archi/context/api/interface.typ.h"
+struct archi_memory;
 
-ARCHI_CONTEXT_INIT_FUNC(archi_context_memory_mapping_init);   ///< Memory mapping context initialization function.
-ARCHI_CONTEXT_FINAL_FUNC(archi_context_memory_mapping_final); ///< Memory mapping context finalization function.
-ARCHI_CONTEXT_GET_FUNC(archi_context_memory_mapping_get);     ///< Memory mapping context getter function.
-ARCHI_CONTEXT_ACT_FUNC(archi_context_memory_mapping_act);     ///< Memory mapping context action function.
+/**
+ * @brief Pointer to memory object.
+ */
+typedef struct archi_memory *archi_memory_t;
 
-extern
-const archi_context_interface_t archi_context_memory_mapping_interface; ///< Memory mapping context interface.
-
-#endif // _ARCHI_MEM_CTX_MAPPING_VAR_H_
+#endif // _ARCHI_MEMORY_API_HANDLE_TYP_H_
 

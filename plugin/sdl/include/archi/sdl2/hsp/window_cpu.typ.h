@@ -8,7 +8,7 @@
 #define _ARCHI_SDL2_HSP_WINDOW_CPU_TYP_H_
 
 #include "archi/sdl2/api/window_cpu.fun.h"
-#include "archi/mem/api/interface.fun.h"
+#include "archi/memory/api/handle.typ.h"
 
 /**
  * @brief Parameters for rendering SDL2 window (CPU renderer).

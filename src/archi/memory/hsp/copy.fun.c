@@ -20,43 +20,27 @@
 
 /**
  * @file
- * @brief Memory interface for heap memory.
+ * @brief HSP state for copying data between memory objects.
  */
 
-#pragma once
-#ifndef _ARCHI_MEM_API_INTERFACE_HEAP_VAR_H_
-#define _ARCHI_MEM_API_INTERFACE_HEAP_VAR_H_
+#include "archi/memory/hsp/copy.fun.h"
+#include "archi/memory/hsp/copy.typ.h"
+#include "archi/memory/api/interface.fun.h"
+#include "archi/hsp/api/state.fun.h"
+#include "archipelago/log/print.fun.h"
 
-#include "archi/mem/api/interface.typ.h"
+ARCHI_HSP_STATE_FUNCTION(archi_hsp_state_memory_map_copy_unmap)
+{
+    archi_memory_map_copy_unmap_data_t *copy_data = ARCHI_HSP_CURRENT_STATE().data;
+    if (copy_data == NULL)
+        return;
 
-/**
- * @brief Heap memory allocation function.
- *
- * Allocates a block of memory from the heap.
- * If layout.alignment == 0, malloc() is used; otherwise,
- * aligned_alloc() is used with the specified alignment.
- * @p alloc_data is ignored. @p code is never set.
- */
-ARCHI_MEMORY_ALLOC_FUNC(archi_memory_heap_alloc);
+    archi_status_t code = archi_memory_map_copy_unmap(
+            copy_data->memory_dest, copy_data->offset_dest, copy_data->map_data_dest,
+            copy_data->memory_src, copy_data->offset_src, copy_data->map_data_src,
+            copy_data->num_of);
 
-/**
- * @brief Heap memory deallocation function.
- */
-ARCHI_MEMORY_FREE_FUNC(archi_memory_heap_free);
-
-/**
- * @brief Heap memory mapping function.
- *
- * This function does nothing but calculating the pointer targeting the specified area.
- * @p code is never set.
- */
-ARCHI_MEMORY_MAP_FUNC(archi_memory_heap_map);
-
-/**
- * @brief Heap memory interface.
- */
-extern
-const archi_memory_interface_t archi_memory_heap_interface;
-
-#endif // _ARCHI_MEM_API_INTERFACE_HEAP_VAR_H_
+    if (code != 0)
+        archi_log_error(__func__, "archi_memory_map_copy_unmap() -> %i", code);
+}
 

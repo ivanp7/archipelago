@@ -23,8 +23,8 @@
  * @brief Application context interface for memory.
  */
 
-#include "archi/mem/ctx/memory.var.h"
-#include "archi/mem/api/interface.fun.h"
+#include "archi/memory/ctx/memory.var.h"
+#include "archi/memory/api/interface.fun.h"
 
 #include <stdlib.h> // for malloc(), free()
 #include <string.h> // for strcmp()

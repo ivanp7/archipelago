@@ -24,8 +24,8 @@
  */
 
 #pragma once
-#ifndef _ARCHI_MEM_API_INTERFACE_TYP_H_
-#define _ARCHI_MEM_API_INTERFACE_TYP_H_
+#ifndef _ARCHI_MEMORY_API_INTERFACE_TYP_H_
+#define _ARCHI_MEMORY_API_INTERFACE_TYP_H_
 
 #include "archipelago/base/status.typ.h"
 
@@ -230,5 +230,5 @@ typedef struct archi_memory_interface {
     archi_memory_unmap_func_t unmap_fn; ///< Memory unmapping function.
 } archi_memory_interface_t;
 
-#endif // _ARCHI_MEM_API_INTERFACE_TYP_H_
+#endif // _ARCHI_MEMORY_API_INTERFACE_TYP_H_
 

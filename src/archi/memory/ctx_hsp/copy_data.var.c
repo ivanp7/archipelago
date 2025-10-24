@@ -23,8 +23,8 @@
  * @brief Application context interface for data of memory copying HSP state.
  */
 
-#include "archi/mem/ctx_hsp/copy_data.var.h"
-#include "archi/mem/hsp/copy.typ.h"
+#include "archi/memory/ctx_hsp/copy_data.var.h"
+#include "archi/memory/hsp/copy.typ.h"
 
 #include <stdlib.h> // for malloc(), free()
 #include <string.h> // for strcmp()

@@ -20,27 +20,22 @@
 
 /**
  * @file
- * @brief HSP state for copying data between memory objects.
+ * @brief Application context interface for data of memory copying HSP state.
  */
 
-#include "archi/mem/hsp/copy.fun.h"
-#include "archi/mem/hsp/copy.typ.h"
-#include "archi/mem/api/interface.fun.h"
-#include "archi/hsp/api/state.fun.h"
-#include "archipelago/log/print.fun.h"
+#pragma once
+#ifndef _ARCHI_MEMORY_CTX_HSP_COPY_DATA_VAR_H_
+#define _ARCHI_MEMORY_CTX_HSP_COPY_DATA_VAR_H_
 
-ARCHI_HSP_STATE_FUNCTION(archi_hsp_state_memory_map_copy_unmap)
-{
-    archi_memory_map_copy_unmap_data_t *copy_data = ARCHI_HSP_CURRENT_STATE().data;
-    if (copy_data == NULL)
-        return;
+#include "archi/context/api/interface.typ.h"
 
-    archi_status_t code = archi_memory_map_copy_unmap(
-            copy_data->memory_dest, copy_data->offset_dest, copy_data->map_data_dest,
-            copy_data->memory_src, copy_data->offset_src, copy_data->map_data_src,
-            copy_data->num_of);
+ARCHI_CONTEXT_INIT_FUNC(archi_context_memory_map_copy_unmap_data_init);   ///< Memory copy data initialization function.
+ARCHI_CONTEXT_FINAL_FUNC(archi_context_memory_map_copy_unmap_data_final); ///< Memory copy data finalization function.
+ARCHI_CONTEXT_GET_FUNC(archi_context_memory_map_copy_unmap_data_get);     ///< Memory copy data getter function.
+ARCHI_CONTEXT_SET_FUNC(archi_context_memory_map_copy_unmap_data_set);     ///< Memory copy data setter function.
 
-    if (code != 0)
-        archi_log_error(__func__, "archi_memory_map_copy_unmap() -> %i", code);
-}
+extern
+const archi_context_interface_t archi_context_memory_map_copy_unmap_data_interface; ///< Memory copy data interface.
+
+#endif // _ARCHI_MEMORY_CTX_HSP_COPY_DATA_VAR_H_
 

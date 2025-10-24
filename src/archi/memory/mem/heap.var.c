@@ -20,29 +20,46 @@
 
 /**
  * @file
- * @brief Types for memory copying HSP state.
+ * @brief Memory interface for heap memory.
  */
 
-#pragma once
-#ifndef _ARCHI_MEM_HSP_COPY_TYP_H_
-#define _ARCHI_MEM_HSP_COPY_TYP_H_
+#include "archi/memory/mem/heap.var.h"
 
-#include "archi/mem/api/interface.fun.h"
+#include <stdlib.h> // for malloc(), aligned_alloc(), free()
 
-/**
- * @brief Parameters for archi_memory_map_copy_unmap().
- */
-typedef struct archi_memory_map_copy_unmap_data {
-    archi_memory_t memory_dest; ///< Destination memory.
-    size_t offset_dest; ///< Offset into destination memory in data elements.
-    void *map_data_dest; ///< Interface-specific data for mapping destination memory.
+ARCHI_MEMORY_ALLOC_FUNC(archi_memory_heap_alloc)
+{
+    (void) alloc_data;
+    (void) code;
 
-    archi_memory_t memory_src; ///< Source memory.
-    size_t offset_src; ///< Offset into source memory in data elements.
-    void *map_data_src; ///< Interface-specific data for mapping source memory.
+    void *allocation;
 
-    size_t num_of; ///< Number of data elements to copy.
-} archi_memory_map_copy_unmap_data_t;
+    if (alignment != 0)
+        allocation = aligned_alloc(alignment, num_bytes);
+    else
+        allocation = malloc(num_bytes);
 
-#endif // _ARCHI_MEM_HSP_COPY_TYP_H_
+    return (archi_memory_alloc_info_t){.allocation = allocation};
+}
+
+ARCHI_MEMORY_FREE_FUNC(archi_memory_heap_free)
+{
+    free(alloc_info.allocation);
+}
+
+ARCHI_MEMORY_MAP_FUNC(archi_memory_heap_map)
+{
+    (void) num_bytes;
+    (void) for_writing;
+    (void) map_data;
+    (void) code;
+
+    return (char*)alloc_info.allocation + offset;
+}
+
+const archi_memory_interface_t archi_memory_heap_interface = {
+    .alloc_fn = archi_memory_heap_alloc,
+    .free_fn = archi_memory_heap_free,
+    .map_fn = archi_memory_heap_map,
+};
 

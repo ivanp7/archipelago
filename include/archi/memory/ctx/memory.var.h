@@ -20,22 +20,21 @@
 
 /**
  * @file
- * @brief HSP state for copying data between memory objects.
+ * @brief Application context interface for memory.
  */
 
 #pragma once
-#ifndef _ARCHI_MEM_HSP_COPY_FUN_H_
-#define _ARCHI_MEM_HSP_COPY_FUN_H_
+#ifndef _ARCHI_MEMORY_CTX_MEMORY_VAR_H_
+#define _ARCHI_MEMORY_CTX_MEMORY_VAR_H_
 
-#include "archi/hsp/api/state.typ.h"
+#include "archi/context/api/interface.typ.h"
 
-/**
- * @brief State function for calling archi_memory_map_copy_unmap().
- *
- * This state function expects archi_memory_map_copy_unmap_data_t
- * object as function data.
- */
-ARCHI_HSP_STATE_FUNCTION(archi_hsp_state_memory_map_copy_unmap);
+ARCHI_CONTEXT_INIT_FUNC(archi_context_memory_init);   ///< Memory context initialization function.
+ARCHI_CONTEXT_FINAL_FUNC(archi_context_memory_final); ///< Memory context finalization function.
+ARCHI_CONTEXT_GET_FUNC(archi_context_memory_get);     ///< Memory context getter function.
 
-#endif // _ARCHI_MEM_HSP_COPY_FUN_H_
+extern
+const archi_context_interface_t archi_context_memory_interface; ///< Memory context interface.
+
+#endif // _ARCHI_MEMORY_CTX_MEMORY_VAR_H_
 
