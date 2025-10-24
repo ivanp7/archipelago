@@ -23,18 +23,19 @@
  * @brief Thread group callbacks for flag barriers.
  */
 
-#include "archi/res_thread/api/callback/flag_barrier.fun.h"
-#include "archi/res_thread/api/flag_barrier.fun.h"
-#include "archipelago/log/print.fun.h"
+#pragma once
+#ifndef _ARCHI_RES_THREAD_THR_FLAG_BARRIER_FUN_H_
+#define _ARCHI_RES_THREAD_THR_FLAG_BARRIER_FUN_H_
 
-ARCHI_THREAD_GROUP_CALLBACK_FUNC(archi_thread_group_callback_flag_barrier_release)
-{
-    (void) work_size;
-    (void) thread_idx;
+#include "archi/res_thread/api/callback.typ.h"
 
-    archi_status_t code = archi_thread_flag_barrier_release(data);
+/**
+ * @brief Thread group callback for releasing flag barrier.
+ *
+ * This callback function expects archi_thread_flag_barrier_t
+ * object as function data.
+ */
+ARCHI_THREAD_GROUP_CALLBACK_FUNC(archi_thread_group_callback_flag_barrier_release);
 
-    if (code != 0)
-        archi_log_error(__func__, "archi_thread_flag_barrier_release() -> %i", code);
-}
+#endif // _ARCHI_RES_THREAD_THR_FLAG_BARRIER_FUN_H_
 

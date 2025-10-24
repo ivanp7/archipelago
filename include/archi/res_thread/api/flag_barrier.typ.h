@@ -20,29 +20,19 @@
 
 /**
  * @file
- * @brief Types for thread group dispatch HSP state.
+ * @brief Flag barrier type.
  */
 
 #pragma once
-#ifndef _ARCHI_RES_THREAD_HSP_DISPATCH_TYP_H_
-#define _ARCHI_RES_THREAD_HSP_DISPATCH_TYP_H_
+#ifndef _ARCHI_RES_THREAD_API_FLAG_BARRIER_TYP_H_
+#define _ARCHI_RES_THREAD_API_FLAG_BARRIER_TYP_H_
 
-#include "archi/res_thread/api/thread_group.typ.h"
-#include "archi/res_thread/api/work.typ.h"
-#include "archi/res_thread/api/callback.typ.h"
+struct archi_thread_flag_barrier;
 
 /**
- * @brief Parameters for archi_thread_group_dispatch().
+ * @brief Pointer to flag barrier.
  */
-typedef struct archi_thread_group_dispatch_data {
-    archi_thread_group_context_t context; ///< Thread group context.
+typedef struct archi_thread_flag_barrier *archi_thread_flag_barrier_t;
 
-    archi_thread_group_work_t *work; ///< Concurrent work task.
-    archi_thread_group_callback_t *callback; ///< Concurrent work completion callback.
-    archi_thread_group_dispatch_params_t params; ///< Dispatch parameters.
-
-    const char *name; ///< Name of the operation (for logging).
-} archi_thread_group_dispatch_data_t;
-
-#endif // _ARCHI_RES_THREAD_HSP_DISPATCH_TYP_H_
+#endif // _ARCHI_RES_THREAD_API_FLAG_BARRIER_TYP_H_
 

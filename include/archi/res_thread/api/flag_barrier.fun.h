@@ -27,14 +27,8 @@
 #ifndef _ARCHI_RES_THREAD_API_FLAG_BARRIER_FUN_H_
 #define _ARCHI_RES_THREAD_API_FLAG_BARRIER_FUN_H_
 
+#include "archi/res_thread/api/flag_barrier.typ.h"
 #include "archipelago/base/status.typ.h"
-
-struct archi_thread_flag_barrier;
-
-/**
- * @brief Pointer to flag barrier.
- */
-typedef struct archi_thread_flag_barrier *archi_thread_flag_barrier_t;
 
 /**
  * @brief Allocate and initialize a flag barrier.

@@ -89,6 +89,7 @@ MODULES = [
         "archi/res_thread/ctx",
         "archi/res_thread/hsp",
         "archi/res_thread/ctx_hsp",
+        "archi/res_thread/thr",
 
         # type conversions
         "archi/util_convert/ctx",

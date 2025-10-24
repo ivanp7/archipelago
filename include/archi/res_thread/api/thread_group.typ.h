@@ -29,6 +29,13 @@
 
 #include <stddef.h> // for size_t
 
+struct archi_thread_group_context;
+
+/**
+ * @brief Pointer to thread group context.
+ */
+typedef struct archi_thread_group_context *archi_thread_group_context_t;
+
 /**
  * @brief Parameters for archi_thread_group_start().
  */

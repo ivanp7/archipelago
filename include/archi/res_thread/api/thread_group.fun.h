@@ -32,13 +32,6 @@
 #include "archi/res_thread/api/callback.typ.h"
 #include "archipelago/base/status.typ.h"
 
-struct archi_thread_group_context;
-
-/**
- * @brief Pointer to thread group context.
- */
-typedef struct archi_thread_group_context *archi_thread_group_context_t;
-
 /**
  * @brief Start a group of threads for concurrent processing.
  *
