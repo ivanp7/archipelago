@@ -24,10 +24,10 @@
  */
 
 #pragma once
-#ifndef _ARCHIPELAGO_CONTEXT_INTERFACE_TYP_H_
-#define _ARCHIPELAGO_CONTEXT_INTERFACE_TYP_H_
+#ifndef _ARCHI_CONTEXT_API_INTERFACE_TYP_H_
+#define _ARCHI_CONTEXT_API_INTERFACE_TYP_H_
 
-#include "archipelago/context/slot.typ.h"
+#include "archi/context/api/slot.typ.h"
 #include "archipelago/base/pointer.typ.h"
 #include "archipelago/base/parameters.typ.h"
 #include "archipelago/base/status.typ.h"
@@ -127,5 +127,5 @@ typedef struct archi_context_interface {
     archi_context_act_func_t act_fn; ///< Context action function.
 } archi_context_interface_t;
 
-#endif // _ARCHIPELAGO_CONTEXT_INTERFACE_TYP_H_
+#endif // _ARCHI_CONTEXT_API_INTERFACE_TYP_H_
 

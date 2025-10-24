@@ -24,11 +24,11 @@
  */
 
 #pragma once
-#ifndef _ARCHIPELAGO_CONTEXT_INTERFACE_FUN_H_
-#define _ARCHIPELAGO_CONTEXT_INTERFACE_FUN_H_
+#ifndef _ARCHI_CONTEXT_API_INTERFACE_FUN_H_
+#define _ARCHI_CONTEXT_API_INTERFACE_FUN_H_
 
-#include "archipelago/context/handle.typ.h"
-#include "archipelago/context/slot.typ.h"
+#include "archi/context/api/handle.typ.h"
+#include "archi/context/api/slot.typ.h"
 #include "archipelago/base/pointer.typ.h"
 #include "archipelago/base/parameters.typ.h"
 #include "archipelago/base/status.typ.h"
@@ -131,5 +131,5 @@ archi_context_act(
         const archi_parameter_list_t *params ///< [in] Action parameters.
 );
 
-#endif // _ARCHIPELAGO_CONTEXT_INTERFACE_FUN_H_
+#endif // _ARCHI_CONTEXT_API_INTERFACE_FUN_H_
 

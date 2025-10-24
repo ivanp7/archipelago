@@ -23,8 +23,8 @@
  * @brief Interface operations on contexts.
  */
 
-#include "archipelago/context/interface.fun.h"
-#include "archipelago/context/interface.typ.h"
+#include "archi/context/api/interface.fun.h"
+#include "archi/context/api/interface.typ.h"
 #include "archipelago/base/ref_count.fun.h"
 
 #include <stdlib.h> // for malloc(), free()

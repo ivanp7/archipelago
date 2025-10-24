@@ -7,7 +7,7 @@
 #ifndef _ARCHI_FONT_PSF2_CTX_FONT_VAR_H_
 #define _ARCHI_FONT_PSF2_CTX_FONT_VAR_H_
 
-#include "archipelago/context/interface.typ.h"
+#include "archi/context/api/interface.typ.h"
 
 ARCHI_CONTEXT_INIT_FUNC(archi_context_font_psf2_init);   ///< PSFv2 font context initialization function.
 ARCHI_CONTEXT_FINAL_FUNC(archi_context_font_psf2_final); ///< PSFv2 font context finalization function.

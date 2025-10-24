@@ -7,7 +7,7 @@
 #ifndef _ARCHI_OPENCL_CTX_PROGRAM_VAR_H_
 #define _ARCHI_OPENCL_CTX_PROGRAM_VAR_H_
 
-#include "archipelago/context/interface.typ.h"
+#include "archi/context/api/interface.typ.h"
 
 ARCHI_CONTEXT_INIT_FUNC(archi_context_opencl_program_init_src); ///< OpenCL program initialization function (from sources).
 ARCHI_CONTEXT_INIT_FUNC(archi_context_opencl_program_init_bin); ///< OpenCL program initialization function (from binaries).

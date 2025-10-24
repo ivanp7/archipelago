@@ -27,7 +27,7 @@
 #ifndef _ARCHI_RES_THREAD_CTX_THREAD_GROUP_VAR_H_
 #define _ARCHI_RES_THREAD_CTX_THREAD_GROUP_VAR_H_
 
-#include "archipelago/context/interface.typ.h"
+#include "archi/context/api/interface.typ.h"
 
 ARCHI_CONTEXT_INIT_FUNC(archi_context_thread_group_init);   ///< Thread group context initialization function.
 ARCHI_CONTEXT_FINAL_FUNC(archi_context_thread_group_final); ///< Thread group context finalization function.

@@ -20,54 +20,19 @@
 
 /**
  * @file
- * @brief Context interface for parameter lists.
+ * @brief Context handle type.
  */
 
 #pragma once
-#ifndef _ARCHIPELAGO_CONTEXT_INTERFACE_PARAMETERS_VAR_H_
-#define _ARCHIPELAGO_CONTEXT_INTERFACE_PARAMETERS_VAR_H_
+#ifndef _ARCHI_CONTEXT_API_HANDLE_TYP_H_
+#define _ARCHI_CONTEXT_API_HANDLE_TYP_H_
 
-#include "archipelago/context/interface.typ.h"
-
-/**
- * @brief Parameter list initialization function.
- *
- * Accepts any parameters, all of them are added to the list.
- */
-ARCHI_CONTEXT_INIT_FUNC(archi_context_parameters_init);
+struct archi_context;
 
 /**
- * @brief Parameter list finalization function.
+ * @brief Pointer to context.
  */
-ARCHI_CONTEXT_FINAL_FUNC(archi_context_parameters_final);
+typedef struct archi_context *archi_context_t;
 
-/**
- * @brief Parameter list getter function.
- *
- * Provides any slot name with no indices, returns a parameter with such name.
- */
-ARCHI_CONTEXT_GET_FUNC(archi_context_parameters_get);
-
-/**
- * @brief Parameter list setter function.
- *
- * Accepts any slot name with no indices, adds a parameter with such name on top of the list.
- */
-ARCHI_CONTEXT_SET_FUNC(archi_context_parameters_set);
-
-/**
- * @brief Parameter list action function.
- *
- * Provides the following actions:
- * - "_" : prepend the parameter list with the action parameters
- */
-ARCHI_CONTEXT_ACT_FUNC(archi_context_parameters_act);
-
-/**
- * @brief Parameter list interface.
- */
-extern
-const archi_context_interface_t archi_context_parameters_interface;
-
-#endif // _ARCHIPELAGO_CONTEXT_INTERFACE_PARAMETERS_VAR_H_
+#endif // _ARCHI_CONTEXT_API_HANDLE_TYP_H_
 

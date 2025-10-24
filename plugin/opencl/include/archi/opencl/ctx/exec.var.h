@@ -7,7 +7,7 @@
 #ifndef _ARCHI_OPENCL_CTX_EXEC_VAR_H_
 #define _ARCHI_OPENCL_CTX_EXEC_VAR_H_
 
-#include "archipelago/context/interface.typ.h"
+#include "archi/context/api/interface.typ.h"
 
 ARCHI_CONTEXT_INIT_FUNC(archi_opencl_kernel_enqueue_data_init);   ///< OpenCL kernel enqueue data initialization function.
 ARCHI_CONTEXT_FINAL_FUNC(archi_opencl_kernel_enqueue_data_final); ///< OpenCL kernel enqueue data finalization function.

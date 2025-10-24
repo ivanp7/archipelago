@@ -24,10 +24,10 @@
  */
 
 #pragma once
-#ifndef _ARCHIPELAGO_CONTEXT_INTERFACE_POINTER_VAR_H_
-#define _ARCHIPELAGO_CONTEXT_INTERFACE_POINTER_VAR_H_
+#ifndef _ARCHI_CONTEXT_CTX_POINTER_VAR_H_
+#define _ARCHI_CONTEXT_CTX_POINTER_VAR_H_
 
-#include "archipelago/context/interface.typ.h"
+#include "archi/context/api/interface.typ.h"
 
 /**
  * @brief Pointer initialization function.
@@ -90,5 +90,5 @@ ARCHI_CONTEXT_ACT_FUNC(archi_context_pointer_act);
 extern
 const archi_context_interface_t archi_context_pointer_interface;
 
-#endif // _ARCHIPELAGO_CONTEXT_INTERFACE_POINTER_VAR_H_
+#endif // _ARCHI_CONTEXT_CTX_POINTER_VAR_H_
 

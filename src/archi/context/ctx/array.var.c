@@ -23,7 +23,7 @@
  * @brief Context interface for arrays of pointers.
  */
 
-#include "archipelago/context/interface/array.var.h"
+#include "archi/context/ctx/array.var.h"
 #include "archipelago/base/ref_count.fun.h"
 #include "archipelago/util/size.def.h"
 

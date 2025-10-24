@@ -27,7 +27,7 @@
 #ifndef _ARCHI_HSP_CTX_TRANSITION_ATTACHMENT_DATA_VAR_H_
 #define _ARCHI_HSP_CTX_TRANSITION_ATTACHMENT_DATA_VAR_H_
 
-#include "archipelago/context/interface.typ.h"
+#include "archi/context/api/interface.typ.h"
 
 ARCHI_CONTEXT_INIT_FUNC(archi_context_hsp_transition_attachment_data_init);   ///< HSP transition attachment initialization function.
 ARCHI_CONTEXT_FINAL_FUNC(archi_context_hsp_transition_attachment_data_final); ///< HSP transition attachment finalization function.

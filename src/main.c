@@ -23,7 +23,7 @@
  * @brief Implementation of the Archipelago executable.
  */
 
-#include "archipelago/context/interface.fun.h"
+#include "archi/context/api/interface.fun.h"
 #include "archipelago/base/ref_count.fun.h"
 #include "archi_exe/args.fun.h"
 #include "archi_exe/args.typ.h"
@@ -32,6 +32,7 @@
 #include "archi_exe/registry.def.h"
 #include "archi_exe/instruction.fun.h"
 #include "archi_exe/instruction.typ.h"
+
 #include "archi/ds_hashmap/ctx/hashmap.var.h"
 #include "archi/res_file/ctx/file.var.h"
 #include "archi/res_library/ctx/library.var.h"

@@ -7,7 +7,7 @@
 #ifndef _ARCHI_OPENCL_CTX_KERNEL_VAR_H_
 #define _ARCHI_OPENCL_CTX_KERNEL_VAR_H_
 
-#include "archipelago/context/interface.typ.h"
+#include "archi/context/api/interface.typ.h"
 
 ARCHI_CONTEXT_INIT_FUNC(archi_context_opencl_kernel_init_new);  ///< OpenCL kernel initialization function (new).
 ARCHI_CONTEXT_INIT_FUNC(archi_context_opencl_kernel_init_clone); ///< OpenCL kernel initialization function (clone).

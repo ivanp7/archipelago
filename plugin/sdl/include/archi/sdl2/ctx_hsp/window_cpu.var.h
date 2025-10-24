@@ -7,7 +7,7 @@
 #ifndef _ARCHI_SDL2_CTX_HSP_WINDOW_CPU_VAR_H_
 #define _ARCHI_SDL2_CTX_HSP_WINDOW_CPU_VAR_H_
 
-#include "archipelago/context/interface.typ.h"
+#include "archi/context/api/interface.typ.h"
 
 ARCHI_CONTEXT_INIT_FUNC(archi_context_sdl2_window_cpu_render_data_init);   ///< SDL window rendering data initialization function.
 ARCHI_CONTEXT_FINAL_FUNC(archi_context_sdl2_window_cpu_render_data_final); ///< SDL window rendering data finalization function.

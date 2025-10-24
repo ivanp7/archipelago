@@ -23,7 +23,7 @@
  * @brief Context interface for pointer wrappers.
  */
 
-#include "archipelago/context/interface/pointer.var.h"
+#include "archi/context/ctx/pointer.var.h"
 #include "archipelago/base/ref_count.fun.h"
 #include "archipelago/util/size.def.h"
 

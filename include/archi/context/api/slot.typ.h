@@ -20,53 +20,24 @@
 
 /**
  * @file
- * @brief Context interface for arrays of pointers.
+ * @brief Application context slot type.
  */
 
 #pragma once
-#ifndef _ARCHIPELAGO_CONTEXT_INTERFACE_ARRAY_VAR_H_
-#define _ARCHIPELAGO_CONTEXT_INTERFACE_ARRAY_VAR_H_
+#ifndef _ARCHI_CONTEXT_API_SLOT_TYP_H_
+#define _ARCHI_CONTEXT_API_SLOT_TYP_H_
 
-#include "archipelago/context/interface.typ.h"
-
-/**
- * @brief Array initialization function.
- *
- * Accepts the following parameters:
- * - "num_elements" : number of elements
- * - "flags"        : array flags
- * - "func_ptrs"    : whether pointers to functions are stored
- */
-ARCHI_CONTEXT_INIT_FUNC(archi_context_array_init);
+#include <stddef.h> // for ptrdiff_t, size_t
 
 /**
- * @brief Array finalization function.
+ * @brief Context slot designator.
  */
-ARCHI_CONTEXT_FINAL_FUNC(archi_context_array_final);
+typedef struct archi_context_slot {
+    const char *name; ///< Name string.
 
-/**
- * @brief Array getter function.
- *
- * Provides the following slots:
- * - "" [index] : element #index
- * - "elements"  : array of references to separate elements of the array
- */
-ARCHI_CONTEXT_GET_FUNC(archi_context_array_get);
+    const ptrdiff_t *index; ///< Array of indices.
+    size_t num_indices;  ///< Size of the array of indices.
+} archi_context_slot_t;
 
-/**
- * @brief Array setter function.
- *
- * Accepts the following slots:
- * - "" [index] : element #index
- * - "num_elements" : number of elements
- */
-ARCHI_CONTEXT_SET_FUNC(archi_context_array_set);
-
-/**
- * @brief Array interface.
- */
-extern
-const archi_context_interface_t archi_context_array_interface;
-
-#endif // _ARCHIPELAGO_CONTEXT_INTERFACE_ARRAY_VAR_H_
+#endif // _ARCHI_CONTEXT_API_SLOT_TYP_H_
 

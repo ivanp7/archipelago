@@ -27,7 +27,9 @@
 #ifndef _ARCHI_EXE_INSTRUCTION_FUN_H_
 #define _ARCHI_EXE_INSTRUCTION_FUN_H_
 
-#include "archipelago/context/interface.fun.h"
+#include "archi/context/api/handle.typ.h"
+#include "archipelago/base/ref_count.typ.h"
+#include "archipelago/base/status.typ.h"
 
 #include <stddef.h> // for size_t
 

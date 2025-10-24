@@ -27,7 +27,7 @@
 #ifndef _ARCHI_HSP_CTX_STATE_BRANCH_DATA_VAR_H_
 #define _ARCHI_HSP_CTX_STATE_BRANCH_DATA_VAR_H_
 
-#include "archipelago/context/interface.typ.h"
+#include "archi/context/api/interface.typ.h"
 
 ARCHI_CONTEXT_INIT_FUNC(archi_context_hsp_branch_state_data_init);   ///< HSP branch state data initialization function.
 ARCHI_CONTEXT_FINAL_FUNC(archi_context_hsp_branch_state_data_final); ///< HSP branch state data finalization function.

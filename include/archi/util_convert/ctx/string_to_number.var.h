@@ -27,7 +27,7 @@
 #ifndef _ARCHI_UTIL_CONVERT_CTX_STRING_TO_NUMBER_VAR_H_
 #define _ARCHI_UTIL_CONVERT_CTX_STRING_TO_NUMBER_VAR_H_
 
-#include "archipelago/context/interface.typ.h"
+#include "archi/context/api/interface.typ.h"
 
 ARCHI_CONTEXT_INIT_FUNC(archi_context_convert_string_to_number_init);   ///< String-to-number converter initialization function.
 ARCHI_CONTEXT_FINAL_FUNC(archi_context_convert_string_to_number_final); ///< String-to-number converter finalization function.

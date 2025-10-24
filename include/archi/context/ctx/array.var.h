@@ -20,24 +20,53 @@
 
 /**
  * @file
- * @brief Application context slot type.
+ * @brief Context interface for arrays of pointers.
  */
 
 #pragma once
-#ifndef _ARCHIPELAGO_CONTEXT_SLOT_TYP_H_
-#define _ARCHIPELAGO_CONTEXT_SLOT_TYP_H_
+#ifndef _ARCHI_CONTEXT_CTX_ARRAY_VAR_H_
+#define _ARCHI_CONTEXT_CTX_ARRAY_VAR_H_
 
-#include <stddef.h> // for ptrdiff_t, size_t
+#include "archi/context/api/interface.typ.h"
 
 /**
- * @brief Context slot designator.
+ * @brief Array initialization function.
+ *
+ * Accepts the following parameters:
+ * - "num_elements" : number of elements
+ * - "flags"        : array flags
+ * - "func_ptrs"    : whether pointers to functions are stored
  */
-typedef struct archi_context_slot {
-    const char *name; ///< Name string.
+ARCHI_CONTEXT_INIT_FUNC(archi_context_array_init);
 
-    const ptrdiff_t *index; ///< Array of indices.
-    size_t num_indices;  ///< Size of the array of indices.
-} archi_context_slot_t;
+/**
+ * @brief Array finalization function.
+ */
+ARCHI_CONTEXT_FINAL_FUNC(archi_context_array_final);
 
-#endif // _ARCHIPELAGO_CONTEXT_SLOT_TYP_H_
+/**
+ * @brief Array getter function.
+ *
+ * Provides the following slots:
+ * - "" [index] : element #index
+ * - "elements"  : array of references to separate elements of the array
+ */
+ARCHI_CONTEXT_GET_FUNC(archi_context_array_get);
+
+/**
+ * @brief Array setter function.
+ *
+ * Accepts the following slots:
+ * - "" [index] : element #index
+ * - "num_elements" : number of elements
+ */
+ARCHI_CONTEXT_SET_FUNC(archi_context_array_set);
+
+/**
+ * @brief Array interface.
+ */
+extern
+const archi_context_interface_t archi_context_array_interface;
+
+#endif // _ARCHI_CONTEXT_CTX_ARRAY_VAR_H_
 

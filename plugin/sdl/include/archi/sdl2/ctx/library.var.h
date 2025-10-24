@@ -7,7 +7,7 @@
 #ifndef _ARCHI_SDL2_CTX_LIBRARY_VAR_H_
 #define _ARCHI_SDL2_CTX_LIBRARY_VAR_H_
 
-#include "archipelago/context/interface.typ.h"
+#include "archi/context/api/interface.typ.h"
 
 ARCHI_CONTEXT_INIT_FUNC(archi_context_sdl2_library_init);   ///< SDL library initialization function.
 ARCHI_CONTEXT_FINAL_FUNC(archi_context_sdl2_library_final); ///< SDL library finalization function.

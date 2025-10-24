@@ -27,7 +27,7 @@
 #ifndef _ARCHI_EXE_INSTRUCTION_TYP_H_
 #define _ARCHI_EXE_INSTRUCTION_TYP_H_
 
-#include "archipelago/context/interface.typ.h"
+#include "archi/context/api/interface.typ.h"
 
 /**
  * @brief Type of context registry instructions.

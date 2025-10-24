@@ -27,7 +27,7 @@
 #ifndef _ARCHI_RES_THREAD_CTX_HSP_DISPATCH_DATA_VAR_H_
 #define _ARCHI_RES_THREAD_CTX_HSP_DISPATCH_DATA_VAR_H_
 
-#include "archipelago/context/interface.typ.h"
+#include "archi/context/api/interface.typ.h"
 
 ARCHI_CONTEXT_INIT_FUNC(archi_context_thread_group_dispatch_data_init);   ///< Thread group dispatch data initialization function.
 ARCHI_CONTEXT_FINAL_FUNC(archi_context_thread_group_dispatch_data_final); ///< Thread group dispatch data finalization function.

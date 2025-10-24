@@ -39,10 +39,12 @@ MODULES = [
 
         "archipelago/base",
         "archipelago/util",
-        "archipelago/context",
         "archipelago/log",
 
         ### built-in modules ###
+
+        # context interface
+        "archi/context",
 
         # hierarchical state processor
         "archi/hsp/api",

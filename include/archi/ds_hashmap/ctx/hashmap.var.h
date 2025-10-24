@@ -27,7 +27,7 @@
 #ifndef _ARCHI_DS_HASHMAP_CTX_HASHMAP_VAR_H_
 #define _ARCHI_DS_HASHMAP_CTX_HASHMAP_VAR_H_
 
-#include "archipelago/context/interface.typ.h"
+#include "archi/context/api/interface.typ.h"
 
 ARCHI_CONTEXT_INIT_FUNC(archi_context_hashmap_init);   ///< Hashmap initialization function.
 ARCHI_CONTEXT_FINAL_FUNC(archi_context_hashmap_final); ///< Hashmap finalization function.
