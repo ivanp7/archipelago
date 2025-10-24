@@ -55,7 +55,7 @@ archi_hsp_frame_alloc(
  */
 archi_hsp_state_t
 archi_hsp_current_state(
-        const struct archi_hsp_context *hsp ///< [in] Hierarchical state processor context.
+        archi_hsp_execution_context_t hsp ///< [in] Hierarchical state processor execution context.
 );
 
 /**
@@ -67,7 +67,7 @@ archi_hsp_current_state(
  */
 size_t
 archi_hsp_stack_frames(
-        const struct archi_hsp_context *hsp ///< [in] Hierarchical state processor context.
+        archi_hsp_execution_context_t hsp ///< [in] Hierarchical state processor execution context.
 );
 
 /*****************************************************************************/
@@ -80,7 +80,7 @@ archi_hsp_stack_frames(
 #define ARCHI_HSP_CURRENT_STATE() archi_hsp_current_state(hsp)
 
 /**
- * @brief Access current number of frames on the stack.
+ * @brief Get current number of frames on the stack.
  *
  * This macro utilizes the parameter `hsp` implicitly provided by signature of ARCHI_HSP_STATE_FUNCTION().
  */
@@ -111,7 +111,7 @@ archi_hsp_stack_frames(
  */
 void
 archi_hsp_advance(
-        struct archi_hsp_context *hsp, ///< [in] Hierarchical state processor context.
+        archi_hsp_execution_context_t hsp, ///< [in] Hierarchical state processor execution context.
 
         size_t num_popped_frames, ///< [in] Number of frames to pop from the stack.
 
@@ -129,7 +129,7 @@ archi_hsp_advance(
  */
 void
 archi_hsp_abort(
-        struct archi_hsp_context *hsp, ///< [in] Hierarchical state processor context.
+        archi_hsp_execution_context_t hsp, ///< [in] Hierarchical state processor execution context.
         archi_status_t code ///< [in] Non-zero status code.
 );
 

@@ -20,51 +20,22 @@
 
 /**
  * @file
- * @brief Types forierarchical state processor states for execution branching.
+ * @brief Types used in attached HSP transitions.
  */
 
 #pragma once
-#ifndef _ARCHI_HSP_API_STATE_BRANCH_TYP_H_
-#define _ARCHI_HSP_API_STATE_BRANCH_TYP_H_
+#ifndef _ARCHI_HSP_HSP_ATTACHED_TRANSITION_TYP_H_
+#define _ARCHI_HSP_HSP_ATTACHED_TRANSITION_TYP_H_
 
-#include "archi/hsp/api/state.typ.h"
-
-/**
- * @brief Declarator of a branch selector function.
- *
- * @return Index of the selected branch.
- */
-#define ARCHI_HSP_BRANCH_SELECTOR_FUNC(name) size_t name( \
-        size_t num_branches, /* Number of branches. */ \
-        void *const data) /* Data for the function to operate on. */
+#include "archi/hsp/api/transition.typ.h"
 
 /**
- * @brief Selector function.
+ * @brief Data for a transition attached to a state of a hierarchical state processor.
  */
-typedef ARCHI_HSP_BRANCH_SELECTOR_FUNC((*archi_hsp_branch_selector_func_t));
+typedef struct archi_hsp_attached_transition_data {
+    archi_hsp_transition_t pre;  ///< Transition used before the state execution.
+    archi_hsp_transition_t post; ///< Transition used after the state execution.
+} archi_hsp_attached_transition_data_t;
 
-/*****************************************************************************/
-
-/**
- * @brief Data for a branch state.
- */
-typedef struct archi_hsp_branch_state_data {
-    archi_hsp_branch_selector_func_t selector_fn; ///< Branch selector function.
-    void *selector_data;                          ///< Branch selector data.
-
-    const size_t num_branches;   ///< Number of branches.
-    archi_hsp_frame_t *branch[]; ///< Array of branches.
-} archi_hsp_branch_state_data_t;
-
-/*****************************************************************************/
-
-/**
- * @brief Data for the simple loop selector function.
- */
-typedef struct archi_hsp_branch_select_loop_data {
-    size_t num_iterations; ///< Number of iterations to do.
-    size_t iteration; ///< Number of the current iteration.
-} archi_hsp_branch_select_loop_data_t;
-
-#endif // _ARCHI_HSP_API_STATE_BRANCH_TYP_H_
+#endif // _ARCHI_HSP_HSP_ATTACHED_TRANSITION_TYP_H_
 

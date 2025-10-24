@@ -31,7 +31,9 @@
 
 ARCHI_HSP_STATE_FUNCTION(archi_hsp_state_thread_group_dispatch)
 {
-    archi_thread_group_dispatch_data_t *dispatch_data = ARCHI_HSP_CURRENT_STATE().data;
+    (void) hsp;
+
+    archi_thread_group_dispatch_data_t *dispatch_data = data;
     if ((dispatch_data == NULL) || (dispatch_data->work == NULL))
         return;
 

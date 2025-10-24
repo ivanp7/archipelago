@@ -20,22 +20,34 @@
 
 /**
  * @file
- * @brief Types for attached hierarchical state processor transitions.
+ * @brief Attached hierarchical state processor transitions.
  */
 
-#pragma once
-#ifndef _ARCHI_HSP_API_TRANSITION_ATTACHMENT_TYP_H_
-#define _ARCHI_HSP_API_TRANSITION_ATTACHMENT_TYP_H_
+#include "archi/hsp/hsp/attached_transition.fun.h"
+#include "archi/hsp/hsp/attached_transition.typ.h"
 
-#include "archi/hsp/api/transition.typ.h"
+ARCHI_HSP_TRANSITION_FUNCTION(archi_hsp_transition_attached)
+{
+    (void) trans_state;
 
-/**
- * @brief Transition attached to a state of a hierarchical state processor.
- */
-typedef struct archi_hsp_transition_attachment {
-    archi_hsp_transition_t pre;  ///< Transition used before the state execution.
-    archi_hsp_transition_t post; ///< Transition used after the state execution.
-} archi_hsp_transition_attachment_t;
+    const archi_hsp_attached_transition_data_t *global_attachment = data;
 
-#endif // _ARCHI_HSP_API_TRANSITION_ATTACHMENT_TYP_H_
+    if (prev_state.function != NULL)
+    {
+        const archi_hsp_attached_transition_data_t *attachment = prev_state.metadata;
+        if ((attachment != NULL) && (attachment->post.function != NULL))
+            attachment->post.function(prev_state, next_state, NULL, attachment->post.data);
+    }
+    else if ((global_attachment != NULL) && (global_attachment->pre.function != NULL))
+        global_attachment->pre.function(prev_state, next_state, NULL, global_attachment->pre.data);
+
+    if (next_state.function != NULL)
+    {
+        const archi_hsp_attached_transition_data_t *attachment = next_state.metadata;
+        if ((attachment != NULL) && (attachment->pre.function != NULL))
+            attachment->pre.function(prev_state, next_state, NULL, attachment->pre.data);
+    }
+    else if ((global_attachment != NULL) && (global_attachment->post.function != NULL))
+        global_attachment->post.function(prev_state, next_state, NULL, global_attachment->post.data);
+}
 

@@ -20,22 +20,16 @@
 
 /**
  * @file
- * @brief Application context interface for HSP transition attachment data.
+ * @brief Dummy hierarchical state processor state.
  */
 
-#pragma once
-#ifndef _ARCHI_HSP_CTX_TRANSITION_ATTACHMENT_DATA_VAR_H_
-#define _ARCHI_HSP_CTX_TRANSITION_ATTACHMENT_DATA_VAR_H_
+#include "archi/hsp/hsp/dummy_state.fun.h"
 
-#include "archi/context/api/interface.typ.h"
+ARCHI_HSP_STATE_FUNCTION(archi_hsp_state_dummy)
+{
+    (void) data;
+    (void) hsp;
 
-ARCHI_CONTEXT_INIT_FUNC(archi_context_hsp_transition_attachment_data_init);   ///< HSP transition attachment initialization function.
-ARCHI_CONTEXT_FINAL_FUNC(archi_context_hsp_transition_attachment_data_final); ///< HSP transition attachment finalization function.
-ARCHI_CONTEXT_GET_FUNC(archi_context_hsp_transition_attachment_data_get);     ///< HSP transition attachment field getter function.
-ARCHI_CONTEXT_SET_FUNC(archi_context_hsp_transition_attachment_data_set);     ///< HSP transition attachment field setter function.
-
-extern
-const archi_context_interface_t archi_context_hsp_transition_attachment_data_interface; ///< HSP transition attachment interface.
-
-#endif // _ARCHI_HSP_CTX_TRANSITION_ATTACHMENT_DATA_VAR_H_
+    // do nothing
+}
 

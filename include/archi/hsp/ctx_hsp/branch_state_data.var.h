@@ -20,34 +20,22 @@
 
 /**
  * @file
- * @brief Attached hierarchical state processor transitions.
+ * @brief Application context interface for HSP branch state data.
  */
 
-#include "archi/hsp/api/transition/attachment.fun.h"
-#include "archi/hsp/api/transition/attachment.typ.h"
+#pragma once
+#ifndef _ARCHI_HSP_CTX_HSP_BRANCH_STATE_DATA_VAR_H_
+#define _ARCHI_HSP_CTX_HSP_BRANCH_STATE_DATA_VAR_H_
 
-ARCHI_HSP_TRANSITION_FUNCTION(archi_hsp_transition_attachments_handler)
-{
-    (void) trans_state;
+#include "archi/context/api/interface.typ.h"
 
-    const archi_hsp_transition_attachment_t *global_attachment = data;
+ARCHI_CONTEXT_INIT_FUNC(archi_context_hsp_branch_state_data_init);   ///< HSP branch state data initialization function.
+ARCHI_CONTEXT_FINAL_FUNC(archi_context_hsp_branch_state_data_final); ///< HSP branch state data finalization function.
+ARCHI_CONTEXT_GET_FUNC(archi_context_hsp_branch_state_data_get);     ///< HSP branch state data field getter function.
+ARCHI_CONTEXT_SET_FUNC(archi_context_hsp_branch_state_data_set);     ///< HSP branch state data field setter function.
 
-    if (prev_state.function != NULL)
-    {
-        const archi_hsp_transition_attachment_t *attachment = prev_state.metadata;
-        if ((attachment != NULL) && (attachment->post.function != NULL))
-            attachment->post.function(prev_state, next_state, NULL, attachment->post.data);
-    }
-    else if ((global_attachment != NULL) && (global_attachment->pre.function != NULL))
-        global_attachment->pre.function(prev_state, next_state, NULL, global_attachment->pre.data);
+extern
+const archi_context_interface_t archi_context_hsp_branch_state_data_interface; ///< HSP branch state data interface.
 
-    if (next_state.function != NULL)
-    {
-        const archi_hsp_transition_attachment_t *attachment = next_state.metadata;
-        if ((attachment != NULL) && (attachment->pre.function != NULL))
-            attachment->pre.function(prev_state, next_state, NULL, attachment->pre.data);
-    }
-    else if ((global_attachment != NULL) && (global_attachment->post.function != NULL))
-        global_attachment->post.function(prev_state, next_state, NULL, global_attachment->post.data);
-}
+#endif // _ARCHI_HSP_CTX_HSP_BRANCH_STATE_DATA_VAR_H_
 

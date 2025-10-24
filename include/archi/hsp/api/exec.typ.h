@@ -20,22 +20,21 @@
 
 /**
  * @file
- * @brief Application context interface for HSP branch state data.
+ * @brief HSP execution context type.
  */
 
 #pragma once
-#ifndef _ARCHI_HSP_CTX_STATE_BRANCH_DATA_VAR_H_
-#define _ARCHI_HSP_CTX_STATE_BRANCH_DATA_VAR_H_
+#ifndef _ARCHI_HSP_API_EXEC_TYP_H_
+#define _ARCHI_HSP_API_EXEC_TYP_H_
 
-#include "archi/context/api/interface.typ.h"
+#include <stddef.h> // for size_t
 
-ARCHI_CONTEXT_INIT_FUNC(archi_context_hsp_branch_state_data_init);   ///< HSP branch state data initialization function.
-ARCHI_CONTEXT_FINAL_FUNC(archi_context_hsp_branch_state_data_final); ///< HSP branch state data finalization function.
-ARCHI_CONTEXT_GET_FUNC(archi_context_hsp_branch_state_data_get);     ///< HSP branch state data field getter function.
-ARCHI_CONTEXT_SET_FUNC(archi_context_hsp_branch_state_data_set);     ///< HSP branch state data field setter function.
+struct archi_hsp_execution_context;
 
-extern
-const archi_context_interface_t archi_context_hsp_branch_state_data_interface; ///< HSP branch state data interface.
+/**
+ * @brief Pointer to HSP execution context.
+ */
+typedef struct archi_hsp_execution_context *archi_hsp_execution_context_t;
 
-#endif // _ARCHI_HSP_CTX_STATE_BRANCH_DATA_VAR_H_
+#endif // _ARCHI_HSP_API_EXEC_TYP_H_
 

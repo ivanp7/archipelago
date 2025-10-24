@@ -50,6 +50,8 @@ MODULES = [
         # hierarchical state processor
         "archi/hsp/api",
         "archi/hsp/ctx",
+        "archi/hsp/hsp",
+        "archi/hsp/ctx_hsp",
 
         # memory
         "archi/memory/api",

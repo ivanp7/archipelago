@@ -30,30 +30,27 @@
 
 ARCHI_HSP_STATE_FUNCTION(archi_hsp_state_thread_flag_barrier_acquire)
 {
-    archi_thread_flag_barrier_t barrier = ARCHI_HSP_CURRENT_STATE().data;
+    (void) hsp;
 
-    archi_status_t code = archi_thread_flag_barrier_acquire(barrier);
-
+    archi_status_t code = archi_thread_flag_barrier_acquire(data);
     if (code != 0)
         archi_log_error(__func__, "archi_thread_flag_barrier_acquire() -> %i", code);
 }
 
 ARCHI_HSP_STATE_FUNCTION(archi_hsp_state_thread_flag_barrier_release)
 {
-    archi_thread_flag_barrier_t barrier = ARCHI_HSP_CURRENT_STATE().data;
+    (void) hsp;
 
-    archi_status_t code = archi_thread_flag_barrier_release(barrier);
-
+    archi_status_t code = archi_thread_flag_barrier_release(data);
     if (code != 0)
         archi_log_error(__func__, "archi_thread_flag_barrier_release() -> %i", code);
 }
 
 ARCHI_HSP_STATE_FUNCTION(archi_hsp_state_thread_flag_barrier_wait)
 {
-    archi_thread_flag_barrier_t barrier = ARCHI_HSP_CURRENT_STATE().data;
+    (void) hsp;
 
-    archi_status_t code = archi_thread_flag_barrier_wait(barrier);
-
+    archi_status_t code = archi_thread_flag_barrier_wait(data);
     if (code != 0)
         archi_log_error(__func__, "archi_thread_flag_barrier_wait() -> %i", code);
 }

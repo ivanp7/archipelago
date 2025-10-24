@@ -20,14 +20,19 @@
 
 /**
  * @file
- * @brief Dummy hierarchical state processor state.
+ * @brief Attached hierarchical state processor transitions.
  */
 
-#include "archi/hsp/api/state/dummy.fun.h"
+#pragma once
+#ifndef _ARCHI_HSP_HSP_ATTACHED_TRANSITION_FUN_H_
+#define _ARCHI_HSP_HSP_ATTACHED_TRANSITION_FUN_H_
 
-ARCHI_HSP_STATE_FUNCTION(archi_hsp_state_dummy)
-{
-    (void) hsp;
-    // do nothing
-}
+#include "archi/hsp/api/transition.typ.h"
+
+/**
+ * @brief Transition attached to a state of a hierarchical state processor.
+ */
+ARCHI_HSP_TRANSITION_FUNCTION(archi_hsp_transition_attached);
+
+#endif // _ARCHI_HSP_HSP_ATTACHED_TRANSITION_FUN_H_
 

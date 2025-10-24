@@ -23,7 +23,7 @@
  * @brief Hierarchical state processor states for execution branching.
  */
 
-#include "archi/hsp/api/state/branch.fun.h"
+#include "archi/hsp/hsp/branch_state.fun.h"
 #include "archi/hsp/api/state.fun.h"
 #include "archipelago/util/size.def.h"
 
@@ -56,7 +56,7 @@ archi_hsp_branch_state_data_alloc(
 
 ARCHI_HSP_STATE_FUNCTION(archi_hsp_state_advance)
 {
-    const archi_hsp_frame_t *frame = ARCHI_HSP_CURRENT_STATE().data;
+    const archi_hsp_frame_t *frame = data;
     if (frame == NULL)
         return;
 
@@ -65,7 +65,7 @@ ARCHI_HSP_STATE_FUNCTION(archi_hsp_state_advance)
 
 ARCHI_HSP_STATE_FUNCTION(archi_hsp_state_branch)
 {
-    const archi_hsp_branch_state_data_t *state_data = ARCHI_HSP_CURRENT_STATE().data;
+    const archi_hsp_branch_state_data_t *state_data = data;
     if ((state_data == NULL) || (state_data->num_branches == 0))
         return;
 

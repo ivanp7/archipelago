@@ -24,10 +24,10 @@
  */
 
 #pragma once
-#ifndef _ARCHI_HSP_API_STATE_BRANCH_FUN_H_
-#define _ARCHI_HSP_API_STATE_BRANCH_FUN_H_
+#ifndef _ARCHI_HSP_HSP_BRANCH_STATE_FUN_H_
+#define _ARCHI_HSP_HSP_BRANCH_STATE_FUN_H_
 
-#include "archi/hsp/api/state/branch.typ.h"
+#include "archi/hsp/hsp/branch_state.typ.h"
 
 /**
  * @brief Allocate branch state data.
@@ -80,5 +80,5 @@ ARCHI_HSP_BRANCH_SELECTOR_FUNC(archi_hsp_branch_select_random);
  */
 ARCHI_HSP_BRANCH_SELECTOR_FUNC(archi_hsp_branch_select_loop);
 
-#endif // _ARCHI_HSP_API_STATE_BRANCH_FUN_H_
+#endif // _ARCHI_HSP_HSP_BRANCH_STATE_FUN_H_
 

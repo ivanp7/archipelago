@@ -24,8 +24,8 @@
  */
 
 #pragma once
-#ifndef _ARCHI_HSP_API_STATE_DUMMY_FUN_H_
-#define _ARCHI_HSP_API_STATE_DUMMY_FUN_H_
+#ifndef _ARCHI_HSP_HSP_DUMMY_STATE_FUN_H_
+#define _ARCHI_HSP_HSP_DUMMY_STATE_FUN_H_
 
 #include "archi/hsp/api/state.typ.h"
 
@@ -34,5 +34,5 @@
  */
 ARCHI_HSP_STATE_FUNCTION(archi_hsp_state_dummy);
 
-#endif // _ARCHI_HSP_API_STATE_DUMMY_FUN_H_
+#endif // _ARCHI_HSP_HSP_DUMMY_STATE_FUN_H_
 

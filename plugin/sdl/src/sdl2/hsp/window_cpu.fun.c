@@ -13,7 +13,9 @@
 
 ARCHI_HSP_STATE_FUNCTION(archi_sdl2_hsp_state_window_cpu_render)
 {
-    archi_sdl2_window_cpu_render_data_t *render_data = ARCHI_HSP_CURRENT_STATE().data;
+    (void) hsp;
+
+    archi_sdl2_window_cpu_render_data_t *render_data = data;
     if ((render_data == NULL) || (render_data->window == NULL) || (render_data->texture == NULL))
         return;
 

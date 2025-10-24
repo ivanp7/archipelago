@@ -23,8 +23,8 @@
  * @brief Application context interface for HSP transition attachment data.
  */
 
-#include "archi/hsp/ctx/transition/attachment_data.var.h"
-#include "archi/hsp/api/transition/attachment.typ.h"
+#include "archi/hsp/ctx_hsp/attached_transition_data.var.h"
+#include "archi/hsp/hsp/attached_transition.typ.h"
 #include "archipelago/base/ref_count.fun.h"
 
 #include <stdlib.h> // for malloc(), free()
@@ -32,8 +32,8 @@
 #include <stdalign.h> // for alignof()
 #include <stdbool.h>
 
-struct archi_context_hsp_transition_attachment_data_data {
-    archi_pointer_t transition_attachment;
+struct archi_context_hsp_attached_transition_data_data {
+    archi_pointer_t attached_transition;
 
     // References
     archi_pointer_t pre_function;
@@ -42,7 +42,7 @@ struct archi_context_hsp_transition_attachment_data_data {
     archi_pointer_t post_data;
 };
 
-ARCHI_CONTEXT_INIT_FUNC(archi_context_hsp_transition_attachment_data_init)
+ARCHI_CONTEXT_INIT_FUNC(archi_context_hsp_attached_transition_data_init)
 {
     archi_pointer_t pre_function = {0};
     archi_pointer_t pre_data = {0};
@@ -104,18 +104,18 @@ ARCHI_CONTEXT_INIT_FUNC(archi_context_hsp_transition_attachment_data_init)
             return ARCHI_STATUS_EKEY;
     }
 
-    struct archi_context_hsp_transition_attachment_data_data *context_data = malloc(sizeof(*context_data));
+    struct archi_context_hsp_attached_transition_data_data *context_data = malloc(sizeof(*context_data));
     if (context_data == NULL)
         return ARCHI_STATUS_ENOMEMORY;
 
-    archi_hsp_transition_attachment_t *attachment = malloc(sizeof(*attachment));
+    archi_hsp_attached_transition_data_t *attachment = malloc(sizeof(*attachment));
     if (attachment == NULL)
     {
         free(context_data);
         return ARCHI_STATUS_ENOMEMORY;
     }
 
-    *attachment = (archi_hsp_transition_attachment_t){
+    *attachment = (archi_hsp_attached_transition_data_t){
         .pre = {
             .function = (archi_hsp_transition_function_t)pre_function.fptr,
             .data = pre_data.ptr,
@@ -126,13 +126,13 @@ ARCHI_CONTEXT_INIT_FUNC(archi_context_hsp_transition_attachment_data_init)
         },
     };
 
-    *context_data = (struct archi_context_hsp_transition_attachment_data_data){
-        .transition_attachment = {
+    *context_data = (struct archi_context_hsp_attached_transition_data_data){
+        .attached_transition = {
             .ptr = attachment,
             .element = {
                 .num_of = 1,
                 .size = sizeof(*attachment),
-                .alignment = alignof(archi_hsp_transition_attachment_t),
+                .alignment = alignof(archi_hsp_attached_transition_data_t),
             },
         },
         .pre_function = pre_function,
@@ -150,23 +150,23 @@ ARCHI_CONTEXT_INIT_FUNC(archi_context_hsp_transition_attachment_data_init)
     return 0;
 }
 
-ARCHI_CONTEXT_FINAL_FUNC(archi_context_hsp_transition_attachment_data_final)
+ARCHI_CONTEXT_FINAL_FUNC(archi_context_hsp_attached_transition_data_final)
 {
-    struct archi_context_hsp_transition_attachment_data_data *context_data =
-        (struct archi_context_hsp_transition_attachment_data_data*)context;
+    struct archi_context_hsp_attached_transition_data_data *context_data =
+        (struct archi_context_hsp_attached_transition_data_data*)context;
 
     archi_reference_count_decrement(context_data->pre_function.ref_count);
     archi_reference_count_decrement(context_data->pre_data.ref_count);
     archi_reference_count_decrement(context_data->post_function.ref_count);
     archi_reference_count_decrement(context_data->post_data.ref_count);
-    free(context_data->transition_attachment.ptr);
+    free(context_data->attached_transition.ptr);
     free(context_data);
 }
 
-ARCHI_CONTEXT_GET_FUNC(archi_context_hsp_transition_attachment_data_get)
+ARCHI_CONTEXT_GET_FUNC(archi_context_hsp_attached_transition_data_get)
 {
-    struct archi_context_hsp_transition_attachment_data_data *context_data =
-        (struct archi_context_hsp_transition_attachment_data_data*)context;
+    struct archi_context_hsp_attached_transition_data_data *context_data =
+        (struct archi_context_hsp_attached_transition_data_data*)context;
 
     if (strcmp("pre.function", slot.name) == 0)
     {
@@ -202,12 +202,12 @@ ARCHI_CONTEXT_GET_FUNC(archi_context_hsp_transition_attachment_data_get)
     return 0;
 }
 
-ARCHI_CONTEXT_SET_FUNC(archi_context_hsp_transition_attachment_data_set)
+ARCHI_CONTEXT_SET_FUNC(archi_context_hsp_attached_transition_data_set)
 {
-    struct archi_context_hsp_transition_attachment_data_data *context_data =
-        (struct archi_context_hsp_transition_attachment_data_data*)context;
+    struct archi_context_hsp_attached_transition_data_data *context_data =
+        (struct archi_context_hsp_attached_transition_data_data*)context;
 
-    archi_hsp_transition_attachment_t *attachment = context_data->transition_attachment.ptr;
+    archi_hsp_attached_transition_data_t *attachment = context_data->attached_transition.ptr;
 
     if (strcmp("pre.function", slot.name) == 0)
     {
@@ -267,10 +267,10 @@ ARCHI_CONTEXT_SET_FUNC(archi_context_hsp_transition_attachment_data_set)
     return 0;
 }
 
-const archi_context_interface_t archi_context_hsp_transition_attachment_data_interface = {
-    .init_fn = archi_context_hsp_transition_attachment_data_init,
-    .final_fn = archi_context_hsp_transition_attachment_data_final,
-    .get_fn = archi_context_hsp_transition_attachment_data_get,
-    .set_fn = archi_context_hsp_transition_attachment_data_set,
+const archi_context_interface_t archi_context_hsp_attached_transition_data_interface = {
+    .init_fn = archi_context_hsp_attached_transition_data_init,
+    .final_fn = archi_context_hsp_attached_transition_data_final,
+    .get_fn = archi_context_hsp_attached_transition_data_get,
+    .set_fn = archi_context_hsp_attached_transition_data_set,
 };
 

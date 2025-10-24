@@ -20,51 +20,22 @@
 
 /**
  * @file
- * @brief Types for hierarchical state processor states.
+ * @brief Application context interface for HSP attached transition data.
  */
 
 #pragma once
-#ifndef _ARCHI_HSP_API_STATE_TYP_H_
-#define _ARCHI_HSP_API_STATE_TYP_H_
+#ifndef _ARCHI_HSP_CTX_HSP_ATTACHED_TRANSITION_DATA_VAR_H_
+#define _ARCHI_HSP_CTX_HSP_ATTACHED_TRANSITION_DATA_VAR_H_
 
-#include "archi/hsp/api/exec.typ.h"
+#include "archi/context/api/interface.typ.h"
 
-#include <stddef.h> // for size_t
+ARCHI_CONTEXT_INIT_FUNC(archi_context_hsp_attached_transition_data_init);   ///< HSP attached transition initialization function.
+ARCHI_CONTEXT_FINAL_FUNC(archi_context_hsp_attached_transition_data_final); ///< HSP attached transition finalization function.
+ARCHI_CONTEXT_GET_FUNC(archi_context_hsp_attached_transition_data_get);     ///< HSP attached transition field getter function.
+ARCHI_CONTEXT_SET_FUNC(archi_context_hsp_attached_transition_data_set);     ///< HSP attached transition field setter function.
 
-/**
- * @brief Signature of a state function.
- *
- * @warning Use of variable-length arrays is not allowed in state functions,
- * as it will lead to memory leaks due to the hierarchical state processor implementation details.
- */
-#define ARCHI_HSP_STATE_FUNCTION(name) void name( \
-        void *const restrict data, /* Current state data. */ \
-        const restrict archi_hsp_execution_context_t hsp) /* Hierarchical state processor execution context. */
+extern
+const archi_context_interface_t archi_context_hsp_attached_transition_data_interface; ///< HSP attached transition interface.
 
-/**
- * @brief State function type.
- */
-typedef ARCHI_HSP_STATE_FUNCTION((*archi_hsp_state_function_t));
-
-/*****************************************************************************/
-
-/**
- * @brief State of a hierarchical state processor.
- */
-typedef struct archi_hsp_state {
-    archi_hsp_state_function_t function; ///< State function.
-    void *data; ///< State data.
-
-    void *metadata; ///< State metadata for a transition function.
-} archi_hsp_state_t;
-
-/**
- * @brief Frame of a hierarchical state processor -- a sequence of states.
- */
-typedef struct archi_hsp_frame {
-    const size_t num_states;   ///< Number of states in the frame.
-    archi_hsp_state_t state[]; ///< Frame states.
-} archi_hsp_frame_t;
-
-#endif // _ARCHI_HSP_API_STATE_TYP_H_
+#endif // _ARCHI_HSP_CTX_HSP_ATTACHED_TRANSITION_DATA_VAR_H_
 

@@ -12,7 +12,9 @@
 
 ARCHI_HSP_STATE_FUNCTION(archi_opencl_hsp_state_wait_for_events)
 {
-    archi_opencl_event_array_t *event_array = ARCHI_HSP_CURRENT_STATE().data;
+    (void) hsp;
+
+    archi_opencl_event_array_t *event_array = data;
     if ((event_array == NULL) || (event_array->num_events == 0))
         return;
 
@@ -27,7 +29,9 @@ ARCHI_HSP_STATE_FUNCTION(archi_opencl_hsp_state_wait_for_events)
 
 ARCHI_HSP_STATE_FUNCTION(archi_opencl_hsp_state_kernel_enqueue)
 {
-    archi_opencl_kernel_enqueue_data_t *enqueue_data = ARCHI_HSP_CURRENT_STATE().data;
+    (void) hsp;
+
+    archi_opencl_kernel_enqueue_data_t *enqueue_data = data;
     if ((enqueue_data == NULL) || (enqueue_data->global_work_size == NULL))
         return;
 

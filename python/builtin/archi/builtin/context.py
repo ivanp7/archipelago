@@ -49,7 +49,7 @@ _TYPE_HSP_TRANSITION = PrivateType('archi.hsp.transition')
 _TYPE_HSP_TRANSITION_FUNC = PrivateType('archi.hsp.transition.function')
 _TYPE_HSP_BRANCH_STATE_DATA = PrivateType('archi.hsp.state.branch.data')
 _TYPE_HSP_BRANCH_STATE_SELECTOR_FUNC = PrivateType('archi.hsp.state.branch.selector_func')
-_TYPE_HSP_TRANSITION_ATTACHMENT_DATA = PrivateType('archi.hsp.transition.attachment.data')
+_TYPE_HSP_ATTACHED_TRANSITION_DATA = PrivateType('archi.hsp.transition.attached.data')
 
 _TYPE_HASHMAP = PrivateType('archi.hashmap')
 _TYPE_HASHMAP_ALLOC_PARAMS = PrivateType('archi.hashmap.alloc_params')
@@ -182,8 +182,8 @@ class HSPBranchStateDataContext(ContextWhitelistable):
             }
 
 
-class HSPTransitionAttachmentDataContext(ContextWhitelistable):
-    """Context type for HSP transition attachment data.
+class HSPAttachedTransitionDataContext(ContextWhitelistable):
+    """Context type for HSP attached transition data.
     """
     class InitParameters(ParametersWhitelistable):
         PARAMETERS = {
@@ -193,9 +193,9 @@ class HSPTransitionAttachmentDataContext(ContextWhitelistable):
                 'post_data': None,
                 }
 
-    INTERFACE_SYMBOL = 'archi_context_hsp_transition_attachment_data_interface'
+    INTERFACE_SYMBOL = 'archi_context_hsp_attached_transition_data_interface'
 
-    DATA_TYPE = _TYPE_HSP_TRANSITION_ATTACHMENT_DATA
+    DATA_TYPE = _TYPE_HSP_ATTACHED_TRANSITION_DATA
 
     INIT_PARAMETERS_CLASS = InitParameters
 
@@ -726,7 +726,7 @@ class TimerContext(ContextWhitelistable):
 
 CONTEXT_CLASSES = [
         Parameters.Context, PointerContext, ArrayContext,
-        HSPFrameContext, HSPTransitionContext, HSPBranchStateDataContext, HSPTransitionAttachmentDataContext,
+        HSPFrameContext, HSPTransitionContext, HSPBranchStateDataContext, HSPAttachedTransitionDataContext,
         HashmapContext, LockFreeQueueContext, EnvVarContext, SignalHandlerContext,
         MemoryContext, MemoryMappingContext, MemoryMapCopyUnmapDataContext,
         FileContext, LibraryContext,

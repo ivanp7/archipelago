@@ -20,19 +20,51 @@
 
 /**
  * @file
- * @brief Attached hierarchical state processor transitions.
+ * @brief Types used in HSP branch states.
  */
 
 #pragma once
-#ifndef _ARCHI_HSP_API_TRANSITION_ATTACHMENT_FUN_H_
-#define _ARCHI_HSP_API_TRANSITION_ATTACHMENT_FUN_H_
+#ifndef _ARCHI_HSP_HSP_BRANCH_STATE_TYP_H_
+#define _ARCHI_HSP_HSP_BRANCH_STATE_TYP_H_
 
-#include "archi/hsp/api/transition.typ.h"
+#include "archi/hsp/api/state.typ.h"
 
 /**
- * @brief Transition attached to a state of a hierarchical state processor.
+ * @brief Declarator of a branch selector function.
+ *
+ * @return Index of the selected branch.
  */
-ARCHI_HSP_TRANSITION_FUNCTION(archi_hsp_transition_attachments_handler);
+#define ARCHI_HSP_BRANCH_SELECTOR_FUNC(name) size_t name( \
+        size_t num_branches, /* Number of branches. */ \
+        void *const data) /* Data for the function to operate on. */
 
-#endif // _ARCHI_HSP_API_TRANSITION_ATTACHMENT_FUN_H_
+/**
+ * @brief Selector function.
+ */
+typedef ARCHI_HSP_BRANCH_SELECTOR_FUNC((*archi_hsp_branch_selector_func_t));
+
+/*****************************************************************************/
+
+/**
+ * @brief Data for a branch state.
+ */
+typedef struct archi_hsp_branch_state_data {
+    archi_hsp_branch_selector_func_t selector_fn; ///< Branch selector function.
+    void *selector_data;                          ///< Branch selector data.
+
+    const size_t num_branches;   ///< Number of branches.
+    archi_hsp_frame_t *branch[]; ///< Array of branches.
+} archi_hsp_branch_state_data_t;
+
+/*****************************************************************************/
+
+/**
+ * @brief Data for the simple loop selector function.
+ */
+typedef struct archi_hsp_branch_select_loop_data {
+    size_t num_iterations; ///< Number of iterations to do.
+    size_t iteration; ///< Number of the current iteration.
+} archi_hsp_branch_select_loop_data_t;
+
+#endif // _ARCHI_HSP_HSP_BRANCH_STATE_TYP_H_
 

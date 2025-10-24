@@ -23,8 +23,8 @@
  * @brief Application context interface for HSP branch state data.
  */
 
-#include "archi/hsp/ctx/state/branch_data.var.h"
-#include "archi/hsp/api/state/branch.fun.h"
+#include "archi/hsp/ctx_hsp/branch_state_data.var.h"
+#include "archi/hsp/hsp/branch_state.fun.h"
 #include "archipelago/base/ref_count.fun.h"
 #include "archipelago/util/size.def.h"
 

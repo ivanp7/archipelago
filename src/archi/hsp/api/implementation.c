@@ -60,7 +60,7 @@ enum archi_hsp_mode {
     J_TRANSITION, // non-zero: setjmp() returns after jump
 };
 
-struct archi_hsp_context {
+struct archi_hsp_execution_context {
     archi_hsp_state_t current_state;
     archi_hsp_transition_t transition;
 
@@ -81,14 +81,14 @@ struct archi_hsp_context {
 
 archi_hsp_state_t
 archi_hsp_current_state(
-        const struct archi_hsp_context *context)
+        archi_hsp_execution_context_t context)
 {
     return (context != NULL) ? context->current_state : (archi_hsp_state_t){0};
 }
 
 size_t
 archi_hsp_stack_frames(
-        const struct archi_hsp_context *context)
+        archi_hsp_execution_context_t context)
 {
     return (context != NULL) ? context->num_stack_frames : 0;
 }
@@ -98,7 +98,7 @@ archi_hsp_stack_frames(
 static
 void
 archi_hsp_state_context_stack_reserve(
-        struct archi_hsp_context *context,
+        archi_hsp_execution_context_t context,
         size_t size)
 {
     if (context->stack_capacity >= context->stack_size + size)
@@ -129,7 +129,7 @@ archi_hsp_state_context_stack_reserve(
 static
 void
 archi_hsp_advance_impl(
-        struct archi_hsp_context *context,
+        archi_hsp_execution_context_t context,
 
         size_t num_popped_frames,
 
@@ -171,14 +171,14 @@ archi_hsp_advance_impl(
 static
 void
 archi_hsp_longjump(
-        struct archi_hsp_context *context)
+        archi_hsp_execution_context_t context)
 {
     longjmp(context->env, J_TRANSITION);
 }
 
 void
 archi_hsp_advance(
-        struct archi_hsp_context *context,
+        archi_hsp_execution_context_t context,
 
         size_t num_popped_frames,
 
@@ -201,7 +201,7 @@ archi_hsp_advance(
 
 void
 archi_hsp_abort(
-        struct archi_hsp_context *context,
+        archi_hsp_execution_context_t context,
         archi_status_t code)
 {
     if ((context == NULL) || (context->mode != J_STATE) || (code == 0))
@@ -216,7 +216,7 @@ archi_hsp_abort(
 static
 bool
 archi_hsp_transition(
-        struct archi_hsp_context *const context)
+        archi_hsp_execution_context_t context)
 {
     archi_hsp_state_t next_state = {0}, trans_state = {0};
 
@@ -254,7 +254,7 @@ archi_hsp_transition(
 static
 void
 archi_hsp_loop(
-        struct archi_hsp_context *const context)
+        archi_hsp_execution_context_t context)
 {
     // This function is needed to get rid of local variables in the stack frame,
     // as setjmp() requires modifiable local variables to be volatile.
@@ -269,9 +269,11 @@ archi_hsp_loop(
             case J_STATE: // hasn't jumped yet, call the state function
                 context->mode = J_STATE;
                 {
-                    /***************************************/
-                    context->current_state.function(context);
-                    /***************************************/
+                    /**********************************/
+                    context->current_state.function(
+                            context->current_state.data,
+                            context);
+                    /**********************************/
                 }
                 // fallthrough
             case J_TRANSITION: // returned from the state function
@@ -293,7 +295,7 @@ archi_hsp_execute(
         return 0;
 
     // Initialize the context
-    struct archi_hsp_context context = {
+    struct archi_hsp_execution_context context = {
         .transition = transition,
 
         .stack_capacity = ARCHI_HSP_INITIAL_STACK_CAPACITY,
