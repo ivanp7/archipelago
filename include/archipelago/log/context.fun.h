@@ -27,16 +27,11 @@
 #ifndef _ARCHIPELAGO_LOG_CONTEXT_FUN_H_
 #define _ARCHIPELAGO_LOG_CONTEXT_FUN_H_
 
+#include "archipelago/log/context.typ.h"
+
 #include <stdbool.h>
 
 struct timespec;
-
-struct archi_log_context;
-
-/**
- * @brief Pointer to logging context.
- */
-typedef struct archi_log_context *archi_log_context_t;
 
 /**
  * @brief Initialize the logging module.

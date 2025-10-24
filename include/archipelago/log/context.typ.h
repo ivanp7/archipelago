@@ -20,31 +20,19 @@
 
 /**
  * @file
- * @brief The logger context type.
+ * @brief Logging context type.
  */
 
 #pragma once
-#ifndef _SRC_ARCHIPELAGO_LOG_CONTEXT_TYP_H_
-#define _SRC_ARCHIPELAGO_LOG_CONTEXT_TYP_H_
+#ifndef _ARCHIPELAGO_LOG_CONTEXT_TYP_H_
+#define _ARCHIPELAGO_LOG_CONTEXT_TYP_H_
 
-#include <stdio.h> // for FILE
-#include <time.h> // for struct timespec
-#include <stdbool.h>
-#ifndef __STDC_NO_ATOMICS__
-#  include <stdatomic.h> // for atomic_flag
-#endif
+struct archi_log_context;
 
-struct archi_log_context {
-    FILE *stream; ///< Stream to print messages to.
+/**
+ * @brief Pointer to logging context.
+ */
+typedef struct archi_log_context *archi_log_context_t;
 
-    struct timespec start_time; ///< Application start time.
-    int verbosity_level;        ///< Log verbosity level.
-    bool colorful;              ///< Whether color is used in log messages.
-
-#ifndef __STDC_NO_ATOMICS__
-    atomic_flag spinlock; ///< Spinlock for message printing atomicity.
-#endif
-};
-
-#endif // _SRC_ARCHIPELAGO_LOG_CONTEXT_TYP_H_
+#endif // _ARCHIPELAGO_LOG_CONTEXT_TYP_H_
 
