@@ -30,6 +30,13 @@
 #include "archi/ipc_signal/api/signal.typ.h"
 #include "archi/ipc_signal/api/handler.typ.h"
 
+struct archi_signal_management_context;
+
+/**
+ * @brief Pointer to signal management context.
+ */
+typedef struct archi_signal_management_context *archi_signal_management_context_t;
+
 /**
  * @brief Parameters for starting the signal management subsystem (archi_signal_management_start()).
  *
