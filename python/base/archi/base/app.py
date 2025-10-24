@@ -29,7 +29,7 @@ from types import SimpleNamespace
 from .memory import CValue, MemoryBlock, Encoder, StringEncoder
 from .ctypes.base import (
         archi_array_layout_t,
-        archi_pointer_flags_t,
+        archi_pointer_attributes_t,
         archi_pointer_t,
         archi_parameter_list_t,
         )
@@ -658,7 +658,7 @@ class ContextWhitelistable(Context):
 
 _TYPE_SIZE = PublicType(c.c_size_t)
 _TYPE_ARRAY_LAYOUT = PublicType(archi_array_layout_t, constr=lambda v: archi_array_layout_t(*v))
-_TYPE_POINTER_FLAGS = PublicType(archi_pointer_flags_t)
+_TYPE_POINTER_FLAGS = PublicType(archi_pointer_attributes_t)
 _TYPE_POINTER = PublicType(archi_pointer_t)
 _TYPE_VOID_P = PublicType(c.c_void_p)
 

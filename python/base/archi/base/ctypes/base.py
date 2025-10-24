@@ -54,7 +54,7 @@ class archi_array_layout_t(c.Structure):
         self.alignment = alignment
 
 
-archi_pointer_flags_t = c.c_uint64
+archi_pointer_attributes_t = c.c_uint64
 
 
 archi_function_t = c.CFUNCTYPE(None)
@@ -74,7 +74,7 @@ class archi_pointer_t(c.Structure):
     _anonymous_ = ['as']
     _fields_ = [('as', union),
                 ('ref_count', c.c_void_p),
-                ('flags', archi_pointer_flags_t),
+                ('flags', archi_pointer_attributes_t),
                 ('element', archi_array_layout_t)]
 
     def __init__(self, layout: 'archi_array_layout_t', flags: 'int' = 0):

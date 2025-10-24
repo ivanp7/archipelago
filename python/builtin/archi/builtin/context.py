@@ -28,7 +28,7 @@ from archi.base.app import (
         Context, ContextWhitelistable, Parameters, ParametersWhitelistable,
         PointerContext, ArrayContext
         )
-from archi.base.ctypes.base import archi_array_layout_t, archi_pointer_flags_t
+from archi.base.ctypes.base import archi_array_layout_t, archi_pointer_attributes_t
 from archi.base.ctypes.context import archi_context_interface_t
 
 from .ctypes.signal import archi_signal_watch_set_t
@@ -39,7 +39,7 @@ _TYPE_BOOL = PublicType(c.c_byte, constr=lambda v: c.c_byte(bool(v)))
 _TYPE_INT = PublicType(c.c_int)
 _TYPE_SIZE = PublicType(c.c_size_t)
 _TYPE_ARRAY_LAYOUT = PublicType(archi_array_layout_t, constr=lambda v: archi_array_layout_t(*v))
-_TYPE_POINTER_FLAGS = PublicType(archi_pointer_flags_t)
+_TYPE_POINTER_FLAGS = PublicType(archi_pointer_attributes_t)
 _TYPE_STR = PublicType(c.c_char, array=True, constr=lambda v: c.create_string_buffer(v.encode()))
 
 _TYPE_HSP_STATE = PrivateType('archi.hsp.state')

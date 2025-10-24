@@ -23,7 +23,7 @@
 
 import ctypes as c
 
-from .base import archi_pointer_flags_t, archi_pointer_t, archi_parameter_list_t
+from .base import archi_pointer_attributes_t, archi_pointer_t, archi_parameter_list_t
 from .context import archi_context_slot_t
 
 
@@ -82,7 +82,7 @@ class archi_exe_registry_instr__init_array_t(c.Structure):
     _fields_ = [('base', archi_exe_registry_instr_base_t),
                 ('key', c.c_char_p),
                 ('num_elements', c.c_size_t),
-                ('flags', archi_pointer_flags_t)]
+                ('flags', archi_pointer_attributes_t)]
 
 
 class archi_exe_registry_instr__init_from_context_t(c.Structure):

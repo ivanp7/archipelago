@@ -37,7 +37,7 @@ struct archi_context_array_data {
 
 ARCHI_CONTEXT_INIT_FUNC(archi_context_array_init)
 {
-    archi_pointer_flags_t flags = 0;
+    archi_pointer_attributes_t flags = 0;
     size_t num_elements = 0;
 
     bool param_flags_set = false;
@@ -67,7 +67,7 @@ ARCHI_CONTEXT_INIT_FUNC(archi_context_array_init)
                     (params->value.ptr == NULL))
                 return ARCHI_STATUS_EVALUE;
 
-            flags = *(archi_pointer_flags_t*)params->value.ptr;
+            flags = *(archi_pointer_attributes_t*)params->value.ptr;
         }
         else
             return ARCHI_STATUS_EKEY;

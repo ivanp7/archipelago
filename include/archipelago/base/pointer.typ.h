@@ -50,10 +50,10 @@
 typedef void (*archi_function_t)(void);
 
 /**
- * @typedef archi_pointer_flags_t
- * @brief Flags describing pointer attributes.
+ * @typedef archi_pointer_attributes_t
+ * @brief Fixed-width integer for storing pointer attributes.
  */
-typedef uint64_t archi_pointer_flags_t;
+typedef uint64_t archi_pointer_attributes_t;
 
 /**
  * @struct archi_pointer_t
@@ -87,8 +87,10 @@ typedef struct archi_pointer {
         void *ptr;             ///< Pointer to a resource (a single object or array).
         archi_function_t fptr; ///< Generic function pointer (to single function or array).
     };
+
     archi_reference_count_t ref_count; ///< Reference count for the resource.
-    archi_pointer_flags_t flags; ///< Flags describing pointer attributes.
+
+    archi_pointer_attributes_t flags; ///< Pointer attributes.
     archi_array_layout_t element; ///< Layout of the data array.
 } archi_pointer_t;
 
@@ -105,7 +107,7 @@ typedef struct archi_pointer {
  * @note This flag is stored in the highest-order bit.
  */
 #define ARCHI_POINTER_FLAG_FUNCTION         \
-    ((archi_pointer_flags_t)1 << (sizeof(archi_pointer_flags_t) * CHAR_BIT - 1))
+    ((archi_pointer_attributes_t)1 << (sizeof(archi_pointer_attributes_t) * CHAR_BIT - 1))
 
 /**
  * @def ARCHI_POINTER_FLAG_WRITABLE
@@ -143,7 +145,7 @@ typedef struct archi_pointer {
  * @brief Mask of bits available for user-defined flags.
  */
 #define ARCHI_POINTER_USER_FLAGS_MASK       \
-    (((archi_pointer_flags_t)1 << ARCHI_POINTER_USER_FLAGS_BITS) - 1)
+    (((archi_pointer_attributes_t)1 << ARCHI_POINTER_USER_FLAGS_BITS) - 1)
 
 #endif // _ARCHIPELAGO_BASE_POINTER_TYP_H_
 

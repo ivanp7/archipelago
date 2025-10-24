@@ -248,7 +248,7 @@ ARCHI_CONTEXT_ACT_FUNC(archi_context_library_act)
                     (params->value.ptr == NULL))
                 return ARCHI_STATUS_EVALUE;
 
-            attributes.flags = *(archi_pointer_flags_t*)params->value.ptr;
+            attributes.flags = *(archi_pointer_attributes_t*)params->value.ptr;
 
             if (attributes.flags > ARCHI_POINTER_USER_FLAGS_MASK)
                 return ARCHI_STATUS_EVALUE;

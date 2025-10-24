@@ -126,7 +126,7 @@ typedef struct archi_exe_registry_instr__init_array {
     const char *key; ///< Key of the new context.
 
     size_t num_elements; ///< Number of elements in the array.
-    archi_pointer_flags_t flags; ///< Array flags.
+    archi_pointer_attributes_t flags; ///< Array flags.
 } archi_exe_registry_instr__init_array_t;
 
 /*****************************************************************************/
