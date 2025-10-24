@@ -25,6 +25,7 @@
 
 #include "archi/res_thread/ctx_hsp/dispatch_data.var.h"
 #include "archi/res_thread/hsp/dispatch.typ.h"
+#include "archipelago/base/ref_count.fun.h"
 #include "archipelago/util/alloc.fun.h"
 
 #include <stdlib.h> // for malloc(), free()

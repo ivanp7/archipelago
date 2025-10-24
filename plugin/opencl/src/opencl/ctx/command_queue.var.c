@@ -4,6 +4,7 @@
  */
 
 #include "archi/opencl/ctx/command_queue.var.h"
+#include "archipelago/base/ref_count.fun.h"
 #include "archipelago/log/print.fun.h"
 
 #include <stdlib.h> // for malloc(), free()

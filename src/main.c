@@ -24,6 +24,7 @@
  */
 
 #include "archipelago/context/interface.fun.h"
+#include "archipelago/base/ref_count.fun.h"
 #include "archi_exe/args.fun.h"
 #include "archi_exe/args.typ.h"
 #include "archi_exe/input.typ.h"

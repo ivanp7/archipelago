@@ -24,6 +24,7 @@
  */
 
 #include "archipelago/context/interface/pointer.var.h"
+#include "archipelago/base/ref_count.fun.h"
 #include "archipelago/util/size.def.h"
 
 #include <stdlib.h> // for malloc(), free()

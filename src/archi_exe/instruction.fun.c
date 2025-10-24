@@ -32,6 +32,7 @@
 #include "archipelago/log/print.fun.h"
 #include "archipelago/log/verbosity.def.h"
 #include "archipelago/log/color.def.h"
+#include "archipelago/base/ref_count.fun.h"
 #include "archipelago/util/alloc.fun.h"
 #include "archipelago/util/size.def.h"
 

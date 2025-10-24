@@ -5,6 +5,7 @@
 
 #include "archi/opencl/ctx/exec.var.h"
 #include "archi/opencl/hsp/exec.typ.h"
+#include "archipelago/base/ref_count.fun.h"
 #include "archipelago/util/alloc.fun.h"
 
 #include <stdlib.h> // for malloc(), free()

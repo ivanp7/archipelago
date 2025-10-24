@@ -8,6 +8,7 @@
 #include "archipelago/log/print.fun.h"
 
 #include <stdlib.h> // for malloc(), free()
+#include <stdbool.h>
 
 struct archi_opencl_svm_metadata {
     cl_context context;

@@ -20,23 +20,17 @@
 
 /**
  * @file
- * @brief Reference counter interface.
+ * @brief Reference counter API.
  */
 
 #pragma once
 #ifndef _ARCHIPELAGO_BASE_REF_COUNT_FUN_H_
 #define _ARCHIPELAGO_BASE_REF_COUNT_FUN_H_
 
+#include "archipelago/base/ref_count.typ.h"
 #include "archipelago/base/destructor.typ.h"
 
 #include <stdbool.h>
-
-struct archi_reference_count;
-
-/**
- * @brief Pointer to reference count.
- */
-typedef struct archi_reference_count *archi_reference_count_t;
 
 /**
  * @brief Allocate and initialize a new reference counter object.

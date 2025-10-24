@@ -5,6 +5,7 @@
 
 #include "archi/font_psf2/ctx/font.var.h"
 #include "archi/font_psf2/api/font.fun.h"
+#include "archipelago/base/ref_count.fun.h"
 
 #include <stdlib.h> // for malloc(), free()
 #include <string.h> // for strcmp()

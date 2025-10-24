@@ -24,6 +24,7 @@
  */
 
 #include "archipelago/context/interface/parameters.var.h"
+#include "archipelago/base/ref_count.fun.h"
 #include "archipelago/util/alloc.fun.h"
 
 #include <stdlib.h> // for malloc(), free()

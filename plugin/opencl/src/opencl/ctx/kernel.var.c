@@ -4,8 +4,9 @@
  */
 
 #include "archi/opencl/ctx/kernel.var.h"
-#include "archipelago/log/print.fun.h"
+#include "archipelago/base/ref_count.fun.h"
 #include "archipelago/util/alloc.fun.h"
+#include "archipelago/log/print.fun.h"
 
 #include <stdlib.h> // for malloc(), free()
 #include <string.h> // for strcmp()

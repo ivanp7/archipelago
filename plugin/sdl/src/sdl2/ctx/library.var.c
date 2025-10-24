@@ -9,6 +9,7 @@
 
 #include <stdlib.h> // for malloc(), free()
 #include <string.h> // for strcmp()
+#include <stdbool.h>
 
 ARCHI_CONTEXT_INIT_FUNC(archi_context_sdl2_library_init)
 {

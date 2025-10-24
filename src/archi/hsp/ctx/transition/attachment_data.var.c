@@ -25,6 +25,7 @@
 
 #include "archi/hsp/ctx/transition/attachment_data.var.h"
 #include "archi/hsp/api/transition/attachment.typ.h"
+#include "archipelago/base/ref_count.fun.h"
 
 #include <stdlib.h> // for malloc(), free()
 #include <string.h> // for strcmp()

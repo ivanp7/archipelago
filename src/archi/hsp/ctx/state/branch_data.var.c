@@ -25,6 +25,7 @@
 
 #include "archi/hsp/ctx/state/branch_data.var.h"
 #include "archi/hsp/api/state/branch.fun.h"
+#include "archipelago/base/ref_count.fun.h"
 #include "archipelago/util/size.def.h"
 
 #include <stdlib.h> // for malloc(), free()

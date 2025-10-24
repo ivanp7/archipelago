@@ -29,6 +29,7 @@
 #include <stdlib.h> // for malloc(), free()
 #include <string.h> // for strcmp()
 #include <stdalign.h> // for alignof()
+#include <stdbool.h>
 
 struct archi_context_thread_group_data {
     archi_pointer_t context;

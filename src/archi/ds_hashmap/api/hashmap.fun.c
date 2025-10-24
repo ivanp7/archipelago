@@ -24,6 +24,7 @@
  */
 
 #include "archi/ds_hashmap/api/hashmap.fun.h"
+#include "archipelago/base/ref_count.fun.h"
 #include "archipelago/util/alloc.fun.h"
 #include "archipelago/util/size.def.h"
 

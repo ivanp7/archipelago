@@ -25,6 +25,7 @@
 
 #include "archi/res_thread/ctx/work.var.h"
 #include "archi/res_thread/api/work.typ.h"
+#include "archipelago/base/ref_count.fun.h"
 
 #include <stdlib.h> // for malloc(), free()
 #include <string.h> // for strcmp()

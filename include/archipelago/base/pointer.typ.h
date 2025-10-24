@@ -27,7 +27,7 @@
 #ifndef _ARCHIPELAGO_BASE_POINTER_TYP_H_
 #define _ARCHIPELAGO_BASE_POINTER_TYP_H_
 
-#include "archipelago/base/ref_count.fun.h"
+#include "archipelago/base/ref_count.typ.h"
 #include "archipelago/base/size.typ.h"
 
 #include <stdint.h> // for uint64_t

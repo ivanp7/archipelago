@@ -10,6 +10,7 @@
 #include <stdlib.h> // for malloc(), free()
 #include <string.h> // for strcmp()
 #include <stdalign.h> // for alignof()
+#include <stdbool.h>
 
 ARCHI_CONTEXT_INIT_FUNC(archi_context_opencl_event_array_init)
 {

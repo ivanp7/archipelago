@@ -26,6 +26,7 @@
 #include "archi/hsp/ctx/frame.var.h"
 #include "archi/hsp/api/state.fun.h"
 #include "archi/hsp/api/exec.fun.h"
+#include "archipelago/base/ref_count.fun.h"
 #include "archipelago/util/size.def.h"
 
 #include <stdlib.h> // for malloc(), free()
