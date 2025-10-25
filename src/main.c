@@ -259,31 +259,31 @@ exit_quick(void) // is called on quick_exit()
 void
 print_logo(void)
 {
-#define LETTERS  13
-#define LINES    2
+#define LETTERS  11
+#define LINES    3
 
     static const char *logo[LINES][LETTERS] = {
-        {"⡰⠁", "⣎⣱", "⣏⡱", "⡎⠑", "⣇⣸", "⡇", "⣏⡱", "⣏⡉", "⡇ ", "⣎⣱", "⡎⠑", "⡎⢱", "⠈⢆"},
-        {"⠘⠄", "⠇⠸", "⠇⠱", "⠣⠔", "⠇⠸", "⠇", "⠇ ", "⠧⠤", "⠧⠤", "⠇⠸", "⠣⠝", "⠣⠜", "⠠⠃"},
+        {"⣎⣱", "  ", "⡎⠑", "  ", "⡇", "  ", "⣏⡉", "  ", "⣎⣱", "  ", "⡎⢱"},
+        {"⠇⠸", "⣏⡱", "⠣⠔", "⣇⣸", "⠇", "⣏⡱", "⠧⠤", "⡇ ", "⠇⠸", "⡎⠑", "⠣⠜"},
+        {"  ", "⠇⠱", "  ", "⠇⠸", " ", "⠇ ", "  ", "⠧⠤", "  ", "⠣⠝", "  "},
     };
 
     static const char *colors[LETTERS] = {
-        ARCHI_COLOR_FG(255), // {
         ARCHI_COLOR_FG(204), // A
         ARCHI_COLOR_FG(223), // R
         ARCHI_COLOR_FG(116), // C
         ARCHI_COLOR_FG(68),  // H
         ARCHI_COLOR_FG(140), // I
-        ARCHI_COLOR_FG(240), // P
-        ARCHI_COLOR_FG(241), // E
-        ARCHI_COLOR_FG(242), // L
-        ARCHI_COLOR_FG(243), // A
-        ARCHI_COLOR_FG(244), // G
-        ARCHI_COLOR_FG(245), // O
-        ARCHI_COLOR_FG(255), // }
+
+        ARCHI_COLOR_FG(245), // P
+        ARCHI_COLOR_FG(244), // E
+        ARCHI_COLOR_FG(243), // L
+        ARCHI_COLOR_FG(242), // A
+        ARCHI_COLOR_FG(241), // G
+        ARCHI_COLOR_FG(240), // O
     };
 
-    static const char *space = " ";
+    static const char *space = "   ";
 
     archi_print_lock(0);
 
@@ -292,14 +292,17 @@ print_logo(void)
 
     for (int i = 0; i < LINES; i++)
     {
-        archi_print("  ");
+        archi_print("%s", space);
 
         for (int j = 0; j < LETTERS; j++)
         {
             if (!archi_process.args.no_color)
                 archi_print("%s", colors[j]);
 
-            archi_print("%s%s", space, logo[i][j]);
+            if (j > 0)
+                archi_print("%s", space);
+
+            archi_print("%s", logo[i][j]);
         }
 
         archi_print_color(ARCHI_COLOR_RESET);
