@@ -1,5 +1,5 @@
 /*****************************************************************************
- * Copyright (C) 2023-2025 by Ivan Podmazov                                  *
+ * Copyright (C) 2023-2026 by Ivan Podmazov                                  *
  *                                                                           *
  * This file is part of Archipelago.                                         *
  *                                                                           *
@@ -27,16 +27,16 @@
 #include "archi/hsp/api/state.fun.h"
 #include "archipelago/util/size.def.h"
 
-#include <stdlib.h> // for rand()
+#include <stdlib.h> // for malloc(), rand()
 
-archi_hsp_branch_state_data_t*
-archi_hsp_branch_state_data_alloc(
+archi_hsp_state_data__branch_t*
+archi_hsp_state_data_alloc__branch(
         size_t num_branches,
         archi_hsp_branch_selector_func_t selector_fn,
         void *selector_data)
 {
-    archi_hsp_branch_state_data_t *state_data = malloc(
-            ARCHI_SIZEOF_FLEXIBLE(archi_hsp_branch_state_data_t, branch, num_branches));
+    archi_hsp_state_data__branch_t *state_data = malloc(
+            ARCHI_SIZEOF_FLEXIBLE(archi_hsp_state_data__branch_t, branch, num_branches));
     if (state_data == NULL)
         return NULL;
 
@@ -54,8 +54,10 @@ archi_hsp_branch_state_data_alloc(
 
 /*****************************************************************************/
 
-ARCHI_HSP_STATE_FUNCTION(archi_hsp_state_advance)
+ARCHI_HSP_STATE_FUNCTION(archi_hsp_state__advance)
 {
+    (void) ARCHI_ERROR_PARAMETER;
+
     const archi_hsp_frame_t *frame = data;
     if (frame == NULL)
         return;
@@ -63,9 +65,9 @@ ARCHI_HSP_STATE_FUNCTION(archi_hsp_state_advance)
     archi_hsp_advance(hsp, 0, frame->num_states, frame->state);
 }
 
-ARCHI_HSP_STATE_FUNCTION(archi_hsp_state_branch)
+ARCHI_HSP_STATE_FUNCTION(archi_hsp_state__branch)
 {
-    const archi_hsp_branch_state_data_t *state_data = data;
+    const archi_hsp_state_data__branch_t *state_data = data;
     if ((state_data == NULL) || (state_data->num_branches == 0))
         return;
 
@@ -74,7 +76,11 @@ ARCHI_HSP_STATE_FUNCTION(archi_hsp_state_branch)
         index = state_data->selector_fn(state_data->num_branches, state_data->selector_data);
 
     if (index >= state_data->num_branches)
+    {
+        ARCHI_ERROR_SET(ARCHI__EINDEX, "branch index (#%zu) out of range (%zu branches)",
+                index, state_data->num_branches);
         return;
+    }
 
     const archi_hsp_frame_t *frame = state_data->branch[index];
     archi_hsp_advance(hsp, 0, frame->num_states, frame->state);
@@ -82,32 +88,34 @@ ARCHI_HSP_STATE_FUNCTION(archi_hsp_state_branch)
 
 /*****************************************************************************/
 
-ARCHI_HSP_BRANCH_SELECTOR_FUNC(archi_hsp_branch_select_uncond)
+ARCHI_HSP_BRANCH_SELECTOR_FUNC(archi_hsp_branch_select__uncond)
 {
     (void) num_branches;
     return (data != NULL) ? *(size_t*)data : 0;
 }
 
-ARCHI_HSP_BRANCH_SELECTOR_FUNC(archi_hsp_branch_select_random)
+ARCHI_HSP_BRANCH_SELECTOR_FUNC(archi_hsp_branch_select__random)
 {
     (void) data;
     return rand() % num_branches;
 }
 
-ARCHI_HSP_BRANCH_SELECTOR_FUNC(archi_hsp_branch_select_loop)
+ARCHI_HSP_BRANCH_SELECTOR_FUNC(archi_hsp_branch_select__loop)
 {
     (void) num_branches;
 
-    archi_hsp_branch_select_loop_data_t *loop_data = data;
+    size_t *loop_control = data;
+    if (loop_control == NULL)
+        return 1;
 
-    if (loop_data->iteration < loop_data->num_iterations)
+    if (loop_control[1] < loop_control[0])
     {
-        loop_data->iteration++;
+        loop_control[1]++;
         return 0;
     }
     else
     {
-        loop_data->iteration = 0;
+        loop_control[1] = 0;
         return 1;
     }
 }

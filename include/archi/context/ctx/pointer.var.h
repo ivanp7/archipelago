@@ -1,5 +1,5 @@
 /*****************************************************************************
- * Copyright (C) 2023-2025 by Ivan Podmazov                                  *
+ * Copyright (C) 2023-2026 by Ivan Podmazov                                  *
  *                                                                           *
  * This file is part of Archipelago.                                         *
  *                                                                           *
@@ -20,7 +20,7 @@
 
 /**
  * @file
- * @brief Context interface for pointer wrappers.
+ * @brief Context interfaces for pointer wrappers.
  */
 
 #pragma once
@@ -30,65 +30,135 @@
 #include "archi/context/api/interface.typ.h"
 
 /**
- * @brief Pointer initialization function.
+ * @brief Context interface: any pointer.
  *
- * Accepts the following parameters:
- * - "value"        : pointer to store
- * - "flags"        : new pointer flags
- * - "layout"       : new array layout
- * - "num_elements" : new number of elements
- * - "element_size" : new element size
- * - "element_alignment" : new element alignment requirement
- */
-ARCHI_CONTEXT_INIT_FUNC(archi_context_pointer_init);
-
-/**
- * @brief Pointer finalization function.
- */
-ARCHI_CONTEXT_FINAL_FUNC(archi_context_pointer_final);
-
-/**
- * @brief Pointer getter function.
+ * Initialization parameters:
+ * - "pointee"  : entity to store
  *
- * Provides the following slots:
- * - "" [offset] : stored pointer + (offset) * (data element size)
- * - "flags"        : pointer flags
- * - "layout"       : array layout
- * - "num_elements" : number of elements
- * - "element_size" : element size
- * - "element_alignment" : element alignment requirement
- */
-ARCHI_CONTEXT_GET_FUNC(archi_context_pointer_get);
-
-/**
- * @brief Pointer setter function.
+ * Getter slots:
+ * - "pointee"  : stored entity
  *
- * Accepts the following slots:
- * - "value" : pointer to store
- * - "" [offset] : copy contents to stored pointer + (offset) * (data element size)
- */
-ARCHI_CONTEXT_SET_FUNC(archi_context_pointer_set);
-
-/**
- * @brief Pointer action function.
- *
- * Implements the following actions:
- * - "update" : update the stored pointer
- *      parameters:
- *        - "value"        : pointer to store
- *        - "flags"        : new pointer flags
- *        - "layout"       : new array layout
- *        - "num_elements" : new number of elements
- *        - "element_size" : new element size
- *        - "element_alignment" : new element alignment requirement
- */
-ARCHI_CONTEXT_ACT_FUNC(archi_context_pointer_act);
-
-/**
- * @brief Pointer interface.
+ * Setter slots:
+ * - "pointee"  : entity to store
  */
 extern
-const archi_context_interface_t archi_context_pointer_interface;
+const archi_context_interface_t
+archi_context_interface__pointer;
+
+/**
+ * @brief Context interface: pointer to data.
+ *
+ * Initialization parameters:
+ * - "pointee"  : data to store
+ * - "writable" : (char) data writability flag
+ *
+ * Getter slots:
+ * - "pointee"  : stored data
+ * - "writable" : (char) data writability flag
+ *
+ * Setter slots:
+ * - "pointee"  : data to store
+ * - "writable" : (char) data writability flag
+ */
+extern
+const archi_context_interface_t
+archi_context_interface__dpointer;
+
+/**
+ * @brief Context interface: pointer to transparent data.
+ *
+ * Initialization parameters:
+ * - "pointee"      : data to store
+ * - "offset"       : (ptrdiff_t) offset applied to the pointer
+ * - "offset_unit"  : (size_t) unit of the offset applied to the pointer
+ * - "writable"     : (char) data writability flag
+ * - "length"       : (size_t) number of data elements
+ * - "stride"       : (size_t) size of a data element in bytes
+ * - "alignment"    : (size_t) data alignment requirement
+ *
+ * Getter slots:
+ * - "pointee"      : stored data
+ * - [offset]       : stored data at offset
+ * - "writable"     : (char) data writability flag
+ * - "length"       : (size_t) number of data elements
+ * - "stride"       : (size_t) size of a data element in bytes
+ * - "size"         : (size_t) total size of data in bytes
+ * - "alignment"    : (size_t) data alignment requirement
+ *
+ * Calls:
+ * - "shift_ptr"    : shift the pointer by arbitrary number of strides
+ *      parameters:
+ *        - "offset"    : (ptrdiff_t) offset within pointee in strides
+ * - "set_attr"     : change length, stride, alignment requirement
+ *      parameters:
+ *        - "length"    : (size_t) number of data elements
+ *        - "stride"    : (size_t) size of a data element in bytes
+ *        - "alignment" : (size_t) data alignment requirement
+ * - "copy"         : copy memory
+ *      parameters:
+ *        - "from"          : source
+ *        - "from_offset"   : (size_t) offset within source
+ *        - "offset"        : (size_t) offset within destination
+ *        - "length"        : (size_t) number of strides to copy
+ * - "fill"         : fill memory with pattern
+ *      parameters:
+ *        - "pattern"   : pattern
+ *        - "offset"    : (size_t) offset within destination
+ *        - "length"    : (size_t) number of strides to fill
+ *
+ * Setter slots:
+ * - "pointee"      : data to store
+ * - "writable"     : (char) data writability flag
+ * - "length"       : (size_t) number of data elements
+ * - "stride"       : (size_t) size of a data element in bytes (preserves total data size)
+ * - "alignment"    : (size_t) data alignment requirement
+ */
+extern
+const archi_context_interface_t
+archi_context_interface__tdpointer;
+
+/**
+ * @brief Context interface: pointer to opaque data.
+ *
+ * Initialization parameters:
+ * - "pointee"      : data to store
+ * - "offset"       : (ptrdiff_t) offset applied to the pointer
+ * - "offset_unit"  : (size_t) unit of the offset applied to the pointer
+ * - "writable"     : (char) data writability flag
+ * - "tag"          : (archi_pointer_attr_t) opaque data type tag
+ *
+ * Getter slots:
+ * - "pointee"  : stored data
+ * - "writable" : (char) data writability flag
+ * - "tag"      : (archi_pointer_attr_t) opaque data type tag
+ *
+ * Setter slots:
+ * - "pointee"  : data to store
+ * - "writable" : (char) data writability flag
+ * - "tag"      : (archi_pointer_attr_t) opaque data type tag
+ */
+extern
+const archi_context_interface_t
+archi_context_interface__odpointer;
+
+/**
+ * @brief Context interface: pointer to function.
+ *
+ * Initialization parameters:
+ * - "pointee"  : function to store
+ * - "tag"      : (archi_pointer_attr_t) function type tag
+ *
+ * Getter slots:
+ * - "pointee"  : stored function
+ * - "tag"      : (archi_pointer_attr_t) function type tag
+ *
+ * Setter slots:
+ * - "pointee"  : function to store
+ * - "tag"      : (archi_pointer_attr_t) function type tag
+ */
+extern
+const archi_context_interface_t
+archi_context_interface__fpointer;
 
 #endif // _ARCHI_CONTEXT_CTX_POINTER_VAR_H_
 

@@ -1,5 +1,5 @@
 /*****************************************************************************
- * Copyright (C) 2023-2025 by Ivan Podmazov                                  *
+ * Copyright (C) 2023-2026 by Ivan Podmazov                                  *
  *                                                                           *
  * This file is part of Archipelago.                                         *
  *                                                                           *
@@ -34,37 +34,32 @@
  *
  * @return Index of the selected branch.
  */
-#define ARCHI_HSP_BRANCH_SELECTOR_FUNC(name) size_t name( \
-        size_t num_branches, /* Number of branches. */ \
-        void *const data) /* Data for the function to operate on. */
+#define ARCHI_HSP_BRANCH_SELECTOR_FUNC(name) size_t name(   \
+        size_t num_branches, /* [in] Number of branches. */ \
+        void *data) /* [in] Data for the function to operate on. */
 
 /**
- * @brief Selector function.
+ * @brief Branch selector function.
  */
 typedef ARCHI_HSP_BRANCH_SELECTOR_FUNC((*archi_hsp_branch_selector_func_t));
+
+/**
+ * @brief Function type tag for branch selector functions.
+ */
+#define ARCHI_POINTER_FUNCTION_TAG__HSP_BRANCH_SELECTOR     4
 
 /*****************************************************************************/
 
 /**
  * @brief Data for a branch state.
  */
-typedef struct archi_hsp_branch_state_data {
+typedef struct archi_hsp_state_data__branch {
     archi_hsp_branch_selector_func_t selector_fn; ///< Branch selector function.
     void *selector_data;                          ///< Branch selector data.
 
     const size_t num_branches;   ///< Number of branches.
     archi_hsp_frame_t *branch[]; ///< Array of branches.
-} archi_hsp_branch_state_data_t;
-
-/*****************************************************************************/
-
-/**
- * @brief Data for the simple loop selector function.
- */
-typedef struct archi_hsp_branch_select_loop_data {
-    size_t num_iterations; ///< Number of iterations to do.
-    size_t iteration; ///< Number of the current iteration.
-} archi_hsp_branch_select_loop_data_t;
+} archi_hsp_state_data__branch_t;
 
 #endif // _ARCHI_HSP_HSP_BRANCH_STATE_TYP_H_
 

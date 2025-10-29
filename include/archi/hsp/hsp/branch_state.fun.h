@@ -1,5 +1,5 @@
 /*****************************************************************************
- * Copyright (C) 2023-2025 by Ivan Podmazov                                  *
+ * Copyright (C) 2023-2026 by Ivan Podmazov                                  *
  *                                                                           *
  * This file is part of Archipelago.                                         *
  *                                                                           *
@@ -36,8 +36,8 @@
  *
  * @return Newly allocated branch state data.
  */
-archi_hsp_branch_state_data_t*
-archi_hsp_branch_state_data_alloc(
+archi_hsp_state_data__branch_t*
+archi_hsp_state_data_alloc__branch(
         size_t num_branches, ///< [in] Number of branches.
         archi_hsp_branch_selector_func_t selector_fn, ///< [in] Branch selector function.
         void *selector_data ///< [in] Branch selector data.
@@ -48,37 +48,43 @@ archi_hsp_branch_state_data_alloc(
 /**
  * @brief State function for calling archi_hsp_advance().
  *
- * This state function expects archi_hsp_frame_t object as function data.
+ * State function data type: archi_hsp_frame_t.
  */
-ARCHI_HSP_STATE_FUNCTION(archi_hsp_state_advance);
+ARCHI_HSP_STATE_FUNCTION(archi_hsp_state__advance);
 
 /**
  * @brief Branch state function using a selector function to choose a branch.
  *
- * This state function expects archi_hsp_branch_state_data_t object as function data.
+ * State function data type: archi_hsp_state_data__branch_t.
  */
-ARCHI_HSP_STATE_FUNCTION(archi_hsp_state_branch);
+ARCHI_HSP_STATE_FUNCTION(archi_hsp_state__branch);
 
 /*****************************************************************************/
 
 /**
  * @brief Select a branch unconditionally.
  *
+ * Selector function data type: size_t.
  * Selector data is the returned branch index.
- * It must be less than the number of branches, otherwise 0 is returned.
  * If data is NULL, then 0 is returned.
  */
-ARCHI_HSP_BRANCH_SELECTOR_FUNC(archi_hsp_branch_select_uncond);
+ARCHI_HSP_BRANCH_SELECTOR_FUNC(archi_hsp_branch_select__uncond);
 
 /**
  * @brief Select a branch randomly.
+ *
+ * Selector function data is not used.
  */
-ARCHI_HSP_BRANCH_SELECTOR_FUNC(archi_hsp_branch_select_random);
+ARCHI_HSP_BRANCH_SELECTOR_FUNC(archi_hsp_branch_select__random);
 
 /**
- * @brief Simple loop - choose 0th branch N times, then choose 1st branch and reset.
+ * @brief Simple loop - choose 0th branch N times, then choose 1st branch and reset the iteration counter to zero.
+ *
+ * Selector function data type: size_t[2].
+ * The first size_t is the number of iterations to do,
+ * the second size_t is the iteration counter.
  */
-ARCHI_HSP_BRANCH_SELECTOR_FUNC(archi_hsp_branch_select_loop);
+ARCHI_HSP_BRANCH_SELECTOR_FUNC(archi_hsp_branch_select__loop);
 
 #endif // _ARCHI_HSP_HSP_BRANCH_STATE_FUN_H_
 

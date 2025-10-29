@@ -1,5 +1,5 @@
 /*****************************************************************************
- * Copyright (C) 2023-2025 by Ivan Podmazov                                  *
+ * Copyright (C) 2023-2026 by Ivan Podmazov                                  *
  *                                                                           *
  * This file is part of Archipelago.                                         *
  *                                                                           *
@@ -20,7 +20,7 @@
 
 /**
  * @file
- * @brief Application context interface for memory.
+ * @brief Context interface for memory objects.
  */
 
 #pragma once
@@ -29,12 +29,29 @@
 
 #include "archi/context/api/interface.typ.h"
 
-ARCHI_CONTEXT_INIT_FUNC(archi_context_memory_init);   ///< Memory context initialization function.
-ARCHI_CONTEXT_FINAL_FUNC(archi_context_memory_final); ///< Memory context finalization function.
-ARCHI_CONTEXT_GET_FUNC(archi_context_memory_get);     ///< Memory context getter function.
-
+/**
+ * @brief Context interface: memory.
+ *
+ * Initialization parameters:
+ * - "interface"        : (archi_memory_interface_t) pointer to memory interface
+ * - "alloc_data"       : data for allocation function
+ * - "length"           : (size_t) number of data elements to allocate
+ * - "stride"           : (size_t) size of a data element in bytes
+ * - "alignment"        : (size_t) alignment requirement of a data element in bytes
+ * - "overalignment"    : (size_t) alignment requirement of memory in bytes
+ *
+ * Getter slots:
+ * - "interface"        : (archi_memory_interface_t) pointer to memory interface
+ * - "allocation"       : pointer to memory allocation
+ * - "length"           : (size_t) number of data elements
+ * - "stride"           : (size_t) size of a data element in bytes
+ * - "size"             : (size_t) size of the memory in bytes
+ * - "alignment"        : (size_t) alignment requirement of a data element in bytes
+ * - "overalignment"    : (size_t) alignment requirement of memory in bytes
+ */
 extern
-const archi_context_interface_t archi_context_memory_interface; ///< Memory context interface.
+const archi_context_interface_t
+archi_context_interface__memory;
 
 #endif // _ARCHI_MEMORY_CTX_MEMORY_VAR_H_
 

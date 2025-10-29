@@ -16,6 +16,7 @@ from archi.builtin.context import LibraryContext
 _TYPE_BOOL = PublicType(c.c_byte, constr=lambda v: c.c_byte(bool(v)))
 _TYPE_INT = PublicType(c.c_int)
 _TYPE_UINT32 = PublicType(c.c_uint32)
+_TYPE_UINT32_ARRAY = PublicType(c.c_uint32, array=True)
 _TYPE_STR = PublicType(c.c_char, array=True, constr=lambda v: c.create_string_buffer(v.encode()))
 
 _TYPE_MEMORY = PrivateType('archi.memory')
@@ -43,7 +44,7 @@ class FontPSFv2Context(ContextWhitelistable):
     """
     class InitParameters(ParametersWhitelistable):
         PARAMETERS = {
-                'contents': None,
+                'data': None,
                 }
 
     INTERFACE_SYMBOL = 'archi_context_font_psf2_interface'
@@ -104,7 +105,7 @@ class SDL2WindowCPUContext(ContextWhitelistable):
             'texture': {0: _TYPE_SDL2_TEXTURE_HANDLE},
             'texture.width': {0: _TYPE_INT},
             'texture.height': {0: _TYPE_INT},
-            'texture.lock': {0: _TYPE_UINT32},
+            'texture.lock': {0: _TYPE_UINT32_ARRAY},
             'texture.lock.pitch': {0: _TYPE_INT},
             'texture.lock.x': {0: _TYPE_INT},
             'texture.lock.y': {0: _TYPE_INT},

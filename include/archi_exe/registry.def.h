@@ -1,5 +1,5 @@
 /*****************************************************************************
- * Copyright (C) 2023-2025 by Ivan Podmazov                                  *
+ * Copyright (C) 2023-2026 by Ivan Podmazov                                  *
  *                                                                           *
  * This file is part of Archipelago.                                         *
  *                                                                           *
@@ -27,13 +27,39 @@
 #ifndef _ARCHI_EXE_REGISTRY_DEF_H_
 #define _ARCHI_EXE_REGISTRY_DEF_H_
 
-// After modifying this list, don't forget to update the help message in `exe/args.c`
+/*****************************************************************************/
+// Built-in contexts
+/*****************************************************************************/
 
-#define ARCHI_EXE_REGISTRY_KEY_REGISTRY         "archi.registry"    ///< Registry key: the context registry itself.
-#define ARCHI_EXE_REGISTRY_KEY_EXECUTABLE       "archi.executable"  ///< Registry key: the library handle of the executable itself.
-#define ARCHI_EXE_REGISTRY_KEY_INPUT_FILE       "archi.input_file"  ///< Registry key: the current input file context.
+#define ARCHI_EXE_REGISTRY_CONTEXT__REGISTRY        "archi.registry"        ///< Built-in context: the context registry itself.
+#define ARCHI_EXE_REGISTRY_CONTEXT__OPERATIONS      "archi.operations"      ///< Built-in context: the context registry operations.
 
-#define ARCHI_EXE_REGISTRY_KEY_SIGNAL           "archi.signal"      ///< Registry key: the signal management context.
+#define ARCHI_EXE_REGISTRY_CONTEXT__EXECUTABLE      "archi.executable"      ///< Built-in context: the library handle of the executable itself.
+#define ARCHI_EXE_REGISTRY_CONTEXT__INPUT_FILE      "archi.input_file"      ///< Built-in context: the current input file context.
+
+#define ARCHI_EXE_REGISTRY_CONTEXT__SIGNAL_HANDLER  "archi.signal_handler"  ///< Built-in context: the signal handler data.
+
+/*****************************************************************************/
+// Built-in registry operations
+/*****************************************************************************/
+
+#define ARCHI_EXE_REGISTRY_OPERATION__DELETE            "delete"            ///< Registry operation: delete a context.
+#define ARCHI_EXE_REGISTRY_OPERATION__ALIAS             "alias"             ///< Registry operation: create a context alias.
+#define ARCHI_EXE_REGISTRY_OPERATION__CREATE_AS         "create_as"         ///< Registry operation: create a context using interface of another context.
+#define ARCHI_EXE_REGISTRY_OPERATION__CREATE_FROM       "create_from"       ///< Registry operation: create a context using interface obtained from another context data/slot.
+#define ARCHI_EXE_REGISTRY_OPERATION__CALL              "call"              ///< Registry operation: invoke context call.
+#define ARCHI_EXE_REGISTRY_OPERATION__SET               "set"               ///< Registry operation: set context slot to value.
+#define ARCHI_EXE_REGISTRY_OPERATION__ASSIGN            "assign"            ///< Registry operation: assign context slot to another context slot.
+#define ARCHI_EXE_REGISTRY_OPERATION__WEAK_ASSIGN       "weak_assign"       ///< Registry operation: assign context slot to another context slot (without reference counter).
+#define ARCHI_EXE_REGISTRY_OPERATION__ASSIGN_CALL       "assign_call"       ///< Registry operation: set context slot to result of another context call.
+#define ARCHI_EXE_REGISTRY_OPERATION__WEAK_ASSIGN_CALL  "weak_assign_call"  ///< Registry operation: set context slot to result of another context call (without reference counter).
+
+
+#define ARCHI_EXE_REGISTRY_OPERATION__CREATE_PARAMETERS             "create_parameters"             ///< Registry operation: create a parameters list context.
+#define ARCHI_EXE_REGISTRY_OPERATION__CREATE_PTR_TO_VALUE           "create_ptr_to_value"           ///< Registry operation: create a pointer context (to value).
+#define ARCHI_EXE_REGISTRY_OPERATION__CREATE_PTR_TO_CONTEXT         "create_ptr_to_context"         ///< Registry operation: create a pointer context (to context slot).
+#define ARCHI_EXE_REGISTRY_OPERATION__CREATE_WEAK_PTR_TO_CONTEXT    "create_weak_ptr_to_context"    ///< Registry operation: create a pointer context (to context slot, without reference counter).
+#define ARCHI_EXE_REGISTRY_OPERATION__CREATE_DPTR_ARRAY             "create_dptr_array"             ///< Registry operation: create a data pointer array context.
 
 #endif // _ARCHI_EXE_REGISTRY_DEF_H_
 

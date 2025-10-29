@@ -25,76 +25,81 @@
 
 #include "archi_exe/logging.fun.h"
 #include "archipelago/log/verbosity.def.h"
-
 #include "../archipelago/log/context.typ.h" // for struct archi_log_context
 
-static
-struct archi_log_context archi_logger = {
-#ifndef __STDC_NO_ATOMICS__
-    .spinlock = ATOMIC_FLAG_INIT,
-#else
-    0
-#endif
-};
+#include <stdlib.h> // for malloc(), free()
 
-archi_log_context_t
-archi_exe_log_context(void)
+static
+struct archi_log_context archi_logger;
+
+ARCHI_GLOBAL_GET_FUNC(archi_exe_log_global_context)
 {
     return &archi_logger;
 }
 
-void
-archi_exe_log_init_stream(
-        FILE *stream)
+bool
+archi_exe_log_initialize(
+        FILE *stream,
+        int level,
+        bool colorful)
 {
-    static bool stream_set = false;
-    if (stream_set)
-        return;
-    stream_set = true;
+    if (archi_logger.stream != NULL)
+        return false;
 
-    if (stream == NULL)
-        stream = stderr;
+    // Set logging stream
+    archi_logger.stream = (stream != NULL) ? stream : stderr;
 
-    archi_logger.stream = stream;
-}
-
-void
-archi_exe_log_init_start_time(void)
-{
-    static bool start_time_set = false;
-    if (start_time_set)
-        return;
-    start_time_set = true;
-
+    // Store logging start time
     timespec_get(&archi_logger.start_time, TIME_UTC);
-}
 
-void
-archi_exe_log_init_verbosity(
-        int level)
-{
-    static bool verbosity_set = false;
-    if (verbosity_set)
-        return;
-    verbosity_set = true;
-
+    // Set logging verbosity
     if (level < 0)
         level = 0;
     else if (level > ARCHI_LOG_VERBOSITY_MAX)
         level = ARCHI_LOG_VERBOSITY_MAX;
 
     archi_logger.verbosity_level = level;
+
+    // Set logging color use flag
+    archi_logger.colorful = colorful;
+
+#ifndef __STDC_NO_THREADS__
+    // Allocate and initialize logging mutex
+    archi_logger.lock = malloc(sizeof(*archi_logger.lock));
+    if (archi_logger.lock == NULL)
+        goto failure_alloc_lock;
+
+    {
+        int ret = mtx_init(archi_logger.lock, mtx_recursive);
+        if (ret != thrd_success)
+            goto failure_init_lock;
+    }
+#endif
+
+    return true;
+
+#ifndef __STDC_NO_THREADS__
+failure_init_lock:
+    free(archi_logger.lock);
+
+failure_alloc_lock:
+    archi_logger = (struct archi_log_context){0};
+
+    return false;
+#endif
 }
 
 void
-archi_exe_log_init_color(
-        bool colorful)
+archi_exe_log_finalize(void)
 {
-    static bool colorful_set = false;
-    if (colorful_set)
+    if (archi_logger.stream == NULL)
         return;
-    colorful_set = true;
 
-    archi_logger.colorful = colorful;
+#ifndef __STDC_NO_THREADS__
+    mtx_destroy(archi_logger.lock);
+    free(archi_logger.lock);
+#endif
+
+    archi_logger = (struct archi_log_context){0};
 }
 

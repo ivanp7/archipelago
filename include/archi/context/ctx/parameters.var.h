@@ -1,5 +1,5 @@
 /*****************************************************************************
- * Copyright (C) 2023-2025 by Ivan Podmazov                                  *
+ * Copyright (C) 2023-2026 by Ivan Podmazov                                  *
  *                                                                           *
  * This file is part of Archipelago.                                         *
  *                                                                           *
@@ -30,44 +30,21 @@
 #include "archi/context/api/interface.typ.h"
 
 /**
- * @brief Parameter list initialization function.
+ * @brief Context interface: key-value (reference-counted) list.
  *
- * Accepts any parameters, all of them are added to the list.
- */
-ARCHI_CONTEXT_INIT_FUNC(archi_context_parameters_init);
-
-/**
- * @brief Parameter list finalization function.
- */
-ARCHI_CONTEXT_FINAL_FUNC(archi_context_parameters_final);
-
-/**
- * @brief Parameter list getter function.
+ * Initialization parameters: any -- add all to the list.
  *
- * Provides any slot name with no indices, returns a parameter with such name.
- */
-ARCHI_CONTEXT_GET_FUNC(archi_context_parameters_get);
-
-/**
- * @brief Parameter list setter function.
+ * Getter slots: any (without indices only) -- find the value with slot name as the key.
  *
- * Accepts any slot name with no indices, adds a parameter with such name on top of the list.
- */
-ARCHI_CONTEXT_SET_FUNC(archi_context_parameters_set);
-
-/**
- * @brief Parameter list action function.
+ * Calls:
+ * - <empty> : prepend the key-value list with the parameters.
+ *      parameters: any.
  *
- * Provides the following actions:
- * - "_" : prepend the parameter list with the action parameters
- */
-ARCHI_CONTEXT_ACT_FUNC(archi_context_parameters_act);
-
-/**
- * @brief Parameter list interface.
+ * Setter slots: any (without indices only) -- add the value with slot name as the key.
  */
 extern
-const archi_context_interface_t archi_context_parameters_interface;
+const archi_context_interface_t
+archi_context_interface__parameters;
 
 #endif // _ARCHI_CONTEXT_CTX_PARAMETERS_VAR_H_
 

@@ -1,5 +1,5 @@
 /*****************************************************************************
- * Copyright (C) 2023-2025 by Ivan Podmazov                                  *
+ * Copyright (C) 2023-2026 by Ivan Podmazov                                  *
  *                                                                           *
  * This file is part of Archipelago.                                         *
  *                                                                           *
@@ -20,7 +20,7 @@
 
 /**
  * @file
- * @brief The application context interface type.
+ * @brief The context interface type.
  */
 
 #pragma once
@@ -28,20 +28,27 @@
 #define _ARCHI_CONTEXT_API_INTERFACE_TYP_H_
 
 #include "archi/context/api/slot.typ.h"
+#include "archi/context/api/callback.typ.h"
 #include "archipelago/base/pointer.typ.h"
-#include "archipelago/base/named_pointer_list.typ.h"
-#include "archipelago/base/status.typ.h"
+#include "archipelago/base/kvlist.typ.h"
+#include "archipelago/base/error.typ.h"
+
+#include <stdbool.h>
 
 /**
  * @brief Declare/define context initialization function.
  *
- * This function is intended to initialize/allocate resources (contexts).
+ * This function is intended for initializing/allocating resources of a context.
  *
- * @return Status code.
+ * Contract:
+ * (1) return non-NULL pointer and zero error code on success;
+ * (2) return NULL pointer and non-zero error code on failure.
+ *
+ * @return Pointer to context data.
  */
-#define ARCHI_CONTEXT_INIT_FUNC(func_name) archi_status_t func_name( \
-        archi_pointer_t **context, /* [out] Context data. */ \
-        const archi_named_pointer_list_t *params) /* [in] Initialization parameters. */
+#define ARCHI_CONTEXT_INIT_FUNC(func_name)  archi_rcpointer_t* func_name(       \
+        const archi_kvlist_rc_t *params, /* [in] Initialization parameters. */  \
+        ARCHI_ERROR_PARAMETER_DECL) /* [out] Error. */
 
 /**
  * @brief Context initialization function type.
@@ -51,10 +58,10 @@ typedef ARCHI_CONTEXT_INIT_FUNC((*archi_context_init_func_t));
 /**
  * @brief Declare/define context finalization function.
  *
- * This function is intended to finalize/release resources (contexts).
+ * This function is intended for finalizing/releasing resources of a context.
  */
-#define ARCHI_CONTEXT_FINAL_FUNC(func_name) void func_name( \
-        archi_pointer_t *context) /* [in] Context data. */
+#define ARCHI_CONTEXT_FINAL_FUNC(func_name) void func_name(                     \
+        archi_rcpointer_t *context) /* [in] Context data. */
 
 /**
  * @brief Context finalization function type.
@@ -62,55 +69,52 @@ typedef ARCHI_CONTEXT_INIT_FUNC((*archi_context_init_func_t));
 typedef ARCHI_CONTEXT_FINAL_FUNC((*archi_context_final_func_t));
 
 /**
- * @brief Declare/define context slot getter function.
+ * @brief Declare/define context slot evaluation function.
  *
- * This function is intended to retrieve resources from a context.
+ * This function is intended for performing computation with potential state changes,
+ * and/or retrieving pointers from a context.
  *
- * @return Status code.
+ * Reference counter of the output value pointer may be set to
+ * `ARCHI_CONTEXT_REF_COUNT` or `ARCHI_CONTEXT_INTERFACE_REF_COUNT`.
+ * These special values will be automatically replaced with
+ * a context reference counter or a interface reference counter, respectively.
+ *
+ * If `call` is false, `slot` is always non-empty and `params` is always NULL.
+ *
+ * Contract:
+ * (1) if `call` is false, use ARCHI_CONTEXT_YIELD() exactly once, or signal error;
+ * (2) if `call` is true, use ARCHI_CONTEXT_YIELD() at most once, or signal error.
  */
-#define ARCHI_CONTEXT_GET_FUNC(func_name) archi_status_t func_name( \
-        archi_pointer_t *context, /* [in,out] Context data. */ \
-        const archi_context_slot_t slot, /* [in] Slot designator. */ \
-        archi_pointer_t *value) /* [out] Place to store the gotten value. */
+#define ARCHI_CONTEXT_EVAL_FUNC(func_name)   void func_name(                    \
+        archi_rcpointer_t *context, /* [in] Context data. */                    \
+        archi_context_slot_t slot, /* [in] Slot designator. */                  \
+        bool call, /* [in] Whether call semantics are used. */                  \
+        const archi_kvlist_rc_t *params, /* [in] Call parameters. */            \
+        ARCHI_CONTEXT_CALLBACK_PARAMETER_DECL, /* [in] Output callback. */      \
+        ARCHI_ERROR_PARAMETER_DECL) /* [out] Error. */
 
 /**
- * @brief Context slot getter function type.
+ * @brief Context slot evaluation function type.
  */
-typedef ARCHI_CONTEXT_GET_FUNC((*archi_context_get_func_t));
+typedef ARCHI_CONTEXT_EVAL_FUNC((*archi_context_eval_func_t));
 
 /**
  * @brief Declare/define context slot setter function.
  *
- * This function is intended to provide resources to a context.
+ * `slot` is always non-empty.
  *
- * @return Status code.
+ * This function is intended for accepting pointers into a context.
  */
-#define ARCHI_CONTEXT_SET_FUNC(func_name) archi_status_t func_name( \
-        archi_pointer_t *context, /* [in,out] Context data. */ \
-        const archi_context_slot_t slot, /* [in] Slot designator. */ \
-        const archi_pointer_t value) /* [in] Value to set. */
+#define ARCHI_CONTEXT_SET_FUNC(func_name)   void func_name(                     \
+        archi_rcpointer_t *context, /* [in] Context data. */                    \
+        archi_context_slot_t slot, /* [in] Slot designator. */                  \
+        archi_rcpointer_t value, /* [in] Value to set. */                       \
+        ARCHI_ERROR_PARAMETER_DECL) /* [out] Error. */
 
 /**
  * @brief Context slot setter function type.
  */
 typedef ARCHI_CONTEXT_SET_FUNC((*archi_context_set_func_t));
-
-/**
- * @brief Declare/define context action function.
- *
- * This function is intended to perform actions within contexts.
- *
- * @return Status code.
- */
-#define ARCHI_CONTEXT_ACT_FUNC(func_name) archi_status_t func_name( \
-        archi_pointer_t *context, /* [in,out] Context data. */ \
-        const archi_context_slot_t action, /* [in] Action designator. */ \
-        const archi_named_pointer_list_t *params) /* [in] Action parameters. */
-
-/**
- * @brief Context action function type.
- */
-typedef ARCHI_CONTEXT_ACT_FUNC((*archi_context_act_func_t));
 
 /*****************************************************************************/
 
@@ -121,10 +125,8 @@ typedef struct archi_context_interface {
     archi_context_init_func_t init_fn;   ///< Context initialization function.
     archi_context_final_func_t final_fn; ///< Context finalization function.
 
-    archi_context_get_func_t get_fn; ///< Context slot getter function.
-    archi_context_set_func_t set_fn; ///< Context slot setter function.
-
-    archi_context_act_func_t act_fn; ///< Context action function.
+    archi_context_eval_func_t eval_fn; ///< Context slot evaluation function.
+    archi_context_set_func_t set_fn;   ///< Context slot setter function.
 } archi_context_interface_t;
 
 #endif // _ARCHI_CONTEXT_API_INTERFACE_TYP_H_

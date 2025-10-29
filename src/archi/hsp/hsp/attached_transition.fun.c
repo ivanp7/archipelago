@@ -1,5 +1,5 @@
 /*****************************************************************************
- * Copyright (C) 2023-2025 by Ivan Podmazov                                  *
+ * Copyright (C) 2023-2026 by Ivan Podmazov                                  *
  *                                                                           *
  * This file is part of Archipelago.                                         *
  *                                                                           *
@@ -26,28 +26,31 @@
 #include "archi/hsp/hsp/attached_transition.fun.h"
 #include "archi/hsp/hsp/attached_transition.typ.h"
 
-ARCHI_HSP_TRANSITION_FUNCTION(archi_hsp_transition_attached)
+ARCHI_HSP_TRANSITION_FUNCTION(archi_hsp_transition__attachments_support)
 {
-    (void) trans_state;
+    const archi_hsp_transition_t *transition = data;
 
-    const archi_hsp_attached_transition_data_t *global_attachment = data;
-
+    // Call post-function of the previous state
     if (prev_state.function != NULL)
     {
-        const archi_hsp_attached_transition_data_t *attachment = prev_state.metadata;
+        const archi_hsp_state_metadata__attached_transition_t *attachment = prev_state.metadata;
         if ((attachment != NULL) && (attachment->post.function != NULL))
-            attachment->post.function(prev_state, next_state, NULL, attachment->post.data);
+            attachment->post.function(prev_state, next_state, attachment->post.data,
+                    ARCHI_ERROR_PARAMETER);
     }
-    else if ((global_attachment != NULL) && (global_attachment->pre.function != NULL))
-        global_attachment->pre.function(prev_state, next_state, NULL, global_attachment->pre.data);
 
+    // Call middle function of the transition
+    if ((transition != NULL) && (transition->function != NULL))
+        transition->function(prev_state, next_state, transition->data,
+                ARCHI_ERROR_PARAMETER);
+
+    // Call pre-function of the next state
     if (next_state.function != NULL)
     {
-        const archi_hsp_attached_transition_data_t *attachment = next_state.metadata;
+        const archi_hsp_state_metadata__attached_transition_t *attachment = next_state.metadata;
         if ((attachment != NULL) && (attachment->pre.function != NULL))
-            attachment->pre.function(prev_state, next_state, NULL, attachment->pre.data);
+            attachment->pre.function(prev_state, next_state, attachment->pre.data,
+                    ARCHI_ERROR_PARAMETER);
     }
-    else if ((global_attachment != NULL) && (global_attachment->post.function != NULL))
-        global_attachment->post.function(prev_state, next_state, NULL, global_attachment->post.data);
 }
 

@@ -1,5 +1,5 @@
 /*****************************************************************************
- * Copyright (C) 2023-2025 by Ivan Podmazov                                  *
+ * Copyright (C) 2023-2026 by Ivan Podmazov                                  *
  *                                                                           *
  * This file is part of Archipelago.                                         *
  *                                                                           *
@@ -30,9 +30,12 @@
 #include "archi/hsp/api/transition.typ.h"
 
 /**
- * @brief Transition attached to a state of a hierarchical state processor.
+ * @brief Support for per-state transition functions.
+ *
+ * Transition function data type: archi_hsp_transition_t.
+ * State metadata type: archi_hsp_state_metadata__attached_transition_t.
  */
-ARCHI_HSP_TRANSITION_FUNCTION(archi_hsp_transition_attached);
+ARCHI_HSP_TRANSITION_FUNCTION(archi_hsp_transition__attachments_support);
 
 #endif // _ARCHI_HSP_HSP_ATTACHED_TRANSITION_FUN_H_
 

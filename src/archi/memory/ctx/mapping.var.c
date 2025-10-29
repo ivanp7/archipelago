@@ -1,5 +1,5 @@
 /*****************************************************************************
- * Copyright (C) 2023-2025 by Ivan Podmazov                                  *
+ * Copyright (C) 2023-2026 by Ivan Podmazov                                  *
  *                                                                           *
  * This file is part of Archipelago.                                         *
  *                                                                           *
@@ -20,355 +20,207 @@
 
 /**
  * @file
- * @brief Application context interface for memory mapping.
+ * @brief Context interface for memory mapping objects.
  */
 
 #include "archi/memory/ctx/mapping.var.h"
 #include "archi/memory/api/interface.fun.h"
-#include "archipelago/base/ref_count.fun.h"
+#include "archi/context/api/interface.def.h"
+#include "archipelago/util/parameters.fun.h"
+#include "archipelago/base/pointer.fun.h"
+#include "archipelago/base/pointer.def.h"
 #include "archipelago/util/size.def.h"
+#include "archipelago/util/string.fun.h"
 
 #include <stdlib.h> // for malloc(), free()
-#include <string.h> // for strcmp(), memmove()
-#include <stdbool.h>
-#include <stdalign.h> // for alignof()
 
-struct archi_context_memory_mapping_data {
-    archi_pointer_t mapping;
-    archi_pointer_t memory;
-    size_t full_size;
+struct archi_context_data__memory_mapping {
+    archi_rcpointer_t mapping;
+
+    size_t offset; ///< Offset of mapped region.
+    size_t length; ///< Length of mapped region.
 };
 
-ARCHI_CONTEXT_INIT_FUNC(archi_context_memory_mapping_init)
+static
+ARCHI_CONTEXT_INIT_FUNC(archi_context_init__memory_mapping)
 {
-    archi_pointer_t memory = {0};
+    // Parse parameters
+    archi_rcpointer_t memory = {0};
     void *map_data = NULL;
     size_t offset = 0;
-    size_t num_of = 0;
-    bool writeable = false;
-
-    bool param_memory_set = false;
-    bool param_map_data_set = false;
-    bool param_offset_set = false;
-    bool param_num_elements_set = false;
-    bool param_writeable_set = false;
-
-    for (; params != NULL; params = params->next)
+    size_t length = 0;
     {
-        if (strcmp("memory", params->name) == 0)
-        {
-            if (param_memory_set)
-                continue;
-            param_memory_set = true;
+        archi_kvlist_parameter_t parsed[] = {
+            {.name = "memory", .value.attr = archi_pointer_attr__opaque_data(ARCHI_POINTER_DATA_TAG__MEMORY)},
+            {.name = "map_data", .value.attr = archi_pointer_attr__opaque_data(0)},
+            {.name = "offset", .value.attr = ARCHI_POINTER_ATTR__DATA_TYPE(1, size_t)},
+            {.name = "length", .value.attr = ARCHI_POINTER_ATTR__DATA_TYPE(1, size_t)},
+        };
 
-            if ((params->value.flags & ARCHI_POINTER_FLAG_FUNCTION) ||
-                    (params->value.ptr == NULL))
-                return ARCHI_STATUS_EVALUE;
+        if (!archi_kvlist_parameters_parse(params, parsed, ARCHI_LENGTH_ARRAY(parsed), false, NULL,
+                    ARCHI_ERROR_PARAMETER))
+            return NULL;
 
-            memory = params->value;
-        }
-        else if (strcmp("map_data", params->name) == 0)
-        {
-            if (param_map_data_set)
-                continue;
-            param_map_data_set = true;
-
-            if (params->value.flags & ARCHI_POINTER_FLAG_FUNCTION)
-                return ARCHI_STATUS_EVALUE;
-
-            map_data = params->value.ptr;
-        }
-        else if (strcmp("offset", params->name) == 0)
-        {
-            if (param_offset_set)
-                continue;
-            param_offset_set = true;
-
-            if ((params->value.flags & ARCHI_POINTER_FLAG_FUNCTION) ||
-                    (params->value.ptr == NULL))
-                return ARCHI_STATUS_EVALUE;
-
-            offset = *(size_t*)params->value.ptr;
-        }
-        else if (strcmp("num_elements", params->name) == 0)
-        {
-            if (param_num_elements_set)
-                continue;
-            param_num_elements_set = true;
-
-            if ((params->value.flags & ARCHI_POINTER_FLAG_FUNCTION) ||
-                    (params->value.ptr == NULL))
-                return ARCHI_STATUS_EVALUE;
-
-            num_of = *(size_t*)params->value.ptr;
-        }
-        else if (strcmp("writeable", params->name) == 0)
-        {
-            if (param_writeable_set)
-                continue;
-            param_writeable_set = true;
-
-            if ((params->value.flags & ARCHI_POINTER_FLAG_FUNCTION) ||
-                    (params->value.ptr == NULL))
-                return ARCHI_STATUS_EVALUE;
-
-            writeable = *(char*)params->value.ptr;
-        }
-        else
-            return ARCHI_STATUS_EKEY;
+        size_t index = 0;
+        if (parsed[index].value_set)
+            memory = parsed[index].value;
+        index++;
+        if (parsed[index].value_set)
+            map_data = parsed[index].value.ptr;
+        index++;
+        if (parsed[index].value_set)
+            offset = *(size_t*)parsed[index].value.ptr;
+        index++;
+        if (parsed[index].value_set)
+            length = *(size_t*)parsed[index].value.ptr;
     }
 
-    struct archi_context_memory_mapping_data *context_data = malloc(sizeof(*context_data));
+    // Construct the context
+    struct archi_context_data__memory_mapping *context_data = malloc(sizeof(*context_data));
     if (context_data == NULL)
-        return ARCHI_STATUS_ENOMEMORY;
+    {
+        ARCHI_ERROR_SET(ARCHI__EMEMORY, "couldn't allocate context data");
+        return NULL;
+    }
 
-    archi_status_t code;
-
-    archi_pointer_t mapping = archi_memory_map(memory.ptr, map_data, offset, num_of, writeable, &code);
-    if (mapping.ptr == NULL)
+    archi_memory_mapping_t mapping = archi_memory_map(memory.ptr,
+            map_data, offset, length, ARCHI_ERROR_PARAMETER);
+    if (mapping == NULL)
     {
         free(context_data);
-        return code;
+        return NULL;
     }
 
-    archi_reference_count_increment(memory.ref_count);
-
-    *context_data = (struct archi_context_memory_mapping_data){
-        .mapping = mapping,
-        .memory = memory,
-        .full_size = mapping.element.num_of * mapping.element.size,
+    *context_data = (struct archi_context_data__memory_mapping){
+        .mapping = {
+            .ptr = mapping,
+            .attr = ARCHI_POINTER_TYPE__DATA_WRITABLE |
+                archi_pointer_attr__opaque_data(ARCHI_POINTER_DATA_TAG__MEMORY_MAPPING),
+        },
+        .offset = offset,
+        .length = length,
     };
 
-    *context = (archi_pointer_t*)context_data;
-    return code;
+    ARCHI_ERROR_RESET();
+    return (archi_rcpointer_t*)context_data;
 }
 
-ARCHI_CONTEXT_FINAL_FUNC(archi_context_memory_mapping_final)
+static
+ARCHI_CONTEXT_FINAL_FUNC(archi_context_final__memory_mapping)
 {
-    struct archi_context_memory_mapping_data *context_data =
-        (struct archi_context_memory_mapping_data*)context;
+    struct archi_context_data__memory_mapping *context_data =
+        (struct archi_context_data__memory_mapping*)context;
 
-    archi_memory_unmap(context_data->memory.ptr);
-    archi_reference_count_decrement(context_data->memory.ref_count);
+    archi_memory_unmap(context_data->mapping.ptr);
     free(context_data);
 }
 
-ARCHI_CONTEXT_GET_FUNC(archi_context_memory_mapping_get)
+static
+ARCHI_CONTEXT_EVAL_FUNC(archi_context_eval__memory_mapping)
 {
-    struct archi_context_memory_mapping_data *context_data =
-        (struct archi_context_memory_mapping_data*)context;
+    (void) params;
 
-    if (strcmp("memory", slot.name) == 0)
+    if (call)
+    {
+        ARCHI_ERROR_SET(ARCHI__ECONSTRAINT, "no calls are supported");
+        return;
+    }
+
+    struct archi_context_data__memory_mapping *context_data =
+        (struct archi_context_data__memory_mapping*)context;
+
+    if (ARCHI_STRING_COMPARE("memory", ==, slot.name))
     {
         if (slot.num_indices != 0)
-            return ARCHI_STATUS_EMISUSE;
-
-        *value = context_data->memory;
-    }
-    else if (strcmp("", slot.name) == 0)
-    {
-        if (slot.num_indices > 1)
-            return ARCHI_STATUS_EMISUSE;
-
-        ptrdiff_t offset = slot.index[0];
-        if ((offset < 0) || ((size_t)offset >= context_data->mapping.element.num_of))
-            return ARCHI_STATUS_EMISUSE;
-
-        size_t padded_size = ARCHI_SIZE_PADDED(context_data->mapping.element.size,
-                context_data->mapping.element.alignment);
-
-        *value = (archi_pointer_t){
-            .ptr = (char*)context_data->mapping.ptr + offset * padded_size,
-                .ref_count = context->ref_count,
-                .flags = context->flags,
-                .element = {
-                    .num_of = context->element.num_of - offset,
-                    .size = context->element.size,
-                    .alignment = context->element.alignment,
-                },
-        };
-    }
-    else if (strcmp("layout", slot.name) == 0)
-    {
-        if (slot.num_indices != 0)
-            return ARCHI_STATUS_EMISUSE;
-
-        *value = (archi_pointer_t){
-            .ptr = &context_data->mapping.element,
-            .ref_count = context->ref_count,
-            .element = {
-                .num_of = 1,
-                .size = sizeof(context_data->mapping.element),
-                .alignment = alignof(archi_array_layout_t),
-            },
-        };
-    }
-    else if (strcmp("num_elements", slot.name) == 0)
-    {
-        if (slot.num_indices != 0)
-            return ARCHI_STATUS_EMISUSE;
-
-        *value = (archi_pointer_t){
-            .ptr = &context_data->mapping.element.num_of,
-            .ref_count = context->ref_count,
-            .element = {
-                .num_of = 1,
-                .size = sizeof(context_data->mapping.element.num_of),
-                .alignment = alignof(size_t),
-            },
-        };
-    }
-    else if (strcmp("element_size", slot.name) == 0)
-    {
-        if (slot.num_indices != 0)
-            return ARCHI_STATUS_EMISUSE;
-
-        *value = (archi_pointer_t){
-            .ptr = &context_data->mapping.element.size,
-            .ref_count = context->ref_count,
-            .element = {
-                .num_of = 1,
-                .size = sizeof(context_data->mapping.element.size),
-                .alignment = alignof(size_t),
-            },
-        };
-    }
-    else if (strcmp("element_alignment", slot.name) == 0)
-    {
-        if (slot.num_indices != 0)
-            return ARCHI_STATUS_EMISUSE;
-
-        *value = (archi_pointer_t){
-            .ptr = &context_data->mapping.element.alignment,
-            .ref_count = context->ref_count,
-            .element = {
-                .num_of = 1,
-                .size = sizeof(context_data->mapping.element.alignment),
-                .alignment = alignof(size_t),
-            },
-        };
-    }
-    else if (strcmp("full_size", slot.name) == 0)
-    {
-        if (slot.num_indices != 0)
-            return ARCHI_STATUS_EMISUSE;
-
-        *value = (archi_pointer_t){
-            .ptr = &context_data->full_size,
-            .ref_count = context->ref_count,
-            .element = {
-                .num_of = 1,
-                .size = sizeof(context_data->full_size),
-                .alignment = alignof(size_t),
-            },
-        };
-    }
-    else
-        return ARCHI_STATUS_EKEY;
-
-    return 0;
-}
-
-ARCHI_CONTEXT_ACT_FUNC(archi_context_memory_mapping_act)
-{
-    struct archi_context_memory_mapping_data *context_data =
-        (struct archi_context_memory_mapping_data*)context;
-
-    if (strcmp("copy", action.name) == 0)
-    {
-        if (action.num_indices > 1)
-            return ARCHI_STATUS_EMISUSE;
-
-        ptrdiff_t offset = (action.num_indices > 0) ? action.index[0] : 0;
-        if ((offset < 0) || ((size_t)offset >= context_data->mapping.element.num_of))
-            return ARCHI_STATUS_EMISUSE;
-
-        archi_pointer_t source = {0};
-        size_t source_offset = 0;
-        size_t num_elements = 0;
-
-        bool param_source_set = false;
-        bool param_source_offset_set = false;
-        bool param_num_elements_set = false;
-
-        for (; params != NULL; params = params->next)
         {
-            if (strcmp("source", params->name) == 0)
-            {
-                if (param_source_set)
-                    continue;
-                param_source_set = true;
-
-                if ((params->value.flags & ARCHI_POINTER_FLAG_FUNCTION) ||
-                        (params->value.ptr == NULL))
-                    return ARCHI_STATUS_EVALUE;
-
-                source = params->value;
-            }
-            else if (strcmp("source_offset", params->name) == 0)
-            {
-                if (param_source_offset_set)
-                    continue;
-                param_source_offset_set = true;
-
-                if ((params->value.flags & ARCHI_POINTER_FLAG_FUNCTION) ||
-                        (params->value.ptr == NULL))
-                    return ARCHI_STATUS_EVALUE;
-
-                source_offset = *(size_t*)params->value.ptr;
-            }
-            else if (strcmp("num_elements", params->name) == 0)
-            {
-                if (param_num_elements_set)
-                    continue;
-                param_num_elements_set = true;
-
-                if ((params->value.flags & ARCHI_POINTER_FLAG_FUNCTION) ||
-                        (params->value.ptr == NULL))
-                    return ARCHI_STATUS_EVALUE;
-
-                num_elements = *(size_t*)params->value.ptr;
-            }
-            else
-                return ARCHI_STATUS_EKEY;
+            ARCHI_ERROR_SET(ARCHI__EINDEX, "number of slot indices isn't 0");
+            return;
         }
 
-        if (source.element.size != context_data->mapping.element.size)
-            return ARCHI_STATUS_EMISUSE;
+        archi_memory_t memory = archi_memory_mapping_memory(context_data->mapping.ptr);
 
-        size_t padded_size = ARCHI_SIZE_PADDED(source.element.size, source.element.alignment);
+        archi_rcpointer_t value = {
+            .ptr = memory,
+            .ref_count = archi_memory_allocation(memory).ref_count,
+            .attr = ARCHI_POINTER_TYPE__DATA_WRITABLE |
+                archi_pointer_attr__opaque_data(ARCHI_POINTER_DATA_TAG__MEMORY),
+        };
 
+        ARCHI_CONTEXT_YIELD(value);
+    }
+    else if (ARCHI_STRING_COMPARE("ptr", ==, slot.name))
+    {
+        if (slot.num_indices != 0)
         {
-            size_t src_padded_size = source.element.size;
-            if (source.element.alignment != 0)
-                src_padded_size = ARCHI_SIZE_PADDED(src_padded_size, source.element.alignment);
-
-            if (padded_size != src_padded_size)
-                return ARCHI_STATUS_EMISUSE;
+            ARCHI_ERROR_SET(ARCHI__EINDEX, "number of slot indices isn't 0");
+            return;
         }
 
-        if (!param_num_elements_set)
-            num_elements = context_data->mapping.element.num_of - offset;
+        ARCHI_CONTEXT_YIELD(archi_memory_mapping_pointer(context_data->mapping.ptr));
+    }
+    else if (ARCHI_STRING_COMPARE("offset", ==, slot.name))
+    {
+        if (slot.num_indices != 0)
+        {
+            ARCHI_ERROR_SET(ARCHI__EINDEX, "number of slot indices isn't 0");
+            return;
+        }
 
-        if (source_offset >= source.element.num_of)
-            return ARCHI_STATUS_EMISUSE;
-        else if (num_elements > source.element.num_of - source_offset)
-            return ARCHI_STATUS_EMISUSE;
+        size_t offset = context_data->offset;
 
-        memmove((char*)context_data->mapping.ptr + offset * padded_size,
-            (char*)source.ptr + source_offset * padded_size,
-            num_elements * padded_size);
+        archi_rcpointer_t value = {
+            .ptr = &offset,
+            .attr = ARCHI_POINTER_TYPE__DATA_ON_STACK |
+                ARCHI_POINTER_ATTR__DATA_TYPE(1, size_t),
+        };
+
+        ARCHI_CONTEXT_YIELD(value);
+    }
+    else if (ARCHI_STRING_COMPARE("length", ==, slot.name))
+    {
+        if (slot.num_indices != 0)
+        {
+            ARCHI_ERROR_SET(ARCHI__EINDEX, "number of slot indices isn't 0");
+            return;
+        }
+
+        size_t length = context_data->length;
+
+        archi_rcpointer_t value = {
+            .ptr = &length,
+            .attr = ARCHI_POINTER_TYPE__DATA_ON_STACK |
+                ARCHI_POINTER_ATTR__DATA_TYPE(1, size_t),
+        };
+
+        ARCHI_CONTEXT_YIELD(value);
+    }
+    else if (ARCHI_STRING_COMPARE("size", ==, slot.name))
+    {
+        if (slot.num_indices != 0)
+        {
+            ARCHI_ERROR_SET(ARCHI__EINDEX, "number of slot indices isn't 0");
+            return;
+        }
+
+        archi_memory_t memory = archi_memory_mapping_memory(context_data->mapping.ptr);
+        size_t size = context_data->length * archi_memory_stride(memory);
+
+        archi_rcpointer_t value = {
+            .ptr = &size,
+            .attr = ARCHI_POINTER_TYPE__DATA_ON_STACK |
+                ARCHI_POINTER_ATTR__DATA_TYPE(1, size_t),
+        };
+
+        ARCHI_CONTEXT_YIELD(value);
     }
     else
-        return ARCHI_STATUS_EKEY;
-
-    return 0;
+        ARCHI_ERROR_SET(ARCHI__EKEY, "unknown slot '%s' encountered", slot.name);
 }
 
-const archi_context_interface_t archi_context_memory_mapping_interface = {
-    .init_fn = archi_context_memory_mapping_init,
-    .final_fn = archi_context_memory_mapping_final,
-    .get_fn = archi_context_memory_mapping_get,
-    .act_fn = archi_context_memory_mapping_act,
+const archi_context_interface_t
+archi_context_interface__memory_mapping = {
+    .init_fn = archi_context_init__memory_mapping,
+    .final_fn = archi_context_final__memory_mapping,
+    .eval_fn = archi_context_eval__memory_mapping,
 };
 

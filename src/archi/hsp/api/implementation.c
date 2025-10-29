@@ -1,5 +1,5 @@
 /*****************************************************************************
- * Copyright (C) 2023-2025 by Ivan Podmazov                                  *
+ * Copyright (C) 2023-2026 by Ivan Podmazov                                  *
  *                                                                           *
  * This file is part of Archipelago.                                         *
  *                                                                           *
@@ -71,7 +71,7 @@ struct archi_hsp_execution_context {
     size_t stack_size;
     size_t num_stack_frames;
 
-    archi_status_t code;
+    archi_error_t error;
 
     enum archi_hsp_mode mode;
     jmp_buf env; // non-local jumps
@@ -87,7 +87,7 @@ archi_hsp_current_state(
 }
 
 size_t
-archi_hsp_stack_frames(
+archi_hsp_frames_on_stack(
         archi_hsp_execution_context_t context)
 {
     return (context != NULL) ? context->num_stack_frames : 0;
@@ -109,21 +109,30 @@ archi_hsp_state_context_stack_reserve(
         new_stack_capacity *= 2; // double the stack capacity
     while (new_stack_capacity < context->stack_size + size);
 
-    context->stack_capacity = new_stack_capacity;
-
     archi_hsp_state_t *new_stack = realloc(context->stack,
             sizeof(*new_stack) * new_stack_capacity);
     if (new_stack == NULL)
-        archi_hsp_abort(context, ARCHI_STATUS_ENOMEMORY);
+    {
+        ARCHI_ERROR_SET_VAR(&context->error, ARCHI__EMEMORY, "couldn't allocate bigger state stack [%zu]",
+                new_stack_capacity);
+        archi_hsp_advance(context, archi_hsp_frames_on_stack(context), 0, NULL);
+    }
 
     context->stack = new_stack;
 
     size_t *new_stack_frames = realloc(context->stack_frames,
             sizeof(*new_stack_frames) * new_stack_capacity);
     if (new_stack_frames == NULL)
-        archi_hsp_abort(context, ARCHI_STATUS_ENOMEMORY);
+    {
+        ARCHI_ERROR_SET_VAR(&context->error, ARCHI__EMEMORY, "couldn't allocate bigger state stack [%zu] (frame pointers)",
+                new_stack_capacity);
+        archi_hsp_advance(context, archi_hsp_frames_on_stack(context), 0, NULL);
+    }
 
     context->stack_frames = new_stack_frames;
+
+    // Update stack capacity after successful allocations
+    context->stack_capacity = new_stack_capacity;
 }
 
 static
@@ -183,15 +192,21 @@ archi_hsp_advance(
         size_t num_popped_frames,
 
         size_t num_pushed_states,
-        const archi_hsp_state_t *pushed_states)
+        const archi_hsp_state_t pushed_states[])
 {
     if ((context == NULL) || (context->mode != J_STATE))
         return;
 
     if (num_popped_frames > context->num_stack_frames)
-        archi_hsp_abort(context, ARCHI_STATUS_EMISUSE);
+    {
+        ARCHI_ERROR_SET_VAR(&context->error, ARCHI__ECONSTRAINT, "number of popped frames greater than number of frames on the stack");
+        archi_hsp_advance(context, archi_hsp_frames_on_stack(context), 0, NULL);
+    }
     else if ((num_pushed_states > 0) && (pushed_states == NULL))
-        archi_hsp_abort(context, ARCHI_STATUS_EMISUSE);
+    {
+        ARCHI_ERROR_SET_VAR(&context->error, ARCHI__ECONSTRAINT, "array of pushed states is NULL");
+        archi_hsp_advance(context, archi_hsp_frames_on_stack(context), 0, NULL);
+    }
 
     archi_hsp_advance_impl(context, num_popped_frames, num_pushed_states, pushed_states);
 
@@ -199,54 +214,42 @@ archi_hsp_advance(
     archi_hsp_longjump(context);
 }
 
-void
-archi_hsp_abort(
-        archi_hsp_execution_context_t context,
-        archi_status_t code)
-{
-    if ((context == NULL) || (context->mode != J_STATE) || (code == 0))
-        return;
-
-    context->code = code;
-    archi_hsp_longjump(context);
-}
-
 /*****************************************************************************/
 
 static
 bool
-archi_hsp_transition(
+archi_hsp_transit(
         archi_hsp_execution_context_t context)
 {
-    archi_hsp_state_t next_state = {0}, trans_state = {0};
+    // Obtain the next state
+    archi_hsp_state_t next_state;
 
     if (context->stack_size > 0)
         next_state = context->stack[context->stack_size - 1]; // stack top
+    else
+        next_state = (archi_hsp_state_t){0}; // stack is empty
 
     // Call the state transition function
     if (context->transition.function != NULL)
     {
-        /**********************************************************/
-        context->transition.function(context->current_state,
-                next_state, &trans_state, context->transition.data);
-        /**********************************************************/
+        /**************************************************************/
+        context->transition.function(context->current_state, next_state,
+                context->transition.data, &context->error);
+        /**************************************************************/
     }
+
+    // Check if the stack is empty
+    if (next_state.function == NULL)
+        return false;
 
     // Update the current state
-    if (trans_state.function != NULL)
-        context->current_state = trans_state;
-    else if (next_state.function != NULL)
-    {
-        context->current_state = next_state;
-        context->stack_size--;
+    context->current_state = next_state;
+    context->stack_size--;
 
-        // Delete the finished frame
-        if ((context->num_stack_frames > 0) &&
-                (context->stack_size < context->stack_frames[context->num_stack_frames - 1]))
-            context->num_stack_frames--;
-    }
-    else // the stack is empty, exit now
-        return false;
+    // Delete the finished frame
+    if ((context->num_stack_frames > 0) &&
+            (context->stack_size < context->stack_frames[context->num_stack_frames - 1]))
+        context->num_stack_frames--;
 
     return true;
 }
@@ -261,7 +264,7 @@ archi_hsp_loop(
     // The only local variable left is `context` pointer,
     // but its address is constant and thus not required to be volatile.
 
-    while ((context->code == 0) && archi_hsp_transition(context)) // no errors and there is a next state
+    while (archi_hsp_transit(context)) // true if there is a next state
     {
         // Set the jump point and call the current state function
         switch (setjmp(context->env))
@@ -272,7 +275,7 @@ archi_hsp_loop(
                     /**********************************/
                     context->current_state.function(
                             context->current_state.data,
-                            context);
+                            context, &context->error);
                     /**********************************/
                 }
                 // fallthrough
@@ -286,13 +289,17 @@ archi_hsp_loop(
     }
 }
 
-archi_status_t
+void
 archi_hsp_execute(
         const archi_hsp_frame_t *entry_frame,
-        archi_hsp_transition_t transition)
+        archi_hsp_transition_t transition,
+        ARCHI_ERROR_PARAMETER_DECL)
 {
     if ((entry_frame == NULL) || (entry_frame->num_states == 0))
-        return 0;
+    {
+        ARCHI_ERROR_RESET();
+        return;
+    }
 
     // Initialize the context
     struct archi_hsp_execution_context context = {
@@ -306,13 +313,17 @@ archi_hsp_execute(
     // Allocate the stack memory
     context.stack = malloc(sizeof(*context.stack) * context.stack_capacity);
     if (context.stack == NULL)
-        return ARCHI_STATUS_ENOMEMORY;
+    {
+        ARCHI_ERROR_SET(ARCHI__EMEMORY, "couldn't allocate state stack");
+        return;
+    }
 
     context.stack_frames = malloc(sizeof(*context.stack_frames) * context.stack_capacity);
     if (context.stack_frames == NULL)
     {
         free(context.stack);
-        return ARCHI_STATUS_ENOMEMORY;
+        ARCHI_ERROR_SET(ARCHI__EMEMORY, "couldn't allocate state stack (frame pointers)");
+        return;
     }
 
     // Push the initial frame to the stack
@@ -325,6 +336,6 @@ archi_hsp_execute(
     free(context.stack);
     free(context.stack_frames);
 
-    return context.code;
+    ARCHI_ERROR_ASSIGN(context.error);
 }
 

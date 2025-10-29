@@ -20,14 +20,14 @@
 
 /**
  * @file
- * @brief Operations on the global log context.
+ * @brief Operations on the global logging context.
  */
 
 #pragma once
 #ifndef _ARCHI_EXE_LOGGING_FUN_H_
 #define _ARCHI_EXE_LOGGING_FUN_H_
 
-#include "archipelago/log/context.fun.h"
+#include "archipelago/base/global.typ.h"
 
 #include <stdio.h> // for FILE
 #include <stdbool.h>
@@ -37,67 +37,42 @@
  *
  * @return Pointer to the global log context.
  */
-archi_log_context_t
-archi_exe_log_context(void);
+ARCHI_GLOBAL_GET_FUNC(archi_exe_log_global_context);
 
 /*****************************************************************************/
 
 /**
- * @brief Initialize the log stream.
+ * @brief Initialize the global log context.
  *
- * This function sets the log stream the very first time it's called.
- * Subsequent invocations have no effect.
+ * This function sets the current UTC time as the log start time.
  *
  * @param[in] stream
- *     Valid stream used to print messages to. If NULL, stderr is used instead.
- */
-void
-archi_exe_log_init_stream(
-        FILE *stream
-);
-
-/**
- * @brief Initialize the log start time.
- *
- * This function sets the log start time the very first time it's called.
- * Subsequent invocations have no effect.
- *
- * @note The current UTC time is used as the log start time.
- */
-void
-archi_exe_log_init_start_time(void);
-
-/**
- * @brief Initialize the log verbosity level (first call only).
- *
- * This function sets the log verbosity level the very first time it's called.
- * Subsequent invocations have no effect.
- *
- * The provided @p level is clamped into the valid
- * range [0, ARCHI_LOG_VERBOSITY_MAX] before being stored.
+ *     Valid stream used to print messages to. If NULL, the default stream (stderr) is used instead.
  *
  * @param[in] level
  *     Desired verbosity level. Values < 0 become 0; values >
  *     ARCHI_LOG_VERBOSITY_MAX become ARCHI_LOG_VERBOSITY_MAX.
- */
-void
-archi_exe_log_init_verbosity(
-        int level
-);
-
-/**
- * @brief Initialize the log color usage flag (first call only).
- *
- * This function sets the usage of color in log the very first time it's called.
- * Subsequent invocations have no effect.
  *
  * @param[in] colorful
  *     True to allow use of color in log messages, false to force monochrome output.
+ *
+ * The provided @p level is clamped into the valid
+ * range [0, ARCHI_LOG_VERBOSITY_MAX] before being stored.
+ *
+ * @return True on success, false on failure.
  */
-void
-archi_exe_log_init_color(
+bool
+archi_exe_log_initialize(
+        FILE *stream,
+        int level,
         bool colorful
 );
+
+/**
+ * @brief Finalize the global log context.
+ */
+void
+archi_exe_log_finalize(void);
 
 #endif // _ARCHI_EXE_LOGGING_FUN_H_
 

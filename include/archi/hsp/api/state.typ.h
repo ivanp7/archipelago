@@ -1,5 +1,5 @@
 /*****************************************************************************
- * Copyright (C) 2023-2025 by Ivan Podmazov                                  *
+ * Copyright (C) 2023-2026 by Ivan Podmazov                                  *
  *                                                                           *
  * This file is part of Archipelago.                                         *
  *                                                                           *
@@ -28,6 +28,7 @@
 #define _ARCHI_HSP_API_STATE_TYP_H_
 
 #include "archi/hsp/api/exec.typ.h"
+#include "archipelago/base/error.typ.h"
 
 #include <stddef.h> // for size_t
 
@@ -37,14 +38,20 @@
  * @warning Use of variable-length arrays is not allowed in state functions,
  * as it will lead to memory leaks due to the hierarchical state processor implementation details.
  */
-#define ARCHI_HSP_STATE_FUNCTION(name) void name( \
-        void *const restrict data, /* Current state data. */ \
-        const restrict archi_hsp_execution_context_t hsp) /* Hierarchical state processor execution context. */
+#define ARCHI_HSP_STATE_FUNCTION(name) void name(                               \
+        void *data, /* [in] Current state data. */                              \
+        archi_hsp_execution_context_t hsp, /* [in] HSP execution context. */    \
+        ARCHI_ERROR_PARAMETER_DECL) /* [out] Error. */
 
 /**
  * @brief State function type.
  */
 typedef ARCHI_HSP_STATE_FUNCTION((*archi_hsp_state_function_t));
+
+/**
+ * @brief Function type tag for state functions.
+ */
+#define ARCHI_POINTER_FUNCTION_TAG__HSP_STATE   2
 
 /*****************************************************************************/
 
@@ -55,7 +62,7 @@ typedef struct archi_hsp_state {
     archi_hsp_state_function_t function; ///< State function.
     void *data; ///< State data.
 
-    void *metadata; ///< State metadata for a transition function.
+    void *metadata; ///< State metadata for a transition function use.
 } archi_hsp_state_t;
 
 /**

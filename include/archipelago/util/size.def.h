@@ -1,5 +1,5 @@
 /*****************************************************************************
- * Copyright (C) 2023-2025 by Ivan Podmazov                                  *
+ * Copyright (C) 2023-2026 by Ivan Podmazov                                  *
  *                                                                           *
  * This file is part of Archipelago.                                         *
  *                                                                           *
@@ -20,7 +20,7 @@
 
 /**
  * @file
- * @brief Macros for calculating sizes of objects.
+ * @brief Utilities related to sizes of objects.
  */
 
 #pragma once
@@ -28,7 +28,18 @@
 #define _ARCHIPELAGO_UTIL_SIZE_DEF_H_
 
 /**
- * @def ARCHI_SIZEOF_FLEXIBLE(type, member, num_of)
+ * @def ARCHI_LENGTH_ARRAY(array)
+ * @brief Get length of an array.
+ *
+ * @note This macro doesn't work with pointers.
+ *
+ * @return Number of elements in array.
+ */
+#define ARCHI_LENGTH_ARRAY(array)   \
+    (sizeof((array)) / sizeof((array)[0]))
+
+/**
+ * @def ARCHI_SIZEOF_FLEXIBLE(type, member, length)
  * @brief Calculate the total size, in bytes, of a struct that contains a flexible array member.
  *
  * This macro is useful when you need to allocate a block of memory large enough
@@ -37,29 +48,26 @@
  *
  * @param type     The name of the struct type that declares the flexible array member.
  * @param member   The name of the flexible array member within the struct.
- * @param num_of   The number of elements you wish to allocate in the flexible array.
+ * @param length   The number of elements you wish to allocate in the flexible array.
  *
  * @return The total size in bytes.
  */
-#define ARCHI_SIZEOF_FLEXIBLE(type, member, num_of) \
-    (sizeof(type) + sizeof(((type*)NULL)->member[0]) * (num_of))
+#define ARCHI_SIZEOF_FLEXIBLE(type, member, length) \
+    (sizeof(type) + sizeof(((type*)NULL)->member[0]) * (length))
 
 /**
- * @def ARCHI_SIZE_PADDED(size, alignment)
- * @brief Calculate the total size, in bytes, of an object including padding for alignment.
+ * @def ARCHI_SIZE_OVERFLOW(length, stride)
+ * @brief Check if full size does not fit in the type.
  *
- * This macro rounds up the given @p size to the nearest multiple of @p alignment,
- * ensuring the element size respects the specified memory alignment requirements.
+ * @param length   The number of data elements.
+ * @param stride   Size of a data element.
  *
- * @param size      The original size of the element in bytes.
- * @param alignment The alignment requirement in bytes (must be a power of two).
+ * @note @p stride must be positive.
  *
- * @return The size of the element rounded up to the nearest multiple of @p alignment.
- *
- * @note This macro assumes @p alignment is a power of two.
+ * @return True if the product overflows, otherwise false.
  */
-#define ARCHI_SIZE_PADDED(size, alignment) \
-    (((size) + ((alignment) - 1)) & ~((alignment) - 1))
+#define ARCHI_SIZE_OVERFLOW(length, stride) \
+    (((length) * (stride)) / (stride) != (length))
 
 #endif // _ARCHIPELAGO_UTIL_SIZE_DEF_H_
 

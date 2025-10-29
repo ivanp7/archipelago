@@ -1,5 +1,5 @@
 /*****************************************************************************
- * Copyright (C) 2023-2025 by Ivan Podmazov                                  *
+ * Copyright (C) 2023-2026 by Ivan Podmazov                                  *
  *                                                                           *
  * This file is part of Archipelago.                                         *
  *                                                                           *
@@ -29,7 +29,7 @@
 
 #include "archi/hsp/api/state.typ.h"
 #include "archi/hsp/api/transition.typ.h"
-#include "archipelago/base/status.typ.h"
+#include "archipelago/base/error.typ.h"
 
 /**
  * @brief Execute a hierarchical state processor.
@@ -42,13 +42,12 @@
  * 4. Pop the next state from the stack.
  * 5. Call the state function [it can modify the stack].
  * 6. Go to step 1.
- *
- * @return Status code.
  */
-archi_status_t
+void
 archi_hsp_execute(
         const archi_hsp_frame_t *entry_frame, ///< [in] Entry frame.
-        archi_hsp_transition_t transition ///< [in] State transition.
+        archi_hsp_transition_t transition, ///< [in] State transition.
+        ARCHI_ERROR_PARAMETER_DECL ///< [out] Error.
 );
 
 #endif // _ARCHI_HSP_API_EXEC_FUN_H_

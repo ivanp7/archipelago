@@ -1,5 +1,5 @@
 /*****************************************************************************
- * Copyright (C) 2023-2025 by Ivan Podmazov                                  *
+ * Copyright (C) 2023-2026 by Ivan Podmazov                                  *
  *                                                                           *
  * This file is part of Archipelago.                                         *
  *                                                                           *
@@ -24,87 +24,189 @@
  */
 
 #include "archi/memory/api/interface.fun.h"
+#include "archipelago/base/pointer.fun.h"
+#include "archipelago/base/pointer.def.h"
 #include "archipelago/base/ref_count.fun.h"
-#include "archipelago/util/size.fun.h"
-#include "archipelago/util/size.def.h"
 
 #include <stdlib.h> // for malloc(), free()
-#include <string.h> // for memcpy()
 
 struct archi_memory {
-    archi_pointer_t interface; ///< Memory interface.
+    archi_rcpointer_t interface; ///< Memory interface.
 
-    archi_pointer_t allocation; ///< Current memory allocation.
-    void *metadata; ///< Metadata for the current memory allocation.
+    archi_rcpointer_t allocation; ///< Memory allocation.
+    void *metadata; ///< Metadata for the memory allocation.
 
-    archi_pointer_t mapping; ///< Current memory mapping.
+    size_t length; ///< Number of data elements.
+    size_t stride; ///< Size of a data element.
+    size_t alignment; ///< Data element alignment requirement.
+    size_t overalignment; ///< Memory alignment requirement.
 };
 
-archi_pointer_t
+archi_rcpointer_t
 archi_memory_interface(
         archi_memory_t memory)
 {
     if (memory == NULL)
-        return (archi_pointer_t){0};
+        return (archi_rcpointer_t){0};
 
     return memory->interface;
 }
 
-archi_pointer_t
+archi_rcpointer_t
 archi_memory_allocation(
         archi_memory_t memory)
 {
     if (memory == NULL)
-        return (archi_pointer_t){0};
+        return (archi_rcpointer_t){0};
 
     return memory->allocation;
 }
 
-archi_pointer_t
-archi_memory_mapping(
+size_t
+archi_memory_length(
         archi_memory_t memory)
 {
     if (memory == NULL)
-        return (archi_pointer_t){0};
+        return 0;
 
-    return memory->mapping;
+    return memory->length;
+}
+
+size_t
+archi_memory_stride(
+        archi_memory_t memory)
+{
+    if (memory == NULL)
+        return 0;
+
+    return memory->stride;
+}
+
+size_t
+archi_memory_size(
+        archi_memory_t memory)
+{
+    if (memory == NULL)
+        return 0;
+
+    return memory->length * memory->stride;
+}
+
+size_t
+archi_memory_alignment(
+        archi_memory_t memory)
+{
+    if (memory == NULL)
+        return 0;
+
+    return memory->alignment;
+}
+
+size_t
+archi_memory_overalignment(
+        archi_memory_t memory)
+{
+    if (memory == NULL)
+        return 0;
+
+    return memory->overalignment;
 }
 
 /*****************************************************************************/
 
+static
+ARCHI_DESTRUCTOR_FUNC(archi_memory_deallocator)
+{
+    archi_memory_t memory = data;
+
+    const archi_memory_interface_t *interface_ptr = memory->interface.ptr;
+
+    // Free the memory
+    if (interface_ptr->free_fn != NULL)
+    {
+        archi_memory_alloc_info_t alloc_info = {
+            .allocation = {
+                .ptr = memory->allocation.ptr,
+                .writable = ARCHI_POINTER_TO_WRITABLE_DATA(memory->allocation.attr),
+            },
+            .metadata = memory->metadata,
+        };
+        archi_pointer_attr_parse__opaque_data(memory->allocation.attr, &alloc_info.allocation.tag, NULL);
+
+        /*********************************/
+        interface_ptr->free_fn(alloc_info);
+        /*********************************/
+    }
+
+    // Decrement the reference count of the interface
+    archi_reference_count_decrement(memory->interface.ref_count);
+
+    // Destroy the memory object
+    free(memory);
+}
+
 archi_memory_t
 archi_memory_allocate(
-        archi_pointer_t interface,
+        archi_rcpointer_t interface,
         void *alloc_data,
 
-        archi_array_layout_t layout,
+        size_t length,
+        size_t stride,
+        size_t alignment,
+        size_t overalignment,
 
-        archi_status_t *code)
+        ARCHI_ERROR_PARAMETER_DECL)
 {
-    if ((interface.flags & ARCHI_POINTER_FLAG_FUNCTION) || (interface.ptr == NULL))
+    // Perform necessary checks
+    archi_error_t error;
+    if (!archi_pointer_valid(interface.p, &error))
     {
-        if (code != NULL)
-            *code = ARCHI_STATUS_EMISUSE;
+        ARCHI_ERROR_SET(error.code, "memory interface pointer is invalid: %s", error.message);
+        return NULL;
+    }
 
+    if (!archi_pointer_attr_compatible(interface.attr,
+                ARCHI_POINTER_ATTR__DATA_TYPE(1, archi_memory_interface_t)))
+    {
+        ARCHI_ERROR_SET(ARCHI__ECONSTRAINT, "memory interface pointer attributes are incorrect");
+        return NULL;
+    }
+    else if (ARCHI_POINTER_TO_STACK(interface.attr))
+    {
+        ARCHI_ERROR_SET(ARCHI__ECONSTRAINT, "memory interface is on stack");
+        return NULL;
+    }
+
+    if (overalignment == 0)
+        overalignment = alignment;
+
+    archi_pointer_attr_t attr = archi_pointer_attr__transp_data(length, stride, alignment, &error);
+
+    if (length == 0)
+    {
+        ARCHI_ERROR_SET(ARCHI__ECONSTRAINT, "memory parameter is invalid: length is zero");
+        return NULL;
+    }
+    else if (attr == (archi_pointer_attr_t)-1)
+    {
+        ARCHI_ERROR_SET(error.code, "memory parameter is invalid: %s", error.message);
+        return NULL;
+    }
+    else if ((overalignment & (overalignment - 1)) != 0)
+    {
+        ARCHI_ERROR_SET(ARCHI__ECONSTRAINT, "memory parameter is invalid: overalignment is not a power of two");
+        return NULL;
+    }
+    else if (overalignment < alignment)
+    {
+        ARCHI_ERROR_SET(ARCHI__ECONSTRAINT, "memory parameter is invalid: overalignment is less than alignment");
         return NULL;
     }
 
     const archi_memory_interface_t *interface_ptr = interface.ptr;
-    if ((interface_ptr->alloc_fn == NULL) || (interface_ptr->map_fn == NULL))
+    if (interface_ptr->alloc_fn == NULL)
     {
-        if (code != NULL)
-            *code = ARCHI_STATUS_EINTERFACE;
-
-        return NULL;
-    }
-
-    // Calculate the total number of bytes requested
-    size_t num_bytes = archi_size_array(layout);
-    if (num_bytes == 0) // invalid layout
-    {
-        if (code != NULL)
-            *code = ARCHI_STATUS_EMISUSE;
-
+        ARCHI_ERROR_SET(ARCHI__ECONSTRAINT, "memory interface doesn't have alloc_fn()");
         return NULL;
     }
 
@@ -112,54 +214,64 @@ archi_memory_allocate(
     archi_memory_t memory = malloc(sizeof(*memory));
     if (memory == NULL)
     {
-        if (code != NULL)
-            *code = ARCHI_STATUS_ENOMEMORY;
-
+        ARCHI_ERROR_SET(ARCHI__EMEMORY, "couldn't allocate memory object");
         return NULL;
     }
 
     *memory = (struct archi_memory){
         .interface = interface,
+
+        .length = length,
+        .stride = stride,
+        .alignment = alignment,
+        .overalignment = overalignment,
     };
 
+    // Allocate the reference counter
+    archi_reference_count_t ref_count =
+        archi_reference_count_alloc(archi_memory_deallocator, memory);
+    if (ref_count == NULL)
+    {
+        ARCHI_ERROR_SET(ARCHI__EMEMORY, "couldn't allocate memory reference counter");
+        goto failure;
+    }
+
     // Allocate the memory itself
-    archi_status_t code_alloc = 0;
-
+    ARCHI_ERROR_RESET_VAR(&error);
+    /*************************************************************/
     archi_memory_alloc_info_t alloc_info = interface_ptr->alloc_fn(
-            num_bytes, layout.alignment, alloc_data, &code_alloc);
+            length * stride, overalignment, alloc_data, &error);
+    /*************************************************************/
+    ARCHI_ERROR_ASSIGN(error);
 
-    if (code_alloc < 0)
+    if (alloc_info.allocation.ptr == NULL)
     {
-        if (code != NULL)
-            *code = code_alloc;
-
-        free(memory);
-        return NULL;
+        if (error.code == 0)
+            ARCHI_ERROR_SET(ARCHI__ECONTRACT, "alloc_fn() returned zero status code on failure");
+        goto failure;
     }
-    else if (alloc_info.allocation == NULL)
-    {
-        if (code != NULL)
-            *code = (code_alloc > 0) ? code_alloc : ARCHI_STATUS_ENOMEMORY;
 
-        free(memory);
-        return NULL;
-    }
+    // Store the allocation into the object
+    memory->allocation = (archi_rcpointer_t){
+        .ptr = alloc_info.allocation.ptr,
+        .attr = (alloc_info.allocation.writable ?
+                ARCHI_POINTER_TYPE__DATA_WRITABLE : ARCHI_POINTER_TYPE__DATA_READONLY) |
+            (alloc_info.allocation.tag ?
+             archi_pointer_attr__opaque_data(alloc_info.allocation.tag) : attr),
+        .ref_count = ref_count,
+    };
+    memory->metadata = alloc_info.metadata;
 
     // Increase the reference count of the interface
     archi_reference_count_increment(interface.ref_count);
 
-    // Store the allocation into the object
-    memory->allocation = (archi_pointer_t){
-        .ptr = alloc_info.allocation,
-        .element = layout,
-    };
-
-    memory->metadata = alloc_info.metadata;
-
-    if (code != NULL)
-        *code = code_alloc;
-
     return memory;
+
+failure:
+    archi_reference_count_free(ref_count);
+    free(memory);
+
+    return NULL;
 }
 
 void
@@ -169,217 +281,207 @@ archi_memory_free(
     if (memory == NULL)
         return;
 
-    if (memory->mapping.ptr != NULL)
-        archi_memory_unmap(memory);
-
-    const archi_memory_interface_t *interface_ptr = memory->interface.ptr;
-
-    if (interface_ptr->free_fn != NULL)
-    {
-        archi_memory_alloc_info_t alloc_info = {
-            .allocation = memory->allocation.ptr,
-            .metadata = memory->metadata,
-        };
-
-        interface_ptr->free_fn(alloc_info);
-    }
-
-    archi_reference_count_decrement(memory->interface.ref_count);
-
-    free(memory);
+    // Decrement the reference count of the memory allocation
+    archi_reference_count_decrement(memory->allocation.ref_count);
 }
+
+/*****************************************************************************/
+
+struct archi_memory_mapping {
+    archi_memory_t memory; ///< Backing memory object.
+
+    archi_rcpointer_t pointer; ///< Pointer to the mapped memory region.
+    void *metadata; ///< Metadata for the memory mapping.
+
+    size_t offset; ///< Offset of the mapped region.
+};
+
+archi_memory_t
+archi_memory_mapping_memory(
+        archi_memory_mapping_t mapping)
+{
+    if (mapping == NULL)
+        return NULL;
+
+    return mapping->memory;
+}
+
+archi_rcpointer_t
+archi_memory_mapping_pointer(
+        archi_memory_mapping_t mapping)
+{
+    if (mapping == NULL)
+        return (archi_rcpointer_t){0};
+
+    return mapping->pointer;
+}
+
+size_t
+archi_memory_mapping_offset(
+        archi_memory_mapping_t mapping)
+{
+    if (mapping == NULL)
+        return 0;
+
+    return mapping->offset;
+}
+
+/*****************************************************************************/
 
 static
 ARCHI_DESTRUCTOR_FUNC(archi_memory_mapping_destructor)
 {
-    archi_memory_t memory = data;
+    archi_memory_mapping_t mapping = data;
+    archi_memory_t memory = mapping->memory;
 
     const archi_memory_interface_t *interface_ptr = memory->interface.ptr;
 
+    // Unmap the memory
     if (interface_ptr->unmap_fn != NULL)
     {
         archi_memory_alloc_info_t alloc_info = {
-            .allocation = memory->allocation.ptr,
+            .allocation = {
+                .ptr = memory->allocation.ptr,
+                .writable = ARCHI_POINTER_TO_WRITABLE_DATA(memory->allocation.attr),
+            },
             .metadata = memory->metadata,
         };
+        archi_pointer_attr_parse__opaque_data(memory->allocation.attr, &alloc_info.allocation.tag, NULL);
 
-        interface_ptr->unmap_fn(alloc_info, memory->mapping.ptr);
+        archi_memory_map_info_t map_info = {
+            .mapping = {
+                .ptr = mapping->pointer.ptr,
+                .writable = ARCHI_POINTER_TO_WRITABLE_DATA(mapping->pointer.attr),
+            },
+            .metadata = mapping->metadata,
+        };
+
+        /********************************************/
+        interface_ptr->unmap_fn(alloc_info, map_info);
+        /********************************************/
     }
 
-    memory->mapping = (archi_pointer_t){0};
+    // Decrement the reference count of the memory object
+    archi_reference_count_decrement(memory->allocation.ref_count);
+
+    // Destroy the memory mapping object
+    free(mapping);
 }
 
-archi_pointer_t
+archi_memory_mapping_t
 archi_memory_map(
         archi_memory_t memory,
         void *map_data,
 
         size_t offset,
-        size_t num_of,
-        bool writeable,
+        size_t length,
 
-        archi_status_t *code)
+        ARCHI_ERROR_PARAMETER_DECL)
 {
-    if ((memory == NULL) || (memory->mapping.ptr != NULL) ||
-            (offset >= memory->allocation.element.num_of))
+    // Perform necessary checks
+    if (memory == NULL)
     {
-        if (code != NULL)
-            *code = ARCHI_STATUS_EMISUSE;
-
-        return (archi_pointer_t){0};
+        ARCHI_ERROR_SET(ARCHI__ECONSTRAINT, "memory object is NULL");
+        return NULL;
+    }
+    else if (offset >= memory->length)
+    {
+        ARCHI_ERROR_SET(ARCHI__ECONSTRAINT, "memory mapping offset (%zu) out of range (memory length = %zu)",
+                offset, memory->length);
+        return NULL;
     }
 
-    // Prepare layout and calculate sizes
-    if (num_of == 0)
-        num_of = memory->allocation.element.num_of - offset;
-    else if (offset + num_of > memory->allocation.element.num_of)
+    if (length == 0)
+        length = memory->length - offset;
+    else if (offset + length > memory->length)
     {
-        if (code != NULL)
-            *code = ARCHI_STATUS_EMISUSE;
-
-        return (archi_pointer_t){0};
+        ARCHI_ERROR_SET(ARCHI__ECONSTRAINT, "memory mapping offset+length (%zu + %zu) out of range (memory length = %zu)",
+                offset, length, memory->length);
+        return NULL;
     }
 
-    archi_array_layout_t layout = {
-        .num_of = num_of,
-        .size = memory->allocation.element.size,
-        .alignment = memory->allocation.element.alignment,
+    const archi_memory_interface_t *interface_ptr = memory->interface.ptr;
+    if (interface_ptr->map_fn == NULL)
+    {
+        ARCHI_ERROR_SET(ARCHI__ECONSTRAINT, "memory interface doesn't have map_fn()");
+        return NULL;
+    }
+
+    // Allocate the memory mapping object
+    archi_memory_mapping_t mapping = malloc(sizeof(*mapping));
+    if (mapping == NULL)
+    {
+        ARCHI_ERROR_SET(ARCHI__EMEMORY, "couldn't allocate memory mapping object");
+        return NULL;
+    }
+
+    *mapping = (struct archi_memory_mapping){
+        .memory = memory,
+        .offset = offset,
     };
-
-    size_t num_bytes = archi_size_array(layout);
-    size_t element_size = ARCHI_SIZE_PADDED(layout.size, layout.alignment);
 
     // Allocate the reference counter
     archi_reference_count_t ref_count =
-        archi_reference_count_alloc(archi_memory_mapping_destructor, memory);
+        archi_reference_count_alloc(archi_memory_mapping_destructor, mapping);
     if (ref_count == NULL)
     {
-        if (code != NULL)
-            *code = ARCHI_STATUS_ENOMEMORY;
-
-        return (archi_pointer_t){0};
+        ARCHI_ERROR_SET(ARCHI__EMEMORY, "couldn't allocate memory mapping refcounter");
+        goto failure;
     }
 
-    // Map the memory area
-    archi_status_t code_map = 0;
-
-    const archi_memory_interface_t *interface_ptr = memory->interface.ptr;
-
+    // Map the memory region
     archi_memory_alloc_info_t alloc_info = {
-        .allocation = memory->allocation.ptr,
+        .allocation = {
+            .ptr = memory->allocation.ptr,
+            .writable = ARCHI_POINTER_TO_WRITABLE_DATA(memory->allocation.attr),
+        },
         .metadata = memory->metadata,
     };
+    archi_pointer_attr_parse__opaque_data(memory->allocation.attr, &alloc_info.allocation.tag, NULL);
 
-    void *mapping = interface_ptr->map_fn(alloc_info,
-            offset * element_size, num_bytes, writeable, map_data, &code_map);
+    archi_error_t error = {0};
+    /**************************************************************************/
+    archi_memory_map_info_t map_info = interface_ptr->map_fn(alloc_info,
+            offset * memory->stride, length * memory->stride, map_data, &error);
+    /**************************************************************************/
+    ARCHI_ERROR_ASSIGN(error);
 
-    if (code_map < 0)
+    if (map_info.mapping.ptr == NULL)
     {
-        if (code != NULL)
-            *code = code_map;
-
-        free(ref_count);
-        return (archi_pointer_t){0};
-    }
-    else if (mapping == NULL)
-    {
-        if (code != NULL)
-            *code = (code_map > 0) ? code_map : ARCHI_STATUS_ERESOURCE;
-
-        free(ref_count);
-        return (archi_pointer_t){0};
+        if (error.code == 0)
+            ARCHI_ERROR_SET(ARCHI__ECONTRACT, "map_fn() returned zero status code on failure");
+        goto failure;
     }
 
-    // Store the allocation into the object
-    memory->mapping = (archi_pointer_t){
-        .ptr = mapping,
+    // Store the mapping into the object
+    mapping->pointer = (archi_rcpointer_t){
+        .ptr = map_info.mapping.ptr,
+        .attr = (map_info.mapping.writable ?
+                ARCHI_POINTER_TYPE__DATA_WRITABLE : ARCHI_POINTER_TYPE__DATA_READONLY) |
+            archi_pointer_attr__transp_data(length, memory->stride, memory->alignment, NULL),
         .ref_count = ref_count,
-        .flags = writeable ? ARCHI_POINTER_FLAG_WRITABLE : 0,
-        .element = layout,
     };
+    mapping->metadata = map_info.metadata;
 
-    if (code != NULL)
-        *code = code_map;
+    // Increase the reference count of the memory object
+    archi_reference_count_increment(memory->allocation.ref_count);
 
-    return memory->mapping;
+    return mapping;
+
+failure:
+    archi_reference_count_free(ref_count);
+    free(mapping);
+
+    return NULL;
 }
 
 void
 archi_memory_unmap(
-        archi_memory_t memory)
+        archi_memory_mapping_t mapping)
 {
-    if (memory == NULL)
+    if (mapping == NULL)
         return;
 
-    archi_reference_count_decrement(memory->mapping.ref_count);
-}
-
-/*****************************************************************************/
-
-archi_status_t
-archi_memory_map_copy_unmap(
-        archi_memory_t memory_dest,
-        size_t offset_dest,
-        void *map_data_dest,
-
-        archi_memory_t memory_src,
-        size_t offset_src,
-        void *map_data_src,
-
-        size_t num_of)
-{
-    if ((memory_dest == NULL) || (memory_src == NULL) || (memory_dest == memory_src))
-        return ARCHI_STATUS_EMISUSE;
-    else if ((memory_dest->mapping.ptr != NULL) || (memory_src->mapping.ptr != NULL))
-        return ARCHI_STATUS_EMISUSE;
-    else if (memory_dest->allocation.element.size != memory_src->allocation.element.size)
-        return ARCHI_STATUS_EMISUSE;
-    else if (ARCHI_SIZE_PADDED(memory_dest->allocation.element.size,
-                memory_dest->allocation.element.alignment) !=
-            ARCHI_SIZE_PADDED(memory_src->allocation.element.size,
-                memory_src->allocation.element.alignment))
-        return ARCHI_STATUS_EMISUSE;
-
-    if (num_of == 0)
-        return 0;
-
-    if ((offset_dest >= memory_dest->allocation.element.num_of) ||
-            (offset_src >= memory_src->allocation.element.num_of))
-        return ARCHI_STATUS_EMISUSE;
-    else if ((offset_dest + num_of > memory_dest->allocation.element.num_of) ||
-            (offset_src + num_of > memory_src->allocation.element.num_of))
-        return ARCHI_STATUS_EMISUSE;
-
-    size_t num_bytes = archi_size_array((archi_array_layout_t){ // number of bytes to copy
-            .num_of = num_of,
-            .size = memory_dest->allocation.element.size,
-            .alignment = memory_dest->allocation.element.alignment,
-        });
-
-    archi_status_t code = 0;
-
-    // Map source memory
-    archi_pointer_t src = archi_memory_map(memory_src, map_data_src,
-            offset_src, num_of, false, &code);
-    if (src.ptr == NULL)
-        return code;
-
-    // Map destination memory
-    archi_pointer_t dest = archi_memory_map(memory_dest, map_data_dest,
-            offset_dest, num_of, true, &code);
-    if (dest.ptr == NULL)
-    {
-        archi_memory_unmap(memory_src);
-        return code;
-    }
-
-    // Copy data
-    memcpy(dest.ptr, src.ptr, num_bytes);
-
-    // Unmap memory
-    archi_memory_unmap(memory_dest);
-    archi_memory_unmap(memory_src);
-
-    return 0;
+    archi_reference_count_decrement(mapping->pointer.ref_count);
 }
 

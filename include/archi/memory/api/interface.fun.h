@@ -1,5 +1,5 @@
 /*****************************************************************************
- * Copyright (C) 2023-2025 by Ivan Podmazov                                  *
+ * Copyright (C) 2023-2026 by Ivan Podmazov                                  *
  *                                                                           *
  * This file is part of Archipelago.                                         *
  *                                                                           *
@@ -30,35 +30,76 @@
 #include "archi/memory/api/handle.typ.h"
 #include "archi/memory/api/interface.typ.h"
 #include "archipelago/base/pointer.typ.h"
-#include "archipelago/base/size.typ.h"
 
 /**
- * @brief Extract memory interface.
+ * @brief Get memory interface.
  *
- * @return Pointer the interface of the memory.
+ * @return Pointer to the interface of the memory.
  */
-archi_pointer_t
+archi_rcpointer_t
 archi_memory_interface(
         archi_memory_t memory ///< [in] Memory.
 );
 
 /**
- * @brief Extract raw memory allocation.
+ * @brief Get raw memory allocation.
  *
- * @return Pointer wrapper to the raw memory allocation.
+ * @return Pointer to the raw memory allocation.
  */
-archi_pointer_t
+archi_rcpointer_t
 archi_memory_allocation(
         archi_memory_t memory ///< [in] Memory.
 );
 
 /**
- * @brief Extract mapped memory region.
+ * @brief Get number of data elements in the memory.
  *
- * @return Pointer wrapper to the mapped memory region.
+ * @return Number of data elements.
  */
-archi_pointer_t
-archi_memory_mapping(
+size_t
+archi_memory_length(
+        archi_memory_t memory ///< [in] Memory.
+);
+
+/**
+ * @brief Get size of a data element in the memory.
+ *
+ * @return Size of a data element.
+ */
+size_t
+archi_memory_stride(
+        archi_memory_t memory ///< [in] Memory.
+);
+
+/**
+ * @brief Get size of the memory.
+ *
+ * @return Size of a the memory allocation.
+ */
+size_t
+archi_memory_size(
+        archi_memory_t memory ///< [in] Memory.
+);
+
+/**
+ * @brief Get data element alignment requirement.
+ *
+ * @return Data element alignment requirement.
+ */
+size_t
+archi_memory_alignment(
+        archi_memory_t memory ///< [in] Memory.
+);
+
+/**
+ * @brief Get memory alignment requirement.
+ *
+ * Memory alignment requirement is never less than data element alignment requirement.
+ *
+ * @return Memory alignment requirement.
+ */
+size_t
+archi_memory_overalignment(
         archi_memory_t memory ///< [in] Memory.
 );
 
@@ -67,99 +108,104 @@ archi_memory_mapping(
 /**
  * @brief Allocate a memory object.
  *
+ * If `overalignment` is 0, memory alignment requirement is equal to data element alignment requirement.
+ *
  * @return New allocated memory.
  */
 archi_memory_t
 archi_memory_allocate(
-        archi_pointer_t interface, ///< [in] Memory interface.
+        archi_rcpointer_t interface, ///< [in] Memory interface.
         void *alloc_data, ///< [in] Interface-specific data for allocation.
 
-        archi_array_layout_t layout, ///< [in] Memory array layout.
+        size_t length, ///< [in] Number of data elements to allocate.
+        size_t stride, ///< [in] Size of each data element.
+        size_t alignment, ///< [in] Data element alignment requirement.
+        size_t overalignment, ///< [in] Memory alignment requirement or 0.
 
-        archi_status_t *code ///< [out] Status code.
+        ARCHI_ERROR_PARAMETER_DECL ///< [out] Error.
 );
 
 /**
  * @brief Deallocate a memory object.
  *
- * This is done forcibly, without considering the reference count state.
- * If an area of the memory is mapped, it is unmapped.
+ * This function is equivalent to:
+ * ```c
+ * archi_reference_count_decrement(archi_memory_allocation(memory).ref_count);
+ * ```
+ *
+ * The memory object is to be considered invalid after this call.
  */
 void
 archi_memory_free(
         archi_memory_t memory ///< [in] Memory.
 );
 
+/*****************************************************************************/
+
 /**
- * @brief Map an area of a memory object for read/write access.
+ * @brief Get the backing memory object from the memory mapping object.
  *
- * @return Pointer wrapper to the mapped memory area.
+ * @return Pointer to the backing memory object.
  */
-archi_pointer_t
-archi_memory_map(
-        archi_memory_t memory, ///< [in] Memory.
-        void *map_data, ///< [in] Interface-specific data for mapping.
-
-        size_t offset, ///< [in] Offset to the mapped area in data elements.
-        size_t num_of, ///< [in] Number of mapped data elements.
-        bool writeable, ///< [in] Whether the memory is mapped for writing.
-
-        archi_status_t *code ///< [out] Status code.
+archi_memory_t
+archi_memory_mapping_memory(
+        archi_memory_mapping_t mapping ///< [in] Memory mapping.
 );
 
 /**
- * @brief Unmap a previously mapped memory region.
+ * @brief Get pointer to the mapped memory region.
+ *
+ * @return Pointer to the mapped memory region.
  */
-void
-archi_memory_unmap(
-        archi_memory_t memory ///< [in] Memory.
+archi_rcpointer_t
+archi_memory_mapping_pointer(
+        archi_memory_mapping_t mapping ///< [in] Memory mapping.
+);
+
+/**
+ * @brief Get offset of the mapped memory region.
+ *
+ * @return Offset of the mapped memory region.
+ */
+size_t
+archi_memory_mapping_offset(
+        archi_memory_mapping_t mapping ///< [in] Memory mapping.
 );
 
 /*****************************************************************************/
 
 /**
- * @brief Copy a chunk of data between two memory regions.
+ * @brief Map an area of a memory object for read/write access.
  *
- * This routine performs the following steps:
- *   1. If size == 0, return success immediately.
- *   2. Validate that both source and destination memory are non‐NULL, have NULL mapping,
- *   have matching element sizes and alignment, and the copied regions are valid.
- *   3. Map the source region for access via archi_memory_map().
- *   4. Map the destination region for access via archi_memory_map().
- *      If mapping the destination fails, the source mapping is undone.
- *   5. memcpy() num_of data elements from source->mapping.ptr to destination->mapping.ptr.
- *   6. Unmap the destination, then unmap the source via archi_memory_unmap().
+ * Zero length has a special meaning: the mapped region starts from offset
+ * and lasts until the memory end.
  *
- * @note The source and destination memory must not be the same.
- *
- * @param [in,out] memory_dest
- *   Wrapper for the destination memory region. A temporary mapping is
- *   created and torn down during this call; on return mapping_ptr == NULL.
- *
- * @param [in,out] memory_src
- *   Wrapper for the source memory region. A temporary mapping is created
- *   and torn down during this call; on return mapping_ptr == NULL.
- *
- * @param [in] num_of
- *   Number of data elements to copy. May be 0, in which case nothing is done.
- *
- * @return Status code.
- *   @retval 0                     Copy succeeded (or size == 0).
- *   @retval ARCHI_STATUS_EMISUSE  Invalid arguments or size exceeds mapping bounds.
- *   @retval <other>               Error code forwarded from
- *                                 archi_memory_map() or archi_memory_unmap().
+ * @return Pointer to the memory mapping object.
  */
-archi_status_t
-archi_memory_map_copy_unmap(
-        archi_memory_t memory_dest, ///< [in] Destination memory.
-        size_t offset_dest, ///< [in] Offset into destination memory in data elements.
-        void *map_data_dest, ///< [in] Interface-specific data for mapping destination memory.
+archi_memory_mapping_t
+archi_memory_map(
+        archi_memory_t memory, ///< [in] Memory.
+        void *map_data, ///< [in] Interface-specific data for mapping.
 
-        archi_memory_t memory_src, ///< [in] Source memory.
-        size_t offset_src, ///< [in] Offset into source memory in data elements.
-        void *map_data_src, ///< [in] Interface-specific data for mapping source memory.
+        size_t offset, ///< [in] Offset to the mapped area in data elements.
+        size_t length, ///< [in] Number of mapped data elements.
 
-        size_t num_of ///< [in] Number of data elements to copy.
+        ARCHI_ERROR_PARAMETER_DECL ///< [out] Error.
+);
+
+/**
+ * @brief Unmap a previously mapped memory region.
+ *
+ * This function is equivalent to:
+ * ```c
+ * archi_reference_count_decrement(archi_memory_mapping_pointer(mapping).ref_count);
+ * ```
+ *
+ * A memory mapping object is to be considered invalid after this call.
+ */
+void
+archi_memory_unmap(
+        archi_memory_mapping_t mapping ///< [in] Memory mapping.
 );
 
 #endif // _ARCHI_MEMORY_API_INTERFACE_FUN_H_

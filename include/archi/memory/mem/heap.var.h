@@ -1,5 +1,5 @@
 /*****************************************************************************
- * Copyright (C) 2023-2025 by Ivan Podmazov                                  *
+ * Copyright (C) 2023-2026 by Ivan Podmazov                                  *
  *                                                                           *
  * This file is part of Archipelago.                                         *
  *                                                                           *
@@ -30,33 +30,11 @@
 #include "archi/memory/api/interface.typ.h"
 
 /**
- * @brief Heap memory allocation function.
- *
- * Allocates a block of memory from the heap.
- * If layout.alignment == 0, malloc() is used; otherwise,
- * aligned_alloc() is used with the specified alignment.
- * @p alloc_data is ignored. @p code is never set.
- */
-ARCHI_MEMORY_ALLOC_FUNC(archi_memory_heap_alloc);
-
-/**
- * @brief Heap memory deallocation function.
- */
-ARCHI_MEMORY_FREE_FUNC(archi_memory_heap_free);
-
-/**
- * @brief Heap memory mapping function.
- *
- * This function does nothing but calculating the pointer targeting the specified area.
- * @p code is never set.
- */
-ARCHI_MEMORY_MAP_FUNC(archi_memory_heap_map);
-
-/**
- * @brief Heap memory interface.
+ * @brief Memory interface: heap.
  */
 extern
-const archi_memory_interface_t archi_memory_heap_interface;
+const archi_memory_interface_t
+archi_memory_interface__heap;
 
 #endif // _ARCHI_MEMORY_API_INTERFACE_HEAP_VAR_H_
 

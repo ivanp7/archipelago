@@ -1,5 +1,5 @@
 /*****************************************************************************
- * Copyright (C) 2023-2025 by Ivan Podmazov                                  *
+ * Copyright (C) 2023-2026 by Ivan Podmazov                                  *
  *                                                                           *
  * This file is part of Archipelago.                                         *
  *                                                                           *
@@ -30,9 +30,11 @@
 #include "archi/hsp/api/state.typ.h"
 
 /**
- * @brief Dummy state function doing nothing
+ * @brief Dummy state function doing nothing.
+ *
+ * State function data is not used.
  */
-ARCHI_HSP_STATE_FUNCTION(archi_hsp_state_dummy);
+ARCHI_HSP_STATE_FUNCTION(archi_hsp_state__dummy);
 
 #endif // _ARCHI_HSP_HSP_DUMMY_STATE_FUN_H_
 

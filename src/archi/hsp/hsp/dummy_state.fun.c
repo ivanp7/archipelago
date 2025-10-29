@@ -1,5 +1,5 @@
 /*****************************************************************************
- * Copyright (C) 2023-2025 by Ivan Podmazov                                  *
+ * Copyright (C) 2023-2026 by Ivan Podmazov                                  *
  *                                                                           *
  * This file is part of Archipelago.                                         *
  *                                                                           *
@@ -25,10 +25,11 @@
 
 #include "archi/hsp/hsp/dummy_state.fun.h"
 
-ARCHI_HSP_STATE_FUNCTION(archi_hsp_state_dummy)
+ARCHI_HSP_STATE_FUNCTION(archi_hsp_state__dummy)
 {
     (void) data;
     (void) hsp;
+    (void) ARCHI_ERROR_PARAMETER;
 
     // do nothing
 }

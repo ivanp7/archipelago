@@ -1,5 +1,5 @@
 /*****************************************************************************
- * Copyright (C) 2023-2025 by Ivan Podmazov                                  *
+ * Copyright (C) 2023-2026 by Ivan Podmazov                                  *
  *                                                                           *
  * This file is part of Archipelago.                                         *
  *                                                                           *
@@ -20,7 +20,7 @@
 
 /**
  * @file
- * @brief Application context interface for hierarchical state processor frames.
+ * @brief Context interface for hierarchical state processor frames.
  */
 
 #pragma once
@@ -29,14 +29,31 @@
 
 #include "archi/context/api/interface.typ.h"
 
-ARCHI_CONTEXT_INIT_FUNC(archi_context_hsp_frame_init);   ///< HSP frame initialization function.
-ARCHI_CONTEXT_FINAL_FUNC(archi_context_hsp_frame_final); ///< HSP frame finalization function.
-ARCHI_CONTEXT_GET_FUNC(archi_context_hsp_frame_get);     ///< HSP frame field getter function.
-ARCHI_CONTEXT_SET_FUNC(archi_context_hsp_frame_set);     ///< HSP frame field setter function.
-ARCHI_CONTEXT_ACT_FUNC(archi_context_hsp_frame_act);     ///< HSP frame action function.
-
+/**
+ * @brief Context interface: HSP frame.
+ *
+ * Initialization parameters:
+ * - "num_states"   : (size_t) number of states in the frame
+ *
+ * Getter slots:
+ * - "num_states"               : (size_t) number of states in the frame
+ * - "state.function" [index]   : (archi_hsp_state_function_t) function of state #index
+ * - "state.data" [index]       : data of state #index
+ * - "state.metadata" [index]   : metadata of state #index
+ *
+ * Calls:
+ * - "execute"  : execute HSP with the frame as initial
+ *      parameters:
+ *        - "transition"    : (archi_hsp_transition_t) transition
+ *
+ * Setter slots:
+ * - "state.function" [index]   : (archi_hsp_state_function_t) function of state #index
+ * - "state.data" [index]       : data of state #index
+ * - "state.metadata" [index]   : metadata of state #index
+ */
 extern
-const archi_context_interface_t archi_context_hsp_frame_interface; ///< HSP frame interface.
+const archi_context_interface_t
+archi_context_interface__hsp_frame;
 
 #endif // _ARCHI_HSP_CTX_FRAME_VAR_H_
 

@@ -1,5 +1,5 @@
 /*****************************************************************************
- * Copyright (C) 2023-2025 by Ivan Podmazov                                  *
+ * Copyright (C) 2023-2026 by Ivan Podmazov                                  *
  *                                                                           *
  * This file is part of Archipelago.                                         *
  *                                                                           *
@@ -30,19 +30,18 @@
 #include "archi/memory/api/handle.typ.h"
 
 /**
- * @brief Parameters for archi_memory_map_copy_unmap().
+ * @brief Data for archi_hsp_state__memory_map_copy_unmap().
  */
-typedef struct archi_memory_map_copy_unmap_data {
-    archi_memory_t memory_dest; ///< Destination memory.
-    size_t offset_dest; ///< Offset into destination memory in data elements.
-    void *map_data_dest; ///< Interface-specific data for mapping destination memory.
+typedef struct archi_hsp_state_data__memory_map_copy_unmap {
+    struct {
+        archi_memory_t memory; ///< Memory object.
+        void *map_data; ///< Interface-specific data for mapping memory.
+        size_t offset; ///< Offset into memory in data elements.
+    } dest,  ///< Destination memory.
+        src; ///< Source memory.
 
-    archi_memory_t memory_src; ///< Source memory.
-    size_t offset_src; ///< Offset into source memory in data elements.
-    void *map_data_src; ///< Interface-specific data for mapping source memory.
-
-    size_t num_of; ///< Number of data elements to copy.
-} archi_memory_map_copy_unmap_data_t;
+    size_t length; ///< Number of data elements to copy.
+} archi_hsp_state_data__memory_map_copy_unmap_t;
 
 #endif // _ARCHI_MEMORY_HSP_COPY_TYP_H_
 

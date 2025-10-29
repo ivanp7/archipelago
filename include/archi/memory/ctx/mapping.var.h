@@ -1,5 +1,5 @@
 /*****************************************************************************
- * Copyright (C) 2023-2025 by Ivan Podmazov                                  *
+ * Copyright (C) 2023-2026 by Ivan Podmazov                                  *
  *                                                                           *
  * This file is part of Archipelago.                                         *
  *                                                                           *
@@ -20,7 +20,7 @@
 
 /**
  * @file
- * @brief Application context interface for memory mapping.
+ * @brief Context interface for memory mapping objects.
  */
 
 #pragma once
@@ -29,13 +29,25 @@
 
 #include "archi/context/api/interface.typ.h"
 
-ARCHI_CONTEXT_INIT_FUNC(archi_context_memory_mapping_init);   ///< Memory mapping context initialization function.
-ARCHI_CONTEXT_FINAL_FUNC(archi_context_memory_mapping_final); ///< Memory mapping context finalization function.
-ARCHI_CONTEXT_GET_FUNC(archi_context_memory_mapping_get);     ///< Memory mapping context getter function.
-ARCHI_CONTEXT_ACT_FUNC(archi_context_memory_mapping_act);     ///< Memory mapping context action function.
-
+/**
+ * @brief Context interface: memory mapping.
+ *
+ * Initialization parameters:
+ * - "memory"   : (archi_memory_t) pointer to memory object to map
+ * - "map_data" : data for mapping function
+ * - "offset"   : (size_t) offset of mapped region
+ * - "length"   : (size_t) length of mapped region
+ *
+ * Getter slots:
+ * - "memory"   : (archi_memory_t) pointer to backing memory object
+ * - "ptr"      : pointer to mapped memory
+ * - "offset"   : (size_t) offset of mapped region
+ * - "length"   : (size_t) length of mapped region
+ * - "size"     : (size_t) size of mapped region in bytes
+ */
 extern
-const archi_context_interface_t archi_context_memory_mapping_interface; ///< Memory mapping context interface.
+const archi_context_interface_t
+archi_context_interface__memory_mapping;
 
 #endif // _ARCHI_MEMORY_CTX_MAPPING_VAR_H_
 

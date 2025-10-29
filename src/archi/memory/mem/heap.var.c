@@ -1,5 +1,5 @@
 /*****************************************************************************
- * Copyright (C) 2023-2025 by Ivan Podmazov                                  *
+ * Copyright (C) 2023-2026 by Ivan Podmazov                                  *
  *                                                                           *
  * This file is part of Archipelago.                                         *
  *                                                                           *
@@ -25,41 +25,50 @@
 
 #include "archi/memory/mem/heap.var.h"
 
-#include <stdlib.h> // for malloc(), aligned_alloc(), free()
+#include <stdlib.h> // for aligned_alloc(), free()
 
-ARCHI_MEMORY_ALLOC_FUNC(archi_memory_heap_alloc)
+static
+ARCHI_MEMORY_ALLOC_FUNC(archi_memory_alloc__heap)
 {
     (void) alloc_data;
-    (void) code;
 
     void *allocation;
 
-    if (alignment != 0)
-        allocation = aligned_alloc(alignment, num_bytes);
-    else
-        allocation = malloc(num_bytes);
+    allocation = aligned_alloc(alignment, num_bytes);
+    if (allocation == NULL)
+    {
+        ARCHI_ERROR_SET(ARCHI__EMEMORY, "couldn't allocate memory on heap (%zu bytes, alignment = %#zx)",
+                num_bytes, alignment);
+        return (archi_memory_alloc_info_t){0};
+    }
 
-    return (archi_memory_alloc_info_t){.allocation = allocation};
+    ARCHI_ERROR_RESET();
+    return (archi_memory_alloc_info_t){.allocation = {.ptr = allocation, .writable = true}};
 }
 
-ARCHI_MEMORY_FREE_FUNC(archi_memory_heap_free)
+static
+ARCHI_MEMORY_FREE_FUNC(archi_memory_free__heap)
 {
-    free(alloc_info.allocation);
+    free(alloc_info.allocation.ptr);
 }
 
-ARCHI_MEMORY_MAP_FUNC(archi_memory_heap_map)
+static
+ARCHI_MEMORY_MAP_FUNC(archi_memory_map__heap)
 {
     (void) num_bytes;
-    (void) for_writing;
     (void) map_data;
-    (void) code;
 
-    return (char*)alloc_info.allocation + offset;
+    ARCHI_ERROR_RESET();
+    return (archi_memory_map_info_t){.mapping = {
+        .ptr = (char*)alloc_info.allocation.ptr + offset,
+        .writable = true,
+    }};
 }
 
-const archi_memory_interface_t archi_memory_heap_interface = {
-    .alloc_fn = archi_memory_heap_alloc,
-    .free_fn = archi_memory_heap_free,
-    .map_fn = archi_memory_heap_map,
+const archi_memory_interface_t
+archi_memory_interface__heap = {
+    .alloc_fn = archi_memory_alloc__heap,
+    .free_fn = archi_memory_free__heap,
+    .map_fn = archi_memory_map__heap,
 };
 

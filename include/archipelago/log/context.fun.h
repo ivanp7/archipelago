@@ -1,5 +1,5 @@
 /*****************************************************************************
- * Copyright (C) 2023-2025 by Ivan Podmazov                                  *
+ * Copyright (C) 2023-2026 by Ivan Podmazov                                  *
  *                                                                           *
  * This file is part of Archipelago.                                         *
  *                                                                           *
@@ -20,62 +20,43 @@
 
 /**
  * @file
- * @brief Operations on log context.
+ * @brief Operations on the global logging context.
  */
 
 #pragma once
 #ifndef _ARCHIPELAGO_LOG_CONTEXT_FUN_H_
 #define _ARCHIPELAGO_LOG_CONTEXT_FUN_H_
 
-#include "archipelago/log/context.typ.h"
+#include "archipelago/base/global.typ.h"
 
 #include <stdbool.h>
 
 struct timespec;
 
 /**
- * @brief Initialize the logging module.
+ * @brief Initialize the logging context pointer.
  *
  * @pre
  *      context != NULL
  *
  * @post
- *      Logging module is ready to be used.
+ *      Logging API is ready to be used.
  *
  * @note Subsequent invocations have no effect.
  *
  * @param[in] context
- *      Log context.
+ *      Logging context.
  */
-void
-archi_log_initialize(
-        archi_log_context_t context
-);
+ARCHI_GLOBAL_SET_FUNC(archi_log_global_context_set);
 
 /**
- * @brief Function pointer type for initializing logging module in shared libraries.
+ * @brief Retrieve the logging context pointer.
  *
- * Shared libraries loaded at runtime can use a symbol of this type
- * (typically obtained via dlsym() or a similar mechanism) to initialize
- * their own logging module with the host application's log context.
- *
- * The function called through this pointer should behave identically
- * to @ref archi_log_initialize().
- *
- * @param[in] context
- *      Log context.
- */
-typedef void (*archi_log_initialize_func_t)(archi_log_context_t context);
-
-/**
- * @brief Retrieve the log context the logging module has been initialized with.
- *
- * If the logging module hasn't been initialized yet, the function returns NULL.
+ * If the logging context pointer hasn't been initialized yet, the function returns NULL.
  *
  * @return Pointer to the log context.
  */
-archi_log_context_t
-archi_log_get_context(void);
+ARCHI_GLOBAL_GET_FUNC(archi_log_global_context);
 
 /*****************************************************************************/
 

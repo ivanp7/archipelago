@@ -1,5 +1,5 @@
 /*****************************************************************************
- * Copyright (C) 2023-2025 by Ivan Podmazov                                  *
+ * Copyright (C) 2023-2026 by Ivan Podmazov                                  *
  *                                                                           *
  * This file is part of Archipelago.                                         *
  *                                                                           *
@@ -33,6 +33,11 @@ struct archi_context;
  * @brief Pointer to context.
  */
 typedef struct archi_context *archi_context_t;
+
+/**
+ * @brief Data type tag for archi_context_t.
+ */
+#define ARCHI_POINTER_DATA_TAG__CONTEXT     1
 
 #endif // _ARCHI_CONTEXT_API_HANDLE_TYP_H_
 

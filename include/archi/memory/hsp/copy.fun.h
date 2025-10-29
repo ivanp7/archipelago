@@ -1,5 +1,5 @@
 /*****************************************************************************
- * Copyright (C) 2023-2025 by Ivan Podmazov                                  *
+ * Copyright (C) 2023-2026 by Ivan Podmazov                                  *
  *                                                                           *
  * This file is part of Archipelago.                                         *
  *                                                                           *
@@ -30,12 +30,21 @@
 #include "archi/hsp/api/state.typ.h"
 
 /**
- * @brief State function for calling archi_memory_map_copy_unmap().
+ * @brief Copy a chunk of data between two memory regions.
  *
- * This state function expects archi_memory_map_copy_unmap_data_t
- * object as function data.
+ * State function data type: archi_hsp_state_data__memory_map_copy_unmap_t.
+ *
+ * This function performs the following steps:
+ *   1. If copy_length == 0, it is set to dest_length - dest_offset.
+ *   2. Validate that both source and destination memory are non‐NULL, have NULL mapping,
+ *   have matching element sizes and alignment, and the copied regions are valid.
+ *   3. Map the source region for access via archi_memory_map().
+ *   4. Map the destination region for access via archi_memory_map().
+ *      If mapping the destination fails, the source mapping is undone.
+ *   5. memcpy() num_of data elements from source->mapping.ptr to destination->mapping.ptr.
+ *   6. Unmap the destination, then unmap the source via archi_memory_unmap().
  */
-ARCHI_HSP_STATE_FUNCTION(archi_hsp_state_memory_map_copy_unmap);
+ARCHI_HSP_STATE_FUNCTION(archi_hsp_state__memory_map_copy_unmap);
 
 #endif // _ARCHI_MEMORY_HSP_COPY_FUN_H_
 

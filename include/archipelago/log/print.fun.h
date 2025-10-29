@@ -1,5 +1,5 @@
 /*****************************************************************************
- * Copyright (C) 2023-2025 by Ivan Podmazov                                  *
+ * Copyright (C) 2023-2026 by Ivan Podmazov                                  *
  *                                                                           *
  * This file is part of Archipelago.                                         *
  *                                                                           *
@@ -48,41 +48,35 @@ archi_print(
 );
 
 /**
- * @brief Print string to the log stream only if use of color is enabled.
+ * @brief Print string to the log stream only if ANSI escape codes are enabled.
  *
- * If @p color is NULL, the function returns immediately without printing.
- * The string won't be printed if color use is disabled.
+ * If @p color is NULL, the function does nothing.
  *
- * @param[in] color
+ * @param[in] string
  *     A null-terminated string. May be NULL, in which case no output is generated.
  */
 void
-archi_print_color(
-        const char *color
+archi_print_escape_code(
+        const char *string
 );
 
+#define archi_print_color archi_print_escape_code
+
 /**
- * @brief Lock an internal spinlock to protect a composite printing operation.
+ * @brief Lock an internal mutex to protect a composite printing operation.
  *
- * Internally, this routine uses an atomic spinlock (when C11 atomics
- * are available) to serialize concurrent calls and prevent interleaved
- * output from multiple threads.
+ * Internally, this routine uses a mutex to serialize concurrent calls
+ * and prevent interleaved output from multiple threads.
  *
  * @note The user code must not use archi_print() and archi_print_color()
  * outside of a lock-protected section.
  *
+ * @warning Each archi_print_lock() must be paired by the corresponding archi_print_unlock().
+ *
  * @param[in] verbosity
- *     Minimum verbosity level at which the spinlock is acquired.
+ *     Minimum verbosity level at which the mutex is acquired.
  *
- * @note When C11 atomics are not available, this operation is a no-op:
- *       thread safety is not guaranteed (output may interleave in multithreaded scenarios).
- *
- * @return True if the spinlock is acquired, false otherwise.
- *
- * @warning This lock is not recursive.
- * Each archi_print_lock() must be followed by archi_print_unlock().
- * archi_log_*() functions must not be called within lock-unlock section,
- * as they use the same spinlock.
+ * @return True if the mutex is acquired, false otherwise.
  */
 bool
 archi_print_lock(
@@ -90,11 +84,9 @@ archi_print_lock(
 );
 
 /**
- * @brief Unock an internal spinlock to protect a composite printing operation.
+ * @brief Unock an internal mutex to protect a composite printing operation.
  *
- * @note When C11 atomics are not available, this operation is a no-op.
- *
- * @warning Each archi_print_unlock() must be preceded by archi_print_lock().
+ * @warning Each archi_print_unlock() must be paired by the corresponding archi_print_lock().
  */
 void
 archi_print_unlock(void);
@@ -105,26 +97,26 @@ archi_print_unlock(void);
  * @brief Log an error-level message.
  *
  * Each message is colorized, prefixed with an elapsed-time timestamp,
- * a single-character level indicator, and optionally the module name.
+ * a single-character level indicator, and optionally the message origin name.
  * Messages are emitted only if the current verbosity allows it.
  *
- * Thread-safe via an atomic spinlock around the actual print,
- * as if implicitly surrounded by a pair of archi_print_lock() and archi_print_unlock().
+ * Thread-safe with the help of a mutex protecting the actual print,
+ * (as if implicitly surrounded by a pair of archi_print_lock() and archi_print_unlock()).
  *
- * @param[in] module
- *     Optional null-terminated module name;
+ * @param[in] origin
+ *     Optional null-terminated message origin name;
  *     if non-NULL it’s printed before the user message.
  *
  * @param[in] format
  *     printf-style format string.  If NULL, no user-text is printed
- *     (only timestamp/module prefix appears).
+ *     (only timestamp/origin prefix appears).
  *
  * @param[in] ...
  *     Arguments corresponding to @p format.
  */
 void
 archi_log_error(
-        const char *module,
+        const char *origin,
         const char *format,
         ...
 );
@@ -135,7 +127,7 @@ archi_log_error(
  * Same behavior as archi_log_error(), but gated at
  * higher verbosity level and using the warning color/indicator.
  *
- * @param[in] module
+ * @param[in] origin
  *     Same as in archi_log_error().
  *
  * @param[in] format
@@ -146,7 +138,7 @@ archi_log_error(
  */
 void
 archi_log_warning(
-        const char *module,
+        const char *origin,
         const char *format,
         ...
 );
@@ -157,7 +149,7 @@ archi_log_warning(
  * Same behavior as archi_log_error(), but gated at
  * higher verbosity level and using the notice color/indicator.
  *
- * @param[in] module
+ * @param[in] origin
  *     Same as in archi_log_error().
  *
  * @param[in] format
@@ -168,7 +160,7 @@ archi_log_warning(
  */
 void
 archi_log_notice(
-        const char *module,
+        const char *origin,
         const char *format,
         ...
 );
@@ -179,7 +171,7 @@ archi_log_notice(
  * Same behavior as archi_log_error(), but gated at
  * higher verbosity level and using the info color/indicator.
  *
- * @param[in] module
+ * @param[in] origin
  *     Same as in archi_log_error().
  *
  * @param[in] format
@@ -190,7 +182,7 @@ archi_log_notice(
  */
 void
 archi_log_info(
-        const char *module,
+        const char *origin,
         const char *format,
         ...
 );
@@ -201,7 +193,7 @@ archi_log_info(
  * Same behavior as archi_log_error(), but gated at
  * higher verbosity level and using the debug color/indicator.
  *
- * @param[in] module
+ * @param[in] origin
  *     Same as in archi_log_error().
  *
  * @param[in] format
@@ -213,7 +205,7 @@ archi_log_info(
 
 void
 archi_log_debug(
-        const char *module,
+        const char *origin,
         const char *format,
         ...
 );

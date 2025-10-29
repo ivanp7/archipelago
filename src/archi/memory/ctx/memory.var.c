@@ -1,5 +1,5 @@
 /*****************************************************************************
- * Copyright (C) 2023-2025 by Ivan Podmazov                                  *
+ * Copyright (C) 2023-2026 by Ivan Podmazov                                  *
  *                                                                           *
  * This file is part of Archipelago.                                         *
  *                                                                           *
@@ -20,259 +20,226 @@
 
 /**
  * @file
- * @brief Application context interface for memory.
+ * @brief Context interface for memory objects.
  */
 
 #include "archi/memory/ctx/memory.var.h"
 #include "archi/memory/api/interface.fun.h"
+#include "archi/context/api/interface.def.h"
+#include "archipelago/util/parameters.fun.h"
+#include "archipelago/base/pointer.fun.h"
+#include "archipelago/base/pointer.def.h"
+#include "archipelago/util/size.def.h"
+#include "archipelago/util/string.fun.h"
 
 #include <stdlib.h> // for malloc(), free()
-#include <string.h> // for strcmp()
-#include <stdbool.h>
-#include <stdalign.h> // for alignof()
 
-struct archi_context_memory_data {
-    archi_pointer_t memory;
-    size_t full_size;
-};
-
-ARCHI_CONTEXT_INIT_FUNC(archi_context_memory_init)
+static
+ARCHI_CONTEXT_INIT_FUNC(archi_context_init__memory)
 {
-    archi_pointer_t interface = {0};
+    // Parse parameters
+    archi_rcpointer_t interface = {0};
     void *alloc_data = NULL;
-    archi_array_layout_t layout = {0};
-    archi_array_layout_t layout_fields = {0};
-
-    bool param_interface_set = false;
-    bool param_alloc_data_set = false;
-    bool param_layout_set = false;
-    bool param_num_elements_set = false;
-    bool param_element_size_set = false;
-    bool param_element_alignment_set = false;
-
-    for (; params != NULL; params = params->next)
+    size_t length = 0;
+    size_t stride = 0;
+    size_t alignment = 0;
+    size_t overalignment = 0;
     {
-        if (strcmp("interface", params->name) == 0)
-        {
-            if (param_interface_set)
-                continue;
-            param_interface_set = true;
+        archi_kvlist_parameter_t parsed[] = {
+            {.name = "interface", .value.attr = ARCHI_POINTER_ATTR__DATA_TYPE(1, archi_memory_interface_t)},
+            {.name = "alloc_data", .value.attr = archi_pointer_attr__opaque_data(0)},
+            {.name = "length", .value.attr = ARCHI_POINTER_ATTR__DATA_TYPE(1, size_t)},
+            {.name = "stride", .value.attr = ARCHI_POINTER_ATTR__DATA_TYPE(1, size_t)},
+            {.name = "alignment", .value.attr = ARCHI_POINTER_ATTR__DATA_TYPE(1, size_t)},
+            {.name = "overalignment", .value.attr = ARCHI_POINTER_ATTR__DATA_TYPE(1, size_t)},
+        };
 
-            if ((params->value.flags & ARCHI_POINTER_FLAG_FUNCTION) ||
-                    (params->value.ptr == NULL))
-                return ARCHI_STATUS_EVALUE;
+        if (!archi_kvlist_parameters_parse(params, parsed, ARCHI_LENGTH_ARRAY(parsed), false, NULL,
+                    ARCHI_ERROR_PARAMETER))
+            return NULL;
 
-            interface = params->value;
-        }
-        else if (strcmp("alloc_data", params->name) == 0)
-        {
-            if (param_alloc_data_set)
-                continue;
-            param_alloc_data_set = true;
-
-            if (params->value.flags & ARCHI_POINTER_FLAG_FUNCTION)
-                return ARCHI_STATUS_EVALUE;
-
-            alloc_data = params->value.ptr;
-        }
-        else if (strcmp("layout", params->name) == 0)
-        {
-            if (param_layout_set)
-                continue;
-            param_layout_set = true;
-
-            if ((params->value.flags & ARCHI_POINTER_FLAG_FUNCTION) ||
-                    (params->value.ptr == NULL))
-                return ARCHI_STATUS_EVALUE;
-
-            layout = *(archi_array_layout_t*)params->value.ptr;
-        }
-        else if (strcmp("num_elements", params->name) == 0)
-        {
-            if (param_num_elements_set)
-                continue;
-            param_num_elements_set = true;
-
-            if ((params->value.flags & ARCHI_POINTER_FLAG_FUNCTION) ||
-                    (params->value.ptr == NULL))
-                return ARCHI_STATUS_EVALUE;
-
-            layout_fields.num_of = *(size_t*)params->value.ptr;
-        }
-        else if (strcmp("element_size", params->name) == 0)
-        {
-            if (param_element_size_set)
-                continue;
-            param_element_size_set = true;
-
-            if ((params->value.flags & ARCHI_POINTER_FLAG_FUNCTION) ||
-                    (params->value.ptr == NULL))
-                return ARCHI_STATUS_EVALUE;
-
-            layout_fields.size = *(size_t*)params->value.ptr;
-        }
-        else if (strcmp("element_alignment", params->name) == 0)
-        {
-            if (param_element_alignment_set)
-                continue;
-            param_element_alignment_set = true;
-
-            if ((params->value.flags & ARCHI_POINTER_FLAG_FUNCTION) ||
-                    (params->value.ptr == NULL))
-                return ARCHI_STATUS_EVALUE;
-
-            layout_fields.alignment = *(size_t*)params->value.ptr;
-        }
-        else
-            return ARCHI_STATUS_EKEY;
+        size_t index = 0;
+        if (parsed[index].value_set)
+            interface = parsed[index].value;
+        index++;
+        if (parsed[index].value_set)
+            alloc_data = parsed[index].value.ptr;
+        index++;
+        if (parsed[index].value_set)
+            length = *(size_t*)parsed[index].value.ptr;
+        index++;
+        if (parsed[index].value_set)
+            stride = *(size_t*)parsed[index].value.ptr;
+        index++;
+        if (parsed[index].value_set)
+            alignment = *(size_t*)parsed[index].value.ptr;
+        index++;
+        if (parsed[index].value_set)
+            overalignment = *(size_t*)parsed[index].value.ptr;
     }
 
-    if (param_num_elements_set)
-        layout.num_of = layout_fields.num_of;
-
-    if (param_element_size_set)
-        layout.size = layout_fields.size;
-
-    if (param_element_alignment_set)
-        layout.alignment = layout_fields.alignment;
-
-    struct archi_context_memory_data *context_data = malloc(sizeof(*context_data));
+    // Construct the context
+    archi_rcpointer_t *context_data = malloc(sizeof(*context_data));
     if (context_data == NULL)
-        return ARCHI_STATUS_ENOMEMORY;
+    {
+        ARCHI_ERROR_SET(ARCHI__EMEMORY, "couldn't allocate context data");
+        return NULL;
+    }
 
-    archi_status_t code;
-
-    archi_memory_t memory = archi_memory_allocate(interface, alloc_data, layout, &code);
+    archi_memory_t memory = archi_memory_allocate(interface, alloc_data,
+            length, stride, alignment, overalignment, ARCHI_ERROR_PARAMETER);
     if (memory == NULL)
     {
         free(context_data);
-        return code;
+        return NULL;
     }
 
-    *context_data = (struct archi_context_memory_data){
-        .memory = {
-            .ptr = memory,
-            .element = layout,
-        },
-        .full_size = layout.num_of * layout.size,
+    *context_data = (archi_rcpointer_t){
+        .ptr = memory,
+        .attr = ARCHI_POINTER_TYPE__DATA_WRITABLE |
+            archi_pointer_attr__opaque_data(ARCHI_POINTER_DATA_TAG__MEMORY),
     };
 
-    *context = (archi_pointer_t*)context_data;
-    return code;
+    ARCHI_ERROR_RESET();
+    return context_data;
 }
 
-ARCHI_CONTEXT_FINAL_FUNC(archi_context_memory_final)
+static
+ARCHI_CONTEXT_FINAL_FUNC(archi_context_final__memory)
 {
-    struct archi_context_memory_data *context_data =
-        (struct archi_context_memory_data*)context;
-
-    archi_memory_free(context_data->memory.ptr);
+    archi_memory_free(context->ptr);
     free(context);
 }
 
-ARCHI_CONTEXT_GET_FUNC(archi_context_memory_get)
+static
+ARCHI_CONTEXT_EVAL_FUNC(archi_context_eval__memory)
 {
-    struct archi_context_memory_data *context_data =
-        (struct archi_context_memory_data*)context;
+    (void) params;
 
-    if (strcmp("interface", slot.name) == 0)
+    if (call)
     {
-        if (slot.num_indices != 0)
-            return ARCHI_STATUS_EMISUSE;
-
-        *value = archi_memory_interface(context_data->memory.ptr);
+        ARCHI_ERROR_SET(ARCHI__ECONSTRAINT, "no calls are supported");
+        return;
     }
-    else if (strcmp("allocation", slot.name) == 0)
+
+    if (ARCHI_STRING_COMPARE("interface", ==, slot.name))
     {
         if (slot.num_indices != 0)
-            return ARCHI_STATUS_EMISUSE;
+        {
+            ARCHI_ERROR_SET(ARCHI__EINDEX, "number of slot indices isn't 0");
+            return;
+        }
 
-        *value = archi_memory_allocation(context_data->memory.ptr);
+        ARCHI_CONTEXT_YIELD(archi_memory_interface(context->ptr));
     }
-    else if (strcmp("layout", slot.name) == 0)
+    else if (ARCHI_STRING_COMPARE("allocation", ==, slot.name))
     {
         if (slot.num_indices != 0)
-            return ARCHI_STATUS_EMISUSE;
+        {
+            ARCHI_ERROR_SET(ARCHI__EINDEX, "number of slot indices isn't 0");
+            return;
+        }
 
-        *value = (archi_pointer_t){
-            .ptr = &context_data->memory.element,
-            .ref_count = context->ref_count,
-            .element = {
-                .num_of = 1,
-                .size = sizeof(context_data->memory.element),
-                .alignment = alignof(archi_array_layout_t),
-            },
+        ARCHI_CONTEXT_YIELD(archi_memory_allocation(context->ptr));
+    }
+    else if (ARCHI_STRING_COMPARE("length", ==, slot.name))
+    {
+        if (slot.num_indices != 0)
+        {
+            ARCHI_ERROR_SET(ARCHI__EINDEX, "number of slot indices isn't 0");
+            return;
+        }
+
+        size_t length = archi_memory_length(context->ptr);
+
+        archi_rcpointer_t value = {
+            .ptr = &length,
+            .attr = ARCHI_POINTER_TYPE__DATA_ON_STACK |
+                ARCHI_POINTER_ATTR__DATA_TYPE(1, size_t),
         };
+
+        ARCHI_CONTEXT_YIELD(value);
     }
-    else if (strcmp("num_elements", slot.name) == 0)
+    else if (ARCHI_STRING_COMPARE("stride", ==, slot.name))
     {
         if (slot.num_indices != 0)
-            return ARCHI_STATUS_EMISUSE;
+        {
+            ARCHI_ERROR_SET(ARCHI__EINDEX, "number of slot indices isn't 0");
+            return;
+        }
 
-        *value = (archi_pointer_t){
-            .ptr = &context_data->memory.element.num_of,
-            .ref_count = context->ref_count,
-            .element = {
-                .num_of = 1,
-                .size = sizeof(context_data->memory.element.num_of),
-                .alignment = alignof(size_t),
-            },
+        size_t stride = archi_memory_stride(context->ptr);
+
+        archi_rcpointer_t value = {
+            .ptr = &stride,
+            .attr = ARCHI_POINTER_TYPE__DATA_ON_STACK |
+                ARCHI_POINTER_ATTR__DATA_TYPE(1, size_t),
         };
+
+        ARCHI_CONTEXT_YIELD(value);
     }
-    else if (strcmp("element_size", slot.name) == 0)
+    else if (ARCHI_STRING_COMPARE("size", ==, slot.name))
     {
         if (slot.num_indices != 0)
-            return ARCHI_STATUS_EMISUSE;
+        {
+            ARCHI_ERROR_SET(ARCHI__EINDEX, "number of slot indices isn't 0");
+            return;
+        }
 
-        *value = (archi_pointer_t){
-            .ptr = &context_data->memory.element.size,
-            .ref_count = context->ref_count,
-            .element = {
-                .num_of = 1,
-                .size = sizeof(context_data->memory.element.size),
-                .alignment = alignof(size_t),
-            },
+        size_t size = archi_memory_size(context->ptr);
+
+        archi_rcpointer_t value = {
+            .ptr = &size,
+            .attr = ARCHI_POINTER_TYPE__DATA_ON_STACK |
+                ARCHI_POINTER_ATTR__DATA_TYPE(1, size_t),
         };
+
+        ARCHI_CONTEXT_YIELD(value);
     }
-    else if (strcmp("element_alignment", slot.name) == 0)
+    else if (ARCHI_STRING_COMPARE("alignment", ==, slot.name))
     {
         if (slot.num_indices != 0)
-            return ARCHI_STATUS_EMISUSE;
+        {
+            ARCHI_ERROR_SET(ARCHI__EINDEX, "number of slot indices isn't 0");
+            return;
+        }
 
-        *value = (archi_pointer_t){
-            .ptr = &context_data->memory.element.alignment,
-            .ref_count = context->ref_count,
-            .element = {
-                .num_of = 1,
-                .size = sizeof(context_data->memory.element.alignment),
-                .alignment = alignof(size_t),
-            },
+        size_t alignment = archi_memory_alignment(context->ptr);
+
+        archi_rcpointer_t value = {
+            .ptr = &alignment,
+            .attr = ARCHI_POINTER_TYPE__DATA_ON_STACK |
+                ARCHI_POINTER_ATTR__DATA_TYPE(1, size_t),
         };
+
+        ARCHI_CONTEXT_YIELD(value);
     }
-    else if (strcmp("full_size", slot.name) == 0)
+    else if (ARCHI_STRING_COMPARE("overalignment", ==, slot.name))
     {
         if (slot.num_indices != 0)
-            return ARCHI_STATUS_EMISUSE;
+        {
+            ARCHI_ERROR_SET(ARCHI__EINDEX, "number of slot indices isn't 0");
+            return;
+        }
 
-        *value = (archi_pointer_t){
-            .ptr = &context_data->full_size,
-            .ref_count = context->ref_count,
-            .element = {
-                .num_of = 1,
-                .size = sizeof(context_data->full_size),
-                .alignment = alignof(size_t),
-            },
+        size_t overalignment = archi_memory_overalignment(context->ptr);
+
+        archi_rcpointer_t value = {
+            .ptr = &overalignment,
+            .attr = ARCHI_POINTER_TYPE__DATA_ON_STACK |
+                ARCHI_POINTER_ATTR__DATA_TYPE(1, size_t),
         };
+
+        ARCHI_CONTEXT_YIELD(value);
     }
     else
-        return ARCHI_STATUS_EKEY;
-
-    return 0;
+        ARCHI_ERROR_SET(ARCHI__EKEY, "unknown slot '%s' encountered", slot.name);
 }
 
-const archi_context_interface_t archi_context_memory_interface = {
-    .init_fn = archi_context_memory_init,
-    .final_fn = archi_context_memory_final,
-    .get_fn = archi_context_memory_get,
+const archi_context_interface_t
+archi_context_interface__memory = {
+    .init_fn = archi_context_init__memory,
+    .final_fn = archi_context_final__memory,
+    .eval_fn = archi_context_eval__memory,
 };
 

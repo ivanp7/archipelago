@@ -1,5 +1,5 @@
 /*****************************************************************************
- * Copyright (C) 2023-2025 by Ivan Podmazov                                  *
+ * Copyright (C) 2023-2026 by Ivan Podmazov                                  *
  *                                                                           *
  * This file is part of Archipelago.                                         *
  *                                                                           *
@@ -30,19 +30,17 @@
 #include <stdio.h> // for FILE
 #include <time.h> // for struct timespec
 #include <stdbool.h>
-#ifndef __STDC_NO_ATOMICS__
-#  include <stdatomic.h> // for atomic_flag
+#ifndef __STDC_NO_THREADS__
+#  include <threads.h> // for mtx_t
 #endif
 
 struct archi_log_context {
     FILE *stream; ///< Stream to print messages to.
-
     struct timespec start_time; ///< Application start time.
     int verbosity_level;        ///< Log verbosity level.
     bool colorful;              ///< Whether color is used in log messages.
-
-#ifndef __STDC_NO_ATOMICS__
-    atomic_flag spinlock; ///< Spinlock for message printing atomicity.
+#ifndef __STDC_NO_THREADS__
+    mtx_t *lock; ///< Mutex for message printing atomicity.
 #endif
 };
 

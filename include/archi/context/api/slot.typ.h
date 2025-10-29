@@ -1,5 +1,5 @@
 /*****************************************************************************
- * Copyright (C) 2023-2025 by Ivan Podmazov                                  *
+ * Copyright (C) 2023-2026 by Ivan Podmazov                                  *
  *                                                                           *
  * This file is part of Archipelago.                                         *
  *                                                                           *
@@ -20,7 +20,7 @@
 
 /**
  * @file
- * @brief Application context slot type.
+ * @brief Context slot type.
  */
 
 #pragma once
@@ -38,6 +38,18 @@ typedef struct archi_context_slot {
     const ptrdiff_t *index; ///< Array of indices.
     size_t num_indices;  ///< Size of the array of indices.
 } archi_context_slot_t;
+
+/**
+ * @brief Check if context slot designator is valid.
+ */
+#define ARCHI_CONTEXT_SLOT_VALID(slot)      \
+    (((slot).name != NULL) && (((slot).num_indices == 0) || ((slot).index != NULL)))
+
+/**
+ * @brief Check if context slot designator is "empty".
+ */
+#define ARCHI_CONTEXT_SLOT_EMPTY(slot)      \
+    (((slot).name[0] == '\0') && ((slot).num_indices == 0))
 
 #endif // _ARCHI_CONTEXT_API_SLOT_TYP_H_
 

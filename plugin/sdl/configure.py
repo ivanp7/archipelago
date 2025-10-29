@@ -29,19 +29,23 @@ TEST_DIR = "test"
 TEST_HEADER_FILE = "test.h"
 TEST_SOURCE_FILE = "test.c"
 
-BUILD_DIR = "build"
+BUILD_DIR = "../../build"
 
 
-ARCHI_IDIR  = os.environ.get('ARCHI_IDIR', "../../include") ### <<<<<<<<<<<<<<<<<<<< INPUT ENVIRONMENT VARIABLE <<<<<<<<<<<<<<<<<<<<
-ARCHI_LDIR  = os.environ.get('ARCHI_LDIR', "../../build/")  ### <<<<<<<<<<<<<<<<<<<< INPUT ENVIRONMENT VARIABLE <<<<<<<<<<<<<<<<<<<<
+ARCHI_IDIR  = "../../include"
+ARCHI_LDIR  = "../../build"
 
 # }}}
 # modules to build {{{
 
 MODULES = [
-        "sdl2",
+        "archi/sdl2/api",
+        "archi/sdl2/ctx",
+        "archi/sdl2/hsp",
+        "archi/sdl2/hsp-ctx",
 
-        "font_psf2",
+        "archi/font_psf2/api",
+        "archi/font_psf2/ctx",
         ]
 
 # }}}
@@ -60,7 +64,7 @@ LFLAGS += [f'-L{ARCHI_LDIR}']
 
 CFLAGS += pkgconfig.cflags('sdl2').split(' ')
 
-LIBS = ['-larchipelago-base', '-larchipelago-log', '-larchi-hsp-api', '-larchi-memory-api', '-larchipelago-util']
+LIBS = ['-larchi-context-ctx', '-larchi-memory-api', '-larchi-hsp-api', '-larchipelago-base', '-larchipelago-log', '-larchipelago-util']
 LIBS += pkgconfig.libs('sdl2').split(' ')
 
 ## }}}

@@ -10,7 +10,7 @@
 #include "archi/hsp/api/state.typ.h"
 
 /**
- * @brief State function for rendering SDL2 window area.
+ * @brief Render SDL2 window by copying the whole texture from a memory object.
  *
  * This state function expects archi_sdl2_window_cpu_render_data_t
  * object as function data.

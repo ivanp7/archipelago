@@ -1,5 +1,5 @@
 /*****************************************************************************
- * Copyright (C) 2023-2025 by Ivan Podmazov                                  *
+ * Copyright (C) 2023-2026 by Ivan Podmazov                                  *
  *                                                                           *
  * This file is part of Archipelago.                                         *
  *                                                                           *
@@ -29,16 +29,19 @@
 
 #include "archi/context/api/handle.typ.h"
 #include "archi/context/api/slot.typ.h"
+#include "archi/context/api/callback.typ.h"
 #include "archipelago/base/pointer.typ.h"
-#include "archipelago/base/named_pointer_list.typ.h"
-#include "archipelago/base/status.typ.h"
+#include "archipelago/base/kvlist.typ.h"
+#include "archipelago/base/error.typ.h"
+
+#include <stdbool.h>
 
 /**
  * @brief Extract context interface.
  *
  * @return Pointer the interface of the context.
  */
-archi_pointer_t
+archi_rcpointer_t
 archi_context_interface(
         archi_context_t context ///< [in] Context.
 );
@@ -46,9 +49,12 @@ archi_context_interface(
 /**
  * @brief Extract context data.
  *
- * @return Pointer wrapper to the context data.
+ * @note Reference counter associated with the returned pointer is that of the context itself,
+ * not the counter returned by the initialization function.
+ *
+ * @return Pointer to the context data.
  */
-archi_pointer_t
+archi_rcpointer_t
 archi_context_data(
         archi_context_t context ///< [in] Context.
 );
@@ -58,77 +64,121 @@ archi_context_data(
 /**
  * @brief Allocate and initialize a context.
  *
- * @return A new initialized context.
+ * `ARCHI_CONTEXT_INIT_FUNC` contract violations are processed as follows:
+ * If (1) is violated by setting non-zero error code, it is ignored.
+ * If (2) is violated by setting zero error code, code for generic failure is set instead.
+ *
+ * @return Handle of a new initialized context.
  */
 archi_context_t
 archi_context_initialize(
-        archi_pointer_t interface, ///< [in] Context interface.
-        const archi_named_pointer_list_t *params, ///< [in] Initialization parameters.
-        archi_status_t *code ///< [out] Status code.
+        archi_rcpointer_t interface, ///< [in] Context interface.
+        const archi_kvlist_rc_t *params, ///< [in] Initialization parameters.
+
+        ARCHI_ERROR_PARAMETER_DECL ///< [out] Error.
 );
 
 /**
  * @brief Finalize and destroy a context.
  *
- * This is done forcibly, without considering the reference count state.
+ * This function is equivalent to:
+ * ```c
+ * archi_reference_count_decrement(archi_context_data(context).ref_count);
+ * ```
+ *
+ * The context is to be considered invalid after this call.
  */
 void
 archi_context_finalize(
         archi_context_t context ///< [in] Context.
 );
 
+/**
+ * @brief Evaluate context slot without call semantics.
+ *
+ * This function calls the context evaluation function
+ * with `call` set to false.
+ *
+ * Empty slot is processed in a special way. In this case,
+ * `archi_context_data(context)` is provided to the callback,
+ * and `eval_fn` function from the interface is not called.
+ */
+void
+archi_context_get(
+        archi_context_t context, ///< [in] Context.
+        archi_context_slot_t slot, ///< [in] Slot designator.
+        archi_context_callback_t callback, ///< [in] Output callback.
+
+        ARCHI_ERROR_PARAMETER_DECL ///< [out] Error.
+);
+
+/**
+ * @brief Evaluate context slot with call semantics.
+ *
+ * This function calls the context evaluation function
+ * with `call` set to true.
+ *
+ * Empty slot is allowed and not processed in a special way.
+ */
+void
+archi_context_call(
+        archi_context_t context, ///< [in] Context.
+        archi_context_slot_t slot, ///< [in] Slot designator.
+        const archi_kvlist_rc_t *params, ///< [in] Call parameters.
+        archi_context_callback_t callback, ///< [in] Output callback.
+
+        ARCHI_ERROR_PARAMETER_DECL ///< [out] Error.
+);
+
+/**
+ * @brief Set value to context slot.
+ *
+ * Setting empty slot is not allowed.
+ */
+void
+archi_context_set(
+        archi_context_t context, ///< [in] Context.
+        archi_context_slot_t slot, ///< [in] Slot designator.
+        archi_rcpointer_t value, ///< [in] Value to set.
+
+        ARCHI_ERROR_PARAMETER_DECL ///< [out] Error.
+);
+
 /*****************************************************************************/
 
 /**
- * @brief Get value from context slot.
+ * @brief Get value from source context/slot and set it to destination context/slot.
  *
- * @return Context slot value.
+ * Destination slot cannot be empty.
  */
-archi_pointer_t
-archi_context_get_slot(
-        archi_context_t context, ///< [in] Context.
-        archi_context_slot_t slot, ///< [in] Slot designator.
-        archi_status_t *code ///< [out] Status code.
+void
+archi_context_set_from_get(
+        archi_context_t context,   ///< [in] Destination context.
+        archi_context_slot_t slot, ///< [in] Destination slot designator.
+
+        archi_context_t src_context,   ///< [in] Source context.
+        archi_context_slot_t src_slot, ///< [in] Source slot designator.
+        bool src_no_refcount, ///< [in] Whether to reset reference counter of the source value.
+
+        ARCHI_ERROR_PARAMETER_DECL ///< [out] Error.
 );
 
 /**
- * @brief Set context slot to an arbitrary value.
+ * @brief Get call result from source context/slot and set it to destination context/slot.
  *
- * @return Status code.
+ * Destination slot cannot be empty.
  */
-archi_status_t
-archi_context_set_slot(
-        archi_context_t context, ///< [in] Context.
-        archi_context_slot_t slot, ///< [in] Slot designator.
-        archi_pointer_t value ///< [in] Value to set.
-);
-
-/**
- * @brief Copy value between context slots.
- *
- * @return Status code.
- */
-archi_status_t
-archi_context_copy_slot(
+void
+archi_context_set_from_call(
         archi_context_t context, ///< [in] Destination context.
         archi_context_slot_t slot, ///< [in] Destination slot designator.
 
         archi_context_t src_context, ///< [in] Source context.
-        archi_context_slot_t src_slot ///< [in] Source slot designator.
-);
+        archi_context_slot_t src_slot, ///< [in] Source slot designator.
+        const archi_kvlist_rc_t *src_params, ///< [in] Source call parameters.
+        bool src_no_refcount, ///< [in] Whether to reset reference counter of the source value.
 
-/*****************************************************************************/
-
-/**
- * @brief Invoke a context action.
- *
- * @return Status code.
- */
-archi_status_t
-archi_context_act(
-        archi_context_t context, ///< [in] Initialized context.
-        archi_context_slot_t action, ///< [in] Action designator.
-        const archi_named_pointer_list_t *params ///< [in] Action parameters.
+        ARCHI_ERROR_PARAMETER_DECL ///< [out] Error.
 );
 
 #endif // _ARCHI_CONTEXT_API_INTERFACE_FUN_H_

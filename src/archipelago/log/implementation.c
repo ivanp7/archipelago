@@ -1,5 +1,5 @@
 /*****************************************************************************
- * Copyright (C) 2023-2025 by Ivan Podmazov                                  *
+ * Copyright (C) 2023-2026 by Ivan Podmazov                                  *
  *                                                                           *
  * This file is part of Archipelago.                                         *
  *                                                                           *
@@ -34,24 +34,17 @@
 #include <stdarg.h>
 
 static
-archi_log_context_t archi_logger;
+struct archi_log_context *archi_logger;
 
-void
-archi_log_initialize(
-        archi_log_context_t context)
+ARCHI_GLOBAL_SET_FUNC(archi_log_global_context_set)
 {
     if (archi_logger != NULL)
         return;
 
-    // Set the stream to standard error if it's not set
-    if (context->stream == NULL)
-        context->stream = stderr;
-
     archi_logger = context;
 }
 
-archi_log_context_t
-archi_log_get_context(void)
+ARCHI_GLOBAL_GET_FUNC(archi_log_global_context)
 {
     return archi_logger;
 }
@@ -60,7 +53,11 @@ void
 archi_log_elapsed_time(
         struct timespec *ts)
 {
-    if ((archi_logger == NULL) || (ts == NULL))
+    if (archi_logger == NULL)
+        return;
+    else if (archi_logger->stream == NULL)
+        return;
+    else if (ts == NULL)
         return;
 
     struct timespec start_time = archi_logger->start_time;
@@ -85,13 +82,19 @@ archi_log_elapsed_time(
 int
 archi_log_verbosity(void)
 {
-    return (archi_logger != NULL) ? archi_logger->verbosity_level : ARCHI_LOG_VERBOSITY_QUIET;
+    if (archi_logger == NULL)
+        return ARCHI_LOG_VERBOSITY_QUIET;
+
+    return archi_logger->verbosity_level;
 }
 
 bool
 archi_log_colorful(void)
 {
-    return (archi_logger != NULL) ? archi_logger->colorful : false;
+    if (archi_logger == NULL)
+        return false;
+
+    return archi_logger->colorful;
 }
 
 /*****************************************************************************/
@@ -102,6 +105,8 @@ archi_print(
         ...)
 {
     if (archi_logger == NULL)
+        return;
+    else if (archi_logger->stream == NULL)
         return;
     else if (format == NULL)
         return;
@@ -115,28 +120,40 @@ archi_print(
 }
 
 void
-archi_print_color(
-        const char *color)
+archi_print_escape_code(
+        const char *string)
 {
     if (archi_logger == NULL)
         return;
+    else if (archi_logger->stream == NULL)
+        return;
     else if (!archi_log_colorful())
         return;
-    else if (color == NULL)
+    else if (string == NULL)
         return;
 
-    fprintf(archi_logger->stream, "%s", color);
+    fprintf(archi_logger->stream, "%s", string);
 }
 
 bool
 archi_print_lock(
         int verbosity)
 {
+    if (archi_logger == NULL)
+        return false;
+    else if (archi_logger->stream == NULL)
+        return false;
+
     if (archi_log_verbosity() < verbosity)
         return false;
 
-#ifndef __STDC_NO_ATOMICS__
-    while (atomic_flag_test_and_set_explicit(&archi_logger->spinlock, memory_order_relaxed));
+#ifndef __STDC_NO_THREADS__
+    if (archi_logger->lock != NULL)
+    {
+        int ret = mtx_lock(archi_logger->lock);
+        if (ret != thrd_success)
+            return false;
+    }
 #endif
 
     return true;
@@ -145,8 +162,14 @@ archi_print_lock(
 void
 archi_print_unlock(void)
 {
-#ifndef __STDC_NO_ATOMICS__
-    atomic_flag_clear_explicit(&archi_logger->spinlock, memory_order_relaxed);
+    if (archi_logger == NULL)
+        return;
+    else if (archi_logger->stream == NULL)
+        return;
+
+#ifndef __STDC_NO_THREADS__
+    if (archi_logger->lock != NULL)
+        mtx_unlock(archi_logger->lock);
 #endif
 }
 
@@ -157,7 +180,7 @@ void
 archi_log(
         const char *message_char,
         const char *message_color,
-        const char *module,
+        const char *origin,
         const char *format,
         va_list args)
 {
@@ -165,8 +188,13 @@ archi_log(
     struct timespec ts;
     archi_log_elapsed_time(&ts);
 
-#ifndef __STDC_NO_ATOMICS__
-    while (atomic_flag_test_and_set_explicit(&archi_logger->spinlock, memory_order_relaxed));
+#ifndef __STDC_NO_THREADS__
+    if (archi_logger->lock != NULL)
+    {
+        int ret = mtx_lock(archi_logger->lock);
+        if (ret != thrd_success)
+            return;
+    }
 #endif
 
     if (archi_logger->colorful)
@@ -186,9 +214,9 @@ archi_log(
             (long)ts.tv_nsec / 1000 % 1000, // microseconds
             message_char);
 
-    // Print module name
-    if (module != NULL)
-        fprintf(archi_logger->stream, "%s: ", module);
+    // Print message origin name
+    if (origin != NULL)
+        fprintf(archi_logger->stream, "(%s) ", origin);
 
     // Print the message
     if (format != NULL)
@@ -200,8 +228,9 @@ archi_log(
 
     fprintf(archi_logger->stream, "\n");
 
-#ifndef __STDC_NO_ATOMICS__
-    atomic_flag_clear_explicit(&archi_logger->spinlock, memory_order_relaxed);
+#ifndef __STDC_NO_THREADS__
+    if (archi_logger->lock != NULL)
+        mtx_unlock(archi_logger->lock);
 #endif
 }
 
@@ -209,7 +238,7 @@ archi_log(
 
 void
 archi_log_error(
-        const char *module,
+        const char *origin,
         const char *format,
         ...)
 {
@@ -219,14 +248,14 @@ archi_log_error(
     va_list args;
     va_start(args, format);
 
-    archi_log("ERR", ARCHI_LOG_COLOR_ERROR, module, format, args);
+    archi_log("ERR", ARCHI_LOG_COLOR_ERROR, origin, format, args);
 
     va_end(args);
 }
 
 void
 archi_log_warning(
-        const char *module,
+        const char *origin,
         const char *format,
         ...)
 {
@@ -236,14 +265,14 @@ archi_log_warning(
     va_list args;
     va_start(args, format);
 
-    archi_log("WRN", ARCHI_LOG_COLOR_WARNING, module, format, args);
+    archi_log("WRN", ARCHI_LOG_COLOR_WARNING, origin, format, args);
 
     va_end(args);
 }
 
 void
 archi_log_notice(
-        const char *module,
+        const char *origin,
         const char *format,
         ...)
 {
@@ -253,14 +282,14 @@ archi_log_notice(
     va_list args;
     va_start(args, format);
 
-    archi_log("NTC", ARCHI_LOG_COLOR_NOTICE, module, format, args);
+    archi_log("NTC", ARCHI_LOG_COLOR_NOTICE, origin, format, args);
 
     va_end(args);
 }
 
 void
 archi_log_info(
-        const char *module,
+        const char *origin,
         const char *format,
         ...)
 {
@@ -270,14 +299,14 @@ archi_log_info(
     va_list args;
     va_start(args, format);
 
-    archi_log("INF", ARCHI_LOG_COLOR_INFO, module, format, args);
+    archi_log("INF", ARCHI_LOG_COLOR_INFO, origin, format, args);
 
     va_end(args);
 }
 
 void
 archi_log_debug(
-        const char *module,
+        const char *origin,
         const char *format,
         ...)
 {
@@ -287,7 +316,7 @@ archi_log_debug(
     va_list args;
     va_start(args, format);
 
-    archi_log("DBG", ARCHI_LOG_COLOR_DEBUG, module, format, args);
+    archi_log("DBG", ARCHI_LOG_COLOR_DEBUG, origin, format, args);
 
     va_end(args);
 }

@@ -1,5 +1,5 @@
 /*****************************************************************************
- * Copyright (C) 2023-2025 by Ivan Podmazov                                  *
+ * Copyright (C) 2023-2026 by Ivan Podmazov                                  *
  *                                                                           *
  * This file is part of Archipelago.                                         *
  *                                                                           *
@@ -30,12 +30,14 @@
 #include "archi/hsp/api/transition.typ.h"
 
 /**
- * @brief Data for a transition attached to a state of a hierarchical state processor.
+ * @brief HSP state metadata for attached transitions.
  */
-typedef struct archi_hsp_attached_transition_data {
+typedef struct archi_hsp_state_metadata__attached_transition {
     archi_hsp_transition_t pre;  ///< Transition used before the state execution.
     archi_hsp_transition_t post; ///< Transition used after the state execution.
-} archi_hsp_attached_transition_data_t;
+
+    void *metadata; ///< Other state metadata.
+} archi_hsp_state_metadata__attached_transition_t;
 
 #endif // _ARCHI_HSP_HSP_ATTACHED_TRANSITION_TYP_H_
 

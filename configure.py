@@ -46,58 +46,56 @@ MODULES = [
         # context interface
         "archi/context/api",
         "archi/context/ctx",
+        "archi/context/ctx-op",
 
         # hierarchical state processor
         "archi/hsp/api",
-        "archi/hsp/ctx",
         "archi/hsp/hsp",
-        "archi/hsp/ctx_hsp",
+        "archi/hsp/ctx",
+        "archi/hsp/hsp-ctx",
+
+        # threads
+        "archi/thread/api",
+        "archi/thread/hsp",
+        "archi/thread/ctx",
+        "archi/thread/hsp-ctx",
 
         # memory
         "archi/memory/api",
-        "archi/memory/ctx",
-        "archi/memory/hsp",
-        "archi/memory/ctx_hsp",
         "archi/memory/mem",
-
-        # hashmaps
-        "archi/ds_hashmap/api",
-        "archi/ds_hashmap/ctx",
-
-        # lock-free queues
-        "archi/ds_lfqueue/api",
-        "archi/ds_lfqueue/ctx",
-
-        # environmental variables
-        "archi/ipc_env/api",
-        "archi/ipc_env/ctx",
-
-        # signal management
-        "archi/ipc_signal/api",
-        "archi/ipc_signal/ctx",
+        "archi/memory/hsp",
+        "archi/memory/ctx",
+        "archi/memory/hsp-ctx",
 
         # files
-        "archi/res_file/api",
-        "archi/res_file/ctx",
+        "archi/file/api",
+        "archi/file/ctx",
 
         # shared libraries
-        "archi/res_library/api",
-        "archi/res_library/ctx",
+        "archi/library/api",
+        "archi/library/ctx",
 
-        # threads
-        "archi/res_thread/api",
-        "archi/res_thread/ctx",
-        "archi/res_thread/hsp",
-        "archi/res_thread/ctx_hsp",
-        "archi/res_thread/thr",
+        # signal management
+        "archi/signal/api",
+        "archi/signal/sig",
+        "archi/signal/ctx",
+        "archi/signal/sig-ctx",
 
-        # type conversions
-        "archi/util_convert/ctx",
+        # hashmaps
+        "archi/hashmap/api",
+        "archi/hashmap/ctx",
+
+        # environment variables
+        "archi/env/api",
+        "archi/env/ctx",
+
+        # parser
+        "archi/parser/ctx",
 
         # timer
-        "archi/util_timer/api",
-        "archi/util_timer/ctx",
-        "archi/util_timer/hsp",
+        "archi/timer/api",
+        "archi/timer/hsp",
+        "archi/timer/ctx",
         ]
 
 MODULE_EXE = "archi_exe" # implementation of the executable

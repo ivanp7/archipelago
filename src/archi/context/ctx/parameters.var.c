@@ -1,5 +1,5 @@
 /*****************************************************************************
- * Copyright (C) 2023-2025 by Ivan Podmazov                                  *
+ * Copyright (C) 2023-2026 by Ivan Podmazov                                  *
  *                                                                           *
  * This file is part of Archipelago.                                         *
  *                                                                           *
@@ -24,201 +24,195 @@
  */
 
 #include "archi/context/ctx/parameters.var.h"
+#include "archi/context/api/interface.def.h"
+#include "archipelago/base/kvlist.fun.h"
+#include "archipelago/base/pointer.def.h"
+#include "archipelago/base/pointer.fun.h"
 #include "archipelago/base/ref_count.fun.h"
-#include "archipelago/util/alloc.fun.h"
+#include "archipelago/util/string.fun.h"
 
 #include <stdlib.h> // for malloc(), free()
-#include <string.h> // for strcmp()
 #include <stdbool.h>
-#include <stdalign.h>
 
 static
-archi_status_t
+archi_kvlist_rc_t*
 archi_context_parameters_copy(
-        archi_pointer_t *base,
-        const archi_named_pointer_list_t *params)
+        const archi_kvlist_rc_t *params,
+        archi_kvlist_rc_t *base,
+        ARCHI_ERROR_PARAMETER_DECL)
 {
-    archi_named_pointer_list_t *head = NULL, *tail = NULL;
+    if (params == NULL)
+        return NULL;
 
-    for (; params != NULL; params = params->next)
+    // Copy the parameter list
+    archi_kvlist_rc_t *head, *tail;
+    head = archi_kvlist_rc_copy(params, &tail);
+    if (head == NULL)
     {
-        archi_named_pointer_list_t *node = malloc(sizeof(*node));
-        if (node == NULL)
-            goto failure;
-
-        char *name = archi_copy_string(params->name);
-        if (name == NULL)
-        {
-            free(node);
-            goto failure;
-        }
-
-        *node = (archi_named_pointer_list_t){
-            .name = name,
-            .value = params->value,
-        };
-
-        if (tail != NULL)
-        {
-            tail->next = node;
-            tail = node;
-        }
-        else
-            head = tail = node;
+        ARCHI_ERROR_SET(ARCHI__EMEMORY, "couldn't allocate parameter list copy");
+        return NULL;
     }
 
-    for (params = head; params != NULL; params = params->next)
+    // Increment reference counters of values, copy stack memory
+    for (archi_kvlist_rc_t *node = head; node != NULL; node = node->next)
     {
-        archi_reference_count_increment(params->value.ref_count);
-        base->flags++; // increment the counter of nodes
+        node->value = archi_rcpointer_own(node->value, ARCHI_ERROR_PARAMETER);
+        if (!node->value.attr) // failed to own
+        {
+            // Undo the work
+            for (archi_kvlist_rc_t *node2 = head; node2 != node; node2 = node2->next)
+                archi_rcpointer_disown(node2->value);
+
+            archi_kvlist_rc_free(head, false);
+            return NULL;
+        }
     }
 
     if (tail != NULL)
-        tail->next = base->ptr;
-    base->ptr = head;
+        tail->next = base;
 
-    return 0;
-
-failure:
-    while (head != NULL)
-    {
-        archi_named_pointer_list_t *next = head->next;
-
-        free((char*)head->name);
-        free(head);
-
-        head = next;
-    }
-
-    return ARCHI_STATUS_ENOMEMORY;
+    return head;
 }
 
-ARCHI_CONTEXT_INIT_FUNC(archi_context_parameters_init)
+static
+ARCHI_CONTEXT_INIT_FUNC(archi_context_init__parameters)
 {
-    archi_pointer_t *context_data = malloc(sizeof(*context_data));
+    // Construct the context
+    archi_rcpointer_t *context_data = malloc(sizeof(*context_data));
     if (context_data == NULL)
-        return ARCHI_STATUS_ENOMEMORY;
+    {
+        ARCHI_ERROR_SET(ARCHI__EMEMORY, "couldn't allocate context data");
+        return NULL;
+    }
 
-    *context_data = (archi_pointer_t){
-        .element = {
-            .num_of = 1,
-            .size = sizeof(archi_named_pointer_list_t),
-            .alignment = alignof(archi_named_pointer_list_t),
-        },
-    };
-
-    archi_status_t code = archi_context_parameters_copy(context_data, params);
-    if (code != 0)
+    archi_kvlist_rc_t *copy = archi_context_parameters_copy(params, NULL, ARCHI_ERROR_PARAMETER);
+    if ((copy == NULL) && (params != NULL))
     {
         free(context_data);
-        return code;
+        return NULL;
     }
 
-    *context = context_data;
-    return 0;
+    *context_data = (archi_rcpointer_t){
+        .ptr = copy,
+        .attr = ARCHI_POINTER_TYPE__DATA_WRITABLE |
+            ARCHI_POINTER_ATTR__DATA_TYPE(copy != NULL, archi_kvlist_rc_t),
+    };
+
+    ARCHI_ERROR_RESET();
+    return context_data;
 }
 
-ARCHI_CONTEXT_FINAL_FUNC(archi_context_parameters_final)
+static
+ARCHI_CONTEXT_FINAL_FUNC(archi_context_final__parameters)
 {
-    archi_named_pointer_list_t *node = context->ptr;
-
-    while (node != NULL)
-    {
-        archi_named_pointer_list_t *next = node->next;
-
-        archi_reference_count_decrement(node->value.ref_count);
-        free((char*)node->name);
-        free(node);
-
-        node = next;
-    }
-
+    archi_kvlist_rc_free(context->ptr, true);
     free(context);
 }
 
-ARCHI_CONTEXT_GET_FUNC(archi_context_parameters_get)
+static
+ARCHI_CONTEXT_EVAL_FUNC(archi_context_eval__parameters)
 {
-    if (slot.num_indices != 0)
-        return ARCHI_STATUS_EMISUSE;
-
-    for (archi_named_pointer_list_t *node = context->ptr;
-            node != NULL; node = node->next)
+    if (!call)
     {
-        if (strcmp(node->name, slot.name) == 0)
+        if (slot.num_indices != 0)
         {
-            *value = node->value;
-            return 0;
+            ARCHI_ERROR_SET(ARCHI__EINDEX, "number of slot indices isn't 0");
+            return;
         }
-    }
 
-    return 1; // not found
-}
-
-ARCHI_CONTEXT_SET_FUNC(archi_context_parameters_set)
-{
-    if (slot.num_indices != 0)
-        return ARCHI_STATUS_EMISUSE;
-
-    for (archi_named_pointer_list_t *node = context->ptr;
-            node != NULL; node = node->next)
-    {
-        if (strcmp(node->name, slot.name) == 0)
+        const archi_kvlist_rc_t *node;
+        if (!archi_kvlist_rc_node(context->ptr, slot.name, &node))
         {
-            archi_reference_count_increment(value.ref_count);
-            archi_reference_count_decrement(node->value.ref_count);
-
-            node->value = value;
-            return 0;
+            ARCHI_ERROR_SET(ARCHI__EKEY, "key '%s' isn't in the list", slot.name);
+            return;
         }
-    }
 
-    archi_named_pointer_list_t *node = malloc(sizeof(*node));
-    if (node == NULL)
-        return ARCHI_STATUS_ENOMEMORY;
-
-    char *name = archi_copy_string(slot.name);
-    if (name == NULL)
-    {
-        free(node);
-        return ARCHI_STATUS_ENOMEMORY;
-    }
-
-    archi_reference_count_increment(value.ref_count);
-
-    *node = (archi_named_pointer_list_t){
-        .next = context->ptr,
-        .name = name,
-        .value = value,
-    };
-
-    context->ptr = node;
-    context->flags++; // increment the counter of nodes
-
-    return 0;
-}
-
-ARCHI_CONTEXT_ACT_FUNC(archi_context_parameters_act)
-{
-    if (strcmp("", action.name) == 0)
-    {
-        if (action.num_indices != 0)
-            return ARCHI_STATUS_EMISUSE;
-
-        archi_status_t code = archi_context_parameters_copy(context, params);
-        if (code != 0)
-            return code;
+        ARCHI_CONTEXT_YIELD(node->value);
     }
     else
-        return ARCHI_STATUS_EKEY;
+    {
+        if (ARCHI_STRING_COMPARE("", ==, slot.name))
+        {
+            if (slot.num_indices != 0)
+            {
+                ARCHI_ERROR_SET(ARCHI__EINDEX, "number of slot indices isn't 0");
+                return;
+            }
 
-    return 0;
+            archi_kvlist_rc_t *copy = archi_context_parameters_copy(params, context->ptr, ARCHI_ERROR_PARAMETER);
+            if ((copy == NULL) && (params != NULL))
+                return;
+
+            // Update context pointer and attributes
+            context->ptr = copy;
+            context->attr = ARCHI_POINTER_TYPE__DATA_WRITABLE |
+                ARCHI_POINTER_ATTR__DATA_TYPE(copy != NULL, archi_kvlist_rc_t);
+        }
+        else
+        {
+            ARCHI_ERROR_SET(ARCHI__EKEY, "unknown call '%s' encountered", slot.name);
+            return;
+        }
+
+        ARCHI_ERROR_RESET();
+    }
 }
 
-const archi_context_interface_t archi_context_parameters_interface = {
-    .init_fn = archi_context_parameters_init,
-    .final_fn = archi_context_parameters_final,
-    .get_fn = archi_context_parameters_get,
-    .set_fn = archi_context_parameters_set,
-    .act_fn = archi_context_parameters_act,
+static
+ARCHI_CONTEXT_SET_FUNC(archi_context_set__parameters)
+{
+    if (slot.num_indices != 0)
+    {
+        ARCHI_ERROR_SET(ARCHI__EINDEX, "number of slot indices isn't 0");
+        return;
+    }
+
+    // Increment reference counter of the new value or copy its memory
+    value = archi_rcpointer_own(value, ARCHI_ERROR_PARAMETER);
+    if (!value.attr) // failed to own
+        return;
+
+    // Find node with the specified key
+    archi_kvlist_rc_t *node;
+    archi_kvlist_rc_node(context->ptr, slot.name, (const archi_kvlist_rc_t**)&node);
+
+    if (node == NULL)
+    {
+        // Create new node
+        node = archi_kvlist_rc_alloc_node(slot.name);
+        if (node == NULL)
+        {
+            archi_rcpointer_disown(value);
+
+            ARCHI_ERROR_SET(ARCHI__EMEMORY, "couldn't allocate key-value list node");
+            return;
+        }
+
+        *node = (archi_kvlist_rc_t){
+            .next = context->ptr,
+            .key = slot.name,
+            .value = value,
+        };
+
+        // Update context pointer and attributes
+        context->ptr = node;
+        context->attr = ARCHI_POINTER_TYPE__DATA_WRITABLE |
+            ARCHI_POINTER_ATTR__DATA_TYPE(1, archi_kvlist_rc_t);
+    }
+    else
+    {
+        archi_rcpointer_disown(node->value);
+        node->value = value;
+    }
+
+    ARCHI_ERROR_RESET();
+}
+
+const archi_context_interface_t
+archi_context_interface__parameters = {
+    .init_fn = archi_context_init__parameters,
+    .final_fn = archi_context_final__parameters,
+    .eval_fn = archi_context_eval__parameters,
+    .set_fn = archi_context_set__parameters,
 };
 

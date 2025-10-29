@@ -1,0 +1,49 @@
+/*****************************************************************************
+ * Copyright (C) 2023-2026 by Ivan Podmazov                                  *
+ *                                                                           *
+ * This file is part of Archipelago.                                         *
+ *                                                                           *
+ *   Archipelago is free software: you can redistribute it and/or modify it  *
+ *   under the terms of the GNU Lesser General Public License as published   *
+ *   by the Free Software Foundation, either version 3 of the License, or    *
+ *   (at your option) any later version.                                     *
+ *                                                                           *
+ *   Archipelago is distributed in the hope that it will be useful,          *
+ *   but WITHOUT ANY WARRANTY; without even the implied warranty of          *
+ *   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the           *
+ *   GNU Lesser General Public License for more details.                     *
+ *                                                                           *
+ *   You should have received a copy of the GNU Lesser General Public        *
+ *   License along with Archipelago. If not, see                             *
+ *   <http://www.gnu.org/licenses/>.                                         *
+ *****************************************************************************/
+
+/**
+ * @file
+ * @brief Functions for initialization of library global object pointers.
+ */
+
+#pragma once
+#ifndef _ARCHI_LIBRARY_API_GLOBAL_FUN_H_
+#define _ARCHI_LIBRARY_API_GLOBAL_FUN_H_
+
+#include "archi/library/api/handle.typ.h"
+#include "archipelago/base/global.typ.h"
+
+/**
+ * @brief Synchronize global object pointer of a loaded library with the host application.
+ *
+ * This function attempts to fetch the exported symbol of the global object setter in the library,
+ * obtain the global object pointer using the provided function, and pass it to the setter.
+ * If the symbol is not present, the function does nothing.
+ *
+ * @return True if the setter was called, otherwise false.
+ */
+bool
+archi_library_initialize_global(
+        archi_library_handle_t handle, ///< [in] Shared library handle.
+        archi_global_init_spec_t init_spec ///< [in] Global object initialization specification.
+);
+
+#endif // _ARCHI_LIBRARY_API_GLOBAL_FUN_H_
+

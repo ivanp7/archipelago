@@ -1,0 +1,11 @@
+[build-system]
+requires = ["setuptools>=42", "wheel"]
+build-backend= "setuptools.build_meta"
+
+[project]
+name="archi"
+version="0.1.0"
+description="Python bindings for the Archipelago base, built-in modules, and standard plugins"
+dependencies=[]
+requires-python=">=3.13"
+

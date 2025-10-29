@@ -1,5 +1,5 @@
 /*****************************************************************************
- * Copyright (C) 2023-2025 by Ivan Podmazov                                  *
+ * Copyright (C) 2023-2026 by Ivan Podmazov                                  *
  *                                                                           *
  * This file is part of Archipelago.                                         *
  *                                                                           *
@@ -27,14 +27,17 @@
 #ifndef _ARCHI_HSP_API_EXEC_TYP_H_
 #define _ARCHI_HSP_API_EXEC_TYP_H_
 
-#include <stddef.h> // for size_t
-
 struct archi_hsp_execution_context;
 
 /**
  * @brief Pointer to HSP execution context.
  */
 typedef struct archi_hsp_execution_context *archi_hsp_execution_context_t;
+
+/**
+ * @brief Data type tag for archi_hsp_execution_context_t.
+ */
+#define ARCHI_POINTER_DATA_TAG__HSP_EXECUTION_CONTEXT   2
 
 #endif // _ARCHI_HSP_API_EXEC_TYP_H_
 

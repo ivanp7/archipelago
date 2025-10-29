@@ -1,5 +1,5 @@
 /*****************************************************************************
- * Copyright (C) 2023-2025 by Ivan Podmazov                                  *
+ * Copyright (C) 2023-2026 by Ivan Podmazov                                  *
  *                                                                           *
  * This file is part of Archipelago.                                         *
  *                                                                           *
@@ -20,7 +20,7 @@
 
 /**
  * @file
- * @brief Application context interface for hierarchical state processor transitions.
+ * @brief Context interface for hierarchical state processor transitions.
  */
 
 #pragma once
@@ -29,13 +29,24 @@
 
 #include "archi/context/api/interface.typ.h"
 
-ARCHI_CONTEXT_INIT_FUNC(archi_context_hsp_transition_init);   ///< HSP transition initialization function.
-ARCHI_CONTEXT_FINAL_FUNC(archi_context_hsp_transition_final); ///< HSP transition finalization function.
-ARCHI_CONTEXT_GET_FUNC(archi_context_hsp_transition_get);     ///< HSP transition field getter function.
-ARCHI_CONTEXT_SET_FUNC(archi_context_hsp_transition_set);     ///< HSP transition field setter function.
-
+/**
+ * @brief Context interface: HSP transition.
+ *
+ * Initialization parameters:
+ * - "function" : (archi_hsp_transition_function_t) transition function
+ * - "data"     : transition data
+ *
+ * Getter slots:
+ * - "function" : (archi_hsp_transition_function_t) transition function
+ * - "data"     : transition data
+ *
+ * Setter slots:
+ * - "function" : (archi_hsp_transition_function_t) transition function
+ * - "data"     : transition data
+ */
 extern
-const archi_context_interface_t archi_context_hsp_transition_interface; ///< HSP transition interface.
+const archi_context_interface_t
+archi_context_interface__hsp_transition;
 
 #endif // _ARCHI_HSP_CTX_TRANSITION_VAR_H_
 

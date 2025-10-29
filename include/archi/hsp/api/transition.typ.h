@@ -1,5 +1,5 @@
 /*****************************************************************************
- * Copyright (C) 2023-2025 by Ivan Podmazov                                  *
+ * Copyright (C) 2023-2026 by Ivan Podmazov                                  *
  *                                                                           *
  * This file is part of Archipelago.                                         *
  *                                                                           *
@@ -32,16 +32,21 @@
 /**
  * @brief Signature of a state transition function.
  */
-#define ARCHI_HSP_TRANSITION_FUNCTION(name) void name( \
-        const archi_hsp_state_t prev_state, /* [in] Previous state. */ \
-        const archi_hsp_state_t next_state, /* [in] Next state. */ \
-        archi_hsp_state_t *const restrict trans_state, /* [out] (optional) Transitional state. */ \
-        void *const restrict data) /* [in] State transition data. */
+#define ARCHI_HSP_TRANSITION_FUNCTION(name) void name(                  \
+        archi_hsp_state_t prev_state, /* [in] Previous state. */        \
+        archi_hsp_state_t next_state, /* [in] Next state. */            \
+        void *data, /* [in] Current transition data. */                 \
+        ARCHI_ERROR_PARAMETER_DECL) /* [out] Error. */
 
 /**
  * @brief State transition function type.
  */
 typedef ARCHI_HSP_TRANSITION_FUNCTION((*archi_hsp_transition_function_t));
+
+/**
+ * @brief Function type tag for state transition functions.
+ */
+#define ARCHI_POINTER_FUNCTION_TAG__HSP_TRANSITION  3
 
 /*****************************************************************************/
 
