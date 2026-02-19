@@ -1,17 +1,38 @@
+/*****************************************************************************
+ * Copyright (C) 2023-2026 by Ivan Podmazov                                  *
+ *                                                                           *
+ * This file is part of Archipelago.                                         *
+ *                                                                           *
+ *   Archipelago is free software: you can redistribute it and/or modify it  *
+ *   under the terms of the GNU Lesser General Public License as published   *
+ *   by the Free Software Foundation, either version 3 of the License, or    *
+ *   (at your option) any later version.                                     *
+ *                                                                           *
+ *   Archipelago is distributed in the hope that it will be useful,          *
+ *   but WITHOUT ANY WARRANTY; without even the implied warranty of          *
+ *   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the           *
+ *   GNU Lesser General Public License for more details.                     *
+ *                                                                           *
+ *   You should have received a copy of the GNU Lesser General Public        *
+ *   License along with Archipelago. If not, see                             *
+ *   <http://www.gnu.org/licenses/>.                                         *
+ *****************************************************************************/
+
 /**
  * @file
- * @brief Operations with fonts.
+ * @brief Operations with PSFv2 fonts.
  */
 
 #include "archi/font_psf2/api/font.fun.h"
-#include "archipelago/base/pointer.def.h"
-#include "archipelago/base/ref_count.fun.h"
-#include "archipelago/util/size.fun.h"
-#include "archipelago/util/string.fun.h"
+#include "archi/font_psf2/api/font.def.h"
+#include "archi_base/pointer.fun.h"
+#include "archi_base/pointer.def.h"
+#include "archi_base/util/string.fun.h"
 
 #include <stdlib.h> // for malloc(), free()
 #include <string.h> // for memcpy()
 #include <limits.h> // for CHAR_BIT
+
 
 #define NUM_UNICODE_CODE_POINTS (ARCHI_STRING_UNICODE_CODEPOINT_MAX + 1)
 
@@ -19,26 +40,34 @@
  * @brief PC Screen Font version 2, representation in memory.
  */
 struct archi_font_psf2 {
-    archi_pointer_t data; ///< Font data.
+    archi_rcpointer_t data; ///< Font data.
     archi_font_psf2_header_t header; ///< Font header.
     uint32_t *mapping_table; ///< (Unicode code point) -> (glyph index) mapping table.
 };
 
 archi_font_psf2_t
 archi_font_psf2_load(
-        archi_pointer_t font_data,
-        ARCHI_ERROR_PARAMETER_DECL)
+        archi_rcpointer_t font_data,
+        ARCHI_ERROR_PARAM_DECL)
 {
     // Check input pointer
-    if (!ARCHI_POINTER_TO_DATA_TYPE(font_data, sizeof(archi_font_psf2_header_t), char))
+    if (!archi_pointer_attr_compatible(font_data.attr,
+                ARCHI_POINTER_ATTR__PDATA(sizeof(archi_font_psf2_header_t), char)))
     {
-        ARCHI_ERROR_SET(ARCHI__ECONSTRAINT, "font data pointer is NULL or has incorrect attributes");
+        ARCHI_ERROR_SET(ARCHI__ECONSTRAINT, "font data pointer has incorrect attributes");
         return NULL;
     }
-    else if (ARCHI_SIZE_OVERFLOW(font_data.length, font_data.stride))
+    else if (font_data.ptr == NULL)
     {
-        ARCHI_ERROR_SET(ARCHI__ECONSTRAINT, "font data size overflows size_t");
+        ARCHI_ERROR_SET(ARCHI__ECONSTRAINT, "font data pointer is NULL");
         return NULL;
+    }
+
+    size_t font_data_size;
+    {
+        size_t length, stride;
+        archi_pointer_attr_unpk__pdata(font_data.attr, &length, &stride, NULL, NULL);
+        font_data_size = length * stride;
     }
 
     // Allocate the font object
@@ -50,7 +79,6 @@ archi_font_psf2_load(
     }
 
     // Initialize the font object
-    font->data = font_data;
     memcpy(&font->header, font_data.ptr, sizeof(archi_font_psf2_header_t));
     font->mapping_table = NULL;
 
@@ -85,7 +113,7 @@ archi_font_psf2_load(
         ARCHI_ERROR_SET(ARCHI__ECONSTRAINT, "number of bytes per glyph in font header is zero");
         goto failure;
     }
-    else if (font_data.length * font_data.stride < font->header.header_size +
+    else if (font_data_size < font->header.header_size +
             (size_t)font->header.bytes_per_glyph * font->header.num_glyphs)
     {
         ARCHI_ERROR_SET(ARCHI__ECONSTRAINT, "data size is not enough to fit all font glyphs");
@@ -107,7 +135,7 @@ archi_font_psf2_load(
     {
         unsigned char *table = (unsigned char*)font_data.ptr +
             font->header.header_size + (size_t)font->header.bytes_per_glyph * font->header.num_glyphs;
-        unsigned char *table_end = (unsigned char*)font_data.ptr + font_data.length * font_data.stride;
+        unsigned char *table_end = (unsigned char*)font_data.ptr + font_data_size;
 
         size_t remaining_bytes = table_end - table;
 
@@ -145,7 +173,9 @@ archi_font_psf2_load(
     }
 
     // Increment the font data reference counter
-    archi_reference_count_increment(font_data.ref_count);
+    font->data = archi_rcpointer_own(font_data, ARCHI_ERROR_PARAM);
+    if (!font->data.attr)
+        goto failure;
 
     ARCHI_ERROR_RESET();
     return font;
@@ -163,7 +193,7 @@ archi_font_psf2_unload(
     if (font == NULL)
         return;
 
-    archi_reference_count_decrement(font->data.ref_count);
+    archi_rcpointer_disown(font->data);
     free(font->mapping_table);
     free(font);
 }
@@ -178,27 +208,26 @@ archi_font_psf2_header(
     return font->header;
 }
 
-archi_pointer_t
+archi_rcpointer_t
 archi_font_psf2_glyph(
         archi_font_psf2_t font,
         uint32_t code_point)
 {
     if (font == NULL)
-        return (archi_pointer_t){0};
+        return (archi_rcpointer_t){0};
     else if (code_point > ARCHI_STRING_UNICODE_CODEPOINT_MAX)
-        return (archi_pointer_t){0};
+        return (archi_rcpointer_t){0};
 
     uint32_t glyph_idx = (font->mapping_table != NULL) ? font->mapping_table[code_point] : code_point;
     if (glyph_idx >= font->header.num_glyphs)
-        return (archi_pointer_t){0};
+        return (archi_rcpointer_t){0};
 
-    return (archi_pointer_t){
+    return (archi_rcpointer_t){
         .ptr = (unsigned char*)font->data.ptr + font->header.header_size +
             (size_t)font->header.bytes_per_glyph * glyph_idx,
+        .attr = (font->data.attr & ARCHI_POINTER_TYPE_MASK) |
+            ARCHI_POINTER_ATTR__PDATA(font->header.bytes_per_glyph, char),
         .ref_count = font->data.ref_count,
-        .attr = ARCHI_POINTER_ATTRIBUTES(ARCHI_POINTER_ATTR__TYPE(font->data.attr), 0, 0),
-        .length = font->header.bytes_per_glyph,
-        .stride = sizeof(char),
     };
 }
 

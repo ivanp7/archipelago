@@ -24,11 +24,12 @@
  */
 
 #include "archi/timer/api/timer.fun.h"
-#include "archipelago/util/string.fun.h"
+#include "archi_base/util/string.fun.h"
 
 #include <stdlib.h> // for malloc(), free()
 #include <math.h> // for INFINITY, NAN, fmin(), fmax()
 #include <sys/time.h> // for gettimeofday(), struct timeval
+
 
 struct archi_timer {
     char *name; ///< Timer name.

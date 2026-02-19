@@ -24,17 +24,19 @@
  */
 
 #include "archi/file/api/file.fun.h"
-#include "archipelago/base/pointer.fun.h"
-#include "archipelago/base/pointer.def.h"
+#include "archi_base/pointer.fun.h"
+#include "archi_base/pointer.def.h"
 
 #include <fcntl.h> // for open()
 #include <unistd.h> // for close(), ftruncate(), lseek(), read(), write(), fsync()
+#include <limits.h> // for LLONG_MAX
+
 
 archi_file_descriptor_t
 archi_file_open(
         const char *pathname,
         archi_file_open_params_t params,
-        ARCHI_ERROR_PARAMETER_DECL)
+        ARCHI_ERROR_PARAM_DECL)
 {
     if (pathname == NULL)
     {
@@ -78,7 +80,7 @@ archi_file_open(
     }
 
     // Truncate file if necessary
-    if (params.truncate && (params.size > 0))
+    if (params.truncate && (params.size != 0))
     {
         int ret = ftruncate(fd, params.size);
         if (ret != 0)
@@ -96,7 +98,7 @@ archi_file_open(
 void
 archi_file_close(
         archi_file_descriptor_t fd,
-        ARCHI_ERROR_PARAMETER_DECL)
+        ARCHI_ERROR_PARAM_DECL)
 {
     if (fd < 0)
     {
@@ -117,7 +119,7 @@ archi_file_close(
 archi_file_descriptor_t
 archi_file_duplicate(
         archi_file_descriptor_t fd,
-        ARCHI_ERROR_PARAMETER_DECL)
+        ARCHI_ERROR_PARAM_DECL)
 {
     if (fd < 0)
     {
@@ -136,12 +138,12 @@ archi_file_duplicate(
     return new_fd;
 }
 
-ptrdiff_t
+long long
 archi_file_seek(
         archi_file_descriptor_t fd,
-        ptrdiff_t offset,
+        long long offset,
         int whence,
-        ARCHI_ERROR_PARAMETER_DECL)
+        ARCHI_ERROR_PARAM_DECL)
 {
     if (fd < 0)
     {
@@ -149,15 +151,15 @@ archi_file_seek(
         return -1;
     }
 
-    if (sizeof(off_t) < sizeof(ptrdiff_t))
+    if (sizeof(off_t) < sizeof(long long))
     {
-#define OFF_MSB ((ptrdiff_t)1 << (sizeof(off_t)*CHAR_BIT - 2))
+#define OFF_MSB ((long long)1 << (sizeof(off_t)*CHAR_BIT - 2))
 #define OFF_MAX (OFF_MSB | (OFF_MSB - 1))
 #define OFF_MIN (-OFF_MAX - 1)
 
         if ((offset < OFF_MIN) || (offset > OFF_MAX))
         {
-            ARCHI_ERROR_SET(ARCHI__ECONSTRAINT, "file offset (%ti) out of bounds (min = %ti, max = %ti)",
+            ARCHI_ERROR_SET(ARCHI__ECONSTRAINT, "file offset (%lli) out of range [%lli; %lli]",
                     offset, OFF_MIN, OFF_MAX);
             return -1;
         }
@@ -174,12 +176,12 @@ archi_file_seek(
         return -1;
     }
 
-    if (sizeof(off_t) > sizeof(ptrdiff_t))
+    if (sizeof(off_t) > sizeof(long long))
     {
-        if (tell > (off_t)PTRDIFF_MAX)
+        if (tell > (off_t)LLONG_MAX)
         {
-            ARCHI_ERROR_SET(ARCHI__ECONSTRAINT, "file offset (%lli) out of bounds (max = %ti)",
-                    (long long)tell, PTRDIFF_MAX);
+            ARCHI_ERROR_SET(ARCHI__ECONSTRAINT, "file offset (%lli) out of range [0; %lli]",
+                    (long long)tell, LLONG_MAX);
             return -1;
         }
     }
@@ -192,7 +194,7 @@ size_t
 archi_file_read(
         archi_file_descriptor_t fd,
         archi_pointer_t destination,
-        ARCHI_ERROR_PARAMETER_DECL)
+        ARCHI_ERROR_PARAM_DECL)
 {
     if (fd < 0)
     {
@@ -206,9 +208,9 @@ archi_file_read(
     }
 
     size_t length, stride;
-    if (!archi_pointer_attr_parse__transp_data(destination.attr, &length, &stride, NULL, NULL))
+    if (!archi_pointer_attr_unpk__pdata(destination.attr, &length, &stride, NULL, NULL))
     {
-        ARCHI_ERROR_SET(ARCHI__ECONSTRAINT, "destination data type is not transparent");
+        ARCHI_ERROR_SET(ARCHI__ECONSTRAINT, "destination data type is not primitive");
         return 0;
     }
 
@@ -225,22 +227,31 @@ archi_file_read(
         return 0;
     }
 
-    ssize_t num_read = read(fd, destination.ptr, size);
-    if (num_read < 0)
+    size_t total_read = 0;
+    char *dest = destination.ptr;
+
+    while (total_read < size)
     {
-        ARCHI_ERROR_SET(ARCHI__ECONSTRAINT, "couldn't read data from file descriptor (%i)", fd);
-        return 0;
+        ssize_t num_read = read(fd, dest, size - total_read);
+        if (num_read < 0)
+        {
+            ARCHI_ERROR_SET(ARCHI__ECONSTRAINT, "couldn't read data from file descriptor (%i)", fd);
+            return total_read;
+        }
+
+        total_read += num_read;
+        dest += num_read;
     }
 
     ARCHI_ERROR_RESET();
-    return num_read;
+    return total_read;
 }
 
 size_t
 archi_file_write(
         archi_file_descriptor_t fd,
         archi_pointer_t source,
-        ARCHI_ERROR_PARAMETER_DECL)
+        ARCHI_ERROR_PARAM_DECL)
 {
     if (fd < 0)
     {
@@ -254,9 +265,9 @@ archi_file_write(
     }
 
     size_t length, stride;
-    if (!archi_pointer_attr_parse__transp_data(source.attr, &length, &stride, NULL, NULL))
+    if (!archi_pointer_attr_unpk__pdata(source.attr, &length, &stride, NULL, NULL))
     {
-        ARCHI_ERROR_SET(ARCHI__ECONSTRAINT, "source data type is not transparent");
+        ARCHI_ERROR_SET(ARCHI__ECONSTRAINT, "source data type is not primitive");
         return 0;
     }
 
@@ -273,21 +284,30 @@ archi_file_write(
         return 0;
     }
 
-    ssize_t num_written = write(fd, source.ptr, size);
-    if (num_written < 0)
+    size_t total_written = 0;
+    const char *src = source.cptr;
+
+    while (total_written < size)
     {
-        ARCHI_ERROR_SET(ARCHI__ECONSTRAINT, "couldn't write data to file descriptor (%i)", fd);
-        return 0;
+        ssize_t num_written = write(fd, src, size - total_written);
+        if (num_written < 0)
+        {
+            ARCHI_ERROR_SET(ARCHI__ECONSTRAINT, "couldn't write data to file descriptor (%i)", fd);
+            return total_written;
+        }
+
+        total_written += num_written;
+        src += num_written;
     }
 
     ARCHI_ERROR_RESET();
-    return num_written;
+    return total_written;
 }
 
 void
 archi_file_sync(
         archi_file_descriptor_t fd,
-        ARCHI_ERROR_PARAMETER_DECL)
+        ARCHI_ERROR_PARAM_DECL)
 {
     if (fd < 0)
     {

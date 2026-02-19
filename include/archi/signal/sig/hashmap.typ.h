@@ -27,9 +27,10 @@
 #ifndef _ARCHI_SIGNAL_SIG_HASHMAP_TYP_H_
 #define _ARCHI_SIGNAL_SIG_HASHMAP_TYP_H_
 
-#include "archi/hashmap/api/hashmap.typ.h"
+#include "archi/hashmap/api/handle.typ.h"
 
 #include <threads.h> // for mtx_t
+
 
 /**
  * @brief Data for the signal meta-handler for multiple handler support.

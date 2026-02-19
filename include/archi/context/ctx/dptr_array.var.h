@@ -29,6 +29,7 @@
 
 #include "archi/context/api/interface.typ.h"
 
+
 /**
  * @brief Context interface: array of pointers to data.
  *
@@ -36,9 +37,9 @@
  * - "length" : (size_t) array length
  *
  * Getter slots:
- * - [index]    : array element #index
- * - "elements" : (archi_rcpointer_t) array of references to separate elements of the array
- * - "length"   : (size_t) array length
+ * - [index]        : array element #index
+ * - "ptr" [index]  : (void*[]) array of pointers to array elements starting at #index
+ * - "length"       : (size_t) array length
  *
  * Setter slots:
  * - [index]    : array element #index

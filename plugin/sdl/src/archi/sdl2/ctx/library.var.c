@@ -1,200 +1,112 @@
+/*****************************************************************************
+ * Copyright (C) 2023-2026 by Ivan Podmazov                                  *
+ *                                                                           *
+ * This file is part of Archipelago.                                         *
+ *                                                                           *
+ *   Archipelago is free software: you can redistribute it and/or modify it  *
+ *   under the terms of the GNU Lesser General Public License as published   *
+ *   by the Free Software Foundation, either version 3 of the License, or    *
+ *   (at your option) any later version.                                     *
+ *                                                                           *
+ *   Archipelago is distributed in the hope that it will be useful,          *
+ *   but WITHOUT ANY WARRANTY; without even the implied warranty of          *
+ *   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the           *
+ *   GNU Lesser General Public License for more details.                     *
+ *                                                                           *
+ *   You should have received a copy of the GNU Lesser General Public        *
+ *   License along with Archipelago. If not, see                             *
+ *   <http://www.gnu.org/licenses/>.                                         *
+ *****************************************************************************/
+
 /**
  * @file
- * @brief Application context interface for SDL library initialization.
+ * @brief Context interface for SDL library initialization.
  */
 
 #include "archi/sdl2/ctx/library.var.h"
-#include "archipelago/util/string.fun.h"
+#include "archi_base/pointer.fun.h"
+#include "archi_base/util/plist.fun.h"
+#include "archi_base/util/check.fun.h"
 
 #include "SDL.h"
 
 #include <stdbool.h>
 
-static
-archi_pointer_t archi_context_sdl2_library_context_data;
 
-ARCHI_CONTEXT_INIT_FUNC(archi_context_sdl2_library_init)
+static
+bool
+archi_sdl2_initialized;
+
+static
+ARCHI_CONTEXT_INIT_FUNC(archi_context_init__sdl2_library)
 {
-    if (archi_context_sdl2_library_context_data.length != 0)
+    if (archi_sdl2_initialized)
     {
         ARCHI_ERROR_SET(ARCHI__ECONSTRAINT, "SDL2 library is initialized already");
         return NULL;
     }
 
     // Parse parameters
-    bool timer = false;
-    bool audio = false;
-    bool video = false;
-    bool joystick = false;
-    bool haptic = false;
-    bool gamecontroller = false;
-    bool events = false;
-    bool sensor = false;
     bool everything = false;
-
-    bool param_timer_set = false;
-    bool param_audio_set = false;
-    bool param_video_set = false;
-    bool param_joystick_set = false;
-    bool param_haptic_set = false;
-    bool param_gamecontroller_set = false;
-    bool param_events_set = false;
-    bool param_sensor_set = false;
-    bool param_everything_set = false;
-
-    for (; params != NULL; params = params->next)
+    bool timer, audio, video, joystick, haptic, gamecontroller, events, sensor;
     {
-        if (ARCHI_STRING_COMPARE("timer", ==, params->key))
-        {
-            if (param_timer_set)
-                continue;
-            param_timer_set = true;
+        archi_plist_param_t parsed[] = {
+            {.name = "everything",
+                .check = {archi_value_check__attr, (archi_pointer_attr_t[]){ARCHI_POINTER_ATTR__PDATA(1, char)}},
+                .assign = {archi_plist_assign__bool, &everything, sizeof(everything)}},
+            // subsystems
+            {.name = "timer", .check = {archi_value_check__attr, (archi_pointer_attr_t[]){ARCHI_POINTER_ATTR__PDATA(1, char)}}},
+            {.name = "audio", .check = {archi_value_check__attr, (archi_pointer_attr_t[]){ARCHI_POINTER_ATTR__PDATA(1, char)}}},
+            {.name = "video", .check = {archi_value_check__attr, (archi_pointer_attr_t[]){ARCHI_POINTER_ATTR__PDATA(1, char)}}},
+            {.name = "joystick", .check = {archi_value_check__attr, (archi_pointer_attr_t[]){ARCHI_POINTER_ATTR__PDATA(1, char)}}},
+            {.name = "haptic", .check = {archi_value_check__attr, (archi_pointer_attr_t[]){ARCHI_POINTER_ATTR__PDATA(1, char)}}},
+            {.name = "gamecontroller", .check = {archi_value_check__attr, (archi_pointer_attr_t[]){ARCHI_POINTER_ATTR__PDATA(1, char)}}},
+            {.name = "events", .check = {archi_value_check__attr, (archi_pointer_attr_t[]){ARCHI_POINTER_ATTR__PDATA(1, char)}}},
+            {.name = "sensor", .check = {archi_value_check__attr, (archi_pointer_attr_t[]){ARCHI_POINTER_ATTR__PDATA(1, char)}}},
+            {0},
+        };
 
-            if (!ARCHI_POINTER_TO_DATA_TYPE(params->value, 1, char))
-            {
-                ARCHI_ERROR_SET(ARCHI__ECONSTRAINT, "'timer' parameter attributes are incorrect");
-                return NULL;
-            }
-
-            timer = *(char*)params->value.ptr != 0;
-        }
-        else if (ARCHI_STRING_COMPARE("audio", ==, params->key))
-        {
-            if (param_audio_set)
-                continue;
-            param_audio_set = true;
-
-            if (!ARCHI_POINTER_TO_DATA_TYPE(params->value, 1, char))
-            {
-                ARCHI_ERROR_SET(ARCHI__ECONSTRAINT, "'audio' parameter attributes are incorrect");
-                return NULL;
-            }
-
-            audio = *(char*)params->value.ptr != 0;
-        }
-        else if (ARCHI_STRING_COMPARE("video", ==, params->key))
-        {
-            if (param_video_set)
-                continue;
-            param_video_set = true;
-
-            if (!ARCHI_POINTER_TO_DATA_TYPE(params->value, 1, char))
-            {
-                ARCHI_ERROR_SET(ARCHI__ECONSTRAINT, "'video' parameter attributes are incorrect");
-                return NULL;
-            }
-
-            video = *(char*)params->value.ptr != 0;
-        }
-        else if (ARCHI_STRING_COMPARE("joystick", ==, params->key))
-        {
-            if (param_joystick_set)
-                continue;
-            param_joystick_set = true;
-
-            if (!ARCHI_POINTER_TO_DATA_TYPE(params->value, 1, char))
-            {
-                ARCHI_ERROR_SET(ARCHI__ECONSTRAINT, "'joystick' parameter attributes are incorrect");
-                return NULL;
-            }
-
-            joystick = *(char*)params->value.ptr != 0;
-        }
-        else if (ARCHI_STRING_COMPARE("haptic", ==, params->key))
-        {
-            if (param_haptic_set)
-                continue;
-            param_haptic_set = true;
-
-            if (!ARCHI_POINTER_TO_DATA_TYPE(params->value, 1, char))
-            {
-                ARCHI_ERROR_SET(ARCHI__ECONSTRAINT, "'haptic' parameter attributes are incorrect");
-                return NULL;
-            }
-
-            haptic = *(char*)params->value.ptr != 0;
-        }
-        else if (ARCHI_STRING_COMPARE("gamecontroller", ==, params->key))
-        {
-            if (param_gamecontroller_set)
-                continue;
-            param_gamecontroller_set = true;
-
-            if (!ARCHI_POINTER_TO_DATA_TYPE(params->value, 1, char))
-            {
-                ARCHI_ERROR_SET(ARCHI__ECONSTRAINT, "'gamecontroller' parameter attributes are incorrect");
-                return NULL;
-            }
-
-            gamecontroller = *(char*)params->value.ptr != 0;
-        }
-        else if (ARCHI_STRING_COMPARE("events", ==, params->key))
-        {
-            if (param_events_set)
-                continue;
-            param_events_set = true;
-
-            if (!ARCHI_POINTER_TO_DATA_TYPE(params->value, 1, char))
-            {
-                ARCHI_ERROR_SET(ARCHI__ECONSTRAINT, "'events' parameter attributes are incorrect");
-                return NULL;
-            }
-
-            events = *(char*)params->value.ptr != 0;
-        }
-        else if (ARCHI_STRING_COMPARE("sensor", ==, params->key))
-        {
-            if (param_sensor_set)
-                continue;
-            param_sensor_set = true;
-
-            if (!ARCHI_POINTER_TO_DATA_TYPE(params->value, 1, char))
-            {
-                ARCHI_ERROR_SET(ARCHI__ECONSTRAINT, "'sensor' parameter attributes are incorrect");
-                return NULL;
-            }
-
-            sensor = *(char*)params->value.ptr != 0;
-        }
-        else if (ARCHI_STRING_COMPARE("everything", ==, params->key))
-        {
-            if (param_everything_set)
-                continue;
-            param_everything_set = true;
-
-            if (!ARCHI_POINTER_TO_DATA_TYPE(params->value, 1, char))
-            {
-                ARCHI_ERROR_SET(ARCHI__ECONSTRAINT, "'everything' parameter attributes are incorrect");
-                return NULL;
-            }
-
-            everything = *(char*)params->value.ptr != 0;
-        }
-        else
-        {
-            ARCHI_ERROR_SET(ARCHI__EKEY, "unknown parameter encountered");
+        if (!archi_plist_parse(&params->n, true, parsed, false, ARCHI_ERROR_PARAM))
             return NULL;
-        }
+
+        size_t index = 0;
+
+#define SUBSYSTEM(var)  do {                            \
+            index++;                                    \
+            if (parsed[index].value_set)                \
+                var = *(char*)parsed[index].value.ptr;  \
+            else                                        \
+                var = everything;                       \
+        } while (0)
+
+        SUBSYSTEM(timer);
+        SUBSYSTEM(audio);
+        SUBSYSTEM(video);
+        SUBSYSTEM(joystick);
+        SUBSYSTEM(haptic);
+        SUBSYSTEM(gamecontroller);
+        SUBSYSTEM(events);
+        SUBSYSTEM(sensor);
+
+#undef SUBSYSTEM
     }
 
     Uint32 flags = everything ? SDL_INIT_EVERYTHING : 0;
-
+    {
 #define SUBSYSTEM(var, flag)    \
-    if (var)                    \
-        flags |= flag;          \
-    else                        \
-        flags &= ~flag
+        if (var) flags |= flag; else flags &= ~flag
 
-    SUBSYSTEM(timer, SDL_INIT_TIMER);
-    SUBSYSTEM(audio, SDL_INIT_AUDIO);
-    SUBSYSTEM(video, SDL_INIT_VIDEO);
-    SUBSYSTEM(joystick, SDL_INIT_JOYSTICK);
-    SUBSYSTEM(haptic, SDL_INIT_HAPTIC);
-    SUBSYSTEM(gamecontroller, SDL_INIT_GAMECONTROLLER);
-    SUBSYSTEM(events, SDL_INIT_EVENTS);
-    SUBSYSTEM(sensor, SDL_INIT_SENSOR);
+        SUBSYSTEM(timer, SDL_INIT_TIMER);
+        SUBSYSTEM(audio, SDL_INIT_AUDIO);
+        SUBSYSTEM(video, SDL_INIT_VIDEO);
+        SUBSYSTEM(joystick, SDL_INIT_JOYSTICK);
+        SUBSYSTEM(haptic, SDL_INIT_HAPTIC);
+        SUBSYSTEM(gamecontroller, SDL_INIT_GAMECONTROLLER);
+        SUBSYSTEM(events, SDL_INIT_EVENTS);
+        SUBSYSTEM(sensor, SDL_INIT_SENSOR);
 
 #undef SUBSYSTEM
+    }
 
     // Construct the context
     int ret = SDL_Init(flags);
@@ -204,23 +116,27 @@ ARCHI_CONTEXT_INIT_FUNC(archi_context_sdl2_library_init)
         return NULL;
     }
 
-    archi_context_sdl2_library_context_data = (archi_pointer_t){
-        .attr = ARCHI_POINTER_DATA_ATTRIBUTES(false, 0, flags),
-        .length = 1,
-    };
+    archi_sdl2_initialized = true;
+
+    static archi_rcpointer_t context_data; // dummy
+    context_data = (archi_rcpointer_t){0};
 
     ARCHI_ERROR_RESET();
-    return &archi_context_sdl2_library_context_data;
+    return &context_data; // must return something non-NULL
 }
 
-ARCHI_CONTEXT_FINAL_FUNC(archi_context_sdl2_library_final)
+static
+ARCHI_CONTEXT_FINAL_FUNC(archi_context_final__sdl2_library)
 {
+    (void) context;
+
     SDL_Quit();
-    archi_context_sdl2_library_context_data = (archi_pointer_t){0};
+    archi_sdl2_initialized = false;
 }
 
-const archi_context_interface_t archi_context_sdl2_library_interface = {
-    .init_fn = archi_context_sdl2_library_init,
-    .final_fn = archi_context_sdl2_library_final,
+const archi_context_interface_t
+archi_context_interface__sdl2_library = {
+    .init_fn = archi_context_init__sdl2_library,
+    .final_fn = archi_context_final__sdl2_library,
 };
 

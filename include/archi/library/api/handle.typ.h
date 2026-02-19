@@ -20,34 +20,17 @@
 
 /**
  * @file
- * @brief Types for file and memory operations.
+ * @brief Shared library handle type.
  */
 
 #pragma once
 #ifndef _ARCHI_LIBRARY_API_HANDLE_TYP_H_
 #define _ARCHI_LIBRARY_API_HANDLE_TYP_H_
 
-#include <stdbool.h>
-
 /**
  * @brief Shared library handle.
  */
 typedef void *archi_library_handle_t;
-
-/**
- * @brief Data type tag for archi_library_handle_t.
- */
-#define ARCHI_POINTER_DATA_TAG__LIBRARY_HANDLE  8
-
-/**
- * @brief Parameters for archi_library_load().
- */
-typedef struct archi_library_load_params {
-    bool lazy;   ///< Whether to perform lazy binding.
-    bool global; ///< Whether defined symbols are available in subsequently loaded libraries.
-
-    int flags;   ///< Other flags for dlopen().
-} archi_library_load_params_t;
 
 #endif // _ARCHI_LIBRARY_API_HANDLE_TYP_H_
 

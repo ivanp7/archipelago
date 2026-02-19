@@ -25,10 +25,11 @@
 
 #include "archi/signal/sig/hashmap.fun.h"
 #include "archi/signal/sig/hashmap.typ.h"
+#include "archi/signal/sig/tag.def.h"
 #include "archi/signal/api/signal.typ.h"
 #include "archi/hashmap/api/hashmap.fun.h"
-#include "archipelago/base/pointer.fun.h"
-#include "archipelago/base/pointer.def.h"
+#include "archi_base/pointer.fun.h"
+
 
 struct archi_hashmap_traverse_data__signal_handler {
     int signo;
@@ -45,7 +46,7 @@ ARCHI_HASHMAP_TRAV_KV_FUNC(archi_hashmap_traverse__signal_handler)
     (void) index;
 
     if (!archi_pointer_attr_compatible(value.attr,
-                ARCHI_POINTER_ATTR__DATA_TYPE(1, archi_signal_handler_t)))
+                ARCHI_POINTER_ATTR__PDATA(1, archi_signal_handler_t)))
         return (archi_hashmap_trav_action_t){0};
 
     struct archi_hashmap_traverse_data__signal_handler *traverse_data = data;

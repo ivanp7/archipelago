@@ -29,6 +29,7 @@
 
 #include "archi/memory/api/interface.typ.h"
 
+
 /**
  * @brief Memory interface: heap.
  */

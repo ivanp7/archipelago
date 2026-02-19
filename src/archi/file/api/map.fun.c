@@ -31,6 +31,7 @@
 #include <unistd.h> // for sysconf()
 #include <stdint.h> // for uintptr_t
 
+
 size_t
 archi_file_page_size(void)
 {
@@ -41,8 +42,8 @@ void*
 archi_file_map(
         archi_file_descriptor_t fd,
         archi_file_map_params_t params,
-        size_t *size,
-        ARCHI_ERROR_PARAMETER_DECL)
+        size_t *out_size,
+        ARCHI_ERROR_PARAM_DECL)
 {
     if (fd < 0)
     {
@@ -82,8 +83,8 @@ archi_file_map(
             return NULL;
         }
 
-        if (size != NULL)
-            *size = params.size;
+        if (out_size != NULL)
+            *out_size = params.size;
 
         ARCHI_ERROR_RESET();
         return mm;
@@ -99,7 +100,7 @@ archi_file_map(
                     (size_t)statbuf.st_size, sizeof(header));
             return NULL;
         }
-        else if (params.size < sizeof(header))
+        else if ((params.size != 0) && (params.size < sizeof(header)))
         {
             ARCHI_ERROR_SET(ARCHI__ECONSTRAINT, "size of mapped file region (%zu) is less than header size (%zu)",
                     params.size, sizeof(header));
@@ -151,8 +152,8 @@ archi_file_map(
             return NULL;
         }
 
-        if (size != NULL)
-            *size = params.size;
+        if (out_size != NULL)
+            *out_size = params.size;
 
         ARCHI_ERROR_RESET();
         return mm;

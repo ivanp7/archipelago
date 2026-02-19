@@ -27,7 +27,8 @@
 #ifndef _ARCHI_ENV_API_CONTEXT_FUN_H_
 #define _ARCHI_ENV_API_CONTEXT_FUN_H_
 
-#include "archipelago/base/global.typ.h"
+#include "archi_base/global.typ.h"
+
 
 /**
  * @brief Initialize the environment context pointer.
@@ -43,7 +44,7 @@
  * @param[in] context
  *      Environment context.
  */
-ARCHI_GLOBAL_SET_FUNC(archi_env_global_context_set);
+ARCHI_GLOBAL_SET_FUNC(archi_global_context_set__env);
 
 /**
  * @brief Retrieve the environment context pointer.
@@ -52,7 +53,7 @@ ARCHI_GLOBAL_SET_FUNC(archi_env_global_context_set);
  *
  * @return Pointer to the environment context.
  */
-ARCHI_GLOBAL_GET_FUNC(archi_env_global_context);
+ARCHI_GLOBAL_GET_FUNC(archi_global_context__env);
 
 #endif // _ARCHI_ENV_API_CONTEXT_FUN_H_
 

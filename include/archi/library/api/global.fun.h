@@ -28,7 +28,10 @@
 #define _ARCHI_LIBRARY_API_GLOBAL_FUN_H_
 
 #include "archi/library/api/handle.typ.h"
-#include "archipelago/base/global.typ.h"
+#include "archi_base/global.typ.h"
+
+#include <stdbool.h>
+
 
 /**
  * @brief Synchronize global object pointer of a loaded library with the host application.

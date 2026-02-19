@@ -29,6 +29,7 @@
 
 #include <stdbool.h>
 
+
 struct archi_signal_flags;
 
 /**
@@ -61,7 +62,7 @@ struct archi_signal_flags;
  *   - true: the flag should be set;
  *   - false: the flag should not be set.
  *
- * @see archi_signal_handler_function_t
+ * @see archi_signal_handler_func_t
  */
 #define ARCHI_SIGNAL_HANDLER_FUNC(func_name)    bool func_name( \
         int signo,                                              \
@@ -76,23 +77,18 @@ struct archi_signal_flags;
  *
  * @see ARCHI_SIGNAL_HANDLER_FUNC
  */
-typedef ARCHI_SIGNAL_HANDLER_FUNC((*archi_signal_handler_function_t));
-
-/**
- * @brief Function type tag for signal handler functions.
- */
-#define ARCHI_POINTER_FUNCTION_TAG__SIGNAL_HANDLER  7
+typedef ARCHI_SIGNAL_HANDLER_FUNC((*archi_signal_handler_func_t));
 
 /**
  * @struct archi_signal_handler_t
- * @brief Descriptor for a signal handler.
+ * @brief Description of a signal handler.
  *
- * Bundles a signal handler function pointer with an opaque user data pointer.
+ * Bundles a signal handler function pointer with a data pointer.
  * When a watched signal arrives, the signal manager invokes
  * handler->function(signo, siginfo, flags, handler->data).
  */
 typedef struct archi_signal_handler {
-    archi_signal_handler_function_t function; ///< Signal hander function.
+    archi_signal_handler_func_t function; ///< Signal hander function.
     void *data; ///< Signal hander function data.
 } archi_signal_handler_t;
 

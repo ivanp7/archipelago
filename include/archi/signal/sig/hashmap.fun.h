@@ -29,12 +29,13 @@
 
 #include "archi/signal/api/handler.typ.h"
 
+
 /**
  * @brief Signal meta-handler for multiple handler support.
  *
- * This function expects archi_signal_handler_hashmap_data_t as function data.
- * Hashmap values must be signal handler objects only.
+ * Function data type: archi_signal_handler_hashmap_data_t.
  *
+ * Hashmap values must be signal handler objects only.
  * When a signal is caught, it is passed to all handlers in the hashmap
  * in the order of oldest to newest.
  */

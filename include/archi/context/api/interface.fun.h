@@ -30,11 +30,12 @@
 #include "archi/context/api/handle.typ.h"
 #include "archi/context/api/slot.typ.h"
 #include "archi/context/api/callback.typ.h"
-#include "archipelago/base/pointer.typ.h"
-#include "archipelago/base/kvlist.typ.h"
-#include "archipelago/base/error.typ.h"
+#include "archi_base/pointer.typ.h"
+#include "archi_base/kvlist.typ.h"
+#include "archi_base/error.typ.h"
 
 #include <stdbool.h>
+
 
 /**
  * @brief Extract context interface.
@@ -73,9 +74,9 @@ archi_context_data(
 archi_context_t
 archi_context_initialize(
         archi_rcpointer_t interface, ///< [in] Context interface.
-        const archi_kvlist_rc_t *params, ///< [in] Initialization parameters.
+        const archi_krcvlist_t *params, ///< [in] Initialization parameters.
 
-        ARCHI_ERROR_PARAMETER_DECL ///< [out] Error.
+        ARCHI_ERROR_PARAM_DECL ///< [out] Error.
 );
 
 /**
@@ -109,7 +110,7 @@ archi_context_get(
         archi_context_slot_t slot, ///< [in] Slot designator.
         archi_context_callback_t callback, ///< [in] Output callback.
 
-        ARCHI_ERROR_PARAMETER_DECL ///< [out] Error.
+        ARCHI_ERROR_PARAM_DECL ///< [out] Error.
 );
 
 /**
@@ -124,10 +125,10 @@ void
 archi_context_call(
         archi_context_t context, ///< [in] Context.
         archi_context_slot_t slot, ///< [in] Slot designator.
-        const archi_kvlist_rc_t *params, ///< [in] Call parameters.
+        const archi_krcvlist_t *params, ///< [in] Call parameters.
         archi_context_callback_t callback, ///< [in] Output callback.
 
-        ARCHI_ERROR_PARAMETER_DECL ///< [out] Error.
+        ARCHI_ERROR_PARAM_DECL ///< [out] Error.
 );
 
 /**
@@ -141,7 +142,20 @@ archi_context_set(
         archi_context_slot_t slot, ///< [in] Slot designator.
         archi_rcpointer_t value, ///< [in] Value to set.
 
-        ARCHI_ERROR_PARAMETER_DECL ///< [out] Error.
+        ARCHI_ERROR_PARAM_DECL ///< [out] Error.
+);
+
+/**
+ * @brief Unset context slot.
+ *
+ * Unsetting empty slot is not allowed.
+ */
+void
+archi_context_unset(
+        archi_context_t context, ///< [in] Context.
+        archi_context_slot_t slot, ///< [in] Slot designator.
+
+        ARCHI_ERROR_PARAM_DECL ///< [out] Error.
 );
 
 /*****************************************************************************/
@@ -158,9 +172,9 @@ archi_context_set_from_get(
 
         archi_context_t src_context,   ///< [in] Source context.
         archi_context_slot_t src_slot, ///< [in] Source slot designator.
-        bool src_no_refcount, ///< [in] Whether to reset reference counter of the source value.
+        bool weak_ref, ///< [in] Whether to reset reference counter of the source value.
 
-        ARCHI_ERROR_PARAMETER_DECL ///< [out] Error.
+        ARCHI_ERROR_PARAM_DECL ///< [out] Error.
 );
 
 /**
@@ -175,10 +189,10 @@ archi_context_set_from_call(
 
         archi_context_t src_context, ///< [in] Source context.
         archi_context_slot_t src_slot, ///< [in] Source slot designator.
-        const archi_kvlist_rc_t *src_params, ///< [in] Source call parameters.
-        bool src_no_refcount, ///< [in] Whether to reset reference counter of the source value.
+        const archi_krcvlist_t *src_params, ///< [in] Source call parameters.
+        bool weak_ref, ///< [in] Whether to reset reference counter of the source value.
 
-        ARCHI_ERROR_PARAMETER_DECL ///< [out] Error.
+        ARCHI_ERROR_PARAM_DECL ///< [out] Error.
 );
 
 #endif // _ARCHI_CONTEXT_API_INTERFACE_FUN_H_

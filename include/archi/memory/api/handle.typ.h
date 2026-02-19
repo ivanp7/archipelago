@@ -36,19 +36,9 @@ struct archi_memory_mapping;
 typedef struct archi_memory *archi_memory_t;
 
 /**
- * @brief Data type tag for archi_memory_t.
- */
-#define ARCHI_POINTER_DATA_TAG__MEMORY  5
-
-/**
  * @brief Pointer to memory mapping object.
  */
 typedef struct archi_memory_mapping *archi_memory_mapping_t;
-
-/**
- * @brief Data type tag for archi_memory_mapping_t.
- */
-#define ARCHI_POINTER_DATA_TAG__MEMORY_MAPPING  6
 
 #endif // _ARCHI_MEMORY_API_HANDLE_TYP_H_
 

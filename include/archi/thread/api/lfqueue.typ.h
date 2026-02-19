@@ -29,17 +29,6 @@
 
 #include <stddef.h> // for size_t
 
-struct archi_thread_lfqueue;
-
-/**
- * @brief Pointer to lock-free queue.
- */
-typedef struct archi_thread_lfqueue *archi_thread_lfqueue_t;
-
-/**
- * @brief Data type tag for archi_thread_lfqueue_t.
- */
-#define ARCHI_POINTER_DATA_TAG__THREAD_LFQUEUE  4
 
 /**
  * @brief Lock-free queue allocation parameters.
@@ -54,11 +43,7 @@ typedef struct archi_thread_lfqueue *archi_thread_lfqueue_t;
  */
 typedef struct archi_thread_lfqueue_alloc_params {
     size_t capacity; ///< Queue capacity.
-
-    struct {
-        size_t size;      ///< Element size.
-        size_t alignment; ///< Element alignment requirement.
-    } element; ///< Queue element properties.
+    size_t elt_size; ///< Queue element size.
 } archi_thread_lfqueue_alloc_params_t;
 
 #endif // _ARCHI_THREAD_API_LFQUEUE_TYP_H_

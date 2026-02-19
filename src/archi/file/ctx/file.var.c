@@ -26,14 +26,16 @@
 #include "archi/file/ctx/file.var.h"
 #include "archi/file/api/file.fun.h"
 #include "archi/file/api/stream.fun.h"
+#include "archi/file/api/tag.def.h"
 #include "archi/context/api/interface.def.h"
-#include "archipelago/util/parameters.fun.h"
-#include "archipelago/base/pointer.fun.h"
-#include "archipelago/base/pointer.def.h"
-#include "archipelago/util/size.def.h"
-#include "archipelago/util/string.fun.h"
+#include "archi_base/pointer.fun.h"
+#include "archi_base/pointer.def.h"
+#include "archi_base/util/plist.fun.h"
+#include "archi_base/util/check.fun.h"
+#include "archi_base/util/string.fun.h"
 
 #include <stdlib.h> // for malloc(), free()
+
 
 struct archi_context_data__file {
     archi_rcpointer_t stream;
@@ -45,76 +47,59 @@ ARCHI_CONTEXT_INIT_FUNC(archi_context_init__file)
 {
     // Parse parameters
     const char *pathname = NULL;
-    bool pathname_set = false;
     archi_file_descriptor_t fd = -1;
-    bool fd_set = false;
     archi_file_open_params_t file_open_params = {0};
     bool stream = false;
+    bool pathname_set = false, fd_set = false;
     {
-        archi_kvlist_parameter_t parsed[] = {
-            {.name = "pathname", .value.attr = ARCHI_POINTER_ATTR__DATA_TYPE(1, char)},
-            {.name = "fd", .value.attr = ARCHI_POINTER_ATTR__DATA_TYPE(1, archi_file_descriptor_t)},
-            {.name = "params", .value.attr = ARCHI_POINTER_ATTR__DATA_TYPE(1, archi_file_open_params_t)},
-            {.name = "size", .value.attr = ARCHI_POINTER_ATTR__DATA_TYPE(1, size_t)},
-            {.name = "readable", .value.attr = ARCHI_POINTER_ATTR__DATA_TYPE(1, char)},
-            {.name = "writable", .value.attr = ARCHI_POINTER_ATTR__DATA_TYPE(1, char)},
-            {.name = "create", .value.attr = ARCHI_POINTER_ATTR__DATA_TYPE(1, char)},
-            {.name = "exclusive", .value.attr = ARCHI_POINTER_ATTR__DATA_TYPE(1, char)},
-            {.name = "truncate", .value.attr = ARCHI_POINTER_ATTR__DATA_TYPE(1, char)},
-            {.name = "append", .value.attr = ARCHI_POINTER_ATTR__DATA_TYPE(1, char)},
-            {.name = "flags", .value.attr = ARCHI_POINTER_ATTR__DATA_TYPE(1, int)},
-            {.name = "mode", .value.attr = ARCHI_POINTER_ATTR__DATA_TYPE(1, int)},
-            {.name = "stream", .value.attr = ARCHI_POINTER_ATTR__DATA_TYPE(1, char)},
+        archi_plist_param_t parsed[] = {
+            {.name = "pathname",
+                .check = {archi_value_check__attr, (archi_pointer_attr_t[]){ARCHI_POINTER_ATTR__PDATA(1, char)}},
+                .assign = {archi_plist_assign__dptr, &pathname, sizeof(pathname), &pathname_set}},
+            {.name = "fd",
+                .check = {archi_value_check__attr, (archi_pointer_attr_t[]){ARCHI_POINTER_ATTR__PDATA(1, archi_file_descriptor_t)}},
+                .assign = {archi_plist_assign__value, &fd, sizeof(fd), &fd_set}},
+            {.name = "params",
+                .check = {archi_value_check__attr, (archi_pointer_attr_t[]){ARCHI_POINTER_ATTR__PDATA(1, archi_file_open_params_t)}},
+                .assign = {archi_plist_assign__value, &file_open_params, sizeof(file_open_params)}},
+            {.name = "size",
+                .check = {archi_value_check__attr, (archi_pointer_attr_t[]){ARCHI_POINTER_ATTR__PDATA(1, size_t)}},
+                .assign = {archi_plist_assign__value, &file_open_params.size, sizeof(file_open_params.size)}},
+            {.name = "readable",
+                .check = {archi_value_check__attr, (archi_pointer_attr_t[]){ARCHI_POINTER_ATTR__PDATA(1, char)}},
+                .assign = {archi_plist_assign__bool, &file_open_params.readable, sizeof(file_open_params.readable)}},
+            {.name = "writable",
+                .check = {archi_value_check__attr, (archi_pointer_attr_t[]){ARCHI_POINTER_ATTR__PDATA(1, char)}},
+                .assign = {archi_plist_assign__bool, &file_open_params.writable, sizeof(file_open_params.writable)}},
+            {.name = "create",
+                .check = {archi_value_check__attr, (archi_pointer_attr_t[]){ARCHI_POINTER_ATTR__PDATA(1, char)}},
+                .assign = {archi_plist_assign__bool, &file_open_params.create, sizeof(file_open_params.create)}},
+            {.name = "exclusive",
+                .check = {archi_value_check__attr, (archi_pointer_attr_t[]){ARCHI_POINTER_ATTR__PDATA(1, char)}},
+                .assign = {archi_plist_assign__bool, &file_open_params.exclusive, sizeof(file_open_params.exclusive)}},
+            {.name = "truncate",
+                .check = {archi_value_check__attr, (archi_pointer_attr_t[]){ARCHI_POINTER_ATTR__PDATA(1, char)}},
+                .assign = {archi_plist_assign__bool, &file_open_params.truncate, sizeof(file_open_params.truncate)}},
+            {.name = "append",
+                .check = {archi_value_check__attr, (archi_pointer_attr_t[]){ARCHI_POINTER_ATTR__PDATA(1, char)}},
+                .assign = {archi_plist_assign__bool, &file_open_params.append, sizeof(file_open_params.append)}},
+            {.name = "flags",
+                .check = {archi_value_check__attr, (archi_pointer_attr_t[]){ARCHI_POINTER_ATTR__PDATA(1, int)}},
+                .assign = {archi_plist_assign__value, &file_open_params.flags, sizeof(file_open_params.flags)}},
+            {.name = "mode",
+                .check = {archi_value_check__attr, (archi_pointer_attr_t[]){ARCHI_POINTER_ATTR__PDATA(1, int)}},
+                .assign = {archi_plist_assign__value, &file_open_params.mode, sizeof(file_open_params.mode)}},
+            {.name = "stream",
+                .check = {archi_value_check__attr, (archi_pointer_attr_t[]){ARCHI_POINTER_ATTR__PDATA(1, char)}},
+                .assign = {archi_plist_assign__bool, &stream, sizeof(stream)}},
+            {0},
         };
 
-        if (!archi_kvlist_parameters_parse(params, parsed, ARCHI_LENGTH_ARRAY(parsed), false, NULL,
-                    ARCHI_ERROR_PARAMETER))
+        if (!archi_plist_parse(&params->n, true, parsed, false, ARCHI_ERROR_PARAM))
             return NULL;
-
-        size_t index = 0;
-        pathname_set = parsed[index].value_set;
-        if (pathname_set)
-            pathname = parsed[index].value.ptr;
-        index++;
-        fd_set = parsed[index].value_set;
-        if (fd_set)
-            fd = *(archi_file_descriptor_t*)parsed[index].value.ptr;
-        index++;
-        if (parsed[index].value_set)
-            file_open_params = *(archi_file_open_params_t*)parsed[index].value.ptr;
-        index++;
-        if (parsed[index].value_set)
-            file_open_params.size = *(size_t*)parsed[index].value.ptr;
-        index++;
-        if (parsed[index].value_set)
-            file_open_params.readable = *(char*)parsed[index].value.ptr;
-        index++;
-        if (parsed[index].value_set)
-            file_open_params.writable = *(char*)parsed[index].value.ptr;
-        index++;
-        if (parsed[index].value_set)
-            file_open_params.create = *(char*)parsed[index].value.ptr;
-        index++;
-        if (parsed[index].value_set)
-            file_open_params.exclusive = *(char*)parsed[index].value.ptr;
-        index++;
-        if (parsed[index].value_set)
-            file_open_params.truncate = *(char*)parsed[index].value.ptr;
-        index++;
-        if (parsed[index].value_set)
-            file_open_params.append = *(char*)parsed[index].value.ptr;
-        index++;
-        if (parsed[index].value_set)
-            file_open_params.flags = *(char*)parsed[index].value.ptr;
-        index++;
-        if (parsed[index].value_set)
-            file_open_params.mode = *(char*)parsed[index].value.ptr;
-        index++;
-        if (parsed[index].value_set)
-            stream = *(char*)parsed[index].value.ptr;
     }
 
-    // Check validity of parameters
+    // Check validness of parameters
     if (!pathname_set && !fd_set)
     {
         ARCHI_ERROR_SET(ARCHI__ECONSTRAINT, "neither pathname nor file descriptor aren't provided");
@@ -137,14 +122,14 @@ ARCHI_CONTEXT_INIT_FUNC(archi_context_init__file)
     *context_data = (struct archi_context_data__file){
         .stream = {
             .attr = ARCHI_POINTER_TYPE__DATA_WRITABLE |
-                archi_pointer_attr__opaque_data(ARCHI_POINTER_DATA_TAG__FILE_STREAM),
+                archi_pointer_attr__cdata(ARCHI_POINTER_DATA_TAG__FILE_STREAM),
         },
     };
 
     if (pathname_set)
-        context_data->fd = archi_file_open(pathname, file_open_params, ARCHI_ERROR_PARAMETER);
+        context_data->fd = archi_file_open(pathname, file_open_params, ARCHI_ERROR_PARAM);
     else if (fd_set)
-        context_data->fd = archi_file_duplicate(fd, ARCHI_ERROR_PARAMETER);
+        context_data->fd = archi_file_duplicate(fd, ARCHI_ERROR_PARAM);
 
     if (context_data->fd < 0)
     {
@@ -154,7 +139,7 @@ ARCHI_CONTEXT_INIT_FUNC(archi_context_init__file)
 
     if (stream)
     {
-        context_data->stream.ptr = archi_file_stream_open(context_data->fd, file_open_params, ARCHI_ERROR_PARAMETER);
+        context_data->stream.ptr = archi_file_stream_open(context_data->fd, file_open_params, ARCHI_ERROR_PARAM);
         if (context_data->stream.ptr == NULL)
         {
             archi_file_close(context_data->fd, NULL);
@@ -202,7 +187,7 @@ ARCHI_CONTEXT_EVAL_FUNC(archi_context_eval__file)
             archi_rcpointer_t value = {
                 .ptr = &fd,
                 .attr = ARCHI_POINTER_TYPE__DATA_ON_STACK |
-                    ARCHI_POINTER_ATTR__DATA_TYPE(1, archi_file_descriptor_t),
+                    ARCHI_POINTER_ATTR__PDATA(1, archi_file_descriptor_t),
             };
 
             ARCHI_CONTEXT_YIELD(value);
@@ -215,14 +200,14 @@ ARCHI_CONTEXT_EVAL_FUNC(archi_context_eval__file)
                 return;
             }
 
-            ptrdiff_t offset = archi_file_seek(context_data->fd, 0, SEEK_CUR, ARCHI_ERROR_PARAMETER);
+            long long offset = archi_file_seek(context_data->fd, 0, SEEK_CUR, ARCHI_ERROR_PARAM);
             if (offset < 0)
                 return;
 
             archi_rcpointer_t value = {
                 .ptr = &offset,
                 .attr = ARCHI_POINTER_TYPE__DATA_ON_STACK |
-                    ARCHI_POINTER_ATTR__DATA_TYPE(1, ptrdiff_t),
+                    ARCHI_POINTER_ATTR__PDATA(1, long long),
             };
 
             ARCHI_CONTEXT_YIELD(value);
@@ -242,32 +227,24 @@ ARCHI_CONTEXT_EVAL_FUNC(archi_context_eval__file)
 
             // Parse parameters
             archi_rcpointer_t destination = {0};
-            bool destination_set = false;
-            size_t dest_offset = 0;
-            size_t length = 0;
-            bool length_set = false;
+            size_t dest_offset = 0, length = 0;
+            bool destination_set = false, length_set = false;
             {
-                archi_kvlist_parameter_t parsed[] = {
-                    {.name = "to", .value.attr = archi_pointer_attr__opaque_data(0)},
-                    {.name = "to_offset", .value.attr = ARCHI_POINTER_ATTR__DATA_TYPE(1, size_t)},
-                    {.name = "length", .value.attr = ARCHI_POINTER_ATTR__DATA_TYPE(1, size_t)},
+                archi_plist_param_t parsed[] = {
+                    {.name = "dest",
+                        .check = {archi_value_check__attr, (archi_pointer_attr_t[]){archi_pointer_attr__cdata(0)}},
+                        .assign = {archi_plist_assign__rcpointer, &destination, sizeof(destination), &destination_set}},
+                    {.name = "dest_offset",
+                        .check = {archi_value_check__attr, (archi_pointer_attr_t[]){ARCHI_POINTER_ATTR__PDATA(1, size_t)}},
+                        .assign = {archi_plist_assign__value, &dest_offset, sizeof(dest_offset)}},
+                    {.name = "length",
+                        .check = {archi_value_check__attr, (archi_pointer_attr_t[]){ARCHI_POINTER_ATTR__PDATA(1, size_t)}},
+                        .assign = {archi_plist_assign__value, &length, sizeof(length), &length_set}},
+                    {0},
                 };
 
-                if (!archi_kvlist_parameters_parse(params, parsed, ARCHI_LENGTH_ARRAY(parsed), false, NULL,
-                            ARCHI_ERROR_PARAMETER))
+                if (!archi_plist_parse(&params->n, true, parsed, false, ARCHI_ERROR_PARAM))
                     return;
-
-                size_t index = 0;
-                destination_set = parsed[index].value_set;
-                if (destination_set)
-                    destination = parsed[index].value;
-                index++;
-                if (parsed[index].value_set)
-                    dest_offset = *(size_t*)parsed[index].value.ptr;
-                index++;
-                length_set = parsed[index].value_set;
-                if (length_set)
-                    length = *(size_t*)parsed[index].value.ptr;
             }
 
             // Check validity of the parameters
@@ -279,10 +256,11 @@ ARCHI_CONTEXT_EVAL_FUNC(archi_context_eval__file)
 
             size_t dest_length, dest_stride;
             {
-                archi_error_t error;
-                if (!archi_pointer_attr_parse__transp_data(destination.attr, &dest_length, &dest_stride, NULL, &error))
+                ARCHI_ERROR_VAR(error);
+
+                if (!archi_pointer_attr_unpk__pdata(destination.attr, &dest_length, &dest_stride, NULL, &error))
                 {
-                    ARCHI_ERROR_SET(error.code, "destination pointer does not refer to transparent data: %s", error.message);
+                    ARCHI_ERROR_SET(error.code, "destination pointer does not refer to primitive data: %s", error.message);
                     return;
                 }
             }
@@ -311,7 +289,7 @@ ARCHI_CONTEXT_EVAL_FUNC(archi_context_eval__file)
             }
 
             // Read the data
-            archi_error_t error;
+            ARCHI_ERROR_VAR(error);
 
             size_t num_read = archi_file_read(context_data->fd, destination.p, &error);
             ARCHI_ERROR_ASSIGN(error);
@@ -336,32 +314,24 @@ ARCHI_CONTEXT_EVAL_FUNC(archi_context_eval__file)
 
             // Parse parameters
             archi_rcpointer_t source = {0};
-            bool source_set = false;
-            size_t src_offset = 0;
-            size_t length = 0;
-            bool length_set = false;
+            size_t src_offset = 0, length = 0;
+            bool source_set = false, length_set = false;
             {
-                archi_kvlist_parameter_t parsed[] = {
-                    {.name = "from", .value.attr = archi_pointer_attr__opaque_data(0)},
-                    {.name = "from_offset", .value.attr = ARCHI_POINTER_ATTR__DATA_TYPE(1, size_t)},
-                    {.name = "length", .value.attr = ARCHI_POINTER_ATTR__DATA_TYPE(1, size_t)},
+                archi_plist_param_t parsed[] = {
+                    {.name = "src",
+                        .check = {archi_value_check__attr, (archi_pointer_attr_t[]){archi_pointer_attr__cdata(0)}},
+                        .assign = {archi_plist_assign__rcpointer, &source, sizeof(source), &source_set}},
+                    {.name = "src_offset",
+                        .check = {archi_value_check__attr, (archi_pointer_attr_t[]){ARCHI_POINTER_ATTR__PDATA(1, size_t)}},
+                        .assign = {archi_plist_assign__value, &src_offset, sizeof(src_offset)}},
+                    {.name = "length",
+                        .check = {archi_value_check__attr, (archi_pointer_attr_t[]){ARCHI_POINTER_ATTR__PDATA(1, size_t)}},
+                        .assign = {archi_plist_assign__value, &length, sizeof(length), &length_set}},
+                    {0},
                 };
 
-                if (!archi_kvlist_parameters_parse(params, parsed, ARCHI_LENGTH_ARRAY(parsed), false, NULL,
-                            ARCHI_ERROR_PARAMETER))
+                if (!archi_plist_parse(&params->n, true, parsed, false, ARCHI_ERROR_PARAM))
                     return;
-
-                size_t index = 0;
-                source_set = parsed[index].value_set;
-                if (source_set)
-                    source = parsed[index].value;
-                index++;
-                if (parsed[index].value_set)
-                    src_offset = *(size_t*)parsed[index].value.ptr;
-                index++;
-                length_set = parsed[index].value_set;
-                if (length_set)
-                    length = *(size_t*)parsed[index].value.ptr;
             }
 
             // Check validity of the parameters
@@ -373,10 +343,11 @@ ARCHI_CONTEXT_EVAL_FUNC(archi_context_eval__file)
 
             size_t src_length, src_stride;
             {
-                archi_error_t error;
-                if (!archi_pointer_attr_parse__transp_data(source.attr, &src_length, &src_stride, NULL, &error))
+                ARCHI_ERROR_VAR(error);
+
+                if (!archi_pointer_attr_unpk__pdata(source.attr, &src_length, &src_stride, NULL, &error))
                 {
-                    ARCHI_ERROR_SET(error.code, "source pointer does not refer to transparent data: %s", error.message);
+                    ARCHI_ERROR_SET(error.code, "source pointer does not refer to primitive data: %s", error.message);
                     return;
                 }
             }
@@ -405,7 +376,7 @@ ARCHI_CONTEXT_EVAL_FUNC(archi_context_eval__file)
             }
 
             // Write the data
-            archi_error_t error;
+            ARCHI_ERROR_VAR(error);
 
             size_t num_written = archi_file_write(context_data->fd, source.p, &error);
             ARCHI_ERROR_ASSIGN(error);
@@ -434,7 +405,7 @@ ARCHI_CONTEXT_EVAL_FUNC(archi_context_eval__file)
             }
 
             // Synchronize the file state with storage
-            archi_error_t error;
+            ARCHI_ERROR_VAR(error);
 
             archi_file_sync(context_data->fd, &error);
             ARCHI_ERROR_ASSIGN(error);
@@ -455,6 +426,12 @@ ARCHI_CONTEXT_EVAL_FUNC(archi_context_eval__file)
 static
 ARCHI_CONTEXT_SET_FUNC(archi_context_set__file)
 {
+    if (unset)
+    {
+        ARCHI_ERROR_SET(ARCHI__ECONSTRAINT, "slot unsetting is not supported");
+        return;
+    }
+
     struct archi_context_data__file *context_data =
         (struct archi_context_data__file*)context;
 
@@ -466,15 +443,15 @@ ARCHI_CONTEXT_SET_FUNC(archi_context_set__file)
             return;
         }
         else if (!archi_pointer_attr_compatible(value.attr,
-                    ARCHI_POINTER_ATTR__DATA_TYPE(1, ptrdiff_t)))
+                    ARCHI_POINTER_ATTR__PDATA(1, long long)))
         {
-            ARCHI_ERROR_SET(ARCHI__ECONSTRAINT, "assigned value is not a ptrdiff_t");
+            ARCHI_ERROR_SET(ARCHI__ECONSTRAINT, "assigned value is not a long long");
             return;
         }
 
-        ptrdiff_t offset = *(ptrdiff_t*)value.ptr;
+        long long offset = *(long long*)value.ptr;
 
-        offset = archi_file_seek(context_data->fd, offset, SEEK_SET, ARCHI_ERROR_PARAMETER);
+        offset = archi_file_seek(context_data->fd, offset, SEEK_SET, ARCHI_ERROR_PARAM);
         if (offset < 0)
             return;
     }
@@ -486,15 +463,15 @@ ARCHI_CONTEXT_SET_FUNC(archi_context_set__file)
             return;
         }
         else if (!archi_pointer_attr_compatible(value.attr,
-                    ARCHI_POINTER_ATTR__DATA_TYPE(1, ptrdiff_t)))
+                    ARCHI_POINTER_ATTR__PDATA(1, long long)))
         {
-            ARCHI_ERROR_SET(ARCHI__ECONSTRAINT, "assigned value is not a ptrdiff_t");
+            ARCHI_ERROR_SET(ARCHI__ECONSTRAINT, "assigned value is not a long long");
             return;
         }
 
-        ptrdiff_t offset = *(ptrdiff_t*)value.ptr;
+        long long offset = *(long long*)value.ptr;
 
-        offset = archi_file_seek(context_data->fd, offset, SEEK_END, ARCHI_ERROR_PARAMETER);
+        offset = archi_file_seek(context_data->fd, offset, SEEK_END, ARCHI_ERROR_PARAM);
         if (offset < 0)
             return;
     }
@@ -506,15 +483,15 @@ ARCHI_CONTEXT_SET_FUNC(archi_context_set__file)
             return;
         }
         else if (!archi_pointer_attr_compatible(value.attr,
-                    ARCHI_POINTER_ATTR__DATA_TYPE(1, ptrdiff_t)))
+                    ARCHI_POINTER_ATTR__PDATA(1, long long)))
         {
-            ARCHI_ERROR_SET(ARCHI__ECONSTRAINT, "assigned value is not a ptrdiff_t");
+            ARCHI_ERROR_SET(ARCHI__ECONSTRAINT, "assigned value is not a long long");
             return;
         }
 
-        ptrdiff_t offset = *(ptrdiff_t*)value.ptr;
+        long long offset = *(long long*)value.ptr;
 
-        offset = archi_file_seek(context_data->fd, offset, SEEK_CUR, ARCHI_ERROR_PARAMETER);
+        offset = archi_file_seek(context_data->fd, offset, SEEK_CUR, ARCHI_ERROR_PARAM);
         if (offset < 0)
             return;
     }

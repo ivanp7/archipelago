@@ -27,14 +27,13 @@
 
 #include <stdlib.h> // for aligned_alloc(), free()
 
+
 static
 ARCHI_MEMORY_ALLOC_FUNC(archi_memory_alloc__heap)
 {
     (void) alloc_data;
 
-    void *allocation;
-
-    allocation = aligned_alloc(alignment, num_bytes);
+    void *allocation = aligned_alloc(alignment, num_bytes);
     if (allocation == NULL)
     {
         ARCHI_ERROR_SET(ARCHI__EMEMORY, "couldn't allocate memory on heap (%zu bytes, alignment = %#zx)",

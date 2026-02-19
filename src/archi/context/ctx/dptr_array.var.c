@@ -25,14 +25,14 @@
 
 #include "archi/context/ctx/dptr_array.var.h"
 #include "archi/context/api/interface.def.h"
-#include "archipelago/util/parameters.fun.h"
-#include "archipelago/base/pointer.fun.h"
-#include "archipelago/base/pointer.def.h"
-#include "archipelago/base/ref_count.fun.h"
-#include "archipelago/util/size.def.h"
-#include "archipelago/util/string.fun.h"
+#include "archi_base/pointer.fun.h"
+#include "archi_base/pointer.def.h"
+#include "archi_base/util/plist.fun.h"
+#include "archi_base/util/check.fun.h"
+#include "archi_base/util/string.fun.h"
 
 #include <stdlib.h> // for malloc(), free()
+
 
 struct archi_context_data__dptr_array {
     archi_rcpointer_t array;
@@ -45,20 +45,18 @@ ARCHI_CONTEXT_INIT_FUNC(archi_context_init__dptr_array)
     // Parse parameters
     size_t length = 0;
     {
-        archi_kvlist_parameter_t parsed[] = {
-            {.name = "length", .value.attr = ARCHI_POINTER_ATTR__DATA_TYPE(1, size_t)},
+        archi_plist_param_t parsed[] = {
+            {.name = "length",
+                .check = {archi_value_check__attr, (archi_pointer_attr_t[]){ARCHI_POINTER_ATTR__PDATA(1, size_t)}},
+                .assign = {archi_plist_assign__value, &length, sizeof(length)}},
+            {0},
         };
 
-        if (!archi_kvlist_parameters_parse(params, parsed, ARCHI_LENGTH_ARRAY(parsed), false, NULL,
-                    ARCHI_ERROR_PARAMETER))
+        if (!archi_plist_parse(&params->n, true, parsed, false, ARCHI_ERROR_PARAM))
             return NULL;
-
-        size_t index = 0;
-        if (parsed[index].value_set)
-            length = *(size_t*)parsed[index].value.ptr;
     }
 
-    // Check validity of parameters
+    // Check validness of parameters
     if (length >= (ARCHI_POINTER_DATA_SIZE_MAX + 1) / sizeof(archi_rcpointer_t))
     {
         ARCHI_ERROR_SET(ARCHI__ECONSTRAINT, "array length (%zu) is too big", length);
@@ -76,7 +74,7 @@ ARCHI_CONTEXT_INIT_FUNC(archi_context_init__dptr_array)
     *context_data = (struct archi_context_data__dptr_array){
         .array = {
             .attr = ARCHI_POINTER_TYPE__DATA_WRITABLE |
-                ARCHI_POINTER_ATTR__DATA_TYPE(length, archi_data_t),
+                ARCHI_POINTER_ATTR__PDATA(length, archi_data_t),
         },
     };
 
@@ -120,7 +118,7 @@ ARCHI_CONTEXT_FINAL_FUNC(archi_context_final__dptr_array)
         (struct archi_context_data__dptr_array*)context;
 
     size_t length;
-    archi_pointer_attr_parse__transp_data(context_data->array.attr, &length, NULL, NULL, NULL);
+    archi_pointer_attr_unpk__pdata(context_data->array.attr, &length, NULL, NULL, NULL);
 
     for (size_t i = 0; i < length; i++)
         archi_rcpointer_disown(context_data->element[i]);
@@ -145,7 +143,7 @@ ARCHI_CONTEXT_EVAL_FUNC(archi_context_eval__dptr_array)
         (struct archi_context_data__dptr_array*)context;
 
     size_t length;
-    archi_pointer_attr_parse__transp_data(context_data->array.attr, &length, NULL, NULL, NULL);
+    archi_pointer_attr_unpk__pdata(context_data->array.attr, &length, NULL, NULL, NULL);
 
     if (ARCHI_STRING_COMPARE("", ==, slot.name))
     {
@@ -155,27 +153,34 @@ ARCHI_CONTEXT_EVAL_FUNC(archi_context_eval__dptr_array)
             return;
         }
 
-        ptrdiff_t index = slot.index[0];
+        archi_context_slot_index_t index = slot.index[0];
         if ((index < 0) || ((size_t)index >= length))
         {
-            ARCHI_ERROR_SET(ARCHI__EINDEX, "index (%ti) out of bounds", index);
+            ARCHI_ERROR_SET(ARCHI__EINDEX, "index (%lli) out of range [0; %zu)", index, length);
             return;
         }
 
         ARCHI_CONTEXT_YIELD(context_data->element[index]);
     }
-    else if (ARCHI_STRING_COMPARE("elements", ==, slot.name))
+    else if (ARCHI_STRING_COMPARE("ptr", ==, slot.name))
     {
-        if (slot.num_indices != 0)
+        if (slot.num_indices != 1)
         {
-            ARCHI_ERROR_SET(ARCHI__EINDEX, "number of slot indices isn't 0");
+            ARCHI_ERROR_SET(ARCHI__EINDEX, "number of slot indices isn't 1");
+            return;
+        }
+
+        archi_context_slot_index_t index = slot.index[0];
+        if ((index < 0) || ((size_t)index >= length))
+        {
+            ARCHI_ERROR_SET(ARCHI__EINDEX, "index (%lli) out of range [0; %zu)", index, length);
             return;
         }
 
         archi_rcpointer_t value = {
-            .ptr = context_data->element,
+            .ptr = &((archi_data_t*)context_data->array.ptr)[index],
             .attr = ARCHI_POINTER_TYPE__DATA_WRITABLE |
-                ARCHI_POINTER_ATTR__DATA_TYPE(length, archi_rcpointer_t),
+                ARCHI_POINTER_ATTR__PDATA(length - index, archi_data_t),
             .ref_count = ARCHI_CONTEXT_REF_COUNT,
         };
 
@@ -192,7 +197,7 @@ ARCHI_CONTEXT_EVAL_FUNC(archi_context_eval__dptr_array)
         archi_rcpointer_t value = {
             .ptr = &length,
             .attr = ARCHI_POINTER_TYPE__DATA_ON_STACK |
-                ARCHI_POINTER_ATTR__DATA_TYPE(1, size_t),
+                ARCHI_POINTER_ATTR__PDATA(1, size_t),
         };
 
         ARCHI_CONTEXT_YIELD(value);
@@ -204,11 +209,17 @@ ARCHI_CONTEXT_EVAL_FUNC(archi_context_eval__dptr_array)
 static
 ARCHI_CONTEXT_SET_FUNC(archi_context_set__dptr_array)
 {
+    if (unset)
+    {
+        ARCHI_ERROR_SET(ARCHI__ECONSTRAINT, "slot unsetting is not supported");
+        return;
+    }
+
     struct archi_context_data__dptr_array *context_data =
         (struct archi_context_data__dptr_array*)context;
 
     size_t length;
-    archi_pointer_attr_parse__transp_data(context_data->array.attr, &length, NULL, NULL, NULL);
+    archi_pointer_attr_unpk__pdata(context_data->array.attr, &length, NULL, NULL, NULL);
 
     if (ARCHI_STRING_COMPARE("", ==, slot.name))
     {
@@ -223,15 +234,15 @@ ARCHI_CONTEXT_SET_FUNC(archi_context_set__dptr_array)
             return;
         }
 
-        ptrdiff_t index = slot.index[0];
+        archi_context_slot_index_t index = slot.index[0];
         if ((index < 0) || ((size_t)index >= length))
         {
-            ARCHI_ERROR_SET(ARCHI__EINDEX, "index (%ti) out of bounds", index);
+            ARCHI_ERROR_SET(ARCHI__EINDEX, "index (%lli) out of range [0; %zu)", index, length);
             return;
         }
 
-        value = archi_rcpointer_own_disown(value, context_data->element[index], ARCHI_ERROR_PARAMETER);
-        if (!value.attr) // failed to own
+        value = archi_rcpointer_own_disown(value, context_data->element[index], ARCHI_ERROR_PARAM);
+        if (!value.attr)
             return;
 
         archi_data_t *array = context_data->array.ptr;
@@ -247,7 +258,7 @@ ARCHI_CONTEXT_SET_FUNC(archi_context_set__dptr_array)
             return;
         }
         else if (!archi_pointer_attr_compatible(value.attr,
-                    ARCHI_POINTER_ATTR__DATA_TYPE(1, size_t)))
+                    ARCHI_POINTER_ATTR__PDATA(1, size_t)))
         {
             ARCHI_ERROR_SET(ARCHI__ECONSTRAINT, "assigned value is not a size_t");
             return;
@@ -316,7 +327,7 @@ ARCHI_CONTEXT_SET_FUNC(archi_context_set__dptr_array)
 
         context_data->array.ptr = ptr_array;
         context_data->array.attr = ARCHI_POINTER_TYPE__DATA_WRITABLE |
-            ARCHI_POINTER_ATTR__DATA_TYPE(new_length, archi_data_t);
+            ARCHI_POINTER_ATTR__PDATA(new_length, archi_data_t);
 
         context_data->element = element_array;
     }

@@ -27,25 +27,14 @@
 #ifndef _ARCHI_HASHMAP_API_HASHMAP_TYP_H_
 #define _ARCHI_HASHMAP_API_HASHMAP_TYP_H_
 
-#include "archipelago/base/pointer.typ.h"
+#include "archi_base/pointer.typ.h"
 
 #include <stddef.h>
 #include <stdbool.h>
 
-struct archi_hashmap;
 
 /**
- * @brief Pointer to hashmap.
- */
-typedef struct archi_hashmap *archi_hashmap_t;
-
-/**
- * @brief Data type tag for archi_hashmap_t.
- */
-#define ARCHI_POINTER_DATA_TAG__HASHMAP     9
-
-/**
- * @brief Parameters for archi_hashmap_alloc().
+ * @brief Hashmap allocation parameters.
  *
  * If capacity is 0, default capacity is used instead.
  *
@@ -60,16 +49,29 @@ typedef struct archi_hashmap_alloc_params {
  */
 #define ARCHI_HASHMAP_DEFAULT_CAPACITY  1024
 
+/**
+ * @brief Signature of a hashmap hash function.
+ *
+ * @return Hash of a key.
+ */
+#define ARCHI_HASHMAP_HASH_FUNC(func_name)  size_t func_name(   \
+        const char *key) /* Key. */
+
+/**
+ * @brief Hashmap hash function type.
+ */
+typedef ARCHI_HASHMAP_HASH_FUNC((*archi_hashmap_hash_func_t));
+
 /*****************************************************************************/
 
 /**
- * @brief Declare/define a hashmap key-value function.
+ * @brief Signature of a hashmap key-value function.
  *
  * @return True if the operation is confirmed, false if it is canceled.
  */
-#define ARCHI_HASHMAP_KV_FUNC(name) bool name(  \
-        const char *key, /* Key. */             \
-        archi_rcpointer_t value, /* Value. */   \
+#define ARCHI_HASHMAP_KV_FUNC(func_name)    bool func_name( \
+        const char *key, /* Key. */                         \
+        archi_rcpointer_t value, /* Value. */               \
         void *data) /* Function data. */
 
 /**
@@ -119,14 +121,14 @@ typedef struct archi_hashmap_trav_action {
 } archi_hashmap_trav_action_t;
 
 /**
- * @brief Declare/define a hashmap traversal key-value action function.
+ * @brief Signature of a hashmap traversal key-value action function.
  *
  * @return Traversal action.
  */
-#define ARCHI_HASHMAP_TRAV_KV_FUNC(name)    archi_hashmap_trav_action_t name(   \
-        const char *key, /* Key. */                                             \
-        archi_rcpointer_t value, /* Value. */                                   \
-        size_t index, /* Number of the current key-value pair. */               \
+#define ARCHI_HASHMAP_TRAV_KV_FUNC(func_name)   archi_hashmap_trav_action_t func_name(  \
+        const char *key, /* Key. */                                                     \
+        archi_rcpointer_t value, /* Value. */                                           \
+        size_t index, /* Number of the current key-value pair. */                       \
         void *data) /* Function data. */
 
 /**

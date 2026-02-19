@@ -27,20 +27,22 @@
 #ifndef _ARCHI_THREAD_API_LFQUEUE_FUN_H_
 #define _ARCHI_THREAD_API_LFQUEUE_FUN_H_
 
+#include "archi/thread/api/handle.typ.h"
 #include "archi/thread/api/lfqueue.typ.h"
-#include "archipelago/base/error.typ.h"
+#include "archi_base/error.typ.h"
 
 #include <stdbool.h>
+
 
 /**
  * @brief Create lock-free queue.
  *
- * @return Lock-free queue.
+ * @return Lock-free queue handle, or NULL in case of error.
  */
 archi_thread_lfqueue_t
 archi_thread_lfqueue_alloc(
         archi_thread_lfqueue_alloc_params_t params, ///< [in] Lock-free queue parameters.
-        ARCHI_ERROR_PARAMETER_DECL ///< [out] Error.
+        ARCHI_ERROR_PARAM_DECL ///< [out] Error.
 );
 
 /**
@@ -54,25 +56,27 @@ archi_thread_lfqueue_free(
 /**
  * @brief Push value to lock-free queue.
  *
- * If `value` is NULL, the pushed element is memset() to zero bytes.
- *
  * @return True if element was pushed to queue, false if queue was full.
  */
 bool
 archi_thread_lfqueue_push(
         archi_thread_lfqueue_t queue, ///< [in] Queue to push value to.
-        const void *value ///< [in] Pointer to pushed value.
+        const void *value, ///< [in] Pointer to pushed value.
+        ARCHI_ERROR_PARAM_DECL ///< [out] Error.
 );
 
 /**
  * @brief Pop value from lock-free queue.
+ *
+ * `value` may be NULL.
  *
  * @return True if element was popped from queue, false if queue was empty.
  */
 bool
 archi_thread_lfqueue_pop(
         archi_thread_lfqueue_t queue, ///< [in] Queue to pop value from.
-        void *value ///< [out] Memory to write popped value to.
+        void *value, ///< [out] Memory to write popped value to.
+        ARCHI_ERROR_PARAM_DECL ///< [out] Error.
 );
 
 /**
@@ -91,17 +95,7 @@ archi_thread_lfqueue_capacity(
  * @return Queue element size.
  */
 size_t
-archi_thread_lfqueue_element_size(
-        archi_thread_lfqueue_t queue ///< [in] Queue.
-);
-
-/**
- * @brief Get queue element alignment requirement.
- *
- * @return Queue element alignment requirement.
- */
-size_t
-archi_thread_lfqueue_element_alignment(
+archi_thread_lfqueue_elt_size(
         archi_thread_lfqueue_t queue ///< [in] Queue.
 );
 

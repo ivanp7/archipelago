@@ -32,6 +32,7 @@
 #endif
 #include <stdbool.h>
 
+
 struct archi_env_context {
 #ifndef __STDC_NO_THREADS__
     mtx_t *getenv_lock; ///< getenv() protection mutex.

@@ -27,9 +27,10 @@
 #ifndef _ARCHI_TIMER_API_TIMER_FUN_H_
 #define _ARCHI_TIMER_API_TIMER_FUN_H_
 
-#include "archi/timer/api/timer.typ.h"
+#include "archi/timer/api/handle.typ.h"
 
 #include <stdbool.h>
+
 
 /**
  * @brief Allocate a timer.

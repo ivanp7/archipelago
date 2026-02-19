@@ -26,83 +26,67 @@
 #include "archi/file/ctx/mapping.var.h"
 #include "archi/file/api/map.fun.h"
 #include "archi/context/api/interface.def.h"
-#include "archipelago/util/parameters.fun.h"
-#include "archipelago/base/pointer.fun.h"
-#include "archipelago/base/pointer.def.h"
-#include "archipelago/util/size.def.h"
-#include "archipelago/util/string.fun.h"
+#include "archi_base/pointer.fun.h"
+#include "archi_base/pointer.def.h"
+#include "archi_base/util/plist.fun.h"
+#include "archi_base/util/check.fun.h"
+#include "archi_base/util/string.fun.h"
+#include "archi_base/util/size.def.h"
 
 #include <stdlib.h> // for malloc(), free()
+
 
 static
 ARCHI_CONTEXT_INIT_FUNC(archi_context_init__file_mapping)
 {
     // Parse parameters
     int fd = -1;
-    bool fd_set = false;
-    size_t stride = 1;
-    bool stride_set = false;
-    size_t alignment = 1;
-    bool alignment_set = false;
+    size_t stride = 1, alignment = 1;
     archi_file_map_params_t file_map_params = {0};
+    bool fd_set = false, stride_set = false, alignment_set = false;
     {
-        archi_kvlist_parameter_t parsed[] = {
-            {.name = "fd", .value.attr = ARCHI_POINTER_ATTR__DATA_TYPE(1, archi_file_descriptor_t)},
-            {.name = "stride", .value.attr = ARCHI_POINTER_ATTR__DATA_TYPE(1, size_t)},
-            {.name = "alignment", .value.attr = ARCHI_POINTER_ATTR__DATA_TYPE(1, size_t)},
-            {.name = "params", .value.attr = ARCHI_POINTER_ATTR__DATA_TYPE(1, archi_file_map_params_t)},
-            {.name = "size", .value.attr = ARCHI_POINTER_ATTR__DATA_TYPE(1, size_t)},
-            {.name = "offset", .value.attr = ARCHI_POINTER_ATTR__DATA_TYPE(1, size_t)},
-            {.name = "ptr_support", .value.attr = ARCHI_POINTER_ATTR__DATA_TYPE(1, char)},
-            {.name = "readable", .value.attr = ARCHI_POINTER_ATTR__DATA_TYPE(1, char)},
-            {.name = "writable", .value.attr = ARCHI_POINTER_ATTR__DATA_TYPE(1, char)},
-            {.name = "shared", .value.attr = ARCHI_POINTER_ATTR__DATA_TYPE(1, char)},
-            {.name = "flags", .value.attr = ARCHI_POINTER_ATTR__DATA_TYPE(1, int)},
+        archi_plist_param_t parsed[] = {
+            {.name = "fd",
+                .check = {archi_value_check__attr, (archi_pointer_attr_t[]){ARCHI_POINTER_ATTR__PDATA(1, archi_file_descriptor_t)}},
+                .assign = {archi_plist_assign__value, &fd, sizeof(fd), &fd_set}},
+            {.name = "stride",
+                .check = {archi_value_check__attr, (archi_pointer_attr_t[]){ARCHI_POINTER_ATTR__PDATA(1, size_t)}},
+                .assign = {archi_plist_assign__value, &stride, sizeof(stride), &stride_set}},
+            {.name = "alignment",
+                .check = {archi_value_check__attr, (archi_pointer_attr_t[]){ARCHI_POINTER_ATTR__PDATA(1, size_t)}},
+                .assign = {archi_plist_assign__value, &alignment, sizeof(alignment), &alignment_set}},
+            {.name = "params",
+                .check = {archi_value_check__attr, (archi_pointer_attr_t[]){ARCHI_POINTER_ATTR__PDATA(1, archi_file_map_params_t)}},
+                .assign = {archi_plist_assign__value, &file_map_params, sizeof(file_map_params)}},
+            {.name = "size",
+                .check = {archi_value_check__attr, (archi_pointer_attr_t[]){ARCHI_POINTER_ATTR__PDATA(1, size_t)}},
+                .assign = {archi_plist_assign__value, &file_map_params.size, sizeof(file_map_params.size)}},
+            {.name = "offset",
+                .check = {archi_value_check__attr, (archi_pointer_attr_t[]){ARCHI_POINTER_ATTR__PDATA(1, size_t)}},
+                .assign = {archi_plist_assign__value, &file_map_params.offset, sizeof(file_map_params.offset)}},
+            {.name = "ptr_support",
+                .check = {archi_value_check__attr, (archi_pointer_attr_t[]){ARCHI_POINTER_ATTR__PDATA(1, char)}},
+                .assign = {archi_plist_assign__bool, &file_map_params.ptr_support, sizeof(file_map_params.ptr_support)}},
+            {.name = "readable",
+                .check = {archi_value_check__attr, (archi_pointer_attr_t[]){ARCHI_POINTER_ATTR__PDATA(1, char)}},
+                .assign = {archi_plist_assign__bool, &file_map_params.readable, sizeof(file_map_params.readable)}},
+            {.name = "writable",
+                .check = {archi_value_check__attr, (archi_pointer_attr_t[]){ARCHI_POINTER_ATTR__PDATA(1, char)}},
+                .assign = {archi_plist_assign__bool, &file_map_params.writable, sizeof(file_map_params.writable)}},
+            {.name = "shared",
+                .check = {archi_value_check__attr, (archi_pointer_attr_t[]){ARCHI_POINTER_ATTR__PDATA(1, char)}},
+                .assign = {archi_plist_assign__bool, &file_map_params.shared, sizeof(file_map_params.shared)}},
+            {.name = "flags",
+                .check = {archi_value_check__attr, (archi_pointer_attr_t[]){ARCHI_POINTER_ATTR__PDATA(1, int)}},
+                .assign = {archi_plist_assign__value, &file_map_params.flags, sizeof(file_map_params.flags)}},
+            {0},
         };
 
-        if (!archi_kvlist_parameters_parse(params, parsed, ARCHI_LENGTH_ARRAY(parsed), false, NULL,
-                    ARCHI_ERROR_PARAMETER))
+        if (!archi_plist_parse(&params->n, true, parsed, false, ARCHI_ERROR_PARAM))
             return NULL;
-
-        size_t index = 0;
-        fd_set = parsed[index].value_set;
-        if (fd_set)
-            fd = *(archi_file_descriptor_t*)parsed[index].value.ptr;
-        index++;
-        stride_set = parsed[index].value_set;
-        if (stride_set)
-            stride = *(size_t*)parsed[index].value.ptr;
-        index++;
-        alignment_set = parsed[index].value_set;
-        if (alignment_set)
-            alignment = *(size_t*)parsed[index].value.ptr;
-        index++;
-        if (parsed[index].value_set)
-            file_map_params = *(archi_file_map_params_t*)parsed[index].value.ptr;
-        index++;
-        if (parsed[index].value_set)
-            file_map_params.size = *(size_t*)parsed[index].value.ptr;
-        index++;
-        if (parsed[index].value_set)
-            file_map_params.offset = *(size_t*)parsed[index].value.ptr;
-        index++;
-        if (parsed[index].value_set)
-            file_map_params.ptr_support = *(char*)parsed[index].value.ptr;
-        index++;
-        if (parsed[index].value_set)
-            file_map_params.readable = *(char*)parsed[index].value.ptr;
-        index++;
-        if (parsed[index].value_set)
-            file_map_params.writable = *(char*)parsed[index].value.ptr;
-        index++;
-        if (parsed[index].value_set)
-            file_map_params.shared = *(char*)parsed[index].value.ptr;
-        index++;
-        if (parsed[index].value_set)
-            file_map_params.flags = *(int*)parsed[index].value.ptr;
     }
 
-    // Check validity of parameters
+    // Check validness of parameters
     if (!fd_set)
     {
         ARCHI_ERROR_SET(ARCHI__ECONSTRAINT, "file descriptor is not set");
@@ -140,12 +124,7 @@ ARCHI_CONTEXT_INIT_FUNC(archi_context_init__file_mapping)
                     file_map_params.size, stride);
             return NULL;
         }
-        else if (alignment == 0)
-        {
-            ARCHI_ERROR_SET(ARCHI__ECONSTRAINT, "file element alignment requirement is 0");
-            return NULL;
-        }
-        else if ((alignment & (alignment - 1)) != 0)
+        else if (!ARCHI_ALIGNMENT_VALID(alignment))
         {
             ARCHI_ERROR_SET(ARCHI__ECONSTRAINT, "file element alignment requirement (%#zx) is not a power of two",
                     alignment);
@@ -177,7 +156,7 @@ ARCHI_CONTEXT_INIT_FUNC(archi_context_init__file_mapping)
     }
 
     size_t mm_size = 0;
-    void *mm = archi_file_map(fd, file_map_params, &mm_size, ARCHI_ERROR_PARAMETER);
+    void *mm = archi_file_map(fd, file_map_params, &mm_size, ARCHI_ERROR_PARAM);
     if (mm == NULL)
     {
         free(context_data);
@@ -194,8 +173,8 @@ ARCHI_CONTEXT_INIT_FUNC(archi_context_init__file_mapping)
         return NULL;
     }
 
-    archi_pointer_attr_t attr = archi_pointer_attr__transp_data(mm_size / stride, stride, alignment,
-            ARCHI_ERROR_PARAMETER);
+    archi_pointer_attr_t attr = archi_pointer_attr__pdata(mm_size / stride, stride, alignment,
+            ARCHI_ERROR_PARAM);
     if (attr == (archi_pointer_attr_t)-1)
     {
         archi_file_unmap(mm, mm_size);
@@ -217,7 +196,7 @@ static
 ARCHI_CONTEXT_FINAL_FUNC(archi_context_final__file_mapping)
 {
     size_t length, stride;
-    archi_pointer_attr_parse__transp_data(context->attr, &length, &stride, NULL, NULL);
+    archi_pointer_attr_unpk__pdata(context->attr, &length, &stride, NULL, NULL);
 
     archi_file_unmap(context->ptr, length * stride);
     free(context);
@@ -243,12 +222,12 @@ ARCHI_CONTEXT_EVAL_FUNC(archi_context_eval__file_mapping)
         }
 
         size_t length;
-        archi_pointer_attr_parse__transp_data(context->attr, &length, NULL, NULL, NULL);
+        archi_pointer_attr_unpk__pdata(context->attr, &length, NULL, NULL, NULL);
 
         archi_rcpointer_t value = {
             .ptr = &length,
             .attr = ARCHI_POINTER_TYPE__DATA_ON_STACK |
-                ARCHI_POINTER_ATTR__DATA_TYPE(1, size_t),
+                ARCHI_POINTER_ATTR__PDATA(1, size_t),
         };
 
         ARCHI_CONTEXT_YIELD(value);
@@ -262,12 +241,12 @@ ARCHI_CONTEXT_EVAL_FUNC(archi_context_eval__file_mapping)
         }
 
         size_t stride;
-        archi_pointer_attr_parse__transp_data(context->attr, NULL, &stride, NULL, NULL);
+        archi_pointer_attr_unpk__pdata(context->attr, NULL, &stride, NULL, NULL);
 
         archi_rcpointer_t value = {
             .ptr = &stride,
             .attr = ARCHI_POINTER_TYPE__DATA_ON_STACK |
-                ARCHI_POINTER_ATTR__DATA_TYPE(1, size_t),
+                ARCHI_POINTER_ATTR__PDATA(1, size_t),
         };
 
         ARCHI_CONTEXT_YIELD(value);
@@ -281,14 +260,14 @@ ARCHI_CONTEXT_EVAL_FUNC(archi_context_eval__file_mapping)
         }
 
         size_t length, stride;
-        archi_pointer_attr_parse__transp_data(context->attr, &length, &stride, NULL, NULL);
+        archi_pointer_attr_unpk__pdata(context->attr, &length, &stride, NULL, NULL);
 
         size_t size = length * stride;
 
         archi_rcpointer_t value = {
             .ptr = &size,
             .attr = ARCHI_POINTER_TYPE__DATA_ON_STACK |
-                ARCHI_POINTER_ATTR__DATA_TYPE(1, size_t),
+                ARCHI_POINTER_ATTR__PDATA(1, size_t),
         };
 
         ARCHI_CONTEXT_YIELD(value);
@@ -302,12 +281,12 @@ ARCHI_CONTEXT_EVAL_FUNC(archi_context_eval__file_mapping)
         }
 
         size_t alignment;
-        archi_pointer_attr_parse__transp_data(context->attr, NULL, NULL, &alignment, NULL);
+        archi_pointer_attr_unpk__pdata(context->attr, NULL, NULL, &alignment, NULL);
 
         archi_rcpointer_t value = {
             .ptr = &alignment,
             .attr = ARCHI_POINTER_TYPE__DATA_ON_STACK |
-                ARCHI_POINTER_ATTR__DATA_TYPE(1, size_t),
+                ARCHI_POINTER_ATTR__PDATA(1, size_t),
         };
 
         ARCHI_CONTEXT_YIELD(value);

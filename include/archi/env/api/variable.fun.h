@@ -27,7 +27,8 @@
 #ifndef _ARCHI_ENV_API_VARIABLE_FUN_H_
 #define _ARCHI_ENV_API_VARIABLE_FUN_H_
 
-#include "archipelago/base/error.typ.h"
+#include "archi_base/error.typ.h"
+
 
 /**
  * @brief Allocate and return a copy of value of an environment variable.
@@ -46,7 +47,7 @@
 char*
 archi_env_get(
         const char *name, ///< [in] Environment variable name.
-        ARCHI_ERROR_PARAMETER_DECL ///< [out] Error.
+        ARCHI_ERROR_PARAM_DECL ///< [out] Error.
 );
 
 #endif // _ARCHI_ENV_API_VARIABLE_FUN_H_

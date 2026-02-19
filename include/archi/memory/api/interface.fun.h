@@ -29,7 +29,8 @@
 
 #include "archi/memory/api/handle.typ.h"
 #include "archi/memory/api/interface.typ.h"
-#include "archipelago/base/pointer.typ.h"
+#include "archi_base/pointer.typ.h"
+
 
 /**
  * @brief Get memory interface.
@@ -38,7 +39,7 @@
  */
 archi_rcpointer_t
 archi_memory_interface(
-        archi_memory_t memory ///< [in] Memory.
+        archi_memory_t memory ///< [in] Memory handle.
 );
 
 /**
@@ -48,7 +49,7 @@ archi_memory_interface(
  */
 archi_rcpointer_t
 archi_memory_allocation(
-        archi_memory_t memory ///< [in] Memory.
+        archi_memory_t memory ///< [in] Memory handle.
 );
 
 /**
@@ -58,7 +59,7 @@ archi_memory_allocation(
  */
 size_t
 archi_memory_length(
-        archi_memory_t memory ///< [in] Memory.
+        archi_memory_t memory ///< [in] Memory handle.
 );
 
 /**
@@ -68,7 +69,7 @@ archi_memory_length(
  */
 size_t
 archi_memory_stride(
-        archi_memory_t memory ///< [in] Memory.
+        archi_memory_t memory ///< [in] Memory handle.
 );
 
 /**
@@ -78,7 +79,7 @@ archi_memory_stride(
  */
 size_t
 archi_memory_size(
-        archi_memory_t memory ///< [in] Memory.
+        archi_memory_t memory ///< [in] Memory handle.
 );
 
 /**
@@ -88,19 +89,20 @@ archi_memory_size(
  */
 size_t
 archi_memory_alignment(
-        archi_memory_t memory ///< [in] Memory.
+        archi_memory_t memory ///< [in] Memory handle.
 );
 
 /**
- * @brief Get memory alignment requirement.
+ * @brief Get extended alignment requirement of the memory.
  *
- * Memory alignment requirement is never less than data element alignment requirement.
+ * Extended alignment requirement of memory
+ * is never less than alignment requirement of a data element.
  *
  * @return Memory alignment requirement.
  */
 size_t
-archi_memory_overalignment(
-        archi_memory_t memory ///< [in] Memory.
+archi_memory_ext_alignment(
+        archi_memory_t memory ///< [in] Memory handle.
 );
 
 /*****************************************************************************/
@@ -108,9 +110,9 @@ archi_memory_overalignment(
 /**
  * @brief Allocate a memory object.
  *
- * If `overalignment` is 0, memory alignment requirement is equal to data element alignment requirement.
+ * If `ext_alignment` is 0, memory alignment requirement is equal to data element alignment requirement.
  *
- * @return New allocated memory.
+ * @return Memory handle.
  */
 archi_memory_t
 archi_memory_allocate(
@@ -120,9 +122,9 @@ archi_memory_allocate(
         size_t length, ///< [in] Number of data elements to allocate.
         size_t stride, ///< [in] Size of each data element.
         size_t alignment, ///< [in] Data element alignment requirement.
-        size_t overalignment, ///< [in] Memory alignment requirement or 0.
+        size_t ext_alignment, ///< [in] Extended alignment requirement or 0.
 
-        ARCHI_ERROR_PARAMETER_DECL ///< [out] Error.
+        ARCHI_ERROR_PARAM_DECL ///< [out] Error.
 );
 
 /**
@@ -137,7 +139,7 @@ archi_memory_allocate(
  */
 void
 archi_memory_free(
-        archi_memory_t memory ///< [in] Memory.
+        archi_memory_t memory ///< [in] Memory handle.
 );
 
 /*****************************************************************************/
@@ -149,7 +151,7 @@ archi_memory_free(
  */
 archi_memory_t
 archi_memory_mapping_memory(
-        archi_memory_mapping_t mapping ///< [in] Memory mapping.
+        archi_memory_mapping_t mapping ///< [in] Memory mapping handle.
 );
 
 /**
@@ -159,7 +161,7 @@ archi_memory_mapping_memory(
  */
 archi_rcpointer_t
 archi_memory_mapping_pointer(
-        archi_memory_mapping_t mapping ///< [in] Memory mapping.
+        archi_memory_mapping_t mapping ///< [in] Memory mapping handle.
 );
 
 /**
@@ -169,7 +171,7 @@ archi_memory_mapping_pointer(
  */
 size_t
 archi_memory_mapping_offset(
-        archi_memory_mapping_t mapping ///< [in] Memory mapping.
+        archi_memory_mapping_t mapping ///< [in] Memory mapping handle.
 );
 
 /*****************************************************************************/
@@ -184,13 +186,13 @@ archi_memory_mapping_offset(
  */
 archi_memory_mapping_t
 archi_memory_map(
-        archi_memory_t memory, ///< [in] Memory.
+        archi_memory_t memory, ///< [in] Memory handle.
         void *map_data, ///< [in] Interface-specific data for mapping.
 
         size_t offset, ///< [in] Offset to the mapped area in data elements.
         size_t length, ///< [in] Number of mapped data elements.
 
-        ARCHI_ERROR_PARAMETER_DECL ///< [out] Error.
+        ARCHI_ERROR_PARAM_DECL ///< [out] Error.
 );
 
 /**
@@ -205,7 +207,7 @@ archi_memory_map(
  */
 void
 archi_memory_unmap(
-        archi_memory_mapping_t mapping ///< [in] Memory mapping.
+        archi_memory_mapping_t mapping ///< [in] Memory mapping handle.
 );
 
 #endif // _ARCHI_MEMORY_API_INTERFACE_FUN_H_

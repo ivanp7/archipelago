@@ -24,198 +24,230 @@
  */
 
 #include "archi/signal/api/signal.fun.h"
+#include "archi_base/util/size.def.h"
 
 #include <stdlib.h> // for malloc()
 
 #include <signal.h> // for SIGRTMIN, SIGRTMAX
 
-size_t
-archi_signal_number_of_rt_signals(void)
+
+int
+archi_signal_number_realtime(void)
 {
+    if (SIGRTMIN > SIGRTMAX) // real-time signals not supported
+        return 0;
+
     return SIGRTMAX - SIGRTMIN + 1;
 }
 
-archi_signal_watch_set_t*
-archi_signal_watch_set_alloc(void)
+const char*
+archi_signal_name[ARCHI_SIGNAL_NUMBER + 1] = {
+    "SIGINT",
+    "SIGQUIT",
+    "SIGTERM",
+
+    "SIGCHLD",
+    "SIGCONT",
+    "SIGTSTP",
+    "SIGXCPU",
+    "SIGXFSZ",
+
+    "SIGPIPE",
+    "SIGPOLL",
+    "SIGURG",
+
+    "SIGALRM",
+    "SIGVTALRM",
+    "SIGPROF",
+
+    "SIGHUP",
+    "SIGTTIN",
+    "SIGTTOU",
+    "SIGWINCH",
+
+    "SIGUSR1",
+    "SIGUSR2",
+
+    "SIGRTMIN",
+};
+
+const char*
+archi_signal_name__SIGRTMAX = "SIGRTMAX";
+
+/*****************************************************************************/
+
+archi_signal_set_t
+archi_signal_set_alloc(void)
 {
-    size_t size = ARCHI_SIGNAL_WATCH_SET_SIZEOF;
-    archi_signal_watch_set_t *signals = malloc(size);
-    if (signals == NULL)
+    archi_signal_set_t set = malloc(sizeof(archi_signal_set_mask_t) * ARCHI_SIGNAL_SET_NUM_MASKS);
+    if (set == NULL)
         return NULL;
 
-#define INIT_SIGNAL(signal) do { \
-        signals->f_##signal = false; \
-    } while (0)
+    for (size_t i = 0; i < ARCHI_SIGNAL_SET_NUM_MASKS; i++)
+        set[i] = 0;
 
-    INIT_SIGNAL(SIGINT);
-    INIT_SIGNAL(SIGQUIT);
-    INIT_SIGNAL(SIGTERM);
+    return set;
+}
 
-    INIT_SIGNAL(SIGCHLD);
-    INIT_SIGNAL(SIGCONT);
-    INIT_SIGNAL(SIGTSTP);
-    INIT_SIGNAL(SIGXCPU);
-    INIT_SIGNAL(SIGXFSZ);
+static
+archi_signal_set_mask_t
+archi_signal_set_tail_mask(void)
+{
+    int tail_bits = (ARCHI_SIGNAL_NUMBER + ARCHI_SIGNAL_NUMBER_REALTIME) % ARCHI_SIGNAL_SET_MASK_NUM_BITS;
+    if (tail_bits == 0)
+        tail_bits = ARCHI_SIGNAL_SET_MASK_NUM_BITS;
 
-    INIT_SIGNAL(SIGPIPE);
-    INIT_SIGNAL(SIGPOLL);
-    INIT_SIGNAL(SIGURG);
+    archi_signal_set_mask_t tail_mask = -1;
+    tail_mask >>= ARCHI_SIGNAL_SET_MASK_NUM_BITS - tail_bits;
 
-    INIT_SIGNAL(SIGALRM);
-    INIT_SIGNAL(SIGVTALRM);
-    INIT_SIGNAL(SIGPROF);
+    return tail_mask;
+}
 
-    INIT_SIGNAL(SIGHUP);
-    INIT_SIGNAL(SIGTTIN);
-    INIT_SIGNAL(SIGTTOU);
-    INIT_SIGNAL(SIGWINCH);
+bool
+archi_signal_set_is_empty(
+        archi_signal_set_const_t set)
+{
+    if (set == NULL)
+        return true;
 
-    INIT_SIGNAL(SIGUSR1);
-    INIT_SIGNAL(SIGUSR2);
+    for (size_t i = 0; i < ARCHI_SIGNAL_SET_NUM_MASKS - 1; i++)
+        if (set[i] != 0)
+            return false;
 
-#undef INIT_SIGNAL
+     // Check used bits only, ignoring possible garbage bits
+    if ((set[ARCHI_SIGNAL_SET_NUM_MASKS - 1] & archi_signal_set_tail_mask()) != 0)
+        return false;
 
-    for (size_t i = 0; i < archi_signal_number_of_rt_signals(); i++)
-        signals->f_SIGRTMIN[i] = false;
-
-    return signals;
+    return true;
 }
 
 void
-archi_signal_watch_set_join(
-        archi_signal_watch_set_t *out,
-        const archi_signal_watch_set_t *in)
+archi_signal_set_clear(
+        archi_signal_set_t set)
+{
+    if (set == NULL)
+        return;
+
+    for (size_t i = 0; i < ARCHI_SIGNAL_SET_NUM_MASKS; i++)
+        set[i] = 0;
+}
+
+void
+archi_signal_set_invert(
+        archi_signal_set_t set)
+{
+    if (set == NULL)
+        return;
+
+    for (size_t i = 0; i < ARCHI_SIGNAL_SET_NUM_MASKS; i++)
+        set[i] = ~set[i];
+
+     // Unset unused bits
+    set[ARCHI_SIGNAL_SET_NUM_MASKS - 1] &= archi_signal_set_tail_mask();
+}
+
+void
+archi_signal_set_assign(
+        archi_signal_set_t out,
+        archi_signal_set_const_t in)
 {
     if ((out == NULL) || (in == NULL))
         return;
 
-#define JOIN_SIGNAL(signal) do { \
-        out->f_##signal = out->f_##signal || in->f_##signal; \
-    } while (0)
+    for (size_t i = 0; i < ARCHI_SIGNAL_SET_NUM_MASKS; i++)
+        out[i] = in[i];
 
-    JOIN_SIGNAL(SIGINT);
-    JOIN_SIGNAL(SIGQUIT);
-    JOIN_SIGNAL(SIGTERM);
+     // Unset unused bits
+    out[ARCHI_SIGNAL_SET_NUM_MASKS - 1] &= archi_signal_set_tail_mask();
+}
 
-    JOIN_SIGNAL(SIGCHLD);
-    JOIN_SIGNAL(SIGCONT);
-    JOIN_SIGNAL(SIGTSTP);
-    JOIN_SIGNAL(SIGXCPU);
-    JOIN_SIGNAL(SIGXFSZ);
+void
+archi_signal_set_join(
+        archi_signal_set_t out,
+        archi_signal_set_const_t in)
+{
+    if ((out == NULL) || (in == NULL))
+        return;
 
-    JOIN_SIGNAL(SIGPIPE);
-    JOIN_SIGNAL(SIGPOLL);
-    JOIN_SIGNAL(SIGURG);
+    for (size_t i = 0; i < ARCHI_SIGNAL_SET_NUM_MASKS; i++)
+        out[i] |= in[i];
 
-    JOIN_SIGNAL(SIGALRM);
-    JOIN_SIGNAL(SIGVTALRM);
-    JOIN_SIGNAL(SIGPROF);
+     // Unset unused bits
+    out[ARCHI_SIGNAL_SET_NUM_MASKS - 1] &= archi_signal_set_tail_mask();
+}
 
-    JOIN_SIGNAL(SIGHUP);
-    JOIN_SIGNAL(SIGTTIN);
-    JOIN_SIGNAL(SIGTTOU);
-    JOIN_SIGNAL(SIGWINCH);
+void
+archi_signal_set_intersect(
+        archi_signal_set_t out,
+        archi_signal_set_const_t in)
+{
+    if ((out == NULL) || (in == NULL))
+        return;
 
-    JOIN_SIGNAL(SIGUSR1);
-    JOIN_SIGNAL(SIGUSR2);
+    for (size_t i = 0; i < ARCHI_SIGNAL_SET_NUM_MASKS; i++)
+        out[i] &= in[i];
 
-#undef JOIN_SIGNAL
-
-    for (size_t i = 0; i < archi_signal_number_of_rt_signals(); i++)
-        out->f_SIGRTMIN[i] = out->f_SIGRTMIN[i] || in->f_SIGRTMIN[i];
+     // Unset unused bits
+    out[ARCHI_SIGNAL_SET_NUM_MASKS - 1] &= archi_signal_set_tail_mask();
 }
 
 bool
-archi_signal_watch_set_not_empty(
-        const archi_signal_watch_set_t *signals)
+archi_signal_set_contains(
+        archi_signal_set_const_t set,
+        int signal_index)
 {
-    if (signals == NULL)
+    if (set == NULL)
+        return false;
+    else if ((signal_index < 0) || (signal_index >= ARCHI_SIGNAL_NUMBER + ARCHI_SIGNAL_NUMBER_REALTIME))
         return false;
 
-#define TEST_SIGNAL(signal) do { \
-        if (signals->f_##signal) \
-            return true;         \
-    } while (0)
-
-    TEST_SIGNAL(SIGINT);
-    TEST_SIGNAL(SIGQUIT);
-    TEST_SIGNAL(SIGTERM);
-
-    TEST_SIGNAL(SIGCHLD);
-    TEST_SIGNAL(SIGCONT);
-    TEST_SIGNAL(SIGTSTP);
-    TEST_SIGNAL(SIGXCPU);
-    TEST_SIGNAL(SIGXFSZ);
-
-    TEST_SIGNAL(SIGPIPE);
-    TEST_SIGNAL(SIGPOLL);
-    TEST_SIGNAL(SIGURG);
-
-    TEST_SIGNAL(SIGALRM);
-    TEST_SIGNAL(SIGVTALRM);
-    TEST_SIGNAL(SIGPROF);
-
-    TEST_SIGNAL(SIGHUP);
-    TEST_SIGNAL(SIGTTIN);
-    TEST_SIGNAL(SIGTTOU);
-    TEST_SIGNAL(SIGWINCH);
-
-    TEST_SIGNAL(SIGUSR1);
-    TEST_SIGNAL(SIGUSR2);
-
-#undef TEST_SIGNAL
-
-    for (size_t i = 0; i < archi_signal_number_of_rt_signals(); i++)
-    {
-        if (signals->f_SIGRTMIN[i])
-            return true;
-    }
-
-    return false;
+    return set[signal_index / ARCHI_SIGNAL_SET_MASK_NUM_BITS] &
+        ((archi_signal_set_mask_t)1 << (signal_index % ARCHI_SIGNAL_SET_MASK_NUM_BITS));
 }
+
+void
+archi_signal_set_add(
+        archi_signal_set_t set,
+        int signal_index)
+{
+    if (set == NULL)
+        return;
+    else if ((signal_index < 0) || (signal_index >= ARCHI_SIGNAL_NUMBER + ARCHI_SIGNAL_NUMBER_REALTIME))
+        return;
+
+    set[signal_index / ARCHI_SIGNAL_SET_MASK_NUM_BITS] |=
+        ((archi_signal_set_mask_t)1 << (signal_index % ARCHI_SIGNAL_SET_MASK_NUM_BITS));
+}
+
+void
+archi_signal_set_remove(
+        archi_signal_set_t set,
+        int signal_index)
+{
+    if (set == NULL)
+        return;
+    else if ((signal_index < 0) || (signal_index >= ARCHI_SIGNAL_NUMBER + ARCHI_SIGNAL_NUMBER_REALTIME))
+        return;
+
+    set[signal_index / ARCHI_SIGNAL_SET_MASK_NUM_BITS] &=
+        ~((archi_signal_set_mask_t)1 << (signal_index % ARCHI_SIGNAL_SET_MASK_NUM_BITS));
+}
+
+/*****************************************************************************/
 
 archi_signal_flags_t*
 archi_signal_flags_alloc(void)
 {
-    size_t size = ARCHI_SIGNAL_FLAGS_SIZEOF;
-    archi_signal_flags_t *signals = malloc(size);
+    archi_signal_flags_t *signals = malloc(ARCHI_SIZEOF_FLEXIBLE(
+                archi_signal_flags_t, rt_signal, ARCHI_SIGNAL_NUMBER_REALTIME));
     if (signals == NULL)
         return NULL;
 
-#define INIT_SIGNAL(signal) do { \
-        ARCHI_SIGNAL_FLAG_INIT(signals->f_##signal); \
-    } while (0)
+    for (int i = 0; i < ARCHI_SIGNAL_NUMBER; i++)
+        ARCHI_SIGNAL_FLAG_INIT(signals->signal[i]);
 
-    INIT_SIGNAL(SIGINT);
-    INIT_SIGNAL(SIGQUIT);
-    INIT_SIGNAL(SIGTERM);
-
-    INIT_SIGNAL(SIGCHLD);
-    INIT_SIGNAL(SIGCONT);
-    INIT_SIGNAL(SIGTSTP);
-    INIT_SIGNAL(SIGXCPU);
-    INIT_SIGNAL(SIGXFSZ);
-
-    INIT_SIGNAL(SIGPIPE);
-    INIT_SIGNAL(SIGPOLL);
-    INIT_SIGNAL(SIGURG);
-
-    INIT_SIGNAL(SIGALRM);
-    INIT_SIGNAL(SIGVTALRM);
-    INIT_SIGNAL(SIGPROF);
-
-    INIT_SIGNAL(SIGHUP);
-    INIT_SIGNAL(SIGTTIN);
-    INIT_SIGNAL(SIGTTOU);
-    INIT_SIGNAL(SIGWINCH);
-
-    INIT_SIGNAL(SIGUSR1);
-    INIT_SIGNAL(SIGUSR2);
-
-#undef INIT_SIGNAL
-
-    for (size_t i = 0; i < archi_signal_number_of_rt_signals(); i++)
-        ARCHI_SIGNAL_FLAG_INIT(signals->f_SIGRTMIN[i]);
+    for (int i = 0; i < ARCHI_SIGNAL_NUMBER_REALTIME; i++)
+        ARCHI_SIGNAL_FLAG_INIT(signals->rt_signal[i]);
 
     return signals;
 }

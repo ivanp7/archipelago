@@ -27,12 +27,14 @@
 #ifndef _ARCHI_THREAD_API_THREAD_GROUP_FUN_H_
 #define _ARCHI_THREAD_API_THREAD_GROUP_FUN_H_
 
+#include "archi/thread/api/handle.typ.h"
 #include "archi/thread/api/thread_group.typ.h"
 #include "archi/thread/api/work.typ.h"
 #include "archi/thread/api/callback.typ.h"
-#include "archipelago/base/error.typ.h"
+#include "archi_base/error.typ.h"
 
 #include <stdbool.h>
+
 
 struct timespec;
 
@@ -48,7 +50,7 @@ struct timespec;
 archi_thread_group_t
 archi_thread_group_create(
         archi_thread_group_start_params_t params, ///< [in] Thread group creation parameters.
-        ARCHI_ERROR_PARAMETER_DECL ///< [out] Error.
+        ARCHI_ERROR_PARAM_DECL ///< [out] Error.
 );
 
 /**
@@ -78,7 +80,7 @@ archi_thread_group_dispatch(
         archi_thread_group_callback_t callback, ///< [in] Concurrent work completion callback.
 
         archi_thread_group_dispatch_params_t params, ///< [in] Dispatch parameters.
-        ARCHI_ERROR_PARAMETER_DECL ///< [out] Error.
+        ARCHI_ERROR_PARAM_DECL ///< [out] Error.
 );
 
 /**

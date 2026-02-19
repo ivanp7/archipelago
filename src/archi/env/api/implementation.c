@@ -25,15 +25,16 @@
 
 #include "archi/env/api/context.fun.h"
 #include "archi/env/api/variable.fun.h"
-#include "archipelago/util/string.fun.h"
+#include "archi_base/util/string.fun.h"
 #include "context.typ.h" // for struct archi_env_context
 
 #include <stdlib.h> // for getenv()
 
+
 static
 struct archi_env_context *archi_environment;
 
-ARCHI_GLOBAL_SET_FUNC(archi_env_global_context_set)
+ARCHI_GLOBAL_SET_FUNC(archi_global_context_set__env)
 {
     if (archi_environment != NULL)
         return;
@@ -41,7 +42,7 @@ ARCHI_GLOBAL_SET_FUNC(archi_env_global_context_set)
     archi_environment = context;
 }
 
-ARCHI_GLOBAL_GET_FUNC(archi_env_global_context)
+ARCHI_GLOBAL_GET_FUNC(archi_global_context__env)
 {
     return archi_environment;
 }
@@ -49,7 +50,7 @@ ARCHI_GLOBAL_GET_FUNC(archi_env_global_context)
 char*
 archi_env_get(
         const char *name,
-        ARCHI_ERROR_PARAMETER_DECL)
+        ARCHI_ERROR_PARAM_DECL)
 {
     if (name == NULL)
     {

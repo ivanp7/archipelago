@@ -4,6 +4,7 @@
 #define CL_TARGET_OPENCL_VERSION 300
 #include <CL/cl.h>
 
+
 #define COLOR_RESET         "\033[0m"
 
 #define COLOR_FG_BLACK      "\033[30m"

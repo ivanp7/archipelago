@@ -27,18 +27,23 @@
 #ifndef _ARCHI_HASHMAP_API_HASHMAP_FUN_H_
 #define _ARCHI_HASHMAP_API_HASHMAP_FUN_H_
 
+#include "archi/hashmap/api/handle.typ.h"
 #include "archi/hashmap/api/hashmap.typ.h"
-#include "archipelago/base/error.typ.h"
+#include "archi_base/error.typ.h"
+
 
 /**
  * @brief Allocate a hashmap.
  *
- * @return Hashmap.
+ * If `hash_fn` is NULL, `archi_string_hash()` is used by default.
+ *
+ * @return Hashmap handle, or NULL in case of error.
  */
 archi_hashmap_t
 archi_hashmap_alloc(
+        archi_hashmap_hash_func_t hash_fn, ///< [in] Hashmap hash function.
         archi_hashmap_alloc_params_t params, ///< [in] Hashmap allocation parameters.
-        ARCHI_ERROR_PARAMETER_DECL ///< [out] Error.
+        ARCHI_ERROR_PARAM_DECL ///< [out] Error.
 );
 
 /**
@@ -61,7 +66,7 @@ archi_hashmap_get(
         archi_hashmap_t hashmap, ///< [in] Hashmap.
         const char *key, ///< [in] Key.
         archi_rcpointer_t *value, ///< [out] The value associated with the key.
-        ARCHI_ERROR_PARAMETER_DECL ///< [out] Error.
+        ARCHI_ERROR_PARAM_DECL ///< [out] Error.
 );
 
 /**
@@ -75,7 +80,7 @@ archi_hashmap_set(
         const char *key, ///< [in] Key.
         archi_rcpointer_t value, ///< [in] Value.
         archi_hashmap_set_params_t params, ///< [in] Additional parameters.
-        ARCHI_ERROR_PARAMETER_DECL ///< [out] Error.
+        ARCHI_ERROR_PARAM_DECL ///< [out] Error.
 );
 
 /**
@@ -88,7 +93,7 @@ archi_hashmap_unset(
         archi_hashmap_t hashmap, ///< [in] Hashmap.
         const char *key, ///< [in] Key.
         archi_hashmap_unset_params_t params, ///< [in] Additional parameters.
-        ARCHI_ERROR_PARAMETER_DECL ///< [out] Error.
+        ARCHI_ERROR_PARAM_DECL ///< [out] Error.
 );
 
 /**
@@ -102,7 +107,17 @@ archi_hashmap_traverse(
         bool first_to_last, ///< [in] True for insertion order (first-to-last), false for reverse insertion order (last-to-first).
         archi_hashmap_trav_kv_func_t trav_fn, ///< [in] Traversal function.
         void *trav_fn_data, ///< [in] Traversal function data.
-        ARCHI_ERROR_PARAMETER_DECL ///< [out] Error.
+        ARCHI_ERROR_PARAM_DECL ///< [out] Error.
+);
+
+/**
+ * @brief Get number of elements in the hashmap.
+ *
+ * @return Number of elements in the hashmap.
+ */
+size_t
+archi_hashmap_num_elements(
+        archi_hashmap_t hashmap ///< [in] Hashmap.
 );
 
 /**
@@ -115,15 +130,12 @@ archi_hashmap_capacity(
         archi_hashmap_t hashmap ///< [in] Hashmap.
 );
 
+/*****************************************************************************/
+
 /**
- * @brief Get number of elements in the hashmap.
- *
- * @return Number of elements in the hashmap.
+ * @brief Hashmap traversal key-value function: unset everything.
  */
-size_t
-archi_hashmap_size(
-        archi_hashmap_t hashmap ///< [in] Hashmap.
-);
+ARCHI_HASHMAP_TRAV_KV_FUNC(archi_hashmap_trav_kv__unset_all);
 
 #endif // _ARCHI_HASHMAP_API_HASHMAP_FUN_H_
 

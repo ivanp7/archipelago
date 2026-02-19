@@ -27,8 +27,9 @@
 #ifndef _ARCHI_CONTEXT_API_CALLBACK_TYP_H_
 #define _ARCHI_CONTEXT_API_CALLBACK_TYP_H_
 
-#include "archipelago/base/pointer.typ.h"
-#include "archipelago/base/error.typ.h"
+#include "archi_base/pointer.typ.h"
+#include "archi_base/error.typ.h"
+
 
 /**
  * @brief Declare/define context callback function.
@@ -40,7 +41,7 @@
 #define ARCHI_CONTEXT_CALLBACK_FUNC(func_name)  void func_name(             \
         archi_rcpointer_t value, /* [in] Pointer to a value/resource. */    \
         void *data, /* [in,out] Callback function data. */                  \
-        ARCHI_ERROR_PARAMETER_DECL) /* [out] Error. */
+        ARCHI_ERROR_PARAM_DECL) /* [out] Error. */
 
 /**
  * @brief Type for context callback function.

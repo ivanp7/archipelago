@@ -24,22 +24,25 @@
  */
 
 #include "archi/memory/api/interface.fun.h"
-#include "archipelago/base/pointer.fun.h"
-#include "archipelago/base/pointer.def.h"
-#include "archipelago/base/ref_count.fun.h"
+#include "archi/memory/api/tag.def.h"
+#include "archi_base/pointer.fun.h"
+#include "archi_base/pointer.def.h"
+#include "archi_base/ref_count.fun.h"
+#include "archi_base/util/size.def.h"
 
 #include <stdlib.h> // for malloc(), free()
+
 
 struct archi_memory {
     archi_rcpointer_t interface; ///< Memory interface.
 
-    archi_rcpointer_t allocation; ///< Memory allocation.
+    archi_rcpointer_t allocation; ///< Pointer to memory allocation.
     void *metadata; ///< Metadata for the memory allocation.
 
     size_t length; ///< Number of data elements.
     size_t stride; ///< Size of a data element.
     size_t alignment; ///< Data element alignment requirement.
-    size_t overalignment; ///< Memory alignment requirement.
+    size_t ext_alignment; ///< Extended alignment requirement of the memory.
 };
 
 archi_rcpointer_t
@@ -103,13 +106,13 @@ archi_memory_alignment(
 }
 
 size_t
-archi_memory_overalignment(
+archi_memory_ext_alignment(
         archi_memory_t memory)
 {
     if (memory == NULL)
         return 0;
 
-    return memory->overalignment;
+    return memory->ext_alignment;
 }
 
 /*****************************************************************************/
@@ -119,7 +122,7 @@ ARCHI_DESTRUCTOR_FUNC(archi_memory_deallocator)
 {
     archi_memory_t memory = data;
 
-    const archi_memory_interface_t *interface_ptr = memory->interface.ptr;
+    const archi_memory_interface_t *interface_ptr = memory->interface.cptr;
 
     // Free the memory
     if (interface_ptr->free_fn != NULL)
@@ -131,7 +134,7 @@ ARCHI_DESTRUCTOR_FUNC(archi_memory_deallocator)
             },
             .metadata = memory->metadata,
         };
-        archi_pointer_attr_parse__opaque_data(memory->allocation.attr, &alloc_info.allocation.tag, NULL);
+        archi_pointer_attr_unpk__cdata(memory->allocation.attr, &alloc_info.allocation.tag, NULL);
 
         /*********************************/
         interface_ptr->free_fn(alloc_info);
@@ -153,12 +156,13 @@ archi_memory_allocate(
         size_t length,
         size_t stride,
         size_t alignment,
-        size_t overalignment,
+        size_t ext_alignment,
 
-        ARCHI_ERROR_PARAMETER_DECL)
+        ARCHI_ERROR_PARAM_DECL)
 {
     // Perform necessary checks
-    archi_error_t error;
+    ARCHI_ERROR_VAR(error);
+
     if (!archi_pointer_valid(interface.p, &error))
     {
         ARCHI_ERROR_SET(error.code, "memory interface pointer is invalid: %s", error.message);
@@ -166,9 +170,14 @@ archi_memory_allocate(
     }
 
     if (!archi_pointer_attr_compatible(interface.attr,
-                ARCHI_POINTER_ATTR__DATA_TYPE(1, archi_memory_interface_t)))
+                archi_pointer_attr__cdata(ARCHI_POINTER_DATA_TAG__MEMORY_INTERFACE)))
     {
         ARCHI_ERROR_SET(ARCHI__ECONSTRAINT, "memory interface pointer attributes are incorrect");
+        return NULL;
+    }
+    else if (interface.cptr == NULL)
+    {
+        ARCHI_ERROR_SET(ARCHI__ECONSTRAINT, "memory interface pointer is NULL");
         return NULL;
     }
     else if (ARCHI_POINTER_TO_STACK(interface.attr))
@@ -177,10 +186,10 @@ archi_memory_allocate(
         return NULL;
     }
 
-    if (overalignment == 0)
-        overalignment = alignment;
+    if (ext_alignment == 0)
+        ext_alignment = alignment;
 
-    archi_pointer_attr_t attr = archi_pointer_attr__transp_data(length, stride, alignment, &error);
+    archi_pointer_attr_t attr = archi_pointer_attr__pdata(length, stride, alignment, &error);
 
     if (length == 0)
     {
@@ -192,18 +201,21 @@ archi_memory_allocate(
         ARCHI_ERROR_SET(error.code, "memory parameter is invalid: %s", error.message);
         return NULL;
     }
-    else if ((overalignment & (overalignment - 1)) != 0)
+    else if (!ARCHI_ALIGNMENT_VALID(ext_alignment))
     {
-        ARCHI_ERROR_SET(ARCHI__ECONSTRAINT, "memory parameter is invalid: overalignment is not a power of two");
+        ARCHI_ERROR_SET(ARCHI__ECONSTRAINT, "memory parameter is invalid: extended alignment (%#zx) is not a power of two",
+                ext_alignment);
         return NULL;
     }
-    else if (overalignment < alignment)
+    else if (ext_alignment < alignment)
     {
-        ARCHI_ERROR_SET(ARCHI__ECONSTRAINT, "memory parameter is invalid: overalignment is less than alignment");
+        ARCHI_ERROR_SET(ARCHI__ECONSTRAINT, "memory parameter is invalid: extended alignment (%#zx) is less than alignment (%#zx)",
+                ext_alignment, alignment);
         return NULL;
     }
 
-    const archi_memory_interface_t *interface_ptr = interface.ptr;
+    // Check pointer to interface
+    const archi_memory_interface_t *interface_ptr = interface.cptr;
     if (interface_ptr->alloc_fn == NULL)
     {
         ARCHI_ERROR_SET(ARCHI__ECONSTRAINT, "memory interface doesn't have alloc_fn()");
@@ -224,7 +236,7 @@ archi_memory_allocate(
         .length = length,
         .stride = stride,
         .alignment = alignment,
-        .overalignment = overalignment,
+        .ext_alignment = ext_alignment,
     };
 
     // Allocate the reference counter
@@ -237,10 +249,10 @@ archi_memory_allocate(
     }
 
     // Allocate the memory itself
-    ARCHI_ERROR_RESET_VAR(&error);
+    ARCHI_ERROR_VAR_UNSET(&error);
     /*************************************************************/
     archi_memory_alloc_info_t alloc_info = interface_ptr->alloc_fn(
-            length * stride, overalignment, alloc_data, &error);
+            length * stride, ext_alignment, alloc_data, &error);
     /*************************************************************/
     ARCHI_ERROR_ASSIGN(error);
 
@@ -257,7 +269,7 @@ archi_memory_allocate(
         .attr = (alloc_info.allocation.writable ?
                 ARCHI_POINTER_TYPE__DATA_WRITABLE : ARCHI_POINTER_TYPE__DATA_READONLY) |
             (alloc_info.allocation.tag ?
-             archi_pointer_attr__opaque_data(alloc_info.allocation.tag) : attr),
+             archi_pointer_attr__cdata(alloc_info.allocation.tag) : attr),
         .ref_count = ref_count,
     };
     memory->metadata = alloc_info.metadata;
@@ -334,7 +346,7 @@ ARCHI_DESTRUCTOR_FUNC(archi_memory_mapping_destructor)
     archi_memory_mapping_t mapping = data;
     archi_memory_t memory = mapping->memory;
 
-    const archi_memory_interface_t *interface_ptr = memory->interface.ptr;
+    const archi_memory_interface_t *interface_ptr = memory->interface.cptr;
 
     // Unmap the memory
     if (interface_ptr->unmap_fn != NULL)
@@ -346,7 +358,7 @@ ARCHI_DESTRUCTOR_FUNC(archi_memory_mapping_destructor)
             },
             .metadata = memory->metadata,
         };
-        archi_pointer_attr_parse__opaque_data(memory->allocation.attr, &alloc_info.allocation.tag, NULL);
+        archi_pointer_attr_unpk__cdata(memory->allocation.attr, &alloc_info.allocation.tag, NULL);
 
         archi_memory_map_info_t map_info = {
             .mapping = {
@@ -376,7 +388,7 @@ archi_memory_map(
         size_t offset,
         size_t length,
 
-        ARCHI_ERROR_PARAMETER_DECL)
+        ARCHI_ERROR_PARAM_DECL)
 {
     // Perform necessary checks
     if (memory == NULL)
@@ -400,7 +412,7 @@ archi_memory_map(
         return NULL;
     }
 
-    const archi_memory_interface_t *interface_ptr = memory->interface.ptr;
+    const archi_memory_interface_t *interface_ptr = memory->interface.cptr;
     if (interface_ptr->map_fn == NULL)
     {
         ARCHI_ERROR_SET(ARCHI__ECONSTRAINT, "memory interface doesn't have map_fn()");
@@ -437,9 +449,10 @@ archi_memory_map(
         },
         .metadata = memory->metadata,
     };
-    archi_pointer_attr_parse__opaque_data(memory->allocation.attr, &alloc_info.allocation.tag, NULL);
+    archi_pointer_attr_unpk__cdata(memory->allocation.attr, &alloc_info.allocation.tag, NULL);
 
-    archi_error_t error = {0};
+    ARCHI_ERROR_VAR(error);
+
     /**************************************************************************/
     archi_memory_map_info_t map_info = interface_ptr->map_fn(alloc_info,
             offset * memory->stride, length * memory->stride, map_data, &error);
@@ -458,7 +471,7 @@ archi_memory_map(
         .ptr = map_info.mapping.ptr,
         .attr = (map_info.mapping.writable ?
                 ARCHI_POINTER_TYPE__DATA_WRITABLE : ARCHI_POINTER_TYPE__DATA_READONLY) |
-            archi_pointer_attr__transp_data(length, memory->stride, memory->alignment, NULL),
+            archi_pointer_attr__pdata(length, memory->stride, memory->alignment, NULL),
         .ref_count = ref_count,
     };
     mapping->metadata = map_info.metadata;

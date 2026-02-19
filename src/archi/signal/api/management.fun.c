@@ -26,10 +26,11 @@
 #include "archi/signal/api/management.fun.h"
 #include "management.typ.h"
 
+
 static
 struct archi_signal_management_context_base *archi_signal_management;
 
-ARCHI_GLOBAL_SET_FUNC(archi_signal_management_global_context_set)
+ARCHI_GLOBAL_SET_FUNC(archi_global_context_set__signal_management)
 {
     if (archi_signal_management != NULL)
         return;
@@ -37,7 +38,7 @@ ARCHI_GLOBAL_SET_FUNC(archi_signal_management_global_context_set)
     archi_signal_management = context;
 }
 
-ARCHI_GLOBAL_GET_FUNC(archi_signal_management_global_context)
+ARCHI_GLOBAL_GET_FUNC(archi_global_context__signal_management)
 {
     return archi_signal_management;
 }

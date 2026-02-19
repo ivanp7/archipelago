@@ -26,11 +26,13 @@
 #include "archi/context/api/interface.fun.h"
 #include "archi/context/api/interface.typ.h"
 #include "archi/context/api/interface.def.h"
-#include "archipelago/base/pointer.fun.h"
-#include "archipelago/base/pointer.def.h"
-#include "archipelago/base/ref_count.fun.h"
+#include "archi/context/api/tag.def.h"
+#include "archi_base/pointer.fun.h"
+#include "archi_base/pointer.def.h"
+#include "archi_base/ref_count.fun.h"
 
 #include <stdlib.h> // for malloc(), free()
+
 
 struct archi_context {
     archi_rcpointer_t interface; ///< Context interface.
@@ -88,12 +90,13 @@ ARCHI_DESTRUCTOR_FUNC(archi_context_destructor)
 archi_context_t
 archi_context_initialize(
         archi_rcpointer_t interface,
-        const archi_kvlist_rc_t *params,
+        const archi_krcvlist_t *params,
 
-        ARCHI_ERROR_PARAMETER_DECL)
+        ARCHI_ERROR_PARAM_DECL)
 {
     // Perform necessary checks
-    archi_error_t error;
+    ARCHI_ERROR_VAR(error);
+
     if (!archi_pointer_valid(interface.p, &error))
     {
         ARCHI_ERROR_SET(error.code, "context interface pointer is invalid: %s", error.message);
@@ -101,18 +104,24 @@ archi_context_initialize(
     }
 
     if (!archi_pointer_attr_compatible(interface.attr,
-                ARCHI_POINTER_ATTR__DATA_TYPE(1, archi_context_interface_t)))
+                archi_pointer_attr__cdata(ARCHI_POINTER_DATA_TAG__CONTEXT_INTERFACE)))
     {
         ARCHI_ERROR_SET(ARCHI__ECONSTRAINT, "context interface pointer attributes are incorrect");
         return NULL;
     }
+    else if (interface.cptr == NULL)
+    {
+        ARCHI_ERROR_SET(ARCHI__ECONSTRAINT, "context interface pointer is NULL");
+        return NULL;
+    }
     else if (ARCHI_POINTER_TO_STACK(interface.attr))
     {
-        ARCHI_ERROR_SET(ARCHI__ECONSTRAINT, "context interface is on stack");
+        ARCHI_ERROR_SET(ARCHI__ECONSTRAINT, "context interface on stack is not supported");
         return NULL;
     }
 
-    const archi_context_interface_t *interface_ptr = interface.ptr;
+    // Check pointer to interface
+    const archi_context_interface_t *interface_ptr = interface.cptr;
     if (interface_ptr->init_fn == NULL)
     {
         ARCHI_ERROR_SET(ARCHI__ECONSTRAINT, "context interface doesn't have init_fn()");
@@ -139,7 +148,7 @@ archi_context_initialize(
     }
 
     // Initialize the context
-    ARCHI_ERROR_RESET_VAR(&error);
+    ARCHI_ERROR_VAR_UNSET(&error);
     /*****************************************************/
     context->data = interface_ptr->init_fn(params, &error);
     /*****************************************************/
@@ -199,7 +208,7 @@ ARCHI_CONTEXT_CALLBACK_FUNC(archi_context_callback_wrapper)
 
     // Check the pointer for validness
     {
-        archi_error_t error;
+        ARCHI_ERROR_VAR(error);
 
         if (!archi_pointer_valid(value.p, &error))
         {
@@ -208,7 +217,7 @@ ARCHI_CONTEXT_CALLBACK_FUNC(archi_context_callback_wrapper)
         }
         else if (ARCHI_POINTER_TO_STACK(value.attr) && (value.ref_count != NULL))
         {
-            ARCHI_ERROR_SET(ARCHI__ECONSTRAINT, "output pointer to stack has reference counter");
+            ARCHI_ERROR_SET(ARCHI__ECONSTRAINT, "output pointer to stack has reference counter, which is meaningless");
             return;
         }
     }
@@ -218,7 +227,7 @@ ARCHI_CONTEXT_CALLBACK_FUNC(archi_context_callback_wrapper)
     {
         if (ARCHI_POINTER_TO_FUNCTION(value.attr))
         {
-            ARCHI_ERROR_SET(ARCHI__ECONSTRAINT, "output pointer to function wants context reference counter");
+            ARCHI_ERROR_SET(ARCHI__ECONSTRAINT, "output pointer to function requests context reference counter, which is meaningless");
             return;
         }
 
@@ -231,7 +240,7 @@ ARCHI_CONTEXT_CALLBACK_FUNC(archi_context_callback_wrapper)
     /*********************************************************************/
     if (wrapper_data->callback.function != NULL)
         wrapper_data->callback.function(value, wrapper_data->callback.data,
-                ARCHI_ERROR_PARAMETER);
+                ARCHI_ERROR_PARAM);
     /*********************************************************************/
 }
 
@@ -241,7 +250,7 @@ archi_context_get(
         archi_context_slot_t slot,
         archi_context_callback_t callback,
 
-        ARCHI_ERROR_PARAMETER_DECL)
+        ARCHI_ERROR_PARAM_DECL)
 {
     // Perform necessary checks
     if (context == NULL)
@@ -269,7 +278,7 @@ archi_context_get(
     {
         /***********************************************************/
         callback.function(archi_context_data(context), callback.data,
-                ARCHI_ERROR_PARAMETER);
+                ARCHI_ERROR_PARAM);
         /***********************************************************/
         return;
     }
@@ -291,7 +300,8 @@ archi_context_get(
     };
 
     // Call the evaluation function
-    archi_error_t error = {0};
+    ARCHI_ERROR_VAR(error);
+
     /****************************************************************************/
     interface_ptr->eval_fn(context->data, slot, false, NULL,
             (archi_context_callback_t){.function = archi_context_callback_wrapper,
@@ -310,10 +320,10 @@ void
 archi_context_call(
         archi_context_t context,
         archi_context_slot_t slot,
-        const archi_kvlist_rc_t *params,
+        const archi_krcvlist_t *params,
         archi_context_callback_t callback,
 
-        ARCHI_ERROR_PARAMETER_DECL)
+        ARCHI_ERROR_PARAM_DECL)
 {
     // Perform necessary checks
     if (context == NULL)
@@ -348,7 +358,8 @@ archi_context_call(
     };
 
     // Call the evaluation function
-    archi_error_t error = {0};
+    ARCHI_ERROR_VAR(error);
+
     /****************************************************************************/
     interface_ptr->eval_fn(context->data, slot, true, params,
             (archi_context_callback_t){.function = archi_context_callback_wrapper,
@@ -369,7 +380,7 @@ archi_context_set(
         archi_context_slot_t slot,
         archi_rcpointer_t value,
 
-        ARCHI_ERROR_PARAMETER_DECL)
+        ARCHI_ERROR_PARAM_DECL)
 {
     // Perform necessary checks
     if (context == NULL)
@@ -392,7 +403,8 @@ archi_context_set(
         return;
     }
 
-    archi_error_t error;
+    ARCHI_ERROR_VAR(error);
+
     if (!archi_pointer_valid(value.p, &error))
     {
         ARCHI_ERROR_SET(error.code, "value assigned to context slot is invalid: %s", error.message);
@@ -408,9 +420,52 @@ archi_context_set(
     }
 
     // Call the setter function
-    /***********************************************************************/
-    interface_ptr->set_fn(context->data, slot, value, ARCHI_ERROR_PARAMETER);
-    /***********************************************************************/
+    /**************************************************************************/
+    interface_ptr->set_fn(context->data, slot, false, value, ARCHI_ERROR_PARAM);
+    /**************************************************************************/
+}
+
+void
+archi_context_unset(
+        archi_context_t context,
+        archi_context_slot_t slot,
+
+        ARCHI_ERROR_PARAM_DECL)
+{
+    // Perform necessary checks
+    if (context == NULL)
+    {
+        ARCHI_ERROR_SET(ARCHI__ECONSTRAINT, "context is NULL");
+        return;
+    }
+
+    if (slot.name == NULL)
+        slot.name = "";
+
+    if (!ARCHI_CONTEXT_SLOT_VALID(slot))
+    {
+        ARCHI_ERROR_SET(ARCHI__ECONSTRAINT, "context slot is invalid");
+        return;
+    }
+    else if (ARCHI_CONTEXT_SLOT_EMPTY(slot))
+    {
+        ARCHI_ERROR_SET(ARCHI__ECONSTRAINT, "context slot is empty");
+        return;
+    }
+
+    // Check context interface
+    const archi_context_interface_t *interface_ptr = context->interface.cptr;
+    if (interface_ptr->set_fn == NULL)
+    {
+        ARCHI_ERROR_SET(ARCHI__ECONSTRAINT, "context interface doesn't have set_fn()");
+        return;
+    }
+
+    // Call the setter function
+    /**********************************************************************/
+    interface_ptr->set_fn(context->data, slot, true, (archi_rcpointer_t){0},
+            ARCHI_ERROR_PARAM);
+    /**********************************************************************/
 }
 
 /*****************************************************************************/
@@ -419,7 +474,7 @@ struct archi_context_set__callback_data {
     archi_context_set_func_t set_fn;
     archi_rcpointer_t *context_data;
     archi_context_slot_t slot;
-    bool no_refcount;
+    bool weak_ref;
 };
 
 static
@@ -427,13 +482,13 @@ ARCHI_CONTEXT_CALLBACK_FUNC(archi_context_set__callback)
 {
     struct archi_context_set__callback_data *callback_data = data;
 
-    if (callback_data->no_refcount)
+    if (callback_data->weak_ref)
         value.ref_count = NULL;
 
-    /*********************************************************/
-    callback_data->set_fn(callback_data->context_data,
-            callback_data->slot, value, ARCHI_ERROR_PARAMETER);
-    /*********************************************************/
+    /*********************************************************************/
+    callback_data->set_fn(callback_data->context_data, callback_data->slot,
+            false, value, ARCHI_ERROR_PARAM);
+    /*********************************************************************/
 }
 
 void
@@ -443,9 +498,9 @@ archi_context_set_from_get(
 
         archi_context_t src_context,
         archi_context_slot_t src_slot,
-        bool src_no_refcount,
+        bool weak_ref,
 
-        ARCHI_ERROR_PARAMETER_DECL)
+        ARCHI_ERROR_PARAM_DECL)
 {
     // Perform necessary checks
     if (context == NULL)
@@ -498,10 +553,10 @@ archi_context_set_from_get(
     // Process empty source slot
     if (ARCHI_CONTEXT_SLOT_EMPTY(src_slot))
     {
-        /**************************************************************/
+        /*****************************************************************/
         interface_ptr->set_fn(context->data, slot,
-                archi_context_data(src_context), ARCHI_ERROR_PARAMETER);
-        /**************************************************************/
+                false, archi_context_data(src_context), ARCHI_ERROR_PARAM);
+        /*****************************************************************/
         return;
     }
 
@@ -510,7 +565,7 @@ archi_context_set_from_get(
         .set_fn = interface_ptr->set_fn,
         .context_data = context->data,
         .slot = slot,
-        .no_refcount = src_no_refcount,
+        .weak_ref = weak_ref,
     };
 
     // Prepare callback wrapper data
@@ -525,7 +580,8 @@ archi_context_set_from_get(
     };
 
     // Call the evaluation function
-    archi_error_t error = {0};
+    ARCHI_ERROR_VAR(error);
+
     /****************************************************************************/
     src_interface_ptr->eval_fn(src_context->data, src_slot, false, NULL,
             (archi_context_callback_t){.function = archi_context_callback_wrapper,
@@ -547,10 +603,10 @@ archi_context_set_from_call(
 
         archi_context_t src_context,
         archi_context_slot_t src_slot,
-        const archi_kvlist_rc_t *src_params,
-        bool src_no_refcount,
+        const archi_krcvlist_t *src_params,
+        bool weak_ref,
 
-        ARCHI_ERROR_PARAMETER_DECL)
+        ARCHI_ERROR_PARAM_DECL)
 {
     // Perform necessary checks
     if (context == NULL)
@@ -605,7 +661,7 @@ archi_context_set_from_call(
         .set_fn = interface_ptr->set_fn,
         .context_data = context->data,
         .slot = slot,
-        .no_refcount = src_no_refcount,
+        .weak_ref = weak_ref,
     };
 
     // Prepare callback wrapper data
@@ -620,7 +676,8 @@ archi_context_set_from_call(
     };
 
     // Call the evaluation function
-    archi_error_t error = {0};
+    ARCHI_ERROR_VAR(error);
+
     /****************************************************************************/
     src_interface_ptr->eval_fn(src_context->data, src_slot, true, src_params,
             (archi_context_callback_t){.function = archi_context_callback_wrapper,

@@ -25,16 +25,18 @@
 
 #include "archi/signal/sig-ctx/hashmap_data.var.h"
 #include "archi/signal/sig/hashmap.typ.h"
+#include "archi/signal/sig/tag.def.h"
 #include "archi/signal/api/handler.typ.h"
 #include "archi/hashmap/api/hashmap.fun.h"
 #include "archi/context/api/interface.def.h"
-#include "archipelago/base/pointer.fun.h"
-#include "archipelago/base/pointer.def.h"
-#include "archipelago/util/parameters.fun.h"
-#include "archipelago/util/size.def.h"
-#include "archipelago/util/string.fun.h"
+#include "archi_base/pointer.fun.h"
+#include "archi_base/pointer.def.h"
+#include "archi_base/util/plist.fun.h"
+#include "archi_base/util/check.fun.h"
+#include "archi_base/util/string.fun.h"
 
 #include <stdlib.h> // for malloc(), free()
+
 
 static
 ARCHI_CONTEXT_INIT_FUNC(archi_context_init__signal_handler_data__hashmap)
@@ -42,21 +44,18 @@ ARCHI_CONTEXT_INIT_FUNC(archi_context_init__signal_handler_data__hashmap)
     // Parse parameters
     archi_hashmap_alloc_params_t hashmap_alloc_params = {0};
     {
-        archi_kvlist_parameter_t parsed[] = {
-            {.name = "params", .value.attr = ARCHI_POINTER_ATTR__DATA_TYPE(1, archi_hashmap_alloc_params_t)},
-            {.name = "capacity", .value.attr = ARCHI_POINTER_ATTR__DATA_TYPE(1, size_t)},
+        archi_plist_param_t parsed[] = {
+            {.name = "params",
+                .check = {archi_value_check__attr, (archi_pointer_attr_t[]){ARCHI_POINTER_ATTR__PDATA(1, archi_hashmap_alloc_params_t)}},
+                .assign = {archi_plist_assign__value, &hashmap_alloc_params, sizeof(hashmap_alloc_params)}},
+            {.name = "capacity",
+                .check = {archi_value_check__attr, (archi_pointer_attr_t[]){ARCHI_POINTER_ATTR__PDATA(1, size_t)}},
+                .assign = {archi_plist_assign__value, &hashmap_alloc_params.capacity, sizeof(hashmap_alloc_params.capacity)}},
+            {0},
         };
 
-        if (!archi_kvlist_parameters_parse(params, parsed, ARCHI_LENGTH_ARRAY(parsed), false, NULL,
-                    ARCHI_ERROR_PARAMETER))
+        if (!archi_plist_parse(&params->n, true, parsed, false, ARCHI_ERROR_PARAM))
             return NULL;
-
-        size_t index = 0;
-        if (parsed[index].value_set)
-            hashmap_alloc_params = *(archi_hashmap_alloc_params_t*)parsed[index].value.ptr;
-        index++;
-        if (parsed[index].value_set)
-            hashmap_alloc_params.capacity = *(size_t*)parsed[index].value.ptr;
     }
 
     // Construct the context
@@ -76,7 +75,7 @@ ARCHI_CONTEXT_INIT_FUNC(archi_context_init__signal_handler_data__hashmap)
         return NULL;
     }
 
-    handler_data->hashmap = archi_hashmap_alloc(hashmap_alloc_params, ARCHI_ERROR_PARAMETER);
+    handler_data->hashmap = archi_hashmap_alloc(NULL, hashmap_alloc_params, ARCHI_ERROR_PARAM);
     if (handler_data->hashmap == NULL)
     {
         free(handler_data);
@@ -101,7 +100,7 @@ ARCHI_CONTEXT_INIT_FUNC(archi_context_init__signal_handler_data__hashmap)
     *context_data = (archi_rcpointer_t){
         .ptr = handler_data,
         .attr = ARCHI_POINTER_TYPE__DATA_WRITABLE |
-            ARCHI_POINTER_ATTR__DATA_TYPE(1, archi_signal_handler_data__hashmap_t),
+            archi_pointer_attr__cdata(ARCHI_POINTER_DATA_TAG__SIGNAL_HANDLER_DATA__HASHMAP),
     };
 
     ARCHI_ERROR_RESET();
@@ -149,7 +148,8 @@ ARCHI_CONTEXT_EVAL_FUNC(archi_context_eval__signal_handler_data__hashmap)
 
     archi_rcpointer_t value = {0};
 
-    archi_error_t error = {0};
+    ARCHI_ERROR_VAR(error);
+
     bool success = archi_hashmap_get(handler_data->hashmap, slot.name, &value, &error);
     ARCHI_ERROR_ASSIGN(error);
 
@@ -176,7 +176,7 @@ ARCHI_CONTEXT_SET_FUNC(archi_context_set__signal_handler_data__hashmap)
         return;
     }
     else if (!archi_pointer_attr_compatible(value.attr,
-                ARCHI_POINTER_ATTR__DATA_TYPE(value.ptr != NULL, archi_signal_handler_t)))
+                ARCHI_POINTER_ATTR__PDATA(value.ptr != NULL, archi_signal_handler_t)))
     {
         ARCHI_ERROR_SET(ARCHI__ECONSTRAINT, "assigned value is not a signal handler");
         return;
@@ -193,18 +193,20 @@ ARCHI_CONTEXT_SET_FUNC(archi_context_set__signal_handler_data__hashmap)
         }
     }
 
-    if (value.ptr != NULL) // set handler
+    if (!unset && (value.ptr != NULL)) // set handler
     {
         archi_hashmap_set_params_t params = {
             .insertion_allowed = true,
             .update_allowed = true,
         };
-        archi_hashmap_set(handler_data->hashmap, slot.name, value, params, ARCHI_ERROR_PARAMETER);
+
+        archi_hashmap_set(handler_data->hashmap, slot.name, value, params, ARCHI_ERROR_PARAM);
     }
     else // unset handler
     {
         archi_hashmap_unset_params_t params = {0};
-        archi_hashmap_unset(handler_data->hashmap, slot.name, params, ARCHI_ERROR_PARAMETER);
+
+        archi_hashmap_unset(handler_data->hashmap, slot.name, params, ARCHI_ERROR_PARAM);
     }
 
     mtx_unlock(&handler_data->hashmap_lock);

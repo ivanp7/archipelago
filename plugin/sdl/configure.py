@@ -39,10 +39,9 @@ ARCHI_LDIR  = "../../build"
 # modules to build {{{
 
 MODULES = [
-        "archi/sdl2/api",
+        "archi/sdl2/exe",
+        "archi/sdl2/agg",
         "archi/sdl2/ctx",
-        "archi/sdl2/hsp",
-        "archi/sdl2/hsp-ctx",
 
         "archi/font_psf2/api",
         "archi/font_psf2/ctx",
@@ -64,7 +63,7 @@ LFLAGS += [f'-L{ARCHI_LDIR}']
 
 CFLAGS += pkgconfig.cflags('sdl2').split(' ')
 
-LIBS = ['-larchi-context-ctx', '-larchi-memory-api', '-larchi-hsp-api', '-larchipelago-base', '-larchipelago-log', '-larchipelago-util']
+LIBS = ['-larchi_base']
 LIBS += pkgconfig.libs('sdl2').split(' ')
 
 ## }}}

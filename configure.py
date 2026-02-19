@@ -3,6 +3,7 @@
 # python initialization {{{
 
 import os
+from datetime import datetime
 
 os.chdir(os.path.dirname(__file__))
 
@@ -23,7 +24,7 @@ TESTS_NAME = f"{PROJECT_PREFIX}-tests"
 
 INCLUDE_DIR = "include"
 SOURCE_DIR = "src"
-EXEC_SOURCE_FILE  = "main.c"
+EXEC_SOURCE_FILE  = "archi_app.c"
 
 TEST_DIR = "test"
 TEST_HEADER_FILE = "test.h"
@@ -35,37 +36,50 @@ BUILD_DIR = "build"
 # modules to build {{{
 
 MODULES = [
-        ### Archipelago base ###
+        ### Logging ###
 
-        "archipelago/base",
-        "archipelago/util",
-        "archipelago/log",
+        "archi_log",
 
-        ### built-in modules ###
+        ### Base ###
 
-        # context interface
+        "archi_base",
+
+        ### Built-in modules ###
+
+        # contexts
         "archi/context/api",
         "archi/context/ctx",
-        "archi/context/ctx-op",
 
-        # hierarchical state processor
-        "archi/hsp/api",
-        "archi/hsp/hsp",
-        "archi/hsp/ctx",
-        "archi/hsp/hsp-ctx",
+        # aggregate objects
+        "archi/aggr/api",
+        "archi/aggr/agg",
+        "archi/aggr/ctx",
+
+        # directed execution graphs
+        "archi/exec/api",
+        "archi/exec/exe",
+        "archi/exec/agg",
+        "archi/exec/ctx",
 
         # threads
         "archi/thread/api",
-        "archi/thread/hsp",
+        "archi/thread/exe",
+        "archi/thread/agg",
         "archi/thread/ctx",
-        "archi/thread/hsp-ctx",
+
+        # signal management
+        "archi/signal/api",
+        "archi/signal/sig",
+        "archi/signal/exe",
+        "archi/signal/agg",
+        "archi/signal/sig-ctx",
 
         # memory
         "archi/memory/api",
         "archi/memory/mem",
-        "archi/memory/hsp",
+        "archi/memory/exe",
+        "archi/memory/agg",
         "archi/memory/ctx",
-        "archi/memory/hsp-ctx",
 
         # files
         "archi/file/api",
@@ -75,30 +89,25 @@ MODULES = [
         "archi/library/api",
         "archi/library/ctx",
 
-        # signal management
-        "archi/signal/api",
-        "archi/signal/sig",
-        "archi/signal/ctx",
-        "archi/signal/sig-ctx",
-
         # hashmaps
         "archi/hashmap/api",
+        "archi/hashmap/exe",
         "archi/hashmap/ctx",
 
         # environment variables
         "archi/env/api",
         "archi/env/ctx",
 
-        # parser
+        # parsers
         "archi/parser/ctx",
 
-        # timer
+        # timers
         "archi/timer/api",
-        "archi/timer/hsp",
+        "archi/timer/exe",
         "archi/timer/ctx",
         ]
 
-MODULE_EXE = "archi_exe" # implementation of the executable
+MODULE_EXE = "archi_app" # implementation of the application
 
 # }}}
 # build flags {{{
@@ -282,7 +291,7 @@ build {target_name}: phony {BUILD_DIR}/{lib_name}
 
     build_ninja_segments.append(f'''\
 build {object}: compile {SOURCE_DIR}/{EXEC_SOURCE_FILE}
-    opts = -fvisibility=hidden
+    opts = -fvisibility=hidden -D{PROJECT_PREFIX.upper()}_APP_VERSION='"{datetime.now().strftime("%y.%m.%d")}"' -D{PROJECT_PREFIX.upper()}_APP_BUILTIN_MODULES='"{':'.join(MODULES + [MODULE_EXE])}"' -D{PROJECT_PREFIX.upper()}_APP_FEATURES='"{'\a'.join(key[8:] + (f'={value}' if value else '') for key, value in FEATURES.items())}"'
 
 build {BUILD_DIR}/{EXEC_NAME}: link_exe {object} {BUILD_DIR}/{lib_name} {' '.join(module_libraries)}
 build exe: phony {BUILD_DIR}/{EXEC_NAME}

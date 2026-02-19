@@ -29,17 +29,18 @@
 
 #include "archi/context/api/interface.typ.h"
 
+
 /**
  * @brief Context interface: environment variable.
  *
  * Initialization parameters:
- * - "default_value"    : default value of environment variables
+ * - "default_value"    : (char[]) default value of environment variables
  *
  * Getter slots: any (without indices only) -- find an environment variable
  * with the specified name.
  *
  * Setter slots:
- * - "default_value"    : default value of environment variables
+ * - "default_value"    : (char[]) default value of environment variables
  */
 extern
 const archi_context_interface_t

@@ -39,6 +39,7 @@
 #include <stdbool.h>
 #include <assert.h>
 
+
 #ifndef NDEBUG
 
 #  define MTX_LOCK(mutex) do {                  \
@@ -230,7 +231,7 @@ archi_thread(
 archi_thread_group_t
 archi_thread_group_create(
         archi_thread_group_start_params_t params,
-        ARCHI_ERROR_PARAMETER_DECL)
+        ARCHI_ERROR_PARAM_DECL)
 {
     size_t thread_idx = 0;
 
@@ -397,7 +398,7 @@ archi_thread_group_dispatch(
         archi_thread_group_callback_t callback,
 
         archi_thread_group_dispatch_params_t params,
-        ARCHI_ERROR_PARAMETER_DECL)
+        ARCHI_ERROR_PARAM_DECL)
 {
     if (context == NULL)
     {

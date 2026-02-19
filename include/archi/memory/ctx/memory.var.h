@@ -29,6 +29,7 @@
 
 #include "archi/context/api/interface.typ.h"
 
+
 /**
  * @brief Context interface: memory.
  *
@@ -38,7 +39,7 @@
  * - "length"           : (size_t) number of data elements to allocate
  * - "stride"           : (size_t) size of a data element in bytes
  * - "alignment"        : (size_t) alignment requirement of a data element in bytes
- * - "overalignment"    : (size_t) alignment requirement of memory in bytes
+ * - "ext_alignment"    : (size_t) extended alignment requirement of memory in bytes
  *
  * Getter slots:
  * - "interface"        : (archi_memory_interface_t) pointer to memory interface
@@ -47,7 +48,7 @@
  * - "stride"           : (size_t) size of a data element in bytes
  * - "size"             : (size_t) size of the memory in bytes
  * - "alignment"        : (size_t) alignment requirement of a data element in bytes
- * - "overalignment"    : (size_t) alignment requirement of memory in bytes
+ * - "ext_alignment"    : (size_t) extended alignment requirement of memory in bytes
  */
 extern
 const archi_context_interface_t

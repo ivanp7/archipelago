@@ -24,12 +24,12 @@
  */
 
 #include "archi/hashmap/api/hashmap.fun.h"
-#include "archipelago/base/pointer.fun.h"
-#include "archipelago/base/ref_count.fun.h"
-#include "archipelago/util/size.def.h"
-#include "archipelago/util/string.fun.h"
+#include "archi_base/pointer.fun.h"
+#include "archi_base/util/size.def.h"
+#include "archi_base/util/string.fun.h"
 
 #include <stdlib.h> // for malloc(), free()
+
 
 struct archi_hashmap_node;
 
@@ -46,8 +46,10 @@ struct archi_hashmap_node {
 };
 
 struct archi_hashmap {
+    archi_hashmap_hash_func_t hash_fn; ///< Hash function.
+
     size_t capacity; ///< Size of the array of nodes.
-    size_t size; ///< Total number of nodes.
+    size_t num_nodes; ///< Total number of nodes.
 
     struct archi_hashmap_node *chrono_first; ///< The chronologically first inserted node.
     struct archi_hashmap_node *chrono_last;  ///< The chronologically last inserted node.
@@ -57,11 +59,15 @@ struct archi_hashmap {
 
 archi_hashmap_t
 archi_hashmap_alloc(
+        archi_hashmap_hash_func_t hash_fn,
         archi_hashmap_alloc_params_t params,
-        ARCHI_ERROR_PARAMETER_DECL)
+        ARCHI_ERROR_PARAM_DECL)
 {
     if (params.capacity == 0)
         params.capacity = ARCHI_HASHMAP_DEFAULT_CAPACITY;
+
+    if (hash_fn == NULL)
+        hash_fn = archi_string_hash;
 
     archi_hashmap_t hashmap = malloc(ARCHI_SIZEOF_FLEXIBLE(
                 struct archi_hashmap, nodes, params.capacity));
@@ -71,8 +77,10 @@ archi_hashmap_alloc(
         return NULL;
     }
 
+    hashmap->hash_fn = hash_fn;
+
     hashmap->capacity = params.capacity;
-    hashmap->size = 0;
+    hashmap->num_nodes = 0;
 
     hashmap->chrono_first = hashmap->chrono_last = NULL;
 
@@ -83,17 +91,6 @@ archi_hashmap_alloc(
     return hashmap;
 }
 
-static
-ARCHI_HASHMAP_TRAV_KV_FUNC(archi_hashmap_free_unset)
-{
-    (void) key;
-    (void) value;
-    (void) index;
-    (void) data;
-
-    return (archi_hashmap_trav_action_t){.type = ARCHI_HASHMAP_TRAV_UNSET};
-}
-
 void
 archi_hashmap_free(
         archi_hashmap_t hashmap)
@@ -101,7 +98,7 @@ archi_hashmap_free(
     if (hashmap == NULL)
         return;
 
-    archi_hashmap_traverse(hashmap, false, archi_hashmap_free_unset, NULL, NULL);
+    archi_hashmap_traverse(hashmap, false, archi_hashmap_trav_kv__unset_all, NULL, NULL);
     free(hashmap);
 }
 
@@ -110,7 +107,7 @@ archi_hashmap_get(
         archi_hashmap_t hashmap,
         const char *key,
         archi_rcpointer_t *value,
-        ARCHI_ERROR_PARAMETER_DECL)
+        ARCHI_ERROR_PARAM_DECL)
 {
     if (hashmap == NULL)
     {
@@ -121,7 +118,7 @@ archi_hashmap_get(
     // Find the node
     struct archi_hashmap_node *node;
     {
-        size_t hash = archi_string_hash(key);
+        size_t hash = hashmap->hash_fn(key);
         hash %= hashmap->capacity;
 
         node = hashmap->nodes[hash];
@@ -152,7 +149,7 @@ archi_hashmap_set(
         const char *key,
         archi_rcpointer_t value,
         archi_hashmap_set_params_t params,
-        ARCHI_ERROR_PARAMETER_DECL)
+        ARCHI_ERROR_PARAM_DECL)
 {
     if (hashmap == NULL)
     {
@@ -165,7 +162,7 @@ archi_hashmap_set(
         return false;
     }
 
-    size_t hash = archi_string_hash(key);
+    size_t hash = hashmap->hash_fn(key);
     hash %= hashmap->capacity;
 
     // Find the node
@@ -205,8 +202,8 @@ archi_hashmap_set(
             return false;
         }
 
-        value = archi_rcpointer_own(value, ARCHI_ERROR_PARAMETER);
-        if (!value.attr) // failed to own
+        value = archi_rcpointer_own(value, ARCHI_ERROR_PARAM);
+        if (!value.attr)
         {
             free(key_copy);
             free(node);
@@ -230,7 +227,7 @@ archi_hashmap_set(
             hashmap->chrono_last->chrono_next = node;
 
         hashmap->chrono_last = hashmap->nodes[hash] = node;
-        hashmap->size++;
+        hashmap->num_nodes++;
     }
     else // the key exists, can just update the value of the current node
     {
@@ -241,8 +238,8 @@ archi_hashmap_set(
             return false;
         }
 
-        value = archi_rcpointer_own_disown(value, node->value, ARCHI_ERROR_PARAMETER);
-        if (!value.attr) // failed to own
+        value = archi_rcpointer_own_disown(value, node->value, ARCHI_ERROR_PARAM);
+        if (!value.attr)
             return false;
 
         node->value = value;
@@ -278,7 +275,7 @@ archi_hashmap_remove_node(
     else
         hashmap->chrono_last = node->chrono_prev;
 
-    hashmap->size--;
+    hashmap->num_nodes--;
 }
 
 bool
@@ -286,7 +283,7 @@ archi_hashmap_unset(
         archi_hashmap_t hashmap,
         const char *key,
         archi_hashmap_unset_params_t params,
-        ARCHI_ERROR_PARAMETER_DECL)
+        ARCHI_ERROR_PARAM_DECL)
 {
     if (hashmap == NULL)
     {
@@ -302,7 +299,7 @@ archi_hashmap_unset(
     // Find the node
     struct archi_hashmap_node *node;
     {
-        size_t hash = archi_string_hash(key);
+        size_t hash = hashmap->hash_fn(key);
         hash %= hashmap->capacity;
 
         node = hashmap->nodes[hash];
@@ -341,7 +338,7 @@ archi_hashmap_traverse(
         bool first_to_last,
         archi_hashmap_trav_kv_func_t trav_fn,
         void *trav_fn_data,
-        ARCHI_ERROR_PARAMETER_DECL)
+        ARCHI_ERROR_PARAM_DECL)
 {
     if (hashmap == NULL)
     {
@@ -370,8 +367,8 @@ archi_hashmap_traverse(
 
             case ARCHI_HASHMAP_TRAV_SET:
                 action.new_value = archi_rcpointer_own_disown(action.new_value, node->value,
-                        ARCHI_ERROR_PARAMETER);
-                if (!action.new_value.attr) // failed to own
+                        ARCHI_ERROR_PARAM);
+                if (!action.new_value.attr)
                     return false;
 
                 node->value = action.new_value;
@@ -405,6 +402,16 @@ archi_hashmap_traverse(
 }
 
 size_t
+archi_hashmap_num_elements(
+        archi_hashmap_t hashmap)
+{
+    if (hashmap == NULL)
+        return 0;
+
+    return hashmap->num_nodes;
+}
+
+size_t
 archi_hashmap_capacity(
         archi_hashmap_t hashmap)
 {
@@ -414,13 +421,15 @@ archi_hashmap_capacity(
     return hashmap->capacity;
 }
 
-size_t
-archi_hashmap_size(
-        archi_hashmap_t hashmap)
-{
-    if (hashmap == NULL)
-        return 0;
+/*****************************************************************************/
 
-    return hashmap->size;
+ARCHI_HASHMAP_TRAV_KV_FUNC(archi_hashmap_trav_kv__unset_all)
+{
+    (void) key;
+    (void) value;
+    (void) index;
+    (void) data;
+
+    return (archi_hashmap_trav_action_t){.type = ARCHI_HASHMAP_TRAV_UNSET};
 }
 

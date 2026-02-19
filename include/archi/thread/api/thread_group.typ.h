@@ -29,17 +29,6 @@
 
 #include <stddef.h> // for size_t
 
-struct archi_thread_group;
-
-/**
- * @brief Pointer to thread group context.
- */
-typedef struct archi_thread_group *archi_thread_group_t;
-
-/**
- * @brief Data type tag for archi_thread_group_t.
- */
-#define ARCHI_POINTER_DATA_TAG__THREAD_GROUP    3
 
 /**
  * @brief Thread group creation parameters.

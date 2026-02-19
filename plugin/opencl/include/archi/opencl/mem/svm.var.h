@@ -1,6 +1,26 @@
+/*****************************************************************************
+ * Copyright (C) 2023-2026 by Ivan Podmazov                                  *
+ *                                                                           *
+ * This file is part of Archipelago.                                         *
+ *                                                                           *
+ *   Archipelago is free software: you can redistribute it and/or modify it  *
+ *   under the terms of the GNU Lesser General Public License as published   *
+ *   by the Free Software Foundation, either version 3 of the License, or    *
+ *   (at your option) any later version.                                     *
+ *                                                                           *
+ *   Archipelago is distributed in the hope that it will be useful,          *
+ *   but WITHOUT ANY WARRANTY; without even the implied warranty of          *
+ *   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the           *
+ *   GNU Lesser General Public License for more details.                     *
+ *                                                                           *
+ *   You should have received a copy of the GNU Lesser General Public        *
+ *   License along with Archipelago. If not, see                             *
+ *   <http://www.gnu.org/licenses/>.                                         *
+ *****************************************************************************/
+
 /**
  * @file
- * @brief Memory interface for OpenCL memory.
+ * @brief Memory interfaces for OpenCL memory.
  */
 
 #pragma once
@@ -9,35 +29,16 @@
 
 #include "archi/memory/api/interface.typ.h"
 
+
 /**
- * @brief OpenCL shared virtual memory allocation function.
+ * @brief Memory interface: OpenCL shared virtual memory.
  *
- * @p alloc_data must point to an object of type archi_opencl_svm_alloc_data_t.
- */
-ARCHI_MEMORY_ALLOC_FUNC(archi_opencl_svm_alloc);
-
-/**
- * @brief OpenCL shared virtual memory deallocation function.
- *
- * Frees a block of heap memory previously allocated by archi_opencl_svm_alloc().
- */
-ARCHI_MEMORY_FREE_FUNC(archi_opencl_svm_free);
-
-/**
- * @brief OpenCL shared virtual memory mapping function.
- */
-ARCHI_MEMORY_MAP_FUNC(archi_opencl_svm_map);
-
-/**
- * @brief OpenCL shared virtual memory unmapping function.
- */
-ARCHI_MEMORY_UNMAP_FUNC(archi_opencl_svm_unmap);
-
-/**
- * @brief OpenCL shared virtual memory interface.
+ * Allocation function data type: archi_memory_alloc_data__opencl_svm_t.
+ * Mapping function data type: archi_memory_map_data__opencl_svm_t.
  */
 extern
-const archi_memory_interface_t archi_opencl_svm_interface;
+const archi_memory_interface_t
+archi_memory_interface__opencl_svm;
 
 #endif // _ARCHI_OPENCL_MEM_SVM_VAR_H_
 

@@ -27,7 +27,13 @@
 #ifndef _ARCHI_CONTEXT_API_SLOT_TYP_H_
 #define _ARCHI_CONTEXT_API_SLOT_TYP_H_
 
-#include <stddef.h> // for ptrdiff_t, size_t
+#include <stddef.h> // for size_t
+
+
+/**
+ * @brief Context slot index.
+ */
+typedef long long archi_context_slot_index_t;
 
 /**
  * @brief Context slot designator.
@@ -35,8 +41,8 @@
 typedef struct archi_context_slot {
     const char *name; ///< Name string.
 
-    const ptrdiff_t *index; ///< Array of indices.
-    size_t num_indices;  ///< Size of the array of indices.
+    const archi_context_slot_index_t *index; ///< Array of indices.
+    size_t num_indices; ///< Size of the array of indices.
 } archi_context_slot_t;
 
 /**

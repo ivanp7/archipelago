@@ -29,12 +29,13 @@
 
 #include <stddef.h> // for size_t
 
+
 /**
  * @brief Declare/define a concurrent work function.
  *
  * This function is called for each work item concurrently.
  */
-#define ARCHI_THREAD_GROUP_WORK_FUNC(name)  void name(                      \
+#define ARCHI_THREAD_GROUP_WORK_FUNC(func_name)     void func_name(         \
         void *data, /* [in] Work data. */                                   \
         size_t work_item_idx, /* [in] Index of the current work item. */    \
         size_t thread_idx) /* [in] Index of the calling thread. */
@@ -43,11 +44,6 @@
  * @brief Concurrent work function.
  */
 typedef ARCHI_THREAD_GROUP_WORK_FUNC((*archi_thread_group_work_func_t));
-
-/**
- * @brief Function type tag for thread work functions.
- */
-#define ARCHI_POINTER_FUNCTION_TAG__THREAD_WORK     5
 
 /**
  * @brief Concurrent work task.

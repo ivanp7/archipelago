@@ -27,27 +27,14 @@
 #ifndef _ARCHI_FILE_API_FILE_TYP_H_
 #define _ARCHI_FILE_API_FILE_TYP_H_
 
-#include <stdio.h> // for FILE
 #include <stddef.h> // for size_t
 #include <stdbool.h>
 
-/**
- * @brief File descriptor.
- */
-typedef int archi_file_descriptor_t;
 
 /**
- * @brief File stream handle.
- */
-typedef FILE *archi_file_stream_t;
-
-/**
- * @brief Data type tag for archi_file_stream_t.
- */
-#define ARCHI_POINTER_DATA_TAG__FILE_STREAM     7
-
-/**
- * @brief Parameters for archi_file_open().
+ * @brief File opening parameters.
+ *
+ * `size` is used for file truncation, otherwise it can be zero.
  */
 typedef struct archi_file_open_params {
     size_t size; ///< Size of file.
@@ -65,10 +52,10 @@ typedef struct archi_file_open_params {
 } archi_file_open_params_t;
 
 /**
- * @brief Parameters for archi_file_map().
+ * @brief File mapping parameters.
  *
- * If has_header is true, size is ignored (it is computed from the header).
- * Otherwise, size = 0 means "until the end of the file".
+ * If `has_header` is true, `size` is ignored (it is computed from the header).
+ * Otherwise, zero `size` means "until the end of the file".
  */
 typedef struct archi_file_map_params {
     size_t size;     ///< Size of the mapped memory.

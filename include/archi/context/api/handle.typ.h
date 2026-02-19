@@ -34,10 +34,5 @@ struct archi_context;
  */
 typedef struct archi_context *archi_context_t;
 
-/**
- * @brief Data type tag for archi_context_t.
- */
-#define ARCHI_POINTER_DATA_TAG__CONTEXT     1
-
 #endif // _ARCHI_CONTEXT_API_HANDLE_TYP_H_
 

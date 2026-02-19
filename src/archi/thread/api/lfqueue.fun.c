@@ -24,10 +24,10 @@
  */
 
 #include "archi/thread/api/lfqueue.fun.h"
-#include "archipelago/util/size.def.h"
+#include "archi_base/util/size.def.h"
 
 #include <stdlib.h> // for malloc(), free()
-#include <string.h> // for memcpy(), memset()
+#include <string.h> // for memcpy()
 
 #ifdef __STDC_NO_ATOMICS__
 #  error Atomics are required, but not supported by the compiler.
@@ -36,6 +36,7 @@
 #include <stdatomic.h> // for atomic_uint_fast*_t
 #include <stdint.h> // for uint_fast*_t
 #include <limits.h> // for CHAR_BIT
+
 
 #ifdef ARCHI_FEATURE_LFQUEUE32
 
@@ -68,7 +69,7 @@ struct archi_thread_lfqueue {
 archi_thread_lfqueue_t
 archi_thread_lfqueue_alloc(
         archi_thread_lfqueue_alloc_params_t params,
-        ARCHI_ERROR_PARAMETER_DECL)
+        ARCHI_ERROR_PARAM_DECL)
 {
     // Validate input parameters
     if (params.capacity == 0)
@@ -86,36 +87,15 @@ archi_thread_lfqueue_alloc(
         ARCHI_ERROR_SET(ARCHI__ECONSTRAINT, "queue capacity (%zu) is bigger than supported", params.capacity);
         return NULL;
     }
-
-    if (params.element.size != 0)
+    else if ((params.elt_size != 0) && ARCHI_SIZE_OVERFLOW(params.capacity, params.elt_size))
     {
-        if (params.element.alignment == 0)
-        {
-            ARCHI_ERROR_SET(ARCHI__ECONSTRAINT, "queue element alignment requirement is zero");
-            return NULL;
-        }
-        else if ((params.element.alignment & (params.element.alignment - 1)) != 0)
-        {
-            ARCHI_ERROR_SET(ARCHI__ECONSTRAINT, "queue element alignment requirement (%#zx) is not a power of two",
-                    params.element.alignment);
-            return NULL;
-        }
-        else if (params.element.size % params.element.alignment != 0)
-        {
-            ARCHI_ERROR_SET(ARCHI__ECONSTRAINT, "queue element size (%zu) isn't a multiple of alignment requirement (%#zx)",
-                    params.element.size, params.element.alignment);
-            return NULL;
-        }
-        else if (ARCHI_SIZE_OVERFLOW(params.capacity, params.element.size))
-        {
-            ARCHI_ERROR_SET(ARCHI__ECONSTRAINT, "queue buffer size (%zu * %zu) doesn't fit into size_t",
-                    params.capacity, params.element.size);
-            return NULL;
-        }
+        ARCHI_ERROR_SET(ARCHI__ECONSTRAINT, "queue buffer size (%zu * %zu) doesn't fit into size_t",
+                params.capacity, params.elt_size);
+        return NULL;
     }
 
     // Calculate data buffer size
-    size_t buffer_size = params.capacity * params.element.size;
+    size_t buffer_size = params.capacity * params.elt_size;
 
     // Allocate the queue object
     archi_thread_lfqueue_t queue = malloc(sizeof(*queue));
@@ -130,13 +110,12 @@ archi_thread_lfqueue_alloc(
 
     if (buffer_size != 0)
     {
-        buffer = aligned_alloc(params.element.alignment, buffer_size);
+        buffer = malloc(buffer_size);
         if (buffer == NULL)
         {
             free(queue);
 
-            ARCHI_ERROR_SET(ARCHI__EMEMORY, "couldn't allocate buffer of lock-free queue (%zu bytes, alignment = %#zx)",
-                    buffer_size, params.element.alignment);
+            ARCHI_ERROR_SET(ARCHI__EMEMORY, "couldn't allocate the buffer of a lock-free queue (%zu bytes)", buffer_size);
             return NULL;
         }
     }
@@ -208,16 +187,27 @@ archi_thread_lfqueue_free(
 bool
 archi_thread_lfqueue_push(
         archi_thread_lfqueue_t queue,
-        const void *value)
+        const void *value,
+        ARCHI_ERROR_PARAM_DECL)
 {
     if (queue == NULL)
+    {
+        ARCHI_ERROR_SET(ARCHI__ECONSTRAINT, "lock-free queue is NULL");
         return false;
+    }
+    else if (value == NULL)
+    {
+        ARCHI_ERROR_SET(ARCHI__ECONSTRAINT, "pointer to value is NULL");
+        return false;
+    }
 
     unsigned int mask_bits = queue->mask_bits;
     archi_thread_lfqueue_count_t mask = queue->params.capacity - 1;
 
     archi_thread_lfqueue_count2_t total_push_count =
         atomic_load_explicit(&queue->total_push_count, memory_order_relaxed);
+
+    ARCHI_ERROR_RESET();
 
     for (;;)
     {
@@ -240,14 +230,8 @@ archi_thread_lfqueue_push(
                         memory_order_relaxed, memory_order_relaxed))
             {
                 if (queue->buffer != NULL)
-                {
-                    if (value != NULL)
-                        memcpy((char*)queue->buffer + queue->params.element.size * index,
-                                value, queue->params.element.size);
-                    else
-                        memset((char*)queue->buffer + queue->params.element.size * index,
-                                0, queue->params.element.size);
-                }
+                    memcpy((char*)queue->buffer + queue->params.elt_size * index,
+                            value, queue->params.elt_size);
 
                 atomic_store_explicit(&queue->push_count[index], push_count + 1, memory_order_release);
                 return true;
@@ -261,16 +245,22 @@ archi_thread_lfqueue_push(
 bool
 archi_thread_lfqueue_pop(
         archi_thread_lfqueue_t queue,
-        void *value)
+        void *value,
+        ARCHI_ERROR_PARAM_DECL)
 {
     if (queue == NULL)
+    {
+        ARCHI_ERROR_SET(ARCHI__ECONSTRAINT, "lock-free queue is NULL");
         return false;
+    }
 
     unsigned int mask_bits = queue->mask_bits;
     archi_thread_lfqueue_count_t mask = queue->params.capacity - 1;
 
     archi_thread_lfqueue_count2_t total_pop_count =
         atomic_load_explicit(&queue->total_pop_count, memory_order_relaxed);
+
+    ARCHI_ERROR_RESET();
 
     for (;;)
     {
@@ -293,8 +283,8 @@ archi_thread_lfqueue_pop(
                         memory_order_relaxed, memory_order_relaxed))
             {
                 if ((queue->buffer != NULL) && (value != NULL))
-                    memcpy(value, (char*)queue->buffer + queue->params.element.size * index,
-                            queue->params.element.size);
+                    memcpy(value, (char*)queue->buffer + queue->params.elt_size * index,
+                            queue->params.elt_size);
 
                 atomic_store_explicit(&queue->pop_count[index], pop_count + 1, memory_order_release);
                 return true;
@@ -316,22 +306,12 @@ archi_thread_lfqueue_capacity(
 }
 
 size_t
-archi_thread_lfqueue_element_size(
+archi_thread_lfqueue_elt_size(
         archi_thread_lfqueue_t queue)
 {
     if (queue == NULL)
         return 0;
 
-    return queue->params.element.size;
-}
-
-size_t
-archi_thread_lfqueue_element_alignment(
-        archi_thread_lfqueue_t queue)
-{
-    if (queue == NULL)
-        return 0;
-
-    return queue->params.element.alignment;
+    return queue->params.elt_size;
 }
 

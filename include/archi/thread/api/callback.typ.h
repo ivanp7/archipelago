@@ -29,26 +29,22 @@
 
 #include <stddef.h> // for size_t
 
+
 /**
  * @brief Declare/define a concurrent work completion callback.
  *
  * This function is called when all work items have been complete.
  */
-#define ARCHI_THREAD_GROUP_CALLBACK_FUNC(name) void name(   \
-        void *data, /* [in] Callback data. */               \
-        size_t work_offset, /* [in] Work offset. */         \
-        size_t work_size, /* [in] Work size. */             \
+#define ARCHI_THREAD_GROUP_CALLBACK_FUNC(func_name)     void func_name( \
+        void *data, /* [in] Callback data. */                           \
+        size_t work_offset, /* [in] Work offset. */                     \
+        size_t work_size, /* [in] Work size. */                         \
         size_t thread_idx) /* [in] Index of the calling thread. */
 
 /**
  * @brief Threaded processing completion callback function.
  */
 typedef ARCHI_THREAD_GROUP_CALLBACK_FUNC((*archi_thread_group_callback_func_t));
-
-/**
- * @brief Function type tag for thread callback functions.
- */
-#define ARCHI_POINTER_FUNCTION_TAG__THREAD_CALLBACK     6
 
 /**
  * @brief Threaded processing completion callback.

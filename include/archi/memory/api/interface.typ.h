@@ -27,11 +27,12 @@
 #ifndef _ARCHI_MEMORY_API_INTERFACE_TYP_H_
 #define _ARCHI_MEMORY_API_INTERFACE_TYP_H_
 
-#include "archipelago/base/pointer.typ.h"
-#include "archipelago/base/error.typ.h"
+#include "archi_base/pointer.typ.h"
+#include "archi_base/error.typ.h"
 
 #include <stddef.h> // for size_t
 #include <stdbool.h>
+
 
 /**
  * @struct archi_memory_alloc_info_t
@@ -42,7 +43,7 @@
  * @note
  *   - The `allocation.ptr` pointer is mandatory.
  *   - The `metadata` pointer is optional.
- *   - If `allocation.tag` is 0, the pointer is considered transparent.
+ *   - If `allocation.tag` is 0, the data type is considered primitive.
  */
 typedef struct archi_memory_alloc_info {
     struct {
@@ -86,7 +87,7 @@ typedef struct archi_memory_map_info {
         size_t num_bytes, /* [in] Number of bytes to allocate. */                   \
         size_t alignment, /* [in] Memory alignment requirement. */                  \
         void *alloc_data, /* [in] Interface-specific data for allocation. */        \
-        ARCHI_ERROR_PARAMETER_DECL) /* [out] Error. */
+        ARCHI_ERROR_PARAM_DECL) /* [out] Error. */
 
 /**
  * @brief Memory allocator function type.
@@ -122,7 +123,7 @@ typedef ARCHI_MEMORY_FREE_FUNC((*archi_memory_free_func_t));
         size_t offset, /* [in] Offset of mapped region. */                      \
         size_t num_bytes, /* [in] Size of mapped region. */                     \
         void *map_data, /* [in] Interface-specific data for mapping. */         \
-        ARCHI_ERROR_PARAMETER_DECL) /* [out] Error. */
+        ARCHI_ERROR_PARAM_DECL) /* [out] Error. */
 
 /**
  * @brief Memory mapping function type.

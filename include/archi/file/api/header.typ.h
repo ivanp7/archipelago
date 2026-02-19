@@ -29,6 +29,7 @@
 
 #include <stddef.h> // for size_t
 
+
 /**
  * @brief Header of a memory-mapped file with support of pointers.
  *

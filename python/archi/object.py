@@ -1,5 +1,5 @@
  #############################################################################
- # Copyright (C) 2023-2025 by Ivan Podmazov                                  #
+ # Copyright (C) 2023-2026 by Ivan Podmazov                                  #
  #                                                                           #
  # This file is part of Archipelago.                                         #
  #                                                                           #
@@ -22,175 +22,191 @@
 # @brief Representation of objects in memory.
 
 import ctypes as c
+from types import MappingProxyType
+
+import archi.ctypes as actype
+
+
+class _ObjectReferencesMixin:
+    """Support for references in objects.
+    """
+    def __init__(self, owner, refs, /):
+        if not isinstance(owner, Object):
+            raise TypeError
+        elif not isinstance(refs, (dict, MappingProxyType)):
+            raise TypeError
+        elif None in refs:
+            raise KeyError
+        elif not all(isinstance(obj, (type(None), Object)) for obj in refs.values()):
+            raise TypeError
+
+        if isinstance(refs, dict):
+            refs = MappingProxyType(refs)
+
+        self._owner = owner
+        self._refs = refs.copy() if refs is not None else {}
+
+    def __contains__(self, key):
+        """Check if there is a reference with the specified key.
+        """
+        return key in self._refs
+
+    def __getitem__(self, key):
+        """Get a referenced object by key.
+        """
+        return self._refs[key]
+
+    @property
+    def ref_map(self):
+        """Get the map of references.
+        """
+        return self._refs
+
+    def ref_set(self, nested=False):
+        """Get the set of references.
+        """
+        if not nested:
+            ref_set = set(self._refs.values())
+        else:
+            ref_set = set()
+            refs = self.ref_set()
+            while refs:
+                ref_set.update(refs)
+
+                nested_refs = set()
+                for obj in refs:
+                    nested_refs.update(obj.ref_set())
+
+                refs = nested_refs.difference(ref_set)
+
+        ref_set.discard(None)
+        return ref_set
+
+
+class _ObjectEquivalentsMixin:
+    """Support for object equivalence checks.
+    """
+    def __init__(self, owner, /):
+        if not isinstance(owner, Object):
+            raise TypeError
+
+        self._owner = owner
+
+    def equivalent_to(self, other, /):
+        """Check if the object is equivalent to (replaceable with) another object.
+        """
+        if not isinstance(other, (type(None), Object)):
+            raise TypeError
+
+        if self._owner is other:
+            return True
+        elif other is None:
+            return False
+
+        if self._owner.total_size != other.total_size:
+            return False
+        elif self._owner.total_alignment != other.total_alignment:
+            return False
+
+        if self._owner.ref_map.keys() != other.ref_map.keys():
+            return False
+
+        if isinstance(self._owner, type(other)):
+            if not self._owner._equivalent_to(other):
+                return False
+        elif isinstance(other, type(self._owner)):
+            if not other._equivalent_to(self._owner):
+                return False
+        else:
+            return False
+
+        return all(_ObjectEquivalentsMixin.equivalent(obj, other[key])
+                   for key, obj in self._owner.ref_map.items())
+
+    @staticmethod
+    def equivalent(obj1, obj2, /):
+        """Check if the object is equivalent to (replaceable with) another object.
+        """
+        if obj1 is None and obj2 is None:
+            return True
+        elif obj1 is None or obj2 is None:
+            return False
+        else:
+            return obj1.equivalent_to(obj2)
 
 
 class Object:
     """Immutable representation of an (array) object backed by a single continuous memory block.
     """
-    def __init__(self, length: 'int', stride: 'int', alignment: 'int', tag: 'int' = None,
-                 refs: 'map[Any, Object]' = None):
+    def __init__(self, length, stride, alignment, tag=None, refs=None):
         """Initialize an object.
         """
-        if not isinstance(length, int) \
-                or not isinstance(stride, int) \
-                or not isinstance(alignment, int):
-            raise TypeError
-        elif not isinstance(tag, (type(None), int)):
-            raise TypeError
-        elif not isinstance(refs, (type(None), map)):
-            raise TypeError
-        elif refs is not None and not all(
-                isinstance(obj, (type(None), Object)) for obj in refs.values()):
-            raise TypeError
+        actype.archi_pointer_attr_t.primitive_data(length, stride, alignment)
+        if tag is not None:
+            actype.archi_pointer_attr_t.complex_data(tag)
 
-        if length < 0:
-            raise ValueError("Length is negative")
-        elif stride <= 0:
-            raise ValueError("Stride is non-positive")
-        elif (alignment <= 0) or ((alignment & (alignment - 1)) != 0):
-            raise ValueError("Alignment requirement is not a power of two")
-        elif stride % alignment != 0:
-            raise ValueError("Stride is not divisible by alignment requirement")
-        elif tag is not None and tag < 0:
-            raise ValueError("Opaque data tag is negative")
+        self._refs = _ObjectReferencesMixin(self, refs if refs is not None else {})
+        self._eqv = _ObjectEquivalentsMixin(self)
 
         self._length = length
         self._stride = stride
         self._alignment = alignment
         self._tag = tag
 
-        self._refs = refs.copy() if refs is not None else {}
-
         self._reset_address()
 
-    def __contains__(self, key) -> 'bool':
-        """Check if there is a reference with the specified key.
-        """
-        return key in self._refs
-
-    def __getitem__(self, key) -> 'Object':
-        """Get a referenced object by key.
-        """
-        return self._refs[key]
-
-    def ref_map(self) -> 'map[Any, Object]':
-        """Get the map of referenced objects.
-        """
-        from types import MappingProxyType
-
-        return MappingProxyType(self._refs)
-
-    def ref_objects(self) -> 'set[Object]':
-        """Get set of all referenced objects.
-        """
-        objects = set(self._refs.values())
-        objects.discard(None)
-        return objects
-
-    def tag(self) -> 'int':
+    @property
+    def tag(self):
         """Get opaque data type tag.
         """
         return self._tag
 
-    def length(self) -> 'int':
+    @property
+    def length(self):
         """Get number of data elements.
         """
         return self._length
 
-    def stride(self) -> 'int':
+    @property
+    def stride(self):
         """Get size of a data element in bytes.
         """
         return self._stride
 
-    def alignment(self) -> 'int':
+    @property
+    def alignment(self):
         """Get alignment requirement of a data element in bytes.
         """
         return self._alignment
 
-    def total_size(self) -> 'int':
+    @property
+    def total_size(self):
         """Get total size of data in bytes.
 
         This method may be redefined to implement support for additional trailing padding.
         """
-        return self.length() * self.stride()
+        return self.length * self.stride
 
-    def total_alignment(self) -> 'int':
+    @property
+    def total_alignment(self):
         """Get total alignment requirement of data in bytes.
 
-        This method may be redefined to implement support for overaligned data.
+        This method may be redefined to implement support for over-aligned data.
         """
-        return self.alignment()
+        return self.alignment
 
-    def address(self) -> 'int':
-        """Get nominal address of the object in memory.
+    def address_of(self, ref_key=None, /):
+        """Get nominal address in memory of the object itself or a referenced object.
 
         This address is to be assigned to pointers in C structures,
         and not to be used to access the real object.
         The real object is accessed through the effective address instead,
         which is only available as 'address' parameter in write() method.
         """
-        return self._address
+        obj = self if ref_key is None else self[ref_key]
+        return obj._address if obj is not None else None
 
-    def to_bytearray(self, address: 'int') -> 'bytearray':
-        """Encode the object as a byte array to be mapped at the specified address.
-
-        Parameter 'address' contains the nominal address of the object.
-        """
-        if not isinstance(address, int):
-            raise TypeError
-        elif address < 0:
-            raise ValueError("Address cannot be negative")
-        elif address % self.total_alignment() != 0:
-            raise ValueError("Address is not divisible by the alignment requirement")
-
-        # Create the byte array
-        buffer = bytearray(self.total_size())
-
-        if self.total_size() != 0:
-            # Set nominal address
-            self._set_address(address)
-
-            # Write object contents to the buffer
-            eff_address = c.addressof(c.c_char.from_buffer(buffer))
-            self._write(eff_address)
-
-            # Reset nominal address
-            self._reset_address()
-
-        return buffer
-
-    def equivalent_to(self, other: 'Object', /) -> 'bool':
-        """Check if the object is equivalent to (replaceable with) another object.
-        """
-        if not isinstance(other, (type(None), Object)):
-            raise TypeError
-
-        if self is other:
-            return True
-        elif other is None:
-            return False
-
-        if self.total_size() != other.total_size():
-            return False
-        elif self.total_alignment() != other.total_alignment():
-            return False
-
-        if self._refs.keys() != other._refs.keys():
-            return False
-
-        if isinstance(self, type(other)):
-            if not self._equivalent_to(other):
-                return False
-        elif isinstance(other, type(self)):
-            if not other._equivalent_to(self):
-                return False
-        else:
-            return False
-
-        return all(Object.equivalent(obj, other._refs[key])
-                   for key, obj in self._refs.items())
-
-    def _set_address(self, address: 'int', /):
+    def _set_address(self, address, /):
         """Set nominal (written to memory) address of the object in memory.
         """
         if not isinstance(address, int):
@@ -205,39 +221,8 @@ class Object:
         """
         self._address = None
 
-    def _equivalent_to(self, other: 'Object', /) -> 'bool':
-        """Check if the object is equivalent to (replaceable with) another object.
-
-        This method is to be reimplemented in derived classes.
-        """
-        return True
-
-    def _write(self, eff_address: 'int', /):
-        """Write object to memory.
-
-        This method is to be implemented in derived classes.
-        It must write (no more than) `self.total_size()` bytes at the specified address.
-
-        Parameter 'eff_address' contains the effective address of the real object,
-        it is to be used to access the modified object.
-        """
-        raise NotImplementedError
-
     @staticmethod
-    def equivalent(obj1: 'Object', obj2: 'Object', /) -> 'bool':
-        """Check if the object is equivalent to (replaceable with) another object.
-        """
-        if obj1 is None and obj2 is None:
-            return True
-        elif obj1 is None or obj2 is None:
-            return False
-
-        return obj1.equivalent_to(obj2)
-
-    @staticmethod
-    def random_address(start: 'int' = 0x7f0000000000,
-                       stop: 'int' = 0x800000000000,
-                       alignment: 'int' = 0x1000) -> 'int':
+    def random_address(start = 0x7f0000000000, stop = 0x800000000000, alignment = 0x1000):
         """Generate random address of the specified alignment
         in range [start, stop).
         """
@@ -256,334 +241,452 @@ class Object:
 
         return random.randrange(start, stop) & ~(alignment - 1)
 
+    def to_bytearray(self, address):
+        """Encode the object as a byte array to be mapped at the specified address.
+
+        Parameter 'address' contains the nominal address of the object.
+        """
+        if not isinstance(address, int):
+            raise TypeError
+        elif address < 0:
+            raise ValueError("Address cannot be negative")
+        elif address % self.total_alignment != 0:
+            raise ValueError("Address is not divisible by the alignment requirement")
+
+        # Create the byte array
+        buffer = bytearray(self.total_size)
+
+        if self.total_size != 0:
+            # Set nominal address
+            self._set_address(address)
+
+            # Write object contents to the buffer
+            eff_address = c.addressof(c.c_char.from_buffer(buffer))
+            self._write(eff_address)
+
+            # Reset nominal address
+            self._reset_address()
+
+        return buffer
+
+    def _write(self, eff_address, /):
+        """Write object to memory.
+
+        This method is to be implemented in derived classes.
+        It must write (no more than) `self.total_size` bytes at the specified address.
+
+        Parameter 'eff_address' contains the effective address of the real object,
+        it is to be used to access the modified object.
+        """
+        raise NotImplementedError
+
+    ### references ###
+
+    def __contains__(self, key):
+        """Check if there is a reference with the specified key.
+        """
+        return key in self._refs
+
+    def __getitem__(self, key):
+        """Get a referenced object by key.
+        """
+        return self._refs[key]
+
+    @property
+    def ref_map(self):
+        """Get the map of referenced objects.
+        """
+        return self._refs.ref_map
+
+    def ref_set(self, nested=False):
+        """Get the set of referenced objects.
+        """
+        return self._refs.ref_set(nested)
+
+    ### equivalents ###
+
+    def equivalent_to(self, other, /):
+        """Check if the object is equivalent to (replaceable with) another object.
+        """
+        return self._eqv.equivalent_to(other)
+
+    def _equivalent_to(self, other, /):
+        """Check if the object is equivalent to (replaceable with) another object.
+
+        This method is to be reimplemented in derived classes.
+        """
+        return True
+
+    @staticmethod
+    def equivalent(obj1, obj2, /):
+        """Check if the object is equivalent to (replaceable with) another object.
+        """
+        return type(self._eqv).equivalent(obj1, obj2)
+
 ##############################################################################
 
-class ObjectPack(Object):
-    """Immutable representation of an object packed
-    together with all of it (nested) references.
+class ObjectEquivalentSet(Object):
+    """Immutable representation of a set of equivalent objects.
     """
-    def __init__(self, header: 'Object', /):
-        """Initialize an object pack.
+    def __init__(self, equivalents, /):
+        """Initialize representation of a set of object equivalents.
         """
-        if not isinstance(header, (type(None), Object)):
+        if not isinstance(equivalents, frozenset):
+            raise TypeError
+        elif len(equivalents) == 0:
+            raise ValueError
+        elif not all(isinstance(obj, Object) for obj in equivalents):
             raise TypeError
 
-        if header is None:
-            self._header = None
-            self._objects = frozenset()
+        iterator = iter(equivalents)
+        self._obj = next(iterator)
+        self._equivalents = equivalents
 
-            super().__init__(length=0, stride=1, alignment=1)
+        for obj in iterator:
+            if not self._obj.equivalent_to(obj):
+                raise ValueError
+
+        if self._obj.total_size != 0:
+            super().__init__(length=1, stride=self._obj.total_size,
+                             alignment=self._obj.total_alignment,
+                             refs=self._obj.ref_map)
+        else:
+            super().__init__(length=0, stride=1, alignment=1,
+                             refs=self._obj.ref_map)
+
+    @property
+    def equivalents(self):
+        """Get the set of equivalent objects.
+        """
+        return self._equivalents
+
+    def _set_address(self, address, /):
+        """Set nominal (written to memory) address of the object in memory.
+        """
+        super()._set_address(address)
+
+        for obj in self._equivalents:
+            obj._set_address(address)
+
+    def _reset_address(self):
+        """Reset nominal address of the object in memory.
+        """
+        super()._reset_address()
+
+        for obj in self._equivalents:
+            obj._reset_address()
+
+    def _write(self, eff_address, /):
+        """Write object to memory.
+        """
+        self._obj._write(eff_address)
+
+    def _equivalent_to(self, other, /):
+        """Check equivalence of objects.
+        """
+        return self._obj._equivalent_to(other)
+
+##############################################################################
+
+class ObjectSequence(Object):
+    """Immutable representation of a sequence of objects.
+    """
+    def __init__(self, seq, /, tag=None):
+        """Initialize an object sequence representation.
+        """
+        if not isinstance(seq, tuple):
+            raise TypeError
+        elif not all(isinstance(obj, Object) for obj in seq):
+            raise TypeError
+
+        self._sequence = seq
+
+        self._objects = {}
+        self._padding = 0
+
+        if len(seq) == 0:
+            super().__init__(length=0, stride=1, alignment=1, tag=tag)
             return
 
-        ############################################
-        # Compute set of nested referenced objects #
-        ############################################
-        objects = set()
+        # Compute total size, alignment, padding
+        total_size = 0
+        total_alignment = 1
 
-        refs = header.ref_objects()
-        while refs:
-            objects.update(refs)
-            nested_refs = set()
-            nested_refs.update(obj.ref_objects() for obj in refs)
-            refs = nested_refs.difference(objects)
-        del nested_refs
-        del refs
+        for obj in seq:
+            size = obj.total_size
+            alignment = obj.total_alignment
 
-        objects.discard(header)
+            total_alignment = max(total_alignment, alignment)
 
-        self._header = header
-        self._objects = frozenset(objects)
+            offset = (total_size + (alignment - 1)) & ~(alignment - 1)
+            self._objects[obj] = offset
+            self._padding += offset - total_size
 
-        ################################
-        # Find groups of equal objects #
-        ################################
-        if header.length() == 0:
-            header = None # zero size objects are omitted
+            total_size = offset + size
 
-        self._object_equivalents = {header: set()} if header is not None else {}
+        total_size = (total_size + (total_alignment - 1)) & ~(total_alignment - 1)
 
-        for obj in objects:
-            if obj.length() == 0:
-                continue # zero size objects are omitted
+        # Merge reference maps of sequence objects
+        ref_map = {}
+        for idx, obj in enumerate(seq):
+            ref_map |= {(idx, key): ref for key, ref in obj.ref_map.items()}
 
-            for key_obj, eq_obj_set in self._object_equivalents.items():
-                if Object.equivalent(obj, key_obj):
-                    eq_obj_set.add(obj)
-                    break
+        # Call the parent constructor
+        if total_size != 0:
+            super().__init__(length=1, stride=total_size, alignment=total_alignment, tag=tag, refs=ref_map)
+        else:
+            super().__init__(length=0, stride=1, alignment=1, tag=tag, refs=ref_map)
+
+    @property
+    def objects(self):
+        """Get the tuple of objects.
+        """
+        return self._sequence
+
+    @property
+    def total_padding(self):
+        """Get the total number of padding bytes in the object sequence.
+        """
+        return self._padding
+
+    def _write(self, eff_address, /):
+        """Write object sequence to memory.
+        """
+        # Set nominal addresses of key objects and all objects equivalent to them
+        for obj, offset in self._objects.items():
+            obj._set_address(self.address_of() + offset)
+
+        # Write key objects to memory at their respective offsets
+        for obj, offset in self._objects.items():
+            obj._write(eff_address + offset)
+
+        # Reset nominal addresses of objects
+        for obj in self._objects.keys():
+            obj._reset_address()
+
+    def _equivalent_to(self, other, /):
+        """Check equivalence of object sequences.
+        """
+        if not isinstance(other, ObjectSequence):
+            return False
+        elif len(self.objects) == len(other.objects):
+            return False
+
+        for obj1, obj2 in zip(self.objects, other.objects):
+            if not obj1.equivalent_to(obj2):
+                return False
+
+        return True
+
+##############################################################################
+
+class ObjectRefTree(ObjectSequence):
+    """Immutable representation of an object packed together with its all nested references.
+
+    Equivalent objects are identified and merged to reduce the total size of the sequence.
+    """
+    def __init__(self, root, /):
+        """Initialize an object reference tree.
+        """
+        if not isinstance(root, Object):
+            raise TypeError
+        elif root.total_size == 0:
+            raise ValueError("root object cannot be of zero size")
+
+        # Get the whole tree of subreferences
+        objects = root.ref_set(nested=True)
+        objects.discard(root) # should not be needed, as circular dependencies are not supported
+
+        ###############################################
+        # Optimize size by merging equivalent objects #
+        ###############################################
+
+        # Create a map of objects to sets of all equivalent objects
+        equivalents = {root: set()}
+
+        while objects:
+            obj = next(iter(objects))
+
+            if obj.total_size != 0: # zero size objects are omitted and won't be assigned an address
+                for key_obj, eq_objs in equivalents.items():
+                    if obj.equivalent_to(key_obj):
+                        eq_objs.add(obj)
+                        break
+                else:
+                    equivalents[obj] = set()
+
+            objects.remove(obj)
+
+        # Merge the root object equivalents
+        if equivalents[root]:
+            equivalents[root].add(root)
+            root = ObjectEquivalentSet(frozenset(equivalents[root]))
+
+        del equivalents[root]
+
+        # Create the list of remaining objects
+        objects = []
+        for key_obj, eq_objs in equivalents.items():
+            if eq_objs:
+                eq_objs.add(key_obj)
+                objects.append(ObjectEquivalentSet(frozenset(eq_objs)))
             else:
-                self._object_equivalents[obj] = set()
+                objects.append(key_obj)
 
-        #################################################################################
-        # Find (sub)optimal ordering of objects, and calculate size, alignment, padding #
-        #################################################################################
-        self._key_objects = {header: 0} if header is not None else {}
+        del equivalents
 
-        total_size = header.total_size() if header is not None else 0
-        total_alignment = header.total_alignment() if header is not None else 1
-
-        key_objects = list(self._object_equivalents.keys())
-        if header is not None:
-            key_objects.remove(header) # header is not relocatable, treat it specially
+        #####################################################
+        # Reorder the list of objects in a (sub)optimal way #
+        #####################################################
 
         # Sort objects by descending alignment (for equal alignments, by descending size)
         def compare(obj1, obj2):
-            return obj2.total_alignment() - obj1.total_alignment() \
-                    if obj2.total_alignment() != obj1.total_alignment() \
-                    else obj2.total_size() - obj1.total_size()
+            return obj2.total_alignment - obj1.total_alignment \
+                    if obj2.total_alignment != obj1.total_alignment \
+                    else obj2.total_size - obj1.total_size
 
         from functools import cmp_to_key
-        key_objects.sort(key=cmp_to_key(compare))
+        objects.sort(key=cmp_to_key(compare))
 
-        # Pack sorted list of objects
-        gaps = [] # free areas as tuples (offset, size)
+        # Pack the sorted list of objects
+        offset_obj = {}
 
-        for obj in key_objects:
-            current_alignment = obj.total_alignment()
-            current_size = obj.total_size()
+        gaps = [] # list of gaps: (offset, size)
+        total_size = root.total_size
 
-            # Update total alignment
-            total_alignment = max(current_alignment, total_alignment)
+        for obj in objects:
+            obj_size = obj.total_size
+            obj_alignment = obj.total_alignment
 
-            # Try to fit the object into one of gaps
-            idx_gap_used = None
-            new_gaps = []
+            # Try to fit the object into the present gaps
+            for gap_idx, (gap_offset, gap_size) in enumerate(gaps):
+                 # Compute the aligned offset within the gap and the remaining gap size
+                gap_offset_p = (gap_offset + (obj_alignment - 1)) & ~(obj_alignment - 1)
+                gap_size_p = gap_size - (gap_offset_p - gap_offset)
 
-            for idx, (gap_offset, gap_size) in enumerate(gaps):
-                gap_offset_aligned = (gap_offset + (current_alignment - 1)) \
-                        & ~(current_alignment - 1)
-                gap_size_aligned = gap_size - (gap_offset_aligned - gap_offset)
+                # Check if the object fits in the gap
+                if obj_size <= gap_size_p:
+                    offset = gap_offset_p
 
-                if current_size <= gap_size_aligned: # the current object fits
-                    if gap_offset_aligned > gap_offset:
-                        new_gaps.append((gap_offset, gap_offset_aligned - gap_offset))
+                    # Update the list of gaps
+                    new_gaps = []
 
-                    if current_size < gap_size_aligned:
-                        new_gaps.append((gap_offset_aligned + current_size,
-                                         gap_size_aligned - current_size))
+                    if gap_offset_p > gap_offset:
+                        new_gaps.append((gap_offset, gap_offset_p - gap_offset))
 
-                    idx_gap_used = idx
+                    if obj_size < gap_size_p:
+                        new_gaps.append((gap_offset_p + obj_size, gap_size_p - obj_size))
+
+                    gaps[gap_idx:gap_idx+1] = new_gaps
                     break
 
-            # Calculate offset, update gaps and total size
-            if idx_gap_used is None:
-                offset = (total_size + (current_alignment - 1)) & ~(current_alignment - 1)
+            else: # the object does not fit into any gaps, append it to the end
+                offset = (total_size + (obj_alignment - 1)) & ~(obj_alignment - 1)
 
                 if offset > total_size:
                     gaps.append((total_size, offset - total_size))
 
-                total_size = offset + current_size
-            else:
-                offset = gap_offset_aligned
+                total_size = offset + obj_size
 
-                gaps[idx_gap_used:idx_gap_used+1] = new_gaps
+            # Insert the object into the map
+            offset_obj[offset] = obj
 
-            # Insert the object into the dictionary
-            self._key_objects[obj] = offset
+        # Prepare the final list of objects
+        objects = [root] + [pair[1] for pair in sorted(offset_obj.items())]
 
-        # Add the final gap to the list of gaps
-        current_size = total_size
-        total_size = (current_size + (total_alignment - 1)) & ~(total_alignment - 1)
+        ###############################
+        # Call the parent constructor #
+        ###############################
 
-        if total_size > current_size:
-            gaps.append((current_size, total_size - current_size))
+        super().__init__(tuple(objects), tag=root.tag)
 
-        # Calculate total padding
-        self._padding = sum(gap_size for _, gap_size in gaps)
-
-        # Sort the dictionary of objects by offsets (optional, not strictly needed)
-        # self._key_objects = {obj: offset for obj, offset
-        #                      in sorted(self._key_objects.items(), key=lambda x: x[1])}
-
-        ###########################
-        # Call parent constructor #
-        ###########################
-        if total_size != 0:
-            super().__init__(length=1, stride=total_size, alignment=total_alignment,
-                             tag=header.tag())
-        else:
-            super().__init__(length=0, stride=1, alignment=total_alignment,
-                             tag=header.tag())
-
-    def header_object(self) -> 'Object':
-        """Get the header object.
+    @property
+    def root_object(self):
+        """Get the root object.
         """
-        return self._header
+        return self.objects[0]
 
-    def packed_objects(self) -> 'frozenset[Object]':
-        """Get the set of packed objects.
+    def _equivalent_to(self, other, /):
+        """Check equivalence of object reference trees.
         """
-        return self._objects
-
-    def total_padding(self) -> 'int':
-        """Get the total number of padding bytes in the object pack.
-        """
-        return self._padding
-
-    def _equivalent_to(self, other: 'ObjectPack', /) -> 'bool':
-        """Compare object packs for equivalence.
-        """
-        return isinstance(other, ObjectPack) \
-                and Object.equivalent(self.header_object(), other.header_object())
-
-    def _write(self, eff_address: 'int', /):
-        """Write object pack to memory.
-        """
-        # Set nominal addresses of key objects and all objects equal to them
-        for obj, offset in self._key_objects.items():
-            address = self.address() + offset
-            obj._set_address(address)
-
-            for eq_obj in self._object_equivalents[obj]:
-                eq_obj._set_address(address) # equivalent objects have the same address
-
-        # Write key objects to memory at their respective offsets
-        for obj, offset in self._key_objects.items():
-            obj._write(eff_address + offset)
-
-        # Reset nominal addresses of objects
-        for obj in self._key_objects.keys():
-            obj._reset_address()
-
-            for eq_obj in self._object_equivalents[obj]:
-                eq_obj._reset_address()
+        return isinstance(other, ObjectRefTree) \
+                and self.root_object.equivalent_to(other.root_object)
 
 ##############################################################################
 
-class CObject(Object):
-    """Wrapper for a ctypes object.
+class PrimitiveData(Object):
+    """Immutable representation of primitive data (without pointers).
     """
-    def __init__(self, cobject, /, tag: 'int' = None,
-                 refs: 'map[Any, Object]' = None):
-        """Initialize a ctypes object wrapper.
+    def __init__(self, cobject, /, tag=None):
+        """Initialize a primitive data representation.
         """
         self._buffer = bytes(cobject)
         self._type = type(cobject)
 
-        if refs is not None:
-            for key in refs.keys():
-                if isinstance(key, tuple):
-                    if len(key) == 0:
-                        raise ValueError
-                    elif not all(isinstance(elt, (str, int)) for elt in key):
-                        raise TypeError
-                elif not isinstance(key, (str, int)):
-                    raise TypeError
-
         if isinstance(cobject, c.Array):
             self._type1 = cobject._type_
             super().__init__(length=len(cobject), stride=c.sizeof(cobject._type_),
-                             alignment=c.alignment(cobject._type_), tag=tag, refs=refs)
+                             alignment=c.alignment(cobject._type_), tag=tag)
         else:
             self._type1 = self._type
             super().__init__(length=1, stride=c.sizeof(cobject),
-                             alignment=c.alignment(cobject), tag=tag, refs=refs)
+                             alignment=c.alignment(cobject), tag=tag)
 
-    def buffer(self) -> 'bytes':
+    def __str__(self):
+        return f"PrimitiveData({self.c_object})"
+
+    @property
+    def buffer(self):
         """Get managed bytes buffer.
         """
         return self._buffer
 
+    @property
     def c_type(self):
         """Get type of the original ctypes object.
         """
         return self._type
 
+    @property
     def c_element_type(self):
         """Get type of an element of the original ctypes object.
         """
         return self._type1
 
+    @property
     def c_object(self):
         """Get copy of the original ctypes object.
         """
-        return self.c_type().from_buffer_copy(self.buffer())
+        return self.c_type.from_buffer_copy(self.buffer)
 
-    def _equivalent_to(self, other: 'CObject', /) -> 'bool':
-        """Check equivalence with another C object.
-        """
-        if not isinstance(other, CObject):
-            return False
-
-        return self.buffer() == other.buffer()
-
-    def _write(self, eff_address: 'int', /):
+    def _write(self, eff_address, /):
         """Write object to memory.
         """
-        from .ctypes import archi_pointer_t
-
-        # Initialize the memory
         c.memmove(eff_address, self._buffer, len(self._buffer))
 
-        # The memory is now a valid object
-        if self._refs:
-            c_object = self._type.from_address(eff_address)
-
-        # Write pointers to referenced objects
-        for ref_key, ref_obj in self._refs:
-            if ref_obj is None:
-                continue
-
-            obj = c_object
-            key = ref_key
-
-            if isinstance(key, tuple):
-                # Descend to the target subobject
-                while len(key) > 1:
-                    if isinstance(key[0], str): # structure field
-                        obj = getattr(obj, key[0])
-                    else: # array element
-                        obj = obj[key[0]]
-
-                    key = key[1:]
-
-                key = key[0]
-
-            if isinstance(key, str): # structure field
-                target = getattr(obj, key)
-            else: # array element
-                target = obj[key]
-
-            if isinstance(target, archi_pointer_t):
-                target.assign(ref_obj)
-            else:
-                # Cast the address to the target type if necessary
-                if isinstance(target, (c.c_void_p, c.c_char_p, c.c_wchar_p)):
-                    address = ref_obj.address()
-                else:
-                    address = c.cast(ref_obj.address(), type(target))
-
-                # Write the pointer address to the structure field / array element
-                if isinstance(key, str): # structure field
-                    setattr(obj, key, address)
-                else: # array element
-                    obj[key] = address
-
-
-class PlainCObject(CObject):
-    """Wrapper for a ctypes object without pointers.
-    """
-    def __init__(self, cobject, /, tag: 'int' = None):
-        """Initialize a plain ctypes object wrapper.
+    def _equivalent_to(self, other, /):
+        """Check equivalence with another C object.
         """
-        super().__init__(cobject, tag=tag)
+        return isinstance(other, PrimitiveData) \
+                and self.buffer == other.buffer
 
     @staticmethod
-    def from_bytes(buf: 'bytes', /) -> 'PlainCObject':
-        """Initialize a wrapper for a raw byte buffer.
+    def from_bytes(buf, /, tag=None):
+        """Create a primitive data representation from a raw byte buffer.
         """
-        if not isinstance(s, (type(None), bytes)):
+        if not isinstance(buf, (type(None), bytes)):
             raise TypeError
 
         if buf is None:
             return None
 
-        return PlainCObject(c.create_string_buffer(buf, len(buf)))
+        return PrimitiveData(c.create_string_buffer(buf, len(buf)), tag=tag)
 
 
-class String(PlainCObject):
-    """Wrapper for a C string.
+class String(PrimitiveData):
+    """Immutable representation of a C string.
     """
-    def __init__(self, string: 'str', /, encoding=None):
+    def __init__(self, string, /, encoding=None):
         """Initialize a C string wrapper.
         """
         if not isinstance(string, str):
@@ -591,425 +694,637 @@ class String(PlainCObject):
 
         self._string = string
 
-        super().__init__(c.create_string_buffer(string.encode() if encoding is None
-                                                else string.encode(encoding=encoding)))
+        super().__init__(c.create_string_buffer(string.encode() if encoding is None else
+                                                string.encode(encoding=encoding)))
 
-    def string(self) -> 'str':
+    def __str__(self):
+        return f"String('{self.string}')"
+
+    @property
+    def string(self):
         """Get the original string.
         """
         return self._string
 
     @staticmethod
-    def nullable(string: 'str', /, encoding=None) -> 'String':
-        """Construct a C string wrapper.
+    def nullable(string, /, encoding=None):
+        """Construct a C string representation.
         """
         if string is None:
             return None
 
         return String(string, encoding=encoding)
 
-##############################################################################
 
-class KeyValueList(CObject):
-    """Representation of a key-value list node.
+class ComplexData(Object):
+    """Immutable representation of complex data (with pointers).
+
+    In a subclass:
+    - `TYPE` must be redefined as a type derived from `c.Structure`;
+    - `TAG` may be redefined as an integer tag of the type;
+    - `REFS` must be a redefined as a dict {key: subclass_of_Object},
+    where `key` is a string suitable as a kwargs key.
     """
-    def __init__(self, key: 'String', value: 'Object', next_node: 'KeyValueList' = None):
-        """Initialize a key-value list node.
+    TYPE = None
+    TAG = None
+    REFS = None
+
+    def __init_subclass__(cls):
+        """Initialize a complex data representation subclass.
         """
-        if not isinstance(key, (type(None), String)) \
-                or not isinstance(value, (type(None), Object)) \
-                or not isinstance(next_node, (type(None), KeyValueList)):
+        if not issubclass(cls.TYPE, c.Structure):
+            raise TypeError
+        elif not isinstance(cls.TAG, (type(None), int)):
+            raise TypeError
+        elif cls.TAG is not None and (cls.TAG < 0 or cls.TAG > actype.archi_pointer_attr_t.DATA_TAG_MAX):
+            raise ValueError
+        elif not isinstance(cls.REFS, dict):
             raise TypeError
 
-        from .ctypes import archi_kvlist_t
-        super().__init__(archi_kvlist_t(),
-                         refs={'key': key, 'value': value, 'next': next_node})
+        for key, value in cls.REFS.items():
+            if not isinstance(key, str):
+                raise TypeError
+            elif not issubclass(value, Object):
+                raise TypeError
 
-    def next_node(self) -> 'KeyValueList':
-        """Get next node of the list.
+    def __init__(self, _=None, /, **kwargs):
+        """Initialize a complex data representation instance.
         """
-        return self['next']
+        if not isinstance(_, (type(None), type(self).TYPE)):
+            raise TypeError
 
-    def key(self) -> 'String':
-        """Get node key.
+        for key, obj in kwargs.items():
+            if key not in type(self).REFS:
+                raise KeyError(f"Complex data object: unrecognized reference key '{key}'")
+            elif not isinstance(obj, (type(None), type(self).REFS[key])):
+                raise TypeError(f"Complex data object: reference '{key}' has incorrect type")
+
+        if _ is None:
+            _ = type(self).TYPE()
+
+        self._buffer = bytes(_)
+
+        refs = {key: (kwargs[key] if key in kwargs else None) for key in type(self).REFS}
+
+        super().__init__(length=1, stride=c.sizeof(_), alignment=c.alignment(_),
+                         tag=type(self).TAG, refs=refs)
+
+    @property
+    def buffer(self):
+        """Get managed bytes buffer.
         """
-        return self['key']
+        return self._buffer
 
-    def value(self) -> 'Object':
-        """Get node value.
+    @property
+    def c_object(self):
+        """Get copy of the original ctypes object.
         """
-        return self['value']
+        return type(self).TYPE.from_buffer_copy(self.buffer)
 
-    @staticmethod
-    def construct(key_object_tuples: 'list', /) -> 'KeyValueList':
+    def _write(self, eff_address, /):
+        """Write object to memory.
+        """
+        c.memmove(eff_address, self._buffer, len(self._buffer))
+
+        cobject = type(self).TYPE.from_address(eff_address)
+        self._write_fields(cobject)
+
+    def _write_fields(self, cobject, /):
+        """Assign the object pointer fields.
+
+        This method is to be implemented in derived classes.
+        """
+        raise NotImplementedError
+
+    def _equivalent_to(self, other, /):
+        """Check equivalence with another C object.
+        """
+        return isinstance(other, ComplexData) \
+                and self.buffer == other.buffer
+
+##############################################################################
+# Base types
+##############################################################################
+
+class KeyValueList(ComplexData):
+    """Representation of a key-value list node.
+    """
+    TYPE = actype.archi_kvlist_t
+    TAG = actype.archi_kvlist_t.TAG
+    REFS = {# 'next': KeyValueList,
+            'key': String,
+            'value': Object}
+
+    def _write_fields(self, cobject, /):
+        cobject.next = c.cast(self.address_of('next'), c.POINTER(actype.archi_kvlist_t))
+        cobject.key = self.address_of('key')
+        cobject.value.assign(self['value'])
+
+    @classmethod
+    def construct(cls, key_object_tuples, /):
         """Construct a key-value list object from a list of (key, value_obj) tuples.
         """
         if not key_object_tuples:
             return None
+
+        key_object_tuples = list(key_object_tuples)
 
         key_obj = {key for key, _ in key_object_tuples}
         key_obj = {key: String.nullable(key) for key in key_obj}
 
         kvlist_node = None
         for key, obj in reversed(key_object_tuples):
-            kvlist_node = KeyValueList(key_obj[key], obj, kvlist_node)
+            kvlist_node = cls(key=key_obj[key], value=obj, next=kvlist_node)
 
         return kvlist_node
 
+KeyValueList.REFS['next'] = KeyValueList
+
+##############################################################################
+# Types used to describe aggregate types
 ##############################################################################
 
-class ExecInputFileHeader(CObject):
-    """Representation of header of an input file for the executable.
+class AggregateMemberType(ComplexData):
+    """Base class for descriptions of aggregate member types.
     """
-    def __init__(self, contents: 'KeyValueList', /):
-        """Initialize an input file header.
-        """
-        if not isinstance(contents, (type(None), KeyValueList)):
+    TYPE = actype.archi_layout_type_t
+    REFS = {}
+
+    KIND = None
+
+
+class AggregateMember(ComplexData):
+    """Description of an aggregate member.
+    """
+    TYPE = actype.archi_aggr_member_t
+    REFS = {'name': String,
+            'member_type': AggregateMemberType}
+
+    def _write_fields(self, cobject, /):
+        cobject.name = self.address_of('name')
+        if self['member_type'] is not None:
+            cobject.kind = self['member_type'].KIND
+        cobject.layout = c.cast(self.address_of('member_type'), c.POINTER(actype.archi_layout_type_t))
+
+
+class AggregateMembers(ObjectSequence):
+    """Array of descriptions of aggregate members.
+    """
+    def __init__(self, member_seq, /):
+        if not isinstance(member_seq, tuple):
+            raise TypeError
+        elif not all(isinstance(obj, AggregateMemberType) for obj in member_seq):
             raise TypeError
 
-        from .ctypes import archi_exe_input_file_header_t
-        super().__init__(archi_exe_input_file_header_t(),
-                         refs={'contents': contents})
+        super().__init__(member_seq)
 
-    def contents(self):
-        """Get list of contents of the file.
+    @property
+    def num_members(self):
+        """Get number of members in the array.
         """
-        return self['contents']
+        return len(self.objects)
+
+    @property
+    def members(self):
+        """Get tuple of members in the array.
+        """
+        return self.objects
 
 
-class ExecInputFile(ObjectPack):
-    """Representation of an input file for the executable.
+class AggregateMemberType_Value(AggregateMemberType):
+    """Description of a value type of an aggregate member.
     """
-    def __init__(self, header: 'ExecInputFileHeader', /):
-        """Initialize an input file.
+    TYPE = actype.archi_aggr_member_type__value_t
+    REFS = {}
+
+    KIND = actype.archi_aggr_member_t.KIND_VALUE
+
+    def _write_fields(self, cobject, /):
+        pass # nothing to do
+
+
+class AggregateMemberType_Pointer(AggregateMemberType):
+    """Description of a pointer type of an aggregate member.
+    """
+    TYPE = actype.archi_aggr_member_type__pointer_t
+    REFS = {}
+
+    KIND = actype.archi_aggr_member_t.KIND_POINTER
+
+    def _write_fields(self, cobject, /):
+        pass # nothing to do
+
+
+class AggregateMemberType_Aggregate(AggregateMemberType):
+    """Description of an aggregate member type.
+    """
+    TYPE = actype.archi_aggr_member_type__aggregate_t
+    REFS = {'members': AggregateMembers}
+
+    KIND = actype.archi_aggr_member_t.KIND_AGGREGATE
+
+    def _write_fields(self, cobject, /):
+        cobject.num_members = self['members'].num_members if self['members'] is not None else 0
+        cobject.members = c.cast(self.address_of('members'), c.POINTER(actype.archi_aggr_member_t))
+
+
+class AggregateType(ComplexData):
+    """Description of an aggregate type.
+    """
+    TYPE = actype.archi_aggr_type_t
+    TAG = actype.archi_aggr_type_t.TAG
+    REFS = {'members': AggregateMembers,
+            'init_value': Object,
+            'init_value_fam': Object}
+
+    def _write_fields(self, cobject, /):
+        cobject.top_level.num_members = self['members'].num_members if self['members'] is not None else 0
+        cobject.top_level.members = c.cast(self.address_of('members'), c.POINTER(actype.archi_aggr_member_t))
+
+        cobject.init_value = self.address_of('init_value')
+        cobject.init_value_fam = self.address_of('init_value_fam')
+
+##############################################################################
+# Types used in input files
+##############################################################################
+
+class AppInputFileHeader(ComplexData):
+    """Immutable representation of an application input file header.
+    """
+    TYPE = actype.archi_app_input_file_header_t
+    REFS = {'contents': KeyValueList}
+
+    def _write_fields(self, cobject, /):
+        cobject.contents = c.cast(self.address_of('contents'), c.POINTER(actype.archi_kvlist_t))
+
+
+class AppInputFile(ObjectRefTree):
+    """Immutable representation of an application input file.
+    """
+    def __init__(self, header, /):
+        """Initialize an input file representation.
         """
-        if not isinstance(header, ExecInputFileHeader):
+        if not isinstance(header, AppInputFileHeader):
             raise TypeError
 
         super().__init__(header)
 
-    def _write(self, eff_address: 'int', /):
+    def _write(self, eff_address, /):
         """Write input file to memory.
         """
         super()._write(eff_address)
 
-        from .ctypes import archi_exe_input_file_header_t
+        header = actype.archi_app_input_file_header_t.from_address(eff_address)
 
-        header = archi_exe_input_file_header_t.from_address(eff_address)
-
-        header.header.addr = self.address()
-        header.header.size = self.total_size() - c.sizeof(header.header)
+        header.header.addr = self.address_of()
+        header.header.size = self.total_size - c.sizeof(header.header)
 
 ##############################################################################
-
-class ContextRegistryOpData_delete(CObject):
-    """Context registry operation data: delete a context.
-    """
-    def __init__(self, key: 'String'):
-        if not isinstance(key, String):
-            raise TypeError
-
-        from .ctypes import archi_context_registry_op_data__delete_t
-        super().__init__(archi_context_registry_op_data__delete_t(),
-                         refs={'key': key})
-
-
-class ContextRegistryOpData_alias(CObject):
-    """Context registry operation data: create a context alias.
-    """
-    def __init__(self, alias_key: 'String', origin_key: 'String'):
-        if not isinstance(alias_key, String) \
-                or not isinstance(origin_key, String):
-            raise TypeError
-
-        from .ctypes import archi_context_registry_op_data__alias_t
-        super().__init__(archi_context_registry_op_data__alias_t(),
-                         refs={'alias_key': alias_key, 'origin_key': origin_key})
-
-
-class ContextRegistryOpData_create_as(CObject):
-    """Context registry operation data: create a context using interface of another context.
-    """
-    def __init__(self, context_key: 'String',
-                 context_init_params_list_key: 'String',
-                 context_init_params_list: 'KeyValueList',
-                 instance_key: 'String'):
-        if not isinstance(context_key, String) \
-                or not isinstance(context_init_params_list_key, (type(None), String)) \
-                or not isinstance(context_init_params_list, (type(None), KeyValueList)) \
-                or not isinstance(instance_key, String):
-            raise TypeError
-
-        from .ctypes import archi_context_registry_op_data__create_as_t
-        super().__init__(archi_context_registry_op_data__create_as_t(),
-                         refs={('context', 'key'): context_key,
-                               ('context', 'init_params', 'list_key'): context_init_params_list_key,
-                               ('context', 'init_params', 'list'): context_init_params_list,
-                               'instance_key': instance_key})
-
-
-class ContextRegistryOpData_create_from(CObject):
-    """Context registry operation data: create a context using interface obtained from another context slot.
-    """
-    def __init__(self, context_key: 'String',
-                 context_init_params_list_key: 'String',
-                 context_init_params_list: 'KeyValueList',
-                 slot_name: 'String',
-                 slot_indices: 'PlainCObject'):
-        if not isinstance(context_key, String) \
-                or not isinstance(context_init_params_list_key, (type(None), String)) \
-                or not isinstance(context_init_params_list, (type(None), KeyValueList)) \
-                or not isinstance(slot_name, (type(None), String)) \
-                or not isinstance(slot_indices, (type(None), PlainCObject)):
-            raise TypeError
-        elif slot_indices is not None and slot_indices.c_element_type() != c.c_ssize_t:
-            raise TypeError
-
-        from .ctypes import archi_context_registry_op_data__create_from_t
-
-        cobject = archi_context_registry_op_data__create_from_t()
-        if slot_indices is not None:
-            cobject.slot.num_indices = slot_indices.length()
-
-        super().__init__(cobject,
-                         refs={('context', 'key'): context_key,
-                               ('context', 'init_params', 'list_key'): context_init_params_list_key,
-                               ('context', 'init_params', 'list'): context_init_params_list,
-                               ('slot', 'name'): slot_name,
-                               ('slot', 'index'): slot_indices})
-
-
-class ContextRegistryOpData_call(CObject):
-    """Context registry operation data: invoke context call.
-    """
-    def __init__(self, target_key: 'String',
-                 target_slot_name: 'String', target_slot_indices: 'PlainCObject',
-                 call_params_list_key: 'String', call_params_list: 'KeyValueList'):
-        if not isinstance(target_key, String) \
-                or not isinstance(target_slot_name, (type(None), String)) \
-                or not isinstance(target_slot_indices, (type(None), PlainCObject)) \
-                or not isinstance(call_params_list_key, (type(None), String)) \
-                or not isinstance(call_params_list, (type(None), KeyValueList)):
-            raise TypeError
-        elif target_slot_indices is not None \
-                and target_slot_indices.c_element_type() != c.c_ssize_t:
-            raise TypeError
-
-        from .ctypes import archi_context_registry_op_data__call_t
-
-        cobject = archi_context_registry_op_data__call_t()
-        if target_slot_indices is not None:
-            cobject.target.slot.num_indices = target_slot_indices.length()
-
-        super().__init__(cobject,
-                         refs={('target', 'key'): target_key,
-                               ('target', 'slot', 'name'): target_slot_name,
-                               ('target', 'slot', 'index'): target_slot_indices,
-                               ('call_params', 'list_key'): call_params_list_key,
-                               ('call_params', 'list'): call_params_list})
-
-
-class ContextRegistryOpData_set(CObject):
-    """Context registry operation data: set context slot to value.
-    """
-    def __init__(self, target_key: 'String',
-                 target_slot_name: 'String', target_slot_indices: 'PlainCObject',
-                 value: 'Object'):
-        if not isinstance(target_key, String) \
-                or not isinstance(target_slot_name, (type(None), String)) \
-                or not isinstance(target_slot_indices, (type(None), PlainCObject)) \
-                or not isinstance(value, (type(None), Object)):
-            raise TypeError
-        elif target_slot_indices is not None \
-                and target_slot_indices.c_element_type() != c.c_ssize_t:
-            raise TypeError
-
-        from .ctypes import archi_context_registry_op_data__set_t
-
-        cobject = archi_context_registry_op_data__set_t()
-        if target_slot_indices is not None:
-            cobject.target.slot.num_indices = target_slot_indices.length()
-
-        super().__init__(cobject,
-                         refs={('target', 'key'): target_key,
-                               ('target', 'slot', 'name'): target_slot_name,
-                               ('target', 'slot', 'index'): target_slot_indices,
-                               'value': value})
-
-
-class ContextRegistryOpData_assign(CObject):
-    """Context registry operation data: set context slot to value of another context slot.
-    """
-    def __init__(self, target_key: 'String',
-                 target_slot_name: 'String', target_slot_indices: 'PlainCObject',
-                 source_key: 'String',
-                 source_slot_name: 'String', source_slot_indices: 'PlainCObject'):
-        if not isinstance(target_key, String) \
-                or not isinstance(target_slot_name, (type(None), String)) \
-                or not isinstance(target_slot_indices, (type(None), PlainCObject)) \
-                or not isinstance(source_key, String) \
-                or not isinstance(source_slot_name, (type(None), String)) \
-                or not isinstance(source_slot_indices, (type(None), PlainCObject)):
-            raise TypeError
-        elif target_slot_indices is not None \
-                and target_slot_indices.c_element_type() != c.c_ssize_t:
-            raise TypeError
-        elif source_slot_indices is not None \
-                and source_slot_indices.c_element_type() != c.c_ssize_t:
-            raise TypeError
-
-        from .ctypes import archi_context_registry_op_data__assign_t
-
-        cobject = archi_context_registry_op_data__assign_t()
-        if target_slot_indices is not None:
-            cobject.target.slot.num_indices = target_slot_indices.length()
-        if source_slot_indices is not None:
-            cobject.source.slot.num_indices = source_slot_indices.length()
-
-        super().__init__(cobject,
-                         refs={('target', 'key'): target_key,
-                               ('target', 'slot', 'name'): target_slot_name,
-                               ('target', 'slot', 'index'): target_slot_indices,
-                               ('source', 'key'): source_key,
-                               ('source', 'slot', 'name'): source_slot_name,
-                               ('source', 'slot', 'index'): source_slot_indices})
-
-
-class ContextRegistryOpData_assign_call(CObject):
-    """Context registry operation data: set context slot to result of another context call.
-    """
-    def __init__(self, target_key: 'String',
-                 target_slot_name: 'String', target_slot_indices: 'PlainCObject',
-                 source_key: 'String',
-                 source_slot_name: 'String', source_slot_indices: 'PlainCObject',
-                 call_params_list_key: 'String', call_params_list: 'KeyValueList'):
-        if not isinstance(target_key, String) \
-                or not isinstance(target_slot_name, (type(None), String)) \
-                or not isinstance(target_slot_indices, (type(None), PlainCObject)) \
-                or not isinstance(source_key, String) \
-                or not isinstance(source_slot_name, (type(None), String)) \
-                or not isinstance(source_slot_indices, (type(None), PlainCObject)) \
-                or not isinstance(call_params_list_key, (type(None), String)) \
-                or not isinstance(call_params_list, (type(None), KeyValueList)):
-            raise TypeError
-        elif target_slot_indices is not None \
-                and target_slot_indices.c_element_type() != c.c_ssize_t:
-            raise TypeError
-        elif source_slot_indices is not None \
-                and source_slot_indices.c_element_type() != c.c_ssize_t:
-            raise TypeError
-
-        from .ctypes import archi_context_registry_op_data__assign_call_t
-
-        cobject = archi_context_registry_op_data__assign_call_t()
-        if target_slot_indices is not None:
-            cobject.target.slot.num_indices = target_slot_indices.length()
-        if source_slot_indices is not None:
-            cobject.source.slot.num_indices = source_slot_indices.length()
-
-        super().__init__(cobject,
-                         refs={('target', 'key'): target_key,
-                               ('target', 'slot', 'name'): target_slot_name,
-                               ('target', 'slot', 'index'): target_slot_indices,
-                               ('source', 'key'): source_key,
-                               ('source', 'slot', 'name'): source_slot_name,
-                               ('source', 'slot', 'index'): source_slot_indices,
-                               ('call_params', 'list_key'): call_params_list_key,
-                               ('call_params', 'list'): call_params_list})
-
+# Registry operations: data for basic context registry operations
 ##############################################################################
 
-class ContextRegistryOpData_create_parameters(CObject):
-    """Context registry operation data: create a parameters list context.
+class ContextSlotIndices(PrimitiveData):
+    """Immutable representation of an array of context slot indices.
     """
-    def __init__(self, key: 'String',
-                 init_params_list_key: 'String', init_params_list: 'KeyValueList'):
-        if not isinstance(key, String) \
-                or not isinstance(init_params_list_key, (type(None), String)) \
-                or not isinstance(init_params_list, (type(None), KeyValueList)):
+    def __init__(self, cobject, /):
+        """Initialize a representation of context slot index array.
+        """
+        if not isinstance(cobject, c.Array):
+            raise TypeError
+        elif not issubclass(cobject._type_, actype.archi_context_slot_index_t):
             raise TypeError
 
-        from .ctypes import archi_context_registry_op_data__create_parameters_t
-        super().__init__(archi_context_registry_op_data__create_parameters_t(),
-                         refs={'key': key,
-                               ('init_params', 'list_key'): init_params_list_key,
-                               ('init_params', 'list'): init_params_list})
+        super().__init__(cobject)
+
+    @staticmethod
+    def nullable(indices, /):
+        """Construct context slot indices representation.
+        """
+        if not indices:
+            return None
+
+        return ContextSlotIndices((actype.archi_context_slot_index_t * len(indices))(*indices))
 
 
-class ContextRegistryOpData_create_pointer_to_value(CObject):
-    """Context registry operation data: create a pointer context (to value).
+class RegistryOpData_delete(ComplexData):
+    """Registry operation data: delete a context.
     """
-    def __init__(self, key: 'String', value: 'Object',
-                 ptr_type: 'archi_context_registry_op_data_pointer_type_t',
-                 init_params_list: 'KeyValueList'):
-        from .ctypes import archi_context_registry_op_data_pointer_type_t
+    TYPE = actype.archi_app_registry_op_data__delete_t
+    REFS = {'key': String}
 
-        if not isinstance(key, String) \
-                or not isinstance(value, (type(None), Object)) \
-                or not isinstance(ptr_type, archi_context_registry_op_data_pointer_type_t) \
-                or not isinstance(init_params_list, (type(None), KeyValueList)):
-            raise TypeError
+    def _write_fields(self, cobject, /):
+        cobject.key = self.address_of('key')
 
-        from .ctypes import archi_context_registry_op_data__create_pointer_to_value_t
-
-        cobject = archi_context_registry_op_data__create_pointer_to_value_t()
-        cobject.type = ptr_type.value
-
-        super().__init__(cobject,
-                         refs={'key': key, 'value': value,
-                               'init_params_list': init_params_list})
+    @classmethod
+    def construct(cls, *, key):
+        return cls(cls.TYPE(),
+                   key=String(key))
 
 
-class ContextRegistryOpData_create_pointer_to_context(CObject):
-    """Context registry operation data: create a pointer context (to context slot).
+class RegistryOpData_alias(ComplexData):
+    """Registry operation data: create a context alias.
     """
-    def __init__(self, key: 'String', pointee_key: 'String',
-                 pointee_slot_name: 'String', pointee_slot_indices: 'PlainCObject',
-                 ptr_type: 'archi_context_registry_op_data_pointer_type_t',
-                 init_params_list: 'KeyValueList'):
-        from .ctypes import archi_context_registry_op_data_pointer_type_t
+    TYPE = actype.archi_app_registry_op_data__alias_t
+    REFS = {'key': String,
+            'original_key': String}
 
-        if not isinstance(key, String) \
-                or not isinstance(pointee_key, String) \
-                or not isinstance(pointee_slot_name, (type(None), String)) \
-                or not isinstance(pointee_slot_indices, (type(None), PlainCObject)) \
-                or not isinstance(ptr_type, archi_context_registry_op_data_pointer_type_t) \
-                or not isinstance(init_params_list, (type(None), KeyValueList)):
-            raise TypeError
-        elif pointee_slot_indices is not None \
-                and pointee_slot_indices.c_element_type() != c.c_ssize_t:
-            raise TypeError
+    def _write_fields(self, cobject, /):
+        cobject.key = self.address_of('key')
+        cobject.original_key = self.address_of('original_key')
 
-        from .ctypes import archi_context_registry_op_data__create_pointer_to_context_t
-
-        cobject = archi_context_registry_op_data__create_pointer_to_context_t()
-        if pointee_slot_indices is not None:
-            cobject.pointee.slot.num_indices = pointee_slot_indices.length()
-        cobject.type = ptr_type.value
-
-        super().__init__(cobject,
-                         refs={'key': key,
-                               ('pointee', 'key'): pointee_key,
-                               ('pointee', 'slot', 'name'): pointee_slot_name,
-                               ('pointee', 'slot', 'index'): pointee_slot_indices,
-                               'init_params_list': init_params_list})
+    @classmethod
+    def construct(cls, *, key, original_key):
+        return cls(cls.TYPE(),
+                   key=String(key),
+                   original_key=String(original_key))
 
 
-class ContextRegistryOpData_create_dptr_array(CObject):
-    """Context registry operation data: create a data pointer array context.
+class RegistryOpData_create_as(ComplexData):
+    """Registry operation data: create a context using interface of another context.
     """
-    def __init__(self, key: 'String', length: 'int'):
-        if not isinstance(key, String) \
-                or not isinstance(length, int):
+    TYPE = actype.archi_app_registry_op_data__create_as_t
+    REFS = {'key': String,
+            'sample_key': String,
+            'init_params_context_key': String,
+            'init_params_list': KeyValueList}
+
+    def _write_fields(self, cobject, /):
+        cobject.key = self.address_of('key')
+        cobject.sample_key = self.address_of('sample_key')
+        cobject.init_params.context_key = self.address_of('init_params_context_key')
+        cobject.init_params.list = c.cast(self.address_of('init_params_list'), c.POINTER(actype.archi_kvlist_t))
+
+    @classmethod
+    def construct(cls, *, key, sample_key, init_params_context_key, init_params_list):
+        return cls(cls.TYPE(),
+                   key=String(key),
+                   sample_key=String(sample_key),
+                   init_params_context_key=String.nullable(init_params_context_key),
+                   init_params_list=KeyValueList.construct(init_params_list.items()))
+
+
+class RegistryOpData_create_from(ComplexData):
+    """Registry operation data: create a context using interface obtained from another context slot.
+    """
+    TYPE = actype.archi_app_registry_op_data__create_from_t
+    REFS = {'key': String,
+            'source_key': String,
+            'source_slot_name': String,
+            'source_slot_indices': ContextSlotIndices,
+            'init_params_context_key': String,
+            'init_params_list': KeyValueList}
+
+    def _write_fields(self, cobject, /):
+        cobject.key = self.address_of('key')
+        cobject.source_key = self.address_of('source_key')
+        cobject.source_slot.name = self.address_of('source_slot_name')
+        cobject.source_slot.index = c.cast(self.address_of('source_slot_indices'), c.POINTER(actype.archi_context_slot_index_t))
+        cobject.source_slot.num_indices = self['source_slot_indices'].length if self['source_slot_indices'] is not None else 0
+        cobject.init_params.context_key = self.address_of('init_params_context_key')
+        cobject.init_params.list = c.cast(self.address_of('init_params_list'), c.POINTER(actype.archi_kvlist_t))
+
+    @classmethod
+    def construct(cls, *, key, source_key, source_slot_name, source_slot_indices,
+                  init_params_context_key, init_params_list):
+        return cls(cls.TYPE(),
+                   key=String(key),
+                   source_key=String(source_key),
+                   source_slot_name=String.nullable(source_slot_name),
+                   source_slot_indices=ContextSlotIndices.nullable(source_slot_indices),
+                   init_params_context_key=String.nullable(init_params_context_key),
+                   init_params_list=KeyValueList.construct(init_params_list.items()))
+
+
+class RegistryOpData_create_params(ComplexData):
+    """Registry operation data: create a parameter list context.
+    """
+    TYPE = actype.archi_app_registry_op_data__create_params_t
+    REFS = {'key': String,
+            'params_context_key': String,
+            'params_list': KeyValueList}
+
+    def _write_fields(self, cobject, /):
+        cobject.key = self.address_of('key')
+        cobject.params.context_key = self.address_of('params_context_key')
+        cobject.params.list = c.cast(self.address_of('params_list'), c.POINTER(actype.archi_kvlist_t))
+
+    @classmethod
+    def construct(cls, *, key, params_context_key, params_list):
+        return cls(cls.TYPE(),
+                   key=String(key),
+                   params_context_key=String.nullable(params_context_key),
+                   params_list=KeyValueList.construct(params_list.items()))
+
+
+class RegistryOpData_create_ptr(ComplexData):
+    """Registry operation data: create a pointer context.
+    """
+    TYPE = actype.archi_app_registry_op_data__create_ptr_t
+    REFS = {'key': String,
+            'pointee': Object}
+
+    def _write_fields(self, cobject, /):
+        cobject.key = self.address_of('key')
+        cobject.pointee.assign(self['pointee'])
+
+    @classmethod
+    def construct(cls, *, key, pointee):
+        return cls(cls.TYPE(),
+                   key=String(key),
+                   pointee=pointee)
+
+
+class RegistryOpData_create_dptr_array(ComplexData):
+    """Registry operation data: create a data pointer array context.
+    """
+    TYPE = actype.archi_app_registry_op_data__create_dptr_array_t
+    REFS = {'key': String}
+
+    def _write_fields(self, cobject, /):
+        cobject.key = self.address_of('key')
+
+    @classmethod
+    def construct(cls, *, key, length):
+        return cls(cls.TYPE(length),
+                   key=String(key))
+
+
+class RegistryOpData_invoke(ComplexData):
+    """Registry operation data: invoke context call.
+    """
+    TYPE = actype.archi_app_registry_op_data__invoke_t
+    REFS = {'key': String,
+            'slot_name': String,
+            'slot_indices': ContextSlotIndices,
+            'call_params_context_key': String,
+            'call_params_list': KeyValueList}
+
+    def _write_fields(self, cobject, /):
+        cobject.key = self.address_of('key')
+        cobject.slot.name = self.address_of('slot_name')
+        cobject.slot.index = c.cast(self.address_of('slot_indices'), c.POINTER(actype.archi_context_slot_index_t))
+        cobject.slot.num_indices = self['slot_indices'].length if self['slot_indices'] is not None else 0
+        cobject.call_params.context_key = self.address_of('call_params_context_key')
+        cobject.call_params.list = c.cast(self.address_of('call_params_list'), c.POINTER(actype.archi_kvlist_t))
+
+    @classmethod
+    def construct(cls, *, key, slot_name, slot_indices,
+                  call_params_context_key, call_params_list):
+        return cls(cls.TYPE(),
+                   key=String(key),
+                   slot_name=String.nullable(slot_name),
+                   slot_indices=ContextSlotIndices.nullable(slot_indices),
+                   call_params_context_key=String.nullable(call_params_context_key),
+                   call_params_list=KeyValueList.construct(call_params_list.items()))
+
+
+class RegistryOpData_unassign(ComplexData):
+    """Registry operation data: unset context slot.
+    """
+    TYPE = actype.archi_app_registry_op_data__unassign_t
+    REFS = {'key': String,
+            'slot_name': String,
+            'slot_indices': ContextSlotIndices}
+
+    def _write_fields(self, cobject, /):
+        cobject.key = self.address_of('key')
+        cobject.slot.name = self.address_of('slot_name')
+        cobject.slot.index = c.cast(self.address_of('slot_indices'), c.POINTER(actype.archi_context_slot_index_t))
+        cobject.slot.num_indices = self['slot_indices'].length if self['slot_indices'] is not None else 0
+
+    @classmethod
+    def construct(cls, *, key, slot_name, slot_indices):
+        return cls(cls.TYPE(),
+                   key=String(key),
+                   slot_name=String.nullable(slot_name),
+                   slot_indices=ContextSlotIndices.nullable(slot_indices))
+
+
+class RegistryOpData_assign(ComplexData):
+    """Registry operation data: set context slot to value.
+    """
+    TYPE = actype.archi_app_registry_op_data__assign_t
+    REFS = {'key': String,
+            'slot_name': String,
+            'slot_indices': ContextSlotIndices,
+            'value': Object}
+
+    def _write_fields(self, cobject, /):
+        cobject.key = self.address_of('key')
+        cobject.slot.name = self.address_of('slot_name')
+        cobject.slot.index = c.cast(self.address_of('slot_indices'), c.POINTER(actype.archi_context_slot_index_t))
+        cobject.slot.num_indices = self['slot_indices'].length if self['slot_indices'] is not None else 0
+        cobject.value.assign(self['value'])
+
+    @classmethod
+    def construct(cls, *, key, slot_name, slot_indices, value):
+        return cls(cls.TYPE(),
+                   key=String(key),
+                   slot_name=String.nullable(slot_name),
+                   slot_indices=ContextSlotIndices.nullable(slot_indices),
+                   value=value)
+
+
+class RegistryOpData_assign_slot(ComplexData):
+    """Registry operation data: set context slot to value of another context slot.
+    """
+    TYPE = actype.archi_app_registry_op_data__assign_slot_t
+    REFS = {'key': String,
+            'slot_name': String,
+            'slot_indices': ContextSlotIndices,
+            'source_key': String,
+            'source_slot_name': String,
+            'source_slot_indices': ContextSlotIndices}
+
+    def _write_fields(self, cobject, /):
+        cobject.key = self.address_of('key')
+        cobject.slot.name = self.address_of('slot_name')
+        cobject.slot.index = c.cast(self.address_of('slot_indices'), c.POINTER(actype.archi_context_slot_index_t))
+        cobject.slot.num_indices = self['slot_indices'].length if self['slot_indices'] is not None else 0
+        cobject.source_key = self.address_of('source_key')
+        cobject.source_slot.name = self.address_of('source_slot_name')
+        cobject.source_slot.index = c.cast(self.address_of('source_slot_indices'), c.POINTER(actype.archi_context_slot_index_t))
+        cobject.source_slot.num_indices = self['source_slot_indices'].length if self['source_slot_indices'] is not None else 0
+
+    @classmethod
+    def construct(cls, *, key, slot_name, slot_indices, source_key, source_slot_name, source_slot_indices):
+        return cls(cls.TYPE(),
+                   key=String(key),
+                   slot_name=String.nullable(slot_name),
+                   slot_indices=ContextSlotIndices.nullable(slot_indices),
+                   source_key=String(source_key),
+                   source_slot_name=String.nullable(source_slot_name),
+                   source_slot_indices=ContextSlotIndices.nullable(source_slot_indices))
+
+
+class RegistryOpData_assign_call(ComplexData):
+    """Registry operation data: set context slot to result of another context call.
+    """
+    TYPE = actype.archi_app_registry_op_data__assign_call_t
+    REFS = {'key': String,
+            'slot_name': String,
+            'slot_indices': ContextSlotIndices,
+            'source_key': String,
+            'source_slot_name': String,
+            'source_slot_indices': ContextSlotIndices,
+            'source_call_params_context_key': String,
+            'source_call_params_list': KeyValueList}
+
+    def _write_fields(self, cobject, /):
+        cobject.key = self.address_of('key')
+        cobject.slot.name = self.address_of('slot_name')
+        cobject.slot.index = c.cast(self.address_of('slot_indices'), c.POINTER(actype.archi_context_slot_index_t))
+        cobject.slot.num_indices = self['slot_indices'].length if self['slot_indices'] is not None else 0
+        cobject.source_key = self.address_of('source_key')
+        cobject.source_slot.name = self.address_of('source_slot_name')
+        cobject.source_slot.index = c.cast(self.address_of('source_slot_indices'), c.POINTER(actype.archi_context_slot_index_t))
+        cobject.source_slot.num_indices = self['source_slot_indices'].length if self['source_slot_indices'] is not None else 0
+        cobject.source_call_params.context_key = self.address_of('source_call_params_context_key')
+        cobject.source_call_params.list = c.cast(self.address_of('source_call_params_list'), c.POINTER(actype.archi_kvlist_t))
+
+    @classmethod
+    def construct(cls, *, key, slot_name, slot_indices, source_key, source_slot_name, source_slot_indices,
+                  source_call_params_context_key, source_call_params_list):
+        return cls(cls.TYPE(),
+                   key=String(key),
+                   slot_name=String.nullable(slot_name),
+                   slot_indices=ContextSlotIndices.nullable(slot_indices),
+                   source_key=String(source_key),
+                   source_slot_name=String.nullable(source_slot_name),
+                   source_slot_indices=ContextSlotIndices.nullable(source_slot_indices),
+                   source_call_params_context_key=String.nullable(source_call_params_context_key),
+                   source_call_params_list=KeyValueList.construct(source_call_params_list.items()))
+
+##############################################################################
+# Signal management
+##############################################################################
+
+class SignalSet(PrimitiveData):
+    """Immutable representation of a set of POSIX signals.
+    """
+    # Input file contents key for signal sets
+    INPUT_FILE_KEY = 'signals'
+
+    def __init__(self, cobject, /):
+        """Initialize a representation of a set of POSIX signals.
+        """
+        if not isinstance(cobject, actype.archi_signal_set_t):
             raise TypeError
-        elif length < 0:
-            raise ValueError
 
-        from .ctypes import archi_context_registry_op_data__create_dptr_array_t
+        super().__init__(cobject)
 
-        cobject = archi_context_registry_op_data__create_dptr_array_t()
-        cobject.length = length
+    @classmethod
+    def construct(cls, **signals):
+        """Construct a set of POSIX signals.
+        """
+        signal_set = actype.archi_signal_set_t()
 
-        super().__init__(cobject,
-                         refs={'key': key})
+        for signal, value in signals.items():
+            if signal == actype.SIGNAL_RT_MIN or signal == actype.SIGNAL_RT_MAX:
+                for index in value:
+                    getattr(signal_set, signal)[index] = True
+            else:
+                setattr(signal_set, signal, value)
+
+        return signal_set
 

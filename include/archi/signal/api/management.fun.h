@@ -29,7 +29,8 @@
 
 #include "archi/signal/api/signal.typ.h"
 #include "archi/signal/api/handler.typ.h"
-#include "archipelago/base/global.typ.h"
+#include "archi_base/global.typ.h"
+
 
 /**
  * @brief Initialize the signal management context pointer.
@@ -45,7 +46,7 @@
  * @param[in] context
  *      Signal management context.
  */
-ARCHI_GLOBAL_SET_FUNC(archi_signal_management_global_context_set);
+ARCHI_GLOBAL_SET_FUNC(archi_global_context_set__signal_management);
 
 /**
  * @brief Retrieve the signal management context pointer.
@@ -54,7 +55,7 @@ ARCHI_GLOBAL_SET_FUNC(archi_signal_management_global_context_set);
  *
  * @return Pointer to the signal management context.
  */
-ARCHI_GLOBAL_GET_FUNC(archi_signal_management_global_context);
+ARCHI_GLOBAL_GET_FUNC(archi_global_context__signal_management);
 
 /**
  * @brief Retrieve the set of signal flags.

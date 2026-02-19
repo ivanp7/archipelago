@@ -7,34 +7,24 @@ import argparse
 import ctypes as c
 import os
 from pathlib import Path
-import random
 import subprocess
-import sys
 
-from archi.base.memory import CValue
-from archi.base.app import Registry
-from archi.base.file import File
-from archi.base.misc.script import eprint, random_map_address, dump_file
-
-from archi.builtin.context import (
-        REGISTRY_BUILTIN_EXECUTABLE,
-        LibraryContext,
-        HashmapContext,
-        EnvVarContext,
+from archi.object import PrimitiveData, String, KeyValueList
+from archi.context import Parameters, Registry
+from archi.script import errprint, write_input_file
+from archi.builtin import (
         FileContext,
+        LibraryContext,
+        EnvVariableContext,
         )
-from archi.builtin.file import FILE_BUILTIN_REGISTRY
-from archi.opencl.context import (
-        OpenCLPluginContext,
-        OpenCLContextHandleContext,
-        OpenCLProgramFromSourcesContext,
-        OpenCLProgramFromBinariesContext,
+from archi.opencl import (
+        OpenCLContext,
+        OpenCLProgramSrcContext,
+        OpenCLProgramBinContext,
         )
 
 ###############################################################################
 # Parse command line arguments
-
-DEFAULT_MAP_ADDRESS = random_map_address()
 
 class DirFileGroupAction(argparse.Action):
     """Generalized Action for grouping files under directories for a specific pair.
@@ -67,9 +57,8 @@ class DirFileGroupAction(argparse.Action):
 parser = argparse.ArgumentParser(
         description="Build an OpenCL library program and write the binaries to file system.")
 
-parser.add_argument('--mapaddr', type=lambda value: int(value, base=16), default=DEFAULT_MAP_ADDRESS,
-                    metavar="ADDRESS", help="Memory map address")
 parser.add_argument('--file', metavar="PATHNAME", help="Pathname of the generated .archi file (stdout if none)")
+parser.add_argument('--mapaddr', type=lambda value: int(value, base=16), metavar="ADDRESS", help="Memory map address")
 
 parser.add_argument('--platform', type=int, default=0, metavar="ID", help="OpenCL platform number")
 parser.add_argument('--devices', nargs='+', type=int, default=[0], metavar="ID", help="OpenCL device number(s)")
@@ -97,34 +86,31 @@ parser.add_argument('--out', nargs='+', default=[], metavar="PATHNAME", required
 parser.set_defaults(hdr_map={}, src_map={}, lib_map={})
 args = parser.parse_args()
 
-eprint(f"Map address: 0x{args.mapaddr:x}")
-if args.file is not None:
-    eprint(f"Generated file: '{args.file}'")
-else:
-    eprint("Generated file: <stdout>")
-eprint()
-eprint(f"OpenCL platform #: {args.platform}")
-eprint(f"OpenCL device #: {args.devices}")
-eprint(f"OpenCL compiler flags: {f"'{args.cflags}'" if args.cflags else '<none>'}")
-eprint(f"OpenCL linker flags: {f"'{args.lflags}'" if args.lflags else '<none>'}")
-eprint()
-eprint("Headers:")
+errprint(f"Generated file: {f"'{args.file}'" if args.file is not None else '<stdout>'}")
+errprint(f"Map address: {f'0x{args.mapaddr:x}' if args.mapaddr is not None else '<random>'}")
+errprint()
+errprint(f"OpenCL platform #: {args.platform}")
+errprint(f"OpenCL device #: {args.devices}")
+errprint(f"OpenCL compiler flags: {f"'{args.cflags}'" if args.cflags else '<none>'}")
+errprint(f"OpenCL linker flags: {f"'{args.lflags}'" if args.lflags else '<none>'}")
+errprint()
+errprint("Headers:")
 for dirpath, filepaths in args.hdr_map.items():
-    eprint(f"    '{dirpath}': {filepaths}")
-eprint()
-eprint("Sources:")
+    errprint(f"    '{dirpath}': {filepaths}")
+errprint()
+errprint("Sources:")
 for dirpath, filepaths in args.src_map.items():
-    eprint(f"    '{dirpath}': {filepaths}")
-eprint()
-eprint("Libraries:")
+    errprint(f"    '{dirpath}': {filepaths}")
+errprint()
+errprint("Libraries:")
 for dirpath, filepaths in args.lib_map.items():
-    eprint(f"    '{dirpath}': {filepaths}")
-eprint()
-eprint(f"Build output file(s): {args.out}")
-eprint()
+    errprint(f"    '{dirpath}': {filepaths}")
+errprint()
+errprint(f"Build output file(s): {args.out}")
+errprint()
 
 if len(args.devices) != len(args.out):
-    raise ValueError("Number of output files must be the same as the number of devices")
+    raise ValueError(f"Number of output files ({len(args.out)}) must be the same as the number of devices ({len(args.devices)})")
 
 ###############################################################################
 # Read contents of all input files
@@ -168,64 +154,55 @@ content_sources = read_sources(args.src_map)
 content_libraries = read_binaries(args.lib_map)
 
 ###############################################################################
-# Forming the list of instructions
+# Forming the list of operations
 
 PLUGIN_OPENCL_PATHNAME = "libarchi_opencl.so"
 
-HASHMAP_CAPACITY = 1024
-TRUE = CValue(c.c_byte(True))
-
 app = Registry()
-executable = app.require_context(*REGISTRY_BUILTIN_EXECUTABLE)
+executable = app.require_context(Registry.KEY_EXECUTABLE, LibraryContext)
 
 # Prepare built-in interfaces
-library_interface = LibraryContext.interface(executable)
-file_interface = FileContext.interface(executable)
-hashmap_interface = HashmapContext.interface(executable)
-envvar_interface = EnvVarContext.interface(executable)
+library_interface = LibraryContext.interface(library=executable)
+file_interface = FileContext.interface(library=executable)
+envvar_interface = EnvVariableContext.interface(library=executable)
 
 # Load OpenCL plugin
-with app.temp_context(library_interface(pathname=PLUGIN_OPENCL_PATHNAME).is_a(OpenCLPluginContext),
-                      key='plugin.opencl') as plugin_opencl:
+with app.temp_context(library_interface(pathname=PLUGIN_OPENCL_PATHNAME), key='plugin.opencl') as plugin_opencl:
     # Prepare OpenCL plugin interfaces
-    opencl_context_interface = OpenCLContextHandleContext.interface(plugin_opencl)
-    opencl_program_src_interface = OpenCLProgramFromSourcesContext.interface(plugin_opencl)
-    opencl_program_bin_interface = OpenCLProgramFromBinariesContext.interface(plugin_opencl)
+    opencl_context_interface = OpenCLContext.interface(library=plugin_opencl)
+    opencl_program_src_interface = OpenCLProgramSrcContext.interface(library=plugin_opencl)
+    opencl_program_bin_interface = OpenCLProgramBinContext.interface(library=plugin_opencl)
 
     # Create the OpenCL context
-    with app.temp_context(opencl_context_interface(platform_idx=args.platform, device_idx=args.devices),
+    with app.temp_context(opencl_context_interface(platform=args.platform, device=args.devices),
                           key='context.opencl') as opencl_context:
         # Prepare the list of dependency libraries of the program
         map_libraries = {}
-        with app.temp_context(OpenCLProgramFromBinariesContext.InitParameters( \
-                context=opencl_context, device_id=opencl_context.device_id),
-                              key='params.library') as params_library:
+        with app.temp_context(OpenCLProgramBinContext.InitParameters( \
+                context=opencl_context, device_id=opencl_context.device_id), key='params.library') as params_library:
             for i, binary in enumerate(content_libraries):
-                with app.temp_context([CValue(binary)], key='array.binary') as array_binary:
-                    params_library.binaries = array_binary.elements
+                with app.temp_context([PrimitiveData.from_bytes(binary)], key='array.binaries') as array_binaries, \
+                        app.temp_context(PrimitiveData((c.c_size_t * 1)(len(binary))), key='array.binary_sizes') as array_binary_sizes:
+                    params_library.binaries = array_binaries
+                    params_library.binary_sizes = array_binary_sizes
 
-                library_key = f'context.library[{i}]'
+                library_key = f'context.program_library[{i}]'
                 app[library_key] = opencl_program_bin_interface(params_library)
                 map_libraries[library_key] = app[library_key]
 
         # Prepare program headers, sources, and library dependencies
-        with app.temp_context(list(map_libraries.values()), key='array.libraries') as libraries, \
-                app.temp_context(hashmap_interface(capacity=HASHMAP_CAPACITY), key='hashmap.headers') as headers, \
-                app.temp_context(hashmap_interface(capacity=HASHMAP_CAPACITY), key='hashmap.sources') as sources, \
-                app.temp_context(envvar_interface(name='CFLAGS', default_value=args.cflags), key='string.cflags') as cflags, \
-                app.temp_context(envvar_interface(name='LFLAGS', default_value=args.lflags), key='string.lflags') as lflags:
+        with app.temp_context(list(map_libraries.values()), key='array.program_libraries') as libraries, \
+                app.temp_context(Parameters(**{path: String(content) for path, content in content_headers.items()}),
+                                 key='params.headers') as headers, \
+                app.temp_context(Parameters(**{path: String(content) for path, content in content_sources.items()}),
+                                 key='params.sources') as sources, \
+                app.temp_context(envvar_interface(default_value=args.cflags), key='envvar.cflags') as cflags_env, \
+                app.temp_context(envvar_interface(default_value=args.lflags), key='envvar.lflags') as lflags_env:
             # Release the temporary contexts
             for library_key in map_libraries.keys():
                 del app[library_key]
 
             del map_libraries
-
-            # Fill the hashmaps with sources
-            for path, contents in content_headers.items():
-                setattr(headers, path, CValue(contents))
-
-            for path, contents in content_sources.items():
-                setattr(sources, path, CValue(contents))
 
             # Build the program
             app['context.program'] = opencl_program_src_interface(context=opencl_context,
@@ -233,27 +210,24 @@ with app.temp_context(library_interface(pathname=PLUGIN_OPENCL_PATHNAME).is_a(Op
                                                                   headers=headers,
                                                                   sources=sources,
                                                                   libraries=libraries,
-                                                                  cflags=cflags,
-                                                                  lflags=lflags)
+                                                                  cflags=cflags_env.CFLAGS,
+                                                                  lflags=lflags_env.LFLAGS)
 
-    with app.del_context('context.program') as opencl_program:
+    with app.deleted_context('context.program') as opencl_program:
         # Write program binaries to output files
         for i, out_file in enumerate(args.out):
             # Open an output file and map it to memory
             with app.temp_context(file_interface(pathname=out_file,
-                                                 size=opencl_program.binary_size[i],
-                                                 create=TRUE, truncate=TRUE,
-                                                 readable=TRUE, writable=TRUE,
-                                                 mode=0o644), key='file.out') as file, \
-                    app.temp_context(file.map(writable=TRUE, shared=TRUE), key='file.memory') as file_memory:
+                                                 size=opencl_program.binary.size[i],
+                                                 readable=True, writable=True,
+                                                 create=True, truncate=True,
+                                                 mode=0o644), key='context.out_file') as file:
                 # Write the program binary for the current device into the output file
-                app.eval(file_memory.copy(source=opencl_program.binary[i]))
+                app.eval(file.write(src=opencl_program.binary[i]))
 
 ###############################################################################
 # Generate the .archi file
 
-file = File()
-file[FILE_BUILTIN_REGISTRY[0]] = FILE_BUILTIN_REGISTRY[1](app)
-
-dump_file(file, args.mapaddr, args.file)
+file_contents = [(Registry.INPUT_FILE_KEY, KeyValueList.construct(app.operation_kvlist()))]
+write_input_file(file_contents, pathname=args.file, mapaddr=args.mapaddr, print_report=True)
 

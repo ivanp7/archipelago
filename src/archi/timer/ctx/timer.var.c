@@ -25,13 +25,15 @@
 
 #include "archi/timer/ctx/timer.var.h"
 #include "archi/timer/api/timer.fun.h"
-#include "archipelago/base/pointer.fun.h"
-#include "archipelago/base/pointer.def.h"
-#include "archipelago/util/parameters.fun.h"
-#include "archipelago/util/size.def.h"
-#include "archipelago/util/string.fun.h"
+#include "archi/timer/api/tag.def.h"
+#include "archi_base/pointer.fun.h"
+#include "archi_base/pointer.def.h"
+#include "archi_base/util/plist.fun.h"
+#include "archi_base/util/check.fun.h"
+#include "archi_base/util/string.fun.h"
 
 #include <stdlib.h> // for malloc(), free()
+
 
 static
 ARCHI_CONTEXT_INIT_FUNC(archi_context_init__timer)
@@ -39,17 +41,15 @@ ARCHI_CONTEXT_INIT_FUNC(archi_context_init__timer)
     // Parse parameters
     const char *name = NULL;
     {
-        archi_kvlist_parameter_t parsed[] = {
-            {.name = "name", .value.attr = ARCHI_POINTER_ATTR__DATA_TYPE(1, char)},
+        archi_plist_param_t parsed[] = {
+            {.name = "name",
+                .check = {archi_value_check__attr, (archi_pointer_attr_t[]){ARCHI_POINTER_ATTR__PDATA(0, char)}},
+                .assign = {archi_plist_assign__dptr_n, &name, sizeof(name)}},
+            {0},
         };
 
-        if (!archi_kvlist_parameters_parse(params, parsed, ARCHI_LENGTH_ARRAY(parsed), false, NULL,
-                    ARCHI_ERROR_PARAMETER))
+        if (!archi_plist_parse(&params->n, true, parsed, false, ARCHI_ERROR_PARAM))
             return NULL;
-
-        size_t index = 0;
-        if (parsed[index].value_set)
-            name = parsed[index].value.ptr;
     }
 
     // Construct the context
@@ -72,7 +72,7 @@ ARCHI_CONTEXT_INIT_FUNC(archi_context_init__timer)
     *context_data = (archi_rcpointer_t){
         .ptr = timer,
         .attr = ARCHI_POINTER_TYPE__DATA_WRITABLE |
-            archi_pointer_attr__opaque_data(ARCHI_POINTER_DATA_TAG__TIMER),
+            archi_pointer_attr__cdata(ARCHI_POINTER_DATA_TAG__TIMER),
     };
 
     ARCHI_ERROR_RESET();

@@ -24,15 +24,16 @@
  */
 
 #include "archi/parser/ctx/number.var.h"
-#include "archipelago/base/pointer.fun.h"
-#include "archipelago/base/pointer.def.h"
-#include "archipelago/util/parameters.fun.h"
-#include "archipelago/util/size.def.h"
-#include "archipelago/util/string.fun.h"
+#include "archi_base/pointer.fun.h"
+#include "archi_base/pointer.def.h"
+#include "archi_base/util/plist.fun.h"
+#include "archi_base/util/check.fun.h"
+#include "archi_base/util/string.fun.h"
 
 #include <stdlib.h> // for malloc(), free(), strto*()
 #include <limits.h> // *_MAX, *_MIN
 #include <errno.h>
+
 
 enum {
     UNSPECIFIED = 0,
@@ -60,34 +61,34 @@ ARCHI_CONTEXT_INIT_FUNC(archi_context_init__number_parser)
     // Parse parameters
     const char *string = NULL;
     int base = 0;
-    bool base_set = false;
     int parsed_type = UNSPECIFIED;
+    bool base_set = false;
     {
-        archi_kvlist_parameter_t parsed[] = {
-            {.name = "base", .value.attr = ARCHI_POINTER_ATTR__DATA_TYPE(1, int)},
-            {.name = "unsigned_char", .value.attr = ARCHI_POINTER_ATTR__DATA_TYPE(2, char)},
-            {.name = "unsigned_short", .value.attr = ARCHI_POINTER_ATTR__DATA_TYPE(2, char)},
-            {.name = "unsigned_int", .value.attr = ARCHI_POINTER_ATTR__DATA_TYPE(2, char)},
-            {.name = "unsigned_long", .value.attr = ARCHI_POINTER_ATTR__DATA_TYPE(2, char)},
-            {.name = "unsigned_long_long", .value.attr = ARCHI_POINTER_ATTR__DATA_TYPE(2, char)},
-            {.name = "signed_char", .value.attr = ARCHI_POINTER_ATTR__DATA_TYPE(2, char)},
-            {.name = "signed_short", .value.attr = ARCHI_POINTER_ATTR__DATA_TYPE(2, char)},
-            {.name = "signed_int", .value.attr = ARCHI_POINTER_ATTR__DATA_TYPE(2, char)},
-            {.name = "signed_long", .value.attr = ARCHI_POINTER_ATTR__DATA_TYPE(2, char)},
-            {.name = "signed_long_long", .value.attr = ARCHI_POINTER_ATTR__DATA_TYPE(2, char)},
-            {.name = "float", .value.attr = ARCHI_POINTER_ATTR__DATA_TYPE(2, char)},
-            {.name = "double", .value.attr = ARCHI_POINTER_ATTR__DATA_TYPE(2, char)},
-            {.name = "long_double", .value.attr = ARCHI_POINTER_ATTR__DATA_TYPE(2, char)},
+        archi_plist_param_t parsed[] = {
+            {.name = "base",
+                .check = {archi_value_check__attr, (archi_pointer_attr_t[]){ARCHI_POINTER_ATTR__PDATA(1, int)}},
+                .assign = {archi_plist_assign__value, &base, sizeof(base), &base_set}},
+            // target types
+            {.name = "unsigned_char", .check = {archi_value_check__attr, (archi_pointer_attr_t[]){ARCHI_POINTER_ATTR__PDATA(2, char)}}},
+            {.name = "unsigned_short", .check = {archi_value_check__attr, (archi_pointer_attr_t[]){ARCHI_POINTER_ATTR__PDATA(2, char)}}},
+            {.name = "unsigned_int", .check = {archi_value_check__attr, (archi_pointer_attr_t[]){ARCHI_POINTER_ATTR__PDATA(2, char)}}},
+            {.name = "unsigned_long", .check = {archi_value_check__attr, (archi_pointer_attr_t[]){ARCHI_POINTER_ATTR__PDATA(2, char)}}},
+            {.name = "unsigned_long_long", .check = {archi_value_check__attr, (archi_pointer_attr_t[]){ARCHI_POINTER_ATTR__PDATA(2, char)}}},
+            {.name = "signed_char", .check = {archi_value_check__attr, (archi_pointer_attr_t[]){ARCHI_POINTER_ATTR__PDATA(2, char)}}},
+            {.name = "signed_short", .check = {archi_value_check__attr, (archi_pointer_attr_t[]){ARCHI_POINTER_ATTR__PDATA(2, char)}}},
+            {.name = "signed_int", .check = {archi_value_check__attr, (archi_pointer_attr_t[]){ARCHI_POINTER_ATTR__PDATA(2, char)}}},
+            {.name = "signed_long", .check = {archi_value_check__attr, (archi_pointer_attr_t[]){ARCHI_POINTER_ATTR__PDATA(2, char)}}},
+            {.name = "signed_long_long", .check = {archi_value_check__attr, (archi_pointer_attr_t[]){ARCHI_POINTER_ATTR__PDATA(2, char)}}},
+            {.name = "float", .check = {archi_value_check__attr, (archi_pointer_attr_t[]){ARCHI_POINTER_ATTR__PDATA(2, char)}}},
+            {.name = "double", .check = {archi_value_check__attr, (archi_pointer_attr_t[]){ARCHI_POINTER_ATTR__PDATA(2, char)}}},
+            {.name = "long_double", .check = {archi_value_check__attr, (archi_pointer_attr_t[]){ARCHI_POINTER_ATTR__PDATA(2, char)}}},
+            {0},
         };
 
-        if (!archi_kvlist_parameters_parse(params, parsed, ARCHI_LENGTH_ARRAY(parsed), false, NULL,
-                    ARCHI_ERROR_PARAMETER))
+        if (!archi_plist_parse(&params->n, true, parsed, false, ARCHI_ERROR_PARAM))
             return NULL;
 
         size_t index = 0;
-        base_set = parsed[index].value_set;
-        if (base_set)
-            base = *(int*)parsed[index].value.ptr;
 
 #define PARAMETER(type, base_allowed)   do {    \
         index++;                                \
@@ -125,7 +126,7 @@ ARCHI_CONTEXT_INIT_FUNC(archi_context_init__number_parser)
 #undef PARAMETER
     }
 
-    // Check validity of parameters
+    // Check validness of parameters
     if (parsed_type == UNSPECIFIED)
     {
         ARCHI_ERROR_SET(ARCHI__ECONSTRAINT, "string and type of a parsed number is not specified");
@@ -172,7 +173,7 @@ ARCHI_CONTEXT_INIT_FUNC(archi_context_init__number_parser)
         *context_data = (archi_rcpointer_t){                \
             .ptr = malloc(sizeof(type)),                    \
             .attr = ARCHI_POINTER_TYPE__DATA_WRITABLE |     \
-                    ARCHI_POINTER_ATTR__DATA_TYPE(1, type), \
+                    ARCHI_POINTER_ATTR__PDATA(1, type),     \
         };                                                  \
         if (context_data->ptr == NULL)                      \
             _OUT_OF_MEMORY();                               \

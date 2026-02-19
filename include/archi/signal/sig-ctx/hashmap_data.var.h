@@ -29,6 +29,7 @@
 
 #include "archi/context/api/interface.typ.h"
 
+
 /**
  * @brief Context interface: data for the signal meta-handler for multiple handler support.
  *
@@ -39,6 +40,7 @@
  * Getter slots: any (without indices only) -- find a signal handler associated with the key.
  *
  * Setter slots: any (without indices only) -- set/unset a signal handler associated with the key.
+ * All setter slots are unsettable.
  */
 extern
 const archi_context_interface_t

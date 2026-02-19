@@ -28,7 +28,8 @@
 #define _ARCHI_CONTEXT_API_INTERFACE_DEF_H_
 
 #include "archi/context/api/callback.typ.h"
-#include "archipelago/base/ref_count.typ.h"
+#include "archi_base/ref_count.typ.h"
+
 
 /**
  * @brief Special reference counter placeholder used for output values in context getters
@@ -59,7 +60,7 @@
     if (!ARCHI_CONTEXT_NO_CALLBACK())                       \
         ARCHI_CONTEXT_CALLBACK_PARAMETER.function((value),  \
                 ARCHI_CONTEXT_CALLBACK_PARAMETER.data,      \
-                ARCHI_ERROR_PARAMETER);                     \
+                ARCHI_ERROR_PARAM);                         \
 } while (0)
 
 #endif // _ARCHI_CONTEXT_API_INTERFACE_DEF_H_

@@ -29,65 +29,127 @@
 
 #include "archi/signal/api/signal.typ.h"
 
+#include <stdbool.h>
+
+
 /**
- * @brief Allocate and initialize a new signal watch set.
+ * @brief Allocate and initialize a new signal set.
  *
- * This function allocates a zero-initialized archi_signal_watch_set_t
- * structure whose size is equal to ARCHI_SIGNAL_WATCH_SET_SIZEOF.
- * All signal watch flags (standard and real‑time) are cleared (false).
+ * This function allocates a archi_signal_set_t object.
+ * All signal flags are initialized to clear state.
  *
  * @note The returned pointer must eventually be released via free().
  *
  * @return
- *   Pointer to a freshly allocated and initialized signal watch set,
+ *   Pointer to a freshly allocated and initialized signal set,
  *   or NULL if memory allocation fails.
  */
-archi_signal_watch_set_t*
-archi_signal_watch_set_alloc(void);
+archi_signal_set_t
+archi_signal_set_alloc(void);
 
 /**
- * @brief Merge two signal watch sets by logical OR.
+ * @brief Check if a signal set is empty.
  *
- * For each signal in the standard and real-time ranges, this function
- * updates the "out" set to include any signal that is watched in
- * either the "out" or "in" set. In effect:
- *   out->f_SIGNAL = out->f_SIGNAL  || in->f_SIGNAL
- * for every supported signal SIGNAL.
- *
- * If either pointer is NULL, the function does nothing.
- *
- * @param[in,out] out
- *   Pointer to the first watch set, which will be updated in place.
- *
- * @param[in] in
- *   Pointer to the second watch set, whose flags are merged into "out".
- */
-void
-archi_signal_watch_set_join(
-        archi_signal_watch_set_t *out,
-        const archi_signal_watch_set_t *in
-);
-
-/**
- * @brief Test if a signal watch set is not empty.
- *
- * If any of the signal watch set fields is set to true, the function returns true.
- * Otherwise, it returns false.
- * If the pointer is NULL, the function returns false.
- *
- * @param[in] signals
- *   Pointer to the watch set.
+ * @return True of set is NULL or empty, false otherwise.
  */
 bool
-archi_signal_watch_set_not_empty(
-        const archi_signal_watch_set_t *signals
+archi_signal_set_is_empty(
+        archi_signal_set_const_t set ///< [in] Signal set.
 );
+
+/**
+ * @brief Remove all signals from a set.
+ *
+ * If set is NULL, the function does nothing.
+ */
+void
+archi_signal_set_clear(
+        archi_signal_set_t set ///< [in] Signal set.
+);
+
+/**
+ * @brief Invert a signal set.
+ *
+ * If set is NULL, the function does nothing.
+ */
+void
+archi_signal_set_invert(
+        archi_signal_set_t set ///< [in] Signal set.
+);
+
+/**
+ * @brief Assign a signal set to another.
+ *
+ * If either set is NULL, the function does nothing.
+ */
+void
+archi_signal_set_assign(
+        archi_signal_set_t out, ///< [in,out] First signal set.
+        archi_signal_set_const_t in ///< [in] Second signal set.
+);
+
+/**
+ * @brief Join two signal sets into the first argument.
+ *
+ * If either set is NULL, the function does nothing.
+ */
+void
+archi_signal_set_join(
+        archi_signal_set_t out, ///< [in,out] First signal set.
+        archi_signal_set_const_t in ///< [in] Second signal set.
+);
+
+/**
+ * @brief Intersect two signal sets into the first argument.
+ *
+ * If either set is NULL, the function does nothing.
+ */
+void
+archi_signal_set_intersect(
+        archi_signal_set_t out, ///< [in,out] First signal set.
+        archi_signal_set_const_t in ///< [in] Second signal set.
+);
+
+/**
+ * @brief Check if a set contains the specified signal.
+ *
+ * @return True if signal is in the set, false otherwise.
+ */
+bool
+archi_signal_set_contains(
+        archi_signal_set_const_t set, ///< [in] Signal set.
+        int signal_index ///< [in] Signal index.
+);
+
+/**
+ * @brief Add a signal to a signal set.
+ *
+ * If set is NULL, the function does nothing.
+ */
+void
+archi_signal_set_add(
+        archi_signal_set_t set, ///< [in] Signal set.
+        int signal_index ///< [in] Signal index.
+);
+
+/**
+ * @brief Remove a signal to a signal set.
+ *
+ * If set is NULL, the function does nothing.
+ */
+void
+archi_signal_set_remove(
+        archi_signal_set_t set, ///< [in] Signal set.
+        int signal_index ///< [in] Signal index.
+);
+
+/*****************************************************************************/
 
 /**
  * @brief Allocate and initialize a new signal flags structure.
  *
- * This function allocates an archi_signal_flags_t structure of size
- * ARCHI_SIGNAL_FLAGS_SIZEOF and initializes each per-signal flag via
+ * This function allocates an archi_signal_flags_t object
+ * and initializes each per-signal flag via
  * the ARCHI_SIGNAL_FLAG_INIT macro (initializing atomics to false).
  *
  * @note The returned pointer must eventually be released via free().
@@ -98,8 +160,6 @@ archi_signal_watch_set_not_empty(
  */
 archi_signal_flags_t*
 archi_signal_flags_alloc(void);
-
-/*****************************************************************************/
 
 /**
  * @def ARCHI_SIGNAL_FLAG_IS_SET(flag)

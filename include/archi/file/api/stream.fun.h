@@ -27,8 +27,10 @@
 #ifndef _ARCHI_FILE_API_STREAM_FUN_H_
 #define _ARCHI_FILE_API_STREAM_FUN_H_
 
+#include "archi/file/api/handle.typ.h"
 #include "archi/file/api/file.typ.h"
-#include "archipelago/base/error.typ.h"
+#include "archi_base/error.typ.h"
+
 
 /**
  * @brief Open a file stream.
@@ -43,7 +45,7 @@ archi_file_stream_t
 archi_file_stream_open(
         archi_file_descriptor_t fd, ///< [in] File descriptor.
         archi_file_open_params_t params, ///< [in] File opening parameters.
-        ARCHI_ERROR_PARAMETER_DECL ///< [out] Error.
+        ARCHI_ERROR_PARAM_DECL ///< [out] Error.
 );
 
 /**
@@ -52,7 +54,7 @@ archi_file_stream_open(
 void
 archi_file_stream_close(
         archi_file_stream_t file, ///< [in] File stream.
-        ARCHI_ERROR_PARAMETER_DECL ///< [out] Error.
+        ARCHI_ERROR_PARAM_DECL ///< [out] Error.
 );
 
 /**

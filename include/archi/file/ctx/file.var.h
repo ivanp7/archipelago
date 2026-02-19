@@ -29,6 +29,7 @@
 
 #include "archi/context/api/interface.typ.h"
 
+
 /**
  * @brief Context interface: file.
  *
@@ -49,25 +50,25 @@
  *
  * Getter slots:
  * - "fd"       : (archi_file_descriptor_t) file descriptor
- * - "offset"   : (ptrdiff_t) file offset (in bytes) from file beginning
+ * - "offset"   : (long long) file offset (in bytes) from file beginning
  *
  * Calls:
  * - "read"     : read data from file to memory
  *      parameters:
- *        - "to"        : destination
- *        - "to_offset" : (size_t) offset within destination
- *        - "length"    : (size_t) number of strides to read
+ *        - "dest"          : destination
+ *        - "dest_offset"   : (size_t) offset within destination
+ *        - "length"        : (size_t) number of strides to read
  * - "write"    : write data to file from memory
  *      parameters:
- *        - "from"          : source
- *        - "from_offset"   : (size_t) offset within source
+ *        - "src"           : source
+ *        - "src_offset"    : (size_t) offset within source
  *        - "length"        : (size_t) number of strides to write
  * - "sync"     : synchronize file state with storage
  *
  * Setter slots:
- * - "offset"       : (ptrdiff_t) file offset (in bytes) from file beginning
- * - "offset.end"   : (ptrdiff_t) file offset (in bytes) from file end
- * - "offset.shift" : (ptrdiff_t) file offset (in bytes) from the current position
+ * - "offset"       : (long long) file offset (in bytes) from file beginning
+ * - "offset.end"   : (long long) file offset (in bytes) from file end
+ * - "offset.shift" : (long long) file offset (in bytes) from the current position
  */
 extern
 const archi_context_interface_t

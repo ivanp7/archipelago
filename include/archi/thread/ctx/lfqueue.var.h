@@ -29,19 +29,18 @@
 
 #include "archi/context/api/interface.typ.h"
 
+
 /**
  * @brief Context interface: lock-free queue.
  *
  * Initialization parameters:
- * - "params"               : (archi_thread_lfqueue_alloc_params_t) queue creation parameters structure
- * - "capacity"             : (size_t) queue capacity
- * - "element_size"         : (size_t) queue element size in bytes
- * - "element_alignment"    : (size_t) queue element alignment requirement in bytes
+ * - "params"   : (archi_thread_lfqueue_alloc_params_t) queue creation parameters structure
+ * - "capacity" : (size_t) queue capacity
+ * - "elt_size" : (size_t) queue element size in bytes
  *
  * Getter slots:
- * - "capacity"             : (size_t) queue capacity
- * - "element.size"         : (size_t) queue element size in bytes
- * - "element.alignment"    : (size_t) queue element alignment requirement in bytes
+ * - "capacity" : (size_t) queue capacity
+ * - "elt_size" : (size_t) queue element size in bytes
  */
 extern
 const archi_context_interface_t

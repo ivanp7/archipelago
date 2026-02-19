@@ -1,17 +1,39 @@
+/*****************************************************************************
+ * Copyright (C) 2023-2026 by Ivan Podmazov                                  *
+ *                                                                           *
+ * This file is part of Archipelago.                                         *
+ *                                                                           *
+ *   Archipelago is free software: you can redistribute it and/or modify it  *
+ *   under the terms of the GNU Lesser General Public License as published   *
+ *   by the Free Software Foundation, either version 3 of the License, or    *
+ *   (at your option) any later version.                                     *
+ *                                                                           *
+ *   Archipelago is distributed in the hope that it will be useful,          *
+ *   but WITHOUT ANY WARRANTY; without even the implied warranty of          *
+ *   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the           *
+ *   GNU Lesser General Public License for more details.                     *
+ *                                                                           *
+ *   You should have received a copy of the GNU Lesser General Public        *
+ *   License along with Archipelago. If not, see                             *
+ *   <http://www.gnu.org/licenses/>.                                         *
+ *****************************************************************************/
+
 /**
  * @file
- * @brief Operations with fonts.
+ * @brief Operations with PSFv2 fonts.
  */
 
 #pragma once
 #ifndef _ARCHI_FONT_PSF2_API_FONT_FUN_H_
 #define _ARCHI_FONT_PSF2_API_FONT_FUN_H_
 
+#include "archi/font_psf2/api/handle.typ.h"
 #include "archi/font_psf2/api/font.typ.h"
-#include "archipelago/base/pointer.typ.h"
-#include "archipelago/base/error.typ.h"
+#include "archi_base/pointer.typ.h"
+#include "archi_base/error.typ.h"
 
 #include <stdbool.h>
+
 
 /**
  * @brief Load PC Screen Font version 2 from buffer.
@@ -20,8 +42,8 @@
  */
 archi_font_psf2_t
 archi_font_psf2_load(
-        archi_pointer_t font_data, ///< [in] Font data.
-        ARCHI_ERROR_PARAMETER_DECL ///< [out] Error.
+        archi_rcpointer_t font_data, ///< [in] Font data.
+        ARCHI_ERROR_PARAM_DECL ///< [out] Error.
 );
 
 /**
@@ -47,7 +69,7 @@ archi_font_psf2_header(
  *
  * @return Pointer to the character glyph.
  */
-archi_pointer_t
+archi_rcpointer_t
 archi_font_psf2_glyph(
         archi_font_psf2_t font, ///< [in] Font.
         uint32_t code_point ///< [in] Unicode code point.

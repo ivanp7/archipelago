@@ -25,6 +25,7 @@
 
 #include "archi/context/api/callback.fun.h"
 
+
 ARCHI_CONTEXT_CALLBACK_FUNC(archi_context_callback__getter)
 {
     archi_rcpointer_t *output = data;

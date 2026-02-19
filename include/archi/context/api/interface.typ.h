@@ -29,11 +29,12 @@
 
 #include "archi/context/api/slot.typ.h"
 #include "archi/context/api/callback.typ.h"
-#include "archipelago/base/pointer.typ.h"
-#include "archipelago/base/kvlist.typ.h"
-#include "archipelago/base/error.typ.h"
+#include "archi_base/pointer.typ.h"
+#include "archi_base/kvlist.typ.h"
+#include "archi_base/error.typ.h"
 
 #include <stdbool.h>
+
 
 /**
  * @brief Declare/define context initialization function.
@@ -47,8 +48,8 @@
  * @return Pointer to context data.
  */
 #define ARCHI_CONTEXT_INIT_FUNC(func_name)  archi_rcpointer_t* func_name(       \
-        const archi_kvlist_rc_t *params, /* [in] Initialization parameters. */  \
-        ARCHI_ERROR_PARAMETER_DECL) /* [out] Error. */
+        const archi_krcvlist_t *params, /* [in] Initialization parameters. */   \
+        ARCHI_ERROR_PARAM_DECL) /* [out] Error. */
 
 /**
  * @brief Context initialization function type.
@@ -79,7 +80,9 @@ typedef ARCHI_CONTEXT_FINAL_FUNC((*archi_context_final_func_t));
  * These special values will be automatically replaced with
  * a context reference counter or a interface reference counter, respectively.
  *
- * If `call` is false, `slot` is always non-empty and `params` is always NULL.
+ * If `call` is false, the following conditions apply:
+ * - `slot` is non-empty;
+ * - `params` is NULL.
  *
  * Contract:
  * (1) if `call` is false, use ARCHI_CONTEXT_YIELD() exactly once, or signal error;
@@ -89,9 +92,9 @@ typedef ARCHI_CONTEXT_FINAL_FUNC((*archi_context_final_func_t));
         archi_rcpointer_t *context, /* [in] Context data. */                    \
         archi_context_slot_t slot, /* [in] Slot designator. */                  \
         bool call, /* [in] Whether call semantics are used. */                  \
-        const archi_kvlist_rc_t *params, /* [in] Call parameters. */            \
+        const archi_krcvlist_t *params, /* [in] Call parameters. */             \
         ARCHI_CONTEXT_CALLBACK_PARAMETER_DECL, /* [in] Output callback. */      \
-        ARCHI_ERROR_PARAMETER_DECL) /* [out] Error. */
+        ARCHI_ERROR_PARAM_DECL) /* [out] Error. */
 
 /**
  * @brief Context slot evaluation function type.
@@ -101,15 +104,19 @@ typedef ARCHI_CONTEXT_EVAL_FUNC((*archi_context_eval_func_t));
 /**
  * @brief Declare/define context slot setter function.
  *
- * `slot` is always non-empty.
+ * `slot` is always non-empty (either `slot.name` is non-empty or `slot.num_indices` is non-zero).
+ *
+ * If `unset` is true, the following conditions apply:
+ * - `value` is empty (default-initialized).
  *
  * This function is intended for accepting pointers into a context.
  */
 #define ARCHI_CONTEXT_SET_FUNC(func_name)   void func_name(                     \
         archi_rcpointer_t *context, /* [in] Context data. */                    \
         archi_context_slot_t slot, /* [in] Slot designator. */                  \
+        bool unset, /* [in] Whether slot value is being unset. */               \
         archi_rcpointer_t value, /* [in] Value to set. */                       \
-        ARCHI_ERROR_PARAMETER_DECL) /* [out] Error. */
+        ARCHI_ERROR_PARAM_DECL) /* [out] Error. */
 
 /**
  * @brief Context slot setter function type.

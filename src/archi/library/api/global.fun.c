@@ -24,9 +24,10 @@
  */
 
 #include "archi/library/api/global.fun.h"
-#include "archi/library/api/handle.fun.h"
+#include "archi/library/api/library.fun.h"
 
 #include <stddef.h> // for NULL
+
 
 bool
 archi_library_initialize_global(

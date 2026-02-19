@@ -27,8 +27,10 @@
 #ifndef _ARCHI_FILE_API_MAP_FUN_H_
 #define _ARCHI_FILE_API_MAP_FUN_H_
 
+#include "archi/file/api/handle.typ.h"
 #include "archi/file/api/file.typ.h"
-#include "archipelago/base/error.typ.h"
+#include "archi_base/error.typ.h"
+
 
 /**
  * @brief Get page size.
@@ -49,8 +51,8 @@ void*
 archi_file_map(
         archi_file_descriptor_t fd, ///< [in] File descriptor.
         archi_file_map_params_t params, ///< [in] File mapping parameters.
-        size_t *size, /// [out] Mapped memory size.
-        ARCHI_ERROR_PARAMETER_DECL ///< [out] Error.
+        size_t *out_size, /// [out] Mapped memory size.
+        ARCHI_ERROR_PARAM_DECL ///< [out] Error.
 );
 
 /**

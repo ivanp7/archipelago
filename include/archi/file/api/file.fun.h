@@ -27,9 +27,11 @@
 #ifndef _ARCHI_FILE_API_FILE_FUN_H_
 #define _ARCHI_FILE_API_FILE_FUN_H_
 
+#include "archi/file/api/handle.typ.h"
 #include "archi/file/api/file.typ.h"
-#include "archipelago/base/pointer.typ.h"
-#include "archipelago/base/error.typ.h"
+#include "archi_base/pointer.typ.h"
+#include "archi_base/error.typ.h"
+
 
 /**
  * @brief Open a file.
@@ -40,7 +42,7 @@ archi_file_descriptor_t
 archi_file_open(
         const char *pathname, ///< [in] Path to opened file.
         archi_file_open_params_t params, ///< [in] File opening parameters.
-        ARCHI_ERROR_PARAMETER_DECL ///< [out] Error.
+        ARCHI_ERROR_PARAM_DECL ///< [out] Error.
 );
 
 /**
@@ -49,7 +51,7 @@ archi_file_open(
 void
 archi_file_close(
         archi_file_descriptor_t fd, ///< [in] File descriptor.
-        ARCHI_ERROR_PARAMETER_DECL ///< [out] Error.
+        ARCHI_ERROR_PARAM_DECL ///< [out] Error.
 );
 
 /**
@@ -60,7 +62,7 @@ archi_file_close(
 archi_file_descriptor_t
 archi_file_duplicate(
         archi_file_descriptor_t fd, ///< [in] File descriptor.
-        ARCHI_ERROR_PARAMETER_DECL ///< [out] Error.
+        ARCHI_ERROR_PARAM_DECL ///< [out] Error.
 );
 
 /**
@@ -68,12 +70,12 @@ archi_file_duplicate(
  *
  * @return Offset in bytes from the beginning of the file.
  */
-ptrdiff_t
+long long
 archi_file_seek(
         archi_file_descriptor_t fd, ///< [in] File descriptor.
-        ptrdiff_t offset, ///< [in] Offset in bytes relative to location specified by whence.
+        long long offset, ///< [in] Offset in bytes relative to location specified by whence.
         int whence, ///< [in] Location specifier as in fseek().
-        ARCHI_ERROR_PARAMETER_DECL ///< [out] Error.
+        ARCHI_ERROR_PARAM_DECL ///< [out] Error.
 );
 
 /**
@@ -85,7 +87,7 @@ size_t
 archi_file_read(
         archi_file_descriptor_t fd, ///< [in] File descriptor.
         archi_pointer_t destination, ///< [in,out] Destination buffer.
-        ARCHI_ERROR_PARAMETER_DECL ///< [out] Error.
+        ARCHI_ERROR_PARAM_DECL ///< [out] Error.
 );
 
 /**
@@ -97,7 +99,7 @@ size_t
 archi_file_write(
         archi_file_descriptor_t fd, ///< [in] File descriptor.
         archi_pointer_t source, ///< [in] Source buffer.
-        ARCHI_ERROR_PARAMETER_DECL ///< [out] Error.
+        ARCHI_ERROR_PARAM_DECL ///< [out] Error.
 );
 
 /**
@@ -106,7 +108,7 @@ archi_file_write(
 void
 archi_file_sync(
         archi_file_descriptor_t fd, ///< [in] File descriptor.
-        ARCHI_ERROR_PARAMETER_DECL ///< [out] Error.
+        ARCHI_ERROR_PARAM_DECL ///< [out] Error.
 );
 
 #endif // _ARCHI_FILE_API_FILE_FUN_H_

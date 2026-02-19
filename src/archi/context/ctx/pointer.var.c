@@ -25,15 +25,16 @@
 
 #include "archi/context/ctx/pointer.var.h"
 #include "archi/context/api/interface.def.h"
-#include "archipelago/util/parameters.fun.h"
-#include "archipelago/base/pointer.def.h"
-#include "archipelago/base/pointer.fun.h"
-#include "archipelago/base/ref_count.fun.h"
-#include "archipelago/util/size.def.h"
-#include "archipelago/util/string.fun.h"
+#include "archi_base/pointer.fun.h"
+#include "archi_base/pointer.def.h"
+#include "archi_base/tag.def.h"
+#include "archi_base/util/plist.fun.h"
+#include "archi_base/util/check.fun.h"
+#include "archi_base/util/string.fun.h"
 
 #include <stdlib.h> // for malloc(), free()
 #include <string.h> // for memcpy(), memmove()
+
 
 static
 ARCHI_CONTEXT_INIT_FUNC(archi_context_init__pointer)
@@ -41,17 +42,14 @@ ARCHI_CONTEXT_INIT_FUNC(archi_context_init__pointer)
     // Parse parameters
     archi_rcpointer_t entity = {0};
     {
-        archi_kvlist_parameter_t parsed[] = {
-            {.name = "pointee", .value_unchecked = true}, // any type
+        archi_plist_param_t parsed[] = {
+            {.name = "pointee",
+                .assign = {archi_plist_assign__rcpointer, &entity, sizeof(entity)}},
+            {0},
         };
 
-        if (!archi_kvlist_parameters_parse(params, parsed, ARCHI_LENGTH_ARRAY(parsed), false, NULL,
-                    ARCHI_ERROR_PARAMETER))
+        if (!archi_plist_parse(&params->n, true, parsed, false, ARCHI_ERROR_PARAM))
             return NULL;
-
-        size_t index = 0;
-        if (parsed[index].value_set)
-            entity = parsed[index].value;
     }
 
     // Construct the context
@@ -63,8 +61,8 @@ ARCHI_CONTEXT_INIT_FUNC(archi_context_init__pointer)
     }
 
     // Own the entity
-    *context_data = archi_rcpointer_own(entity, ARCHI_ERROR_PARAMETER);
-    if (!context_data->attr) // failed to own
+    *context_data = archi_rcpointer_own(entity, ARCHI_ERROR_PARAM);
+    if (!context_data->attr)
     {
         free(context_data);
         return NULL;
@@ -109,6 +107,12 @@ ARCHI_CONTEXT_EVAL_FUNC(archi_context_eval__pointer)
 static
 ARCHI_CONTEXT_SET_FUNC(archi_context_set__pointer)
 {
+    if (unset)
+    {
+        ARCHI_ERROR_SET(ARCHI__ECONSTRAINT, "slot unsetting is not supported");
+        return;
+    }
+
     if (ARCHI_STRING_COMPARE("pointee", ==, slot.name))
     {
         if (slot.num_indices != 0)
@@ -117,8 +121,8 @@ ARCHI_CONTEXT_SET_FUNC(archi_context_set__pointer)
             return;
         }
 
-        value = archi_rcpointer_own_disown(value, *context, ARCHI_ERROR_PARAMETER);
-        if (!value.attr) // failed to own
+        value = archi_rcpointer_own_disown(value, *context, ARCHI_ERROR_PARAM);
+        if (!value.attr)
             return;
 
         *context = value;
@@ -150,22 +154,18 @@ ARCHI_CONTEXT_INIT_FUNC(archi_context_init__dpointer)
     bool writable = false;
     bool writable_set = false;
     {
-        archi_kvlist_parameter_t parsed[] = {
-            {.name = "pointee", .value.attr = archi_pointer_attr__opaque_data(0)}, // any data type
-            {.name = "writable", .value.attr = ARCHI_POINTER_ATTR__DATA_TYPE(1, char)},
+        archi_plist_param_t parsed[] = {
+            {.name = "pointee",
+                .check = {archi_value_check__attr, (archi_pointer_attr_t[]){archi_pointer_attr__cdata(0)}},
+                .assign = {archi_plist_assign__rcpointer, &data, sizeof(data)}},
+            {.name = "writable",
+                .check = {archi_value_check__attr, (archi_pointer_attr_t[]){ARCHI_POINTER_ATTR__PDATA(1, char)}},
+                .assign = {archi_plist_assign__bool, &writable, sizeof(writable), &writable_set}},
+            {0},
         };
 
-        if (!archi_kvlist_parameters_parse(params, parsed, ARCHI_LENGTH_ARRAY(parsed), false, NULL,
-                    ARCHI_ERROR_PARAMETER))
+        if (!archi_plist_parse(&params->n, true, parsed, false, ARCHI_ERROR_PARAM))
             return NULL;
-
-        size_t index = 0;
-        if (parsed[index].value_set)
-            data = parsed[index].value;
-        index++;
-        writable_set = parsed[index].value_set;
-        if (writable_set)
-            writable = *(char*)parsed[index].value.ptr;
     }
 
     // Construct the context
@@ -177,8 +177,8 @@ ARCHI_CONTEXT_INIT_FUNC(archi_context_init__dpointer)
     }
 
     // Own the data
-    *context_data = archi_rcpointer_own(data, ARCHI_ERROR_PARAMETER);
-    if (!context_data->attr) // failed to own
+    *context_data = archi_rcpointer_own(data, ARCHI_ERROR_PARAM);
+    if (!context_data->attr)
     {
         free(context_data);
         return NULL;
@@ -230,7 +230,7 @@ ARCHI_CONTEXT_EVAL_FUNC(archi_context_eval__dpointer)
         archi_rcpointer_t value = {
             .ptr = &writable,
             .attr = ARCHI_POINTER_TYPE__DATA_ON_STACK |
-                ARCHI_POINTER_ATTR__DATA_TYPE(1, char),
+                ARCHI_POINTER_ATTR__PDATA(1, char),
         };
 
         ARCHI_CONTEXT_YIELD(value);
@@ -242,6 +242,12 @@ ARCHI_CONTEXT_EVAL_FUNC(archi_context_eval__dpointer)
 static
 ARCHI_CONTEXT_SET_FUNC(archi_context_set__dpointer)
 {
+    if (unset)
+    {
+        ARCHI_ERROR_SET(ARCHI__ECONSTRAINT, "slot unsetting is not supported");
+        return;
+    }
+
     if (ARCHI_STRING_COMPARE("pointee", ==, slot.name))
     {
         if (slot.num_indices != 0)
@@ -255,8 +261,8 @@ ARCHI_CONTEXT_SET_FUNC(archi_context_set__dpointer)
             return;
         }
 
-        value = archi_rcpointer_own_disown(value, *context, ARCHI_ERROR_PARAMETER);
-        if (!value.attr) // failed to own
+        value = archi_rcpointer_own_disown(value, *context, ARCHI_ERROR_PARAM);
+        if (!value.attr)
             return;
 
         *context = value;
@@ -269,7 +275,7 @@ ARCHI_CONTEXT_SET_FUNC(archi_context_set__dpointer)
             return;
         }
         else if (!archi_pointer_attr_compatible(value.attr,
-                    ARCHI_POINTER_ATTR__DATA_TYPE(1, char)))
+                    ARCHI_POINTER_ATTR__PDATA(1, char)))
         {
             ARCHI_ERROR_SET(ARCHI__ECONSTRAINT, "assigned value is not a boolean");
             return;
@@ -301,80 +307,57 @@ archi_context_interface__dpointer = {
 /*****************************************************************************/
 
 static
-ARCHI_CONTEXT_INIT_FUNC(archi_context_init__tdpointer)
+ARCHI_CONTEXT_INIT_FUNC(archi_context_init__pdpointer)
 {
     // Parse parameters
     archi_rcpointer_t data = {0};
-    ptrdiff_t offset = 0;
+    long long offset = 0;
     size_t offset_unit = 1;
     bool writable = false;
-    bool writable_set = false;
-    size_t length = 0;
-    bool length_set = false;
-    size_t stride = 1;
-    bool stride_set = false;
-    size_t alignment = 1;
-    bool alignment_set = false;
+    size_t length = 0, stride = 1, alignment = 1;
+    bool writable_set = false, length_set = false, stride_set = false, alignment_set = false;
     {
-        archi_kvlist_parameter_t parsed[] = {
-            {.name = "pointee", .value.attr = archi_pointer_attr__opaque_data(0)}, // any data type
-            {.name = "offset", .value.attr = ARCHI_POINTER_ATTR__DATA_TYPE(1, ptrdiff_t)},
-            {.name = "offset_unit", .value.attr = ARCHI_POINTER_ATTR__DATA_TYPE(1, size_t)},
-            {.name = "writable", .value.attr = ARCHI_POINTER_ATTR__DATA_TYPE(1, char)},
-            {.name = "length", .value.attr = ARCHI_POINTER_ATTR__DATA_TYPE(1, size_t)},
-            {.name = "stride", .value.attr = ARCHI_POINTER_ATTR__DATA_TYPE(1, size_t)},
-            {.name = "alignment", .value.attr = ARCHI_POINTER_ATTR__DATA_TYPE(1, size_t)},
+        archi_plist_param_t parsed[] = {
+            {.name = "pointee",
+                .check = {archi_value_check__attr, (archi_pointer_attr_t[]){archi_pointer_attr__cdata(0)}},
+                .assign = {archi_plist_assign__rcpointer, &data, sizeof(data)}},
+            {.name = "offset",
+                .check = {archi_value_check__attr, (archi_pointer_attr_t[]){ARCHI_POINTER_ATTR__PDATA(1, long long)}},
+                .assign = {archi_plist_assign__value, &offset, sizeof(offset)}},
+            {.name = "offset_unit",
+                .check = {archi_value_check__attr, (archi_pointer_attr_t[]){ARCHI_POINTER_ATTR__PDATA(1, size_t)}},
+                .assign = {archi_plist_assign__value, &offset_unit, sizeof(offset_unit)}},
+            {.name = "writable",
+                .check = {archi_value_check__attr, (archi_pointer_attr_t[]){ARCHI_POINTER_ATTR__PDATA(1, char)}},
+                .assign = {archi_plist_assign__bool, &writable, sizeof(writable), &writable_set}},
+            {.name = "length",
+                .check = {archi_value_check__attr, (archi_pointer_attr_t[]){ARCHI_POINTER_ATTR__PDATA(1, size_t)}},
+                .assign = {archi_plist_assign__value, &length, sizeof(length), &length_set}},
+            {.name = "stride",
+                .check = {archi_value_check__attr, (archi_pointer_attr_t[]){ARCHI_POINTER_ATTR__PDATA(1, size_t)}},
+                .assign = {archi_plist_assign__value, &stride, sizeof(stride), &stride_set}},
+            {.name = "alignment",
+                .check = {archi_value_check__attr, (archi_pointer_attr_t[]){ARCHI_POINTER_ATTR__PDATA(1, size_t)}},
+                .assign = {archi_plist_assign__value, &alignment, sizeof(alignment), &alignment_set}},
+            {0},
         };
 
-        if (!archi_kvlist_parameters_parse(params, parsed, ARCHI_LENGTH_ARRAY(parsed), false, NULL,
-                    ARCHI_ERROR_PARAMETER))
+        if (!archi_plist_parse(&params->n, true, parsed, false, ARCHI_ERROR_PARAM))
             return NULL;
-
-        size_t index = 0;
-        if (parsed[index].value_set)
-            data = parsed[index].value;
-        index++;
-        if (parsed[index].value_set)
-            offset = *(ptrdiff_t*)parsed[index].value.ptr;
-        index++;
-        if (parsed[index].value_set)
-            offset_unit = *(size_t*)parsed[index].value.ptr;
-        index++;
-        writable_set = parsed[index].value_set;
-        if (writable_set)
-            writable = *(char*)parsed[index].value.ptr;
-        index++;
-        length_set = parsed[index].value_set;
-        if (length_set)
-            length = *(size_t*)parsed[index].value.ptr;
-        index++;
-        stride_set = parsed[index].value_set;
-        if (stride_set)
-            stride = *(size_t*)parsed[index].value.ptr;
-        index++;
-        alignment_set = parsed[index].value_set;
-        if (alignment_set)
-            alignment = *(size_t*)parsed[index].value.ptr;
     }
 
-    // Check validity of parameters
+    // Check validness of parameters
     if (offset_unit == 0)
     {
         ARCHI_ERROR_SET(ARCHI__ECONSTRAINT, "pointer offset unit is zero");
         return NULL;
     }
-    else if (((offset > 0) && ARCHI_SIZE_OVERFLOW((size_t)offset, offset_unit)) ||
-            ((offset < 0) && ARCHI_SIZE_OVERFLOW((size_t)-offset, offset_unit)))
-    {
-        ARCHI_ERROR_SET(ARCHI__ECONSTRAINT, "pointer offset (%ti) is too large", offset);
-        return NULL;
-    }
 
     // Parse pointer attributes
     if ((!length_set || !stride_set || !alignment_set) &&
-            !archi_pointer_attr_parse__transp_data(data.attr, (!length_set ? &length : NULL),
+            !archi_pointer_attr_unpk__pdata(data.attr, (!length_set ? &length : NULL),
                 (!stride_set ? &stride : NULL), (!alignment_set ? &alignment : NULL),
-                ARCHI_ERROR_PARAMETER))
+                ARCHI_ERROR_PARAM))
         return NULL;
 
     // Check pointer alignment
@@ -389,14 +372,14 @@ ARCHI_CONTEXT_INIT_FUNC(archi_context_init__tdpointer)
 
         if (addr % alignment != 0)
         {
-            ARCHI_ERROR_SET(ARCHI__ECONSTRAINT, "shifted pointer is misaligned");
+            ARCHI_ERROR_SET(ARCHI__ECONSTRAINT, "pointer is misaligned");
             return NULL;
         }
     }
 
     // Construct new pointer attributes
-    archi_pointer_attr_t attr = archi_pointer_attr__transp_data(length, stride, alignment,
-            ARCHI_ERROR_PARAMETER);
+    archi_pointer_attr_t attr = archi_pointer_attr__pdata(length, stride, alignment,
+            ARCHI_ERROR_PARAM);
     if (attr == (archi_pointer_attr_t)-1)
         return NULL;
 
@@ -420,8 +403,8 @@ ARCHI_CONTEXT_INIT_FUNC(archi_context_init__tdpointer)
     }
 
     // Own the data
-    *context_data = archi_rcpointer_own(data, ARCHI_ERROR_PARAMETER);
-    if (!context_data->attr) // failed to own
+    *context_data = archi_rcpointer_own(data, ARCHI_ERROR_PARAM);
+    if (!context_data->attr)
     {
         free(context_data);
         return NULL;
@@ -443,7 +426,7 @@ ARCHI_CONTEXT_INIT_FUNC(archi_context_init__tdpointer)
 }
 
 static
-ARCHI_CONTEXT_EVAL_FUNC(archi_context_eval__tdpointer)
+ARCHI_CONTEXT_EVAL_FUNC(archi_context_eval__pdpointer)
 {
     if (!call)
     {
@@ -466,19 +449,17 @@ ARCHI_CONTEXT_EVAL_FUNC(archi_context_eval__tdpointer)
             }
 
             size_t length, stride, alignment;
-            archi_pointer_attr_parse__transp_data(context->attr, &length, &stride, &alignment, NULL);
+            archi_pointer_attr_unpk__pdata(context->attr, &length, &stride, &alignment, NULL);
 
-            ptrdiff_t offset = slot.index[0];
+            archi_context_slot_index_t offset = slot.index[0];
             if ((offset > 0) && ((size_t)offset > length))
             {
-                ARCHI_ERROR_SET(ARCHI__EINDEX, "offset (%ti) exceeds data length (%zu)", offset, length);
+                ARCHI_ERROR_SET(ARCHI__EINDEX, "offset (%lli) exceeds data length (%zu)", offset, length);
                 return;
             }
-            else if ((offset < 0) && (ARCHI_SIZE_OVERFLOW((size_t)-offset, stride) ||
-                        ((size_t)-offset * stride > ARCHI_POINTER_DATA_SIZE_MAX) ||
-                        (((size_t)-offset + length) * stride > ARCHI_POINTER_DATA_SIZE_MAX)))
+            else if ((offset < 0) && (length - offset >= (ARCHI_POINTER_DATA_SIZE_MAX + 1) / stride))
             {
-                ARCHI_ERROR_SET(ARCHI__EINDEX, "(offset+length)*stride (%ti*%zu+%zu) exceeds ARCHI_POINTER_DATA_SIZE_MAX",
+                ARCHI_ERROR_SET(ARCHI__EINDEX, "(offset+length)*stride (%lli*%zu+%zu) exceeds ARCHI_POINTER_DATA_SIZE_MAX",
                         offset, stride, length);
                 return;
             }
@@ -488,9 +469,9 @@ ARCHI_CONTEXT_EVAL_FUNC(archi_context_eval__tdpointer)
             if (context->ptr != NULL)
             {
                 value = (archi_rcpointer_t){
-                    .ptr = (char*)context->ptr + offset * (ptrdiff_t)stride,
+                    .ptr = (char*)context->ptr + (ptrdiff_t)offset * (ptrdiff_t)stride,
                     .attr = (context->attr & ARCHI_POINTER_TYPE_MASK) |
-                        archi_pointer_attr__transp_data(length - offset, stride, alignment, NULL),
+                        archi_pointer_attr__pdata(length - offset, stride, alignment, NULL),
                     .ref_count = context->ref_count,
                 };
             }
@@ -498,7 +479,7 @@ ARCHI_CONTEXT_EVAL_FUNC(archi_context_eval__tdpointer)
             {
                 value = (archi_rcpointer_t){
                     .attr = (context->attr & ARCHI_POINTER_TYPE_MASK) |
-                        archi_pointer_attr__transp_data(0, stride, alignment, NULL),
+                        archi_pointer_attr__pdata(0, stride, alignment, NULL),
                 };
             }
 
@@ -517,7 +498,7 @@ ARCHI_CONTEXT_EVAL_FUNC(archi_context_eval__tdpointer)
             archi_rcpointer_t value = {
                 .ptr = &writable,
                 .attr = ARCHI_POINTER_TYPE__DATA_ON_STACK |
-                    ARCHI_POINTER_ATTR__DATA_TYPE(1, char),
+                    ARCHI_POINTER_ATTR__PDATA(1, char),
             };
 
             ARCHI_CONTEXT_YIELD(value);
@@ -531,12 +512,12 @@ ARCHI_CONTEXT_EVAL_FUNC(archi_context_eval__tdpointer)
             }
 
             size_t length;
-            archi_pointer_attr_parse__transp_data(context->attr, &length, NULL, NULL, NULL);
+            archi_pointer_attr_unpk__pdata(context->attr, &length, NULL, NULL, NULL);
 
             archi_rcpointer_t value = {
                 .ptr = &length,
                 .attr = ARCHI_POINTER_TYPE__DATA_ON_STACK |
-                    ARCHI_POINTER_ATTR__DATA_TYPE(1, size_t),
+                    ARCHI_POINTER_ATTR__PDATA(1, size_t),
             };
 
             ARCHI_CONTEXT_YIELD(value);
@@ -550,12 +531,12 @@ ARCHI_CONTEXT_EVAL_FUNC(archi_context_eval__tdpointer)
             }
 
             size_t stride;
-            archi_pointer_attr_parse__transp_data(context->attr, NULL, &stride, NULL, NULL);
+            archi_pointer_attr_unpk__pdata(context->attr, NULL, &stride, NULL, NULL);
 
             archi_rcpointer_t value = {
                 .ptr = &stride,
                 .attr = ARCHI_POINTER_TYPE__DATA_ON_STACK |
-                    ARCHI_POINTER_ATTR__DATA_TYPE(1, size_t),
+                    ARCHI_POINTER_ATTR__PDATA(1, size_t),
             };
 
             ARCHI_CONTEXT_YIELD(value);
@@ -571,14 +552,14 @@ ARCHI_CONTEXT_EVAL_FUNC(archi_context_eval__tdpointer)
             size_t size;
             {
                 size_t length, stride;
-                archi_pointer_attr_parse__transp_data(context->attr, &length, &stride, NULL, NULL);
+                archi_pointer_attr_unpk__pdata(context->attr, &length, &stride, NULL, NULL);
                 size = length * stride;
             }
 
             archi_rcpointer_t value = {
                 .ptr = &size,
                 .attr = ARCHI_POINTER_TYPE__DATA_ON_STACK |
-                    ARCHI_POINTER_ATTR__DATA_TYPE(1, size_t),
+                    ARCHI_POINTER_ATTR__PDATA(1, size_t),
             };
 
             ARCHI_CONTEXT_YIELD(value);
@@ -592,12 +573,12 @@ ARCHI_CONTEXT_EVAL_FUNC(archi_context_eval__tdpointer)
             }
 
             size_t alignment;
-            archi_pointer_attr_parse__transp_data(context->attr, NULL, NULL, &alignment, NULL);
+            archi_pointer_attr_unpk__pdata(context->attr, NULL, NULL, &alignment, NULL);
 
             archi_rcpointer_t value = {
                 .ptr = &alignment,
                 .attr = ARCHI_POINTER_TYPE__DATA_ON_STACK |
-                    ARCHI_POINTER_ATTR__DATA_TYPE(1, size_t),
+                    ARCHI_POINTER_ATTR__PDATA(1, size_t),
             };
 
             ARCHI_CONTEXT_YIELD(value);
@@ -616,30 +597,20 @@ ARCHI_CONTEXT_EVAL_FUNC(archi_context_eval__tdpointer)
             }
 
             size_t stride, alignment;
-            archi_pointer_attr_parse__transp_data(context->attr, NULL, &stride, &alignment, NULL);
+            archi_pointer_attr_unpk__pdata(context->attr, NULL, &stride, &alignment, NULL);
 
             // Parse parameters
-            ptrdiff_t offset = 0;
+            long long offset = 0;
             {
-                archi_kvlist_parameter_t parsed[] = {
-                    {.name = "offset", .value.attr = ARCHI_POINTER_ATTR__DATA_TYPE(1, ptrdiff_t)},
+                archi_plist_param_t parsed[] = {
+                    {.name = "offset",
+                        .check = {archi_value_check__attr, (archi_pointer_attr_t[]){ARCHI_POINTER_ATTR__PDATA(1, long long)}},
+                        .assign = {archi_plist_assign__value, &offset, sizeof(offset)}},
+                    {0},
                 };
 
-                if (!archi_kvlist_parameters_parse(params, parsed, ARCHI_LENGTH_ARRAY(parsed), false, NULL,
-                            ARCHI_ERROR_PARAMETER))
+                if (!archi_plist_parse(&params->n, true, parsed, false, ARCHI_ERROR_PARAM))
                     return;
-
-                size_t index = 0;
-                if (parsed[index].value_set)
-                    offset = *(ptrdiff_t*)parsed[index].value.ptr;
-            }
-
-            // Check validity of parameters
-            if (((offset > 0) && ARCHI_SIZE_OVERFLOW((size_t)offset, stride)) ||
-                    ((offset < 0) && ARCHI_SIZE_OVERFLOW((size_t)-offset, stride)))
-            {
-                ARCHI_ERROR_SET(ARCHI__ECONSTRAINT, "pointer offset (%ti) is too large", offset);
-                return;
             }
 
             // Apply offset
@@ -650,6 +621,8 @@ ARCHI_CONTEXT_EVAL_FUNC(archi_context_eval__tdpointer)
                 else if (offset < 0)
                     context->ptr = (char*)context->ptr - (size_t)-offset * stride;
             }
+
+            ARCHI_ERROR_RESET();
         }
         else if (ARCHI_STRING_COMPARE("set_attr", ==, slot.name))
         {
@@ -660,45 +633,42 @@ ARCHI_CONTEXT_EVAL_FUNC(archi_context_eval__tdpointer)
             }
 
             size_t length, stride, alignment;
-            archi_pointer_attr_parse__transp_data(context->attr, &length, &stride, &alignment, NULL);
+            archi_pointer_attr_unpk__pdata(context->attr, &length, &stride, &alignment, NULL);
 
             // Parse parameters
             {
-                archi_kvlist_parameter_t parsed[] = {
-                    {.name = "length", .value.attr = ARCHI_POINTER_ATTR__DATA_TYPE(1, size_t)},
-                    {.name = "stride", .value.attr = ARCHI_POINTER_ATTR__DATA_TYPE(1, size_t)},
-                    {.name = "alignment", .value.attr = ARCHI_POINTER_ATTR__DATA_TYPE(1, size_t)},
+                archi_plist_param_t parsed[] = {
+                    {.name = "length",
+                        .check = {archi_value_check__attr, (archi_pointer_attr_t[]){ARCHI_POINTER_ATTR__PDATA(1, size_t)}},
+                        .assign = {archi_plist_assign__value, &length, sizeof(length)}},
+                    {.name = "stride",
+                        .check = {archi_value_check__attr, (archi_pointer_attr_t[]){ARCHI_POINTER_ATTR__PDATA(1, size_t)}},
+                        .assign = {archi_plist_assign__value, &stride, sizeof(stride)}},
+                    {.name = "alignment",
+                        .check = {archi_value_check__attr, (archi_pointer_attr_t[]){ARCHI_POINTER_ATTR__PDATA(1, size_t)}},
+                        .assign = {archi_plist_assign__value, &alignment, sizeof(alignment)}},
+                    {0},
                 };
 
-                if (!archi_kvlist_parameters_parse(params, parsed, ARCHI_LENGTH_ARRAY(parsed), false, NULL,
-                            ARCHI_ERROR_PARAMETER))
+                if (!archi_plist_parse(&params->n, true, parsed, false, ARCHI_ERROR_PARAM))
                     return;
-
-                size_t index = 0;
-                if (parsed[index].value_set)
-                    length = *(size_t*)parsed[index].value.ptr;
-                index++;
-                if (parsed[index].value_set)
-                    stride = *(size_t*)parsed[index].value.ptr;
-                index++;
-                if (parsed[index].value_set)
-                    alignment = *(size_t*)parsed[index].value.ptr;
             }
 
-            // Check validity of parameters
-            archi_pointer_attr_t attr = archi_pointer_attr__transp_data(length, stride, alignment,
-                    ARCHI_ERROR_PARAMETER);
+            // Check validness of parameters
+            archi_pointer_attr_t attr = archi_pointer_attr__pdata(length, stride, alignment,
+                    ARCHI_ERROR_PARAM);
             if (attr == (archi_pointer_attr_t)-1)
                 return;
 
             if ((context->ptr != NULL) && ((uintptr_t)context->ptr % alignment != 0))
             {
-                ARCHI_ERROR_SET(ARCHI__ECONSTRAINT, "assigned alignment (%zu) is greater then pointer alignment",
-                        alignment);
+                ARCHI_ERROR_SET(ARCHI__ECONSTRAINT, "pointer is misaligned");
                 return;
             }
 
             context->attr = (context->attr & ARCHI_POINTER_TYPE_MASK) | attr;
+
+            ARCHI_ERROR_RESET();
         }
         else if (ARCHI_STRING_COMPARE("copy", ==, slot.name))
         {
@@ -713,62 +683,59 @@ ARCHI_CONTEXT_EVAL_FUNC(archi_context_eval__tdpointer)
                 return;
             }
 
-            size_t dest_length, stride, alignment;
-            archi_pointer_attr_parse__transp_data(context->attr, &dest_length, &stride, &alignment, NULL);
+            size_t dest_length, dest_stride;
+            archi_pointer_attr_unpk__pdata(context->attr, &dest_length, &dest_stride, NULL, NULL);
 
             // Parse parameters
             archi_rcpointer_t source = {0};
-            bool source_set = false;
-            size_t src_offset = 0;
-            size_t dest_offset = 0;
-            size_t copy_length = 0;
-            bool copy_length_set = false;
+            size_t src_offset = 0, dest_offset = 0, copy_length = 0;
+            bool source_set = false, copy_length_set = false;
             {
-                archi_kvlist_parameter_t parsed[] = {
-                    {.name = "from", .value.attr = archi_pointer_attr__transp_data(0, stride, alignment, NULL)},
-                    {.name = "from_offset", .value.attr = ARCHI_POINTER_ATTR__DATA_TYPE(1, size_t)},
-                    {.name = "offset", .value.attr = ARCHI_POINTER_ATTR__DATA_TYPE(1, size_t)},
-                    {.name = "length", .value.attr = ARCHI_POINTER_ATTR__DATA_TYPE(1, size_t)},
+                archi_plist_param_t parsed[] = {
+                    {.name = "src",
+                        .check = {archi_value_check__attr, (archi_pointer_attr_t[]){archi_pointer_attr__cdata(0)}},
+                        .assign = {archi_plist_assign__rcpointer, &source, sizeof(source), &source_set}},
+                    {.name = "src_offset",
+                        .check = {archi_value_check__attr, (archi_pointer_attr_t[]){ARCHI_POINTER_ATTR__PDATA(1, size_t)}},
+                        .assign = {archi_plist_assign__value, &src_offset, sizeof(src_offset)}},
+                    {.name = "offset",
+                        .check = {archi_value_check__attr, (archi_pointer_attr_t[]){ARCHI_POINTER_ATTR__PDATA(1, size_t)}},
+                        .assign = {archi_plist_assign__value, &dest_offset, sizeof(dest_offset)}},
+                    {.name = "length",
+                        .check = {archi_value_check__attr, (archi_pointer_attr_t[]){ARCHI_POINTER_ATTR__PDATA(1, size_t)}},
+                        .assign = {archi_plist_assign__value, &copy_length, sizeof(copy_length), &copy_length_set}},
+                    {0},
                 };
 
-                if (!archi_kvlist_parameters_parse(params, parsed, ARCHI_LENGTH_ARRAY(parsed), false, NULL,
-                            ARCHI_ERROR_PARAMETER))
+                if (!archi_plist_parse(&params->n, true, parsed, false, ARCHI_ERROR_PARAM))
                     return;
-
-                size_t index = 0;
-                source_set = parsed[index].value_set;
-                if (source_set)
-                    source = parsed[index].value;
-                index++;
-                if (parsed[index].value_set)
-                    src_offset = *(size_t*)parsed[index].value.ptr;
-                index++;
-                if (parsed[index].value_set)
-                    dest_offset = *(size_t*)parsed[index].value.ptr;
-                index++;
-                copy_length_set = parsed[index].value_set;
-                if (copy_length_set)
-                    copy_length = *(size_t*)parsed[index].value.ptr;
             }
 
-            // Check validity of parameters
+            // Check validness of parameters
             if (!source_set)
             {
                 ARCHI_ERROR_SET(ARCHI__ECONSTRAINT, "source pointer is not set");
                 return;
             }
 
-            size_t src_length;
+            size_t src_length, src_stride;
             {
-                archi_error_t error;
-                if (!archi_pointer_attr_parse__transp_data(source.attr, &src_length, NULL, NULL, &error))
+                ARCHI_ERROR_VAR(error);
+
+                if (!archi_pointer_attr_unpk__pdata(source.attr, &src_length, &src_stride, NULL, &error))
                 {
-                    ARCHI_ERROR_SET(error.code, "source pointer does not refer to transparent data: %s", error.message);
+                    ARCHI_ERROR_SET(error.code, "source is not primitive data: %s", error.message);
                     return;
                 }
             }
 
-            if (src_offset > src_length)
+            if (dest_offset > dest_length)
+            {
+                ARCHI_ERROR_SET(ARCHI__ECONSTRAINT, "destination offset (%zu) exceeds destination length (%zu)",
+                        dest_offset, dest_length);
+                return;
+            }
+            else if (src_offset > src_length)
             {
                 ARCHI_ERROR_SET(ARCHI__ECONSTRAINT, "source offset (%zu) exceeds source length (%zu)",
                         src_offset, src_length);
@@ -776,40 +743,50 @@ ARCHI_CONTEXT_EVAL_FUNC(archi_context_eval__tdpointer)
             }
 
             if (!copy_length_set)
-                copy_length = src_length - src_offset;
+                copy_length = dest_length - dest_offset;
 
             if (copy_length != 0)
             {
-                if (source.ptr == NULL)
+                if (context->ptr == NULL)
                 {
-                    ARCHI_ERROR_SET(ARCHI__ECONSTRAINT, "source pointer is NULL for non-zero copy length");
+                    ARCHI_ERROR_SET(ARCHI__ECONSTRAINT, "destination pointer is NULL");
                     return;
                 }
-                else if (context->ptr == NULL)
+                else if (source.ptr == NULL)
                 {
-                    ARCHI_ERROR_SET(ARCHI__ECONSTRAINT, "destination pointer is NULL for non-zero copy length");
+                    ARCHI_ERROR_SET(ARCHI__ECONSTRAINT, "source pointer is NULL");
                     return;
                 }
             }
 
-            if (src_offset + copy_length > src_length)
+            size_t copy_size = copy_length * dest_stride;
+
+            if (copy_size % src_stride != 0)
             {
-                ARCHI_ERROR_SET(ARCHI__ECONSTRAINT, "copied area (offset = %zu, length = %zu) is out of source bounds (length = %zu)",
-                        src_offset, copy_length, src_length);
+                ARCHI_ERROR_SET(ARCHI__ECONSTRAINT, "copied area size (%zu) is not divisible by source stride (%zu)",
+                        copy_size, src_stride);
                 return;
             }
-            else if (dest_offset + copy_length > dest_length)
+
+            if (dest_offset + copy_length > dest_length)
             {
                 ARCHI_ERROR_SET(ARCHI__ECONSTRAINT, "copied area (offset = %zu, length = %zu) is out of destination bounds (length = %zu)",
                         dest_offset, copy_length, dest_length);
                 return;
             }
+            else if (src_offset + (copy_size / src_stride) > src_length)
+            {
+                ARCHI_ERROR_SET(ARCHI__ECONSTRAINT, "copied area (offset = %zu, length = %zu) is out of source bounds (length = %zu)",
+                        src_offset, copy_size / src_stride, src_length);
+                return;
+            }
 
             // Copy the memory
-            if (copy_length != 0)
-                memmove((char*)context->ptr + dest_offset * stride,
-                        (const char*)source.cptr + src_offset * stride,
-                        copy_length * stride);
+            memmove((char*)context->ptr + dest_offset * dest_stride,
+                    (const char*)source.cptr + src_offset * src_stride,
+                    copy_size);
+
+            ARCHI_ERROR_RESET();
         }
         else if (ARCHI_STRING_COMPARE("fill", ==, slot.name))
         {
@@ -825,39 +802,31 @@ ARCHI_CONTEXT_EVAL_FUNC(archi_context_eval__tdpointer)
             }
 
             size_t length, stride, alignment;
-            archi_pointer_attr_parse__transp_data(context->attr, &length, &stride, &alignment, NULL);
+            archi_pointer_attr_unpk__pdata(context->attr, &length, &stride, &alignment, NULL);
 
             // Parse parameters
             archi_rcpointer_t pattern = {0};
-            bool pattern_set = false;
-            size_t offset = 0;
-            size_t fill_length = 0;
-            bool fill_length_set = false;
+            size_t offset = 0, fill_length = 0;
+            bool pattern_set = false, fill_length_set = false;
             {
-                archi_kvlist_parameter_t parsed[] = {
-                    {.name = "pattern", .value.attr = archi_pointer_attr__transp_data(1, stride, alignment, NULL)},
-                    {.name = "offset", .value.attr = ARCHI_POINTER_ATTR__DATA_TYPE(1, size_t)},
-                    {.name = "length", .value.attr = ARCHI_POINTER_ATTR__DATA_TYPE(1, size_t)},
+                archi_plist_param_t parsed[] = {
+                    {.name = "pattern",
+                        .check = {archi_value_check__attr, (archi_pointer_attr_t[]){archi_pointer_attr__pdata(1, stride, alignment, NULL)}},
+                        .assign = {archi_plist_assign__rcpointer, &pattern, sizeof(pattern), &pattern_set}},
+                    {.name = "offset",
+                        .check = {archi_value_check__attr, (archi_pointer_attr_t[]){ARCHI_POINTER_ATTR__PDATA(1, size_t)}},
+                        .assign = {archi_plist_assign__value, &offset, sizeof(offset)}},
+                    {.name = "length",
+                        .check = {archi_value_check__attr, (archi_pointer_attr_t[]){ARCHI_POINTER_ATTR__PDATA(1, size_t)}},
+                        .assign = {archi_plist_assign__value, &fill_length, sizeof(fill_length), &fill_length_set}},
+                    {0},
                 };
 
-                if (!archi_kvlist_parameters_parse(params, parsed, ARCHI_LENGTH_ARRAY(parsed), false, NULL,
-                            ARCHI_ERROR_PARAMETER))
+                if (!archi_plist_parse(&params->n, true, parsed, false, ARCHI_ERROR_PARAM))
                     return;
-
-                size_t index = 0;
-                pattern_set = parsed[index].value_set;
-                if (pattern_set)
-                    pattern = parsed[index].value;
-                index++;
-                if (parsed[index].value_set)
-                    offset = *(size_t*)parsed[index].value.ptr;
-                index++;
-                fill_length_set = parsed[index].value_set;
-                if (fill_length_set)
-                    fill_length = *(size_t*)parsed[index].value.ptr;
             }
 
-            // Check validity of parameters
+            // Check validness of parameters
             if (!pattern_set)
             {
                 ARCHI_ERROR_SET(ARCHI__ECONSTRAINT, "pattern pointer is not set");
@@ -875,7 +844,7 @@ ARCHI_CONTEXT_EVAL_FUNC(archi_context_eval__tdpointer)
                 fill_length = length;
 
             size_t pattern_length;
-            archi_pointer_attr_parse__transp_data(pattern.attr, &pattern_length, NULL, NULL, NULL);
+            archi_pointer_attr_unpk__pdata(pattern.attr, &pattern_length, NULL, NULL, NULL);
 
             if (fill_length % pattern_length != 0)
             {
@@ -886,24 +855,27 @@ ARCHI_CONTEXT_EVAL_FUNC(archi_context_eval__tdpointer)
 
             // Fill the memory
             size_t num_patterns = fill_length / pattern_length;
+            size_t pattern_size = pattern_length * stride;
             for (size_t i = 0; i < num_patterns; i++)
                 memcpy((char*)context->ptr + (offset + pattern_length * i) * stride,
-                        pattern.cptr,
-                        pattern_length * stride);
+                        pattern.cptr, pattern_size);
+
+            ARCHI_ERROR_RESET();
         }
         else
-        {
             ARCHI_ERROR_SET(ARCHI__EKEY, "unknown slot '%s' encountered", slot.name);
-            return;
-        }
-
-        ARCHI_ERROR_RESET();
     }
 }
 
 static
-ARCHI_CONTEXT_SET_FUNC(archi_context_set__tdpointer)
+ARCHI_CONTEXT_SET_FUNC(archi_context_set__pdpointer)
 {
+    if (unset)
+    {
+        ARCHI_ERROR_SET(ARCHI__ECONSTRAINT, "slot unsetting is not supported");
+        return;
+    }
+
     if (ARCHI_STRING_COMPARE("pointee", ==, slot.name))
     {
         if (slot.num_indices != 0)
@@ -911,14 +883,14 @@ ARCHI_CONTEXT_SET_FUNC(archi_context_set__tdpointer)
             ARCHI_ERROR_SET(ARCHI__EINDEX, "number of slot indices isn't 0");
             return;
         }
-        else if (!archi_pointer_attr_parse__transp_data(value.attr, NULL, NULL, NULL, ARCHI_ERROR_PARAMETER))
+        else if (!archi_pointer_attr_unpk__pdata(value.attr, NULL, NULL, NULL, NULL))
         {
-            ARCHI_ERROR_SET(ARCHI__ECONSTRAINT, "assigned value is not transparent data");
+            ARCHI_ERROR_SET(ARCHI__ECONSTRAINT, "assigned value is not primitive data");
             return;
         }
 
-        value = archi_rcpointer_own_disown(value, *context, ARCHI_ERROR_PARAMETER);
-        if (!value.attr) // failed to own
+        value = archi_rcpointer_own_disown(value, *context, ARCHI_ERROR_PARAM);
+        if (!value.attr)
             return;
 
         *context = value;
@@ -931,7 +903,7 @@ ARCHI_CONTEXT_SET_FUNC(archi_context_set__tdpointer)
             return;
         }
         else if (!archi_pointer_attr_compatible(value.attr,
-                    ARCHI_POINTER_ATTR__DATA_TYPE(1, char)))
+                    ARCHI_POINTER_ATTR__PDATA(1, char)))
         {
             ARCHI_ERROR_SET(ARCHI__ECONSTRAINT, "assigned value is not a boolean");
             return;
@@ -951,7 +923,7 @@ ARCHI_CONTEXT_SET_FUNC(archi_context_set__tdpointer)
             return;
         }
         else if (!archi_pointer_attr_compatible(value.attr,
-                    ARCHI_POINTER_ATTR__DATA_TYPE(1, size_t)))
+                    ARCHI_POINTER_ATTR__PDATA(1, size_t)))
         {
             ARCHI_ERROR_SET(ARCHI__ECONSTRAINT, "assigned value is not a size_t");
             return;
@@ -960,10 +932,10 @@ ARCHI_CONTEXT_SET_FUNC(archi_context_set__tdpointer)
         size_t length = *(size_t*)value.ptr;
 
         size_t stride, alignment;
-        archi_pointer_attr_parse__transp_data(context->attr, NULL, &stride, &alignment, NULL);
+        archi_pointer_attr_unpk__pdata(context->attr, NULL, &stride, &alignment, NULL);
 
-        archi_pointer_attr_t attr = archi_pointer_attr__transp_data(length, stride, alignment,
-                ARCHI_ERROR_PARAMETER);
+        archi_pointer_attr_t attr = archi_pointer_attr__pdata(length, stride, alignment,
+                ARCHI_ERROR_PARAM);
         if (attr == (archi_pointer_attr_t)-1)
             return;
 
@@ -977,7 +949,7 @@ ARCHI_CONTEXT_SET_FUNC(archi_context_set__tdpointer)
             return;
         }
         else if (!archi_pointer_attr_compatible(value.attr,
-                    ARCHI_POINTER_ATTR__DATA_TYPE(1, size_t)))
+                    ARCHI_POINTER_ATTR__PDATA(1, size_t)))
         {
             ARCHI_ERROR_SET(ARCHI__ECONSTRAINT, "assigned value is not a size_t");
             return;
@@ -993,20 +965,21 @@ ARCHI_CONTEXT_SET_FUNC(archi_context_set__tdpointer)
         size_t length, alignment;
         {
             size_t old_stride;
-            archi_pointer_attr_parse__transp_data(context->attr, &length, &old_stride, &alignment, NULL);
+            archi_pointer_attr_unpk__pdata(context->attr, &length, &old_stride, &alignment, NULL);
 
             size_t size = length * old_stride;
             if (size % stride != 0)
             {
-                ARCHI_ERROR_SET(ARCHI__ECONSTRAINT, "data size is not divisible by new stride");
+                ARCHI_ERROR_SET(ARCHI__ECONSTRAINT, "data size (%zu) is not divisible by new stride (%zu)",
+                        size, stride);
                 return;
             }
 
             length = size / stride;
         }
 
-        archi_pointer_attr_t attr = archi_pointer_attr__transp_data(length, stride, alignment,
-                ARCHI_ERROR_PARAMETER);
+        archi_pointer_attr_t attr = archi_pointer_attr__pdata(length, stride, alignment,
+                ARCHI_ERROR_PARAM);
         if (attr == (archi_pointer_attr_t)-1)
             return;
 
@@ -1020,7 +993,7 @@ ARCHI_CONTEXT_SET_FUNC(archi_context_set__tdpointer)
             return;
         }
         else if (!archi_pointer_attr_compatible(value.attr,
-                    ARCHI_POINTER_ATTR__DATA_TYPE(1, size_t)))
+                    ARCHI_POINTER_ATTR__PDATA(1, size_t)))
         {
             ARCHI_ERROR_SET(ARCHI__ECONSTRAINT, "assigned value is not a size_t");
             return;
@@ -1029,10 +1002,10 @@ ARCHI_CONTEXT_SET_FUNC(archi_context_set__tdpointer)
         size_t alignment = *(size_t*)value.ptr;
 
         size_t length, stride;
-        archi_pointer_attr_parse__transp_data(context->attr, &length, &stride, NULL, NULL);
+        archi_pointer_attr_unpk__pdata(context->attr, &length, &stride, NULL, NULL);
 
-        archi_pointer_attr_t attr = archi_pointer_attr__transp_data(length, stride, alignment,
-                ARCHI_ERROR_PARAMETER);
+        archi_pointer_attr_t attr = archi_pointer_attr__pdata(length, stride, alignment,
+                ARCHI_ERROR_PARAM);
         if (attr == (archi_pointer_attr_t)-1)
             return;
 
@@ -1055,73 +1028,58 @@ ARCHI_CONTEXT_SET_FUNC(archi_context_set__tdpointer)
 }
 
 const archi_context_interface_t
-archi_context_interface__tdpointer = {
-    .init_fn = archi_context_init__tdpointer,
+archi_context_interface__pdpointer = {
+    .init_fn = archi_context_init__pdpointer,
     .final_fn = archi_context_final__pointer,
-    .eval_fn = archi_context_eval__tdpointer,
-    .set_fn = archi_context_set__tdpointer,
+    .eval_fn = archi_context_eval__pdpointer,
+    .set_fn = archi_context_set__pdpointer,
 };
 
 /*****************************************************************************/
 
 static
-ARCHI_CONTEXT_INIT_FUNC(archi_context_init__odpointer)
+ARCHI_CONTEXT_INIT_FUNC(archi_context_init__cdpointer)
 {
     // Parse parameters
     archi_rcpointer_t data = {0};
-    ptrdiff_t offset = 0;
+    long long offset = 0;
     size_t offset_unit = 1;
     bool writable = false;
-    bool writable_set = false;
     archi_pointer_attr_t tag = 0;
-    bool tag_set = false;
+    bool writable_set = false, tag_set = false;
     {
-        archi_kvlist_parameter_t parsed[] = {
-            {.name = "pointee", .value.attr = archi_pointer_attr__opaque_data(0)}, // any data type
-            {.name = "offset", .value.attr = ARCHI_POINTER_ATTR__DATA_TYPE(1, ptrdiff_t)},
-            {.name = "offset_unit", .value.attr = ARCHI_POINTER_ATTR__DATA_TYPE(1, size_t)},
-            {.name = "writable", .value.attr = ARCHI_POINTER_ATTR__DATA_TYPE(1, char)},
-            {.name = "tag", .value.attr = ARCHI_POINTER_ATTR__DATA_TYPE(1, archi_pointer_attr_t)},
+        archi_plist_param_t parsed[] = {
+            {.name = "pointee",
+                .check = {archi_value_check__attr, (archi_pointer_attr_t[]){archi_pointer_attr__cdata(0)}},
+                .assign = {archi_plist_assign__rcpointer, &data, sizeof(data)}},
+            {.name = "offset",
+                .check = {archi_value_check__attr, (archi_pointer_attr_t[]){ARCHI_POINTER_ATTR__PDATA(1, long long)}},
+                .assign = {archi_plist_assign__value, &offset, sizeof(offset)}},
+            {.name = "offset_unit",
+                .check = {archi_value_check__attr, (archi_pointer_attr_t[]){ARCHI_POINTER_ATTR__PDATA(1, size_t)}},
+                .assign = {archi_plist_assign__value, &offset_unit, sizeof(offset_unit)}},
+            {.name = "writable",
+                .check = {archi_value_check__attr, (archi_pointer_attr_t[]){ARCHI_POINTER_ATTR__PDATA(1, char)}},
+                .assign = {archi_plist_assign__bool, &writable, sizeof(writable), &writable_set}},
+            {.name = "tag",
+                .check = {archi_value_check__attr, (archi_pointer_attr_t[]){ARCHI_POINTER_ATTR__PDATA(1, archi_pointer_attr_t)}},
+                .assign = {archi_plist_assign__value, &tag, sizeof(tag), &tag_set}},
+            {0},
         };
 
-        if (!archi_kvlist_parameters_parse(params, parsed, ARCHI_LENGTH_ARRAY(parsed), false, NULL,
-                    ARCHI_ERROR_PARAMETER))
+        if (!archi_plist_parse(&params->n, true, parsed, false, ARCHI_ERROR_PARAM))
             return NULL;
-
-        size_t index = 0;
-        if (parsed[index].value_set)
-            data = parsed[index].value;
-        index++;
-        if (parsed[index].value_set)
-            offset = *(ptrdiff_t*)parsed[index].value.ptr;
-        index++;
-        if (parsed[index].value_set)
-            offset_unit = *(size_t*)parsed[index].value.ptr;
-        index++;
-        writable_set = parsed[index].value_set;
-        if (writable_set)
-            writable = *(char*)parsed[index].value.ptr;
-        index++;
-        tag_set = parsed[index].value_set;
-        if (tag_set)
-            tag = *(archi_pointer_attr_t*)parsed[index].value.ptr;
     }
 
-    // Check validity of parameters
+    // Check validness of parameters
     if (offset_unit == 0)
     {
         ARCHI_ERROR_SET(ARCHI__ECONSTRAINT, "pointer offset unit is zero");
         return NULL;
     }
-    else if (((offset > 0) && ARCHI_SIZE_OVERFLOW((size_t)offset, offset_unit)) ||
-            ((offset < 0) && ARCHI_SIZE_OVERFLOW((size_t)-offset, offset_unit)))
-    {
-        ARCHI_ERROR_SET(ARCHI__ECONSTRAINT, "pointer offset (%ti) is too large", offset);
-        return NULL;
-    }
     else if (tag > ARCHI_POINTER_DATA_TAG_MAX)
     {
-        ARCHI_ERROR_SET(ARCHI__ECONSTRAINT, "opaque data type tag (%llu) exceeds ARCHI_POINTER_DATA_TAG_MAX",
+        ARCHI_ERROR_SET(ARCHI__ECONSTRAINT, "data type tag (%llu) exceeds ARCHI_POINTER_DATA_TAG_MAX",
                 (unsigned long long)tag);
         return NULL;
     }
@@ -1144,8 +1102,8 @@ ARCHI_CONTEXT_INIT_FUNC(archi_context_init__odpointer)
     }
 
     // Own the data
-    *context_data = archi_rcpointer_own(data, ARCHI_ERROR_PARAMETER);
-    if (!context_data->attr) // failed to own
+    *context_data = archi_rcpointer_own(data, ARCHI_ERROR_PARAM);
+    if (!context_data->attr)
     {
         free(context_data);
         return NULL;
@@ -1160,15 +1118,15 @@ ARCHI_CONTEXT_INIT_FUNC(archi_context_init__odpointer)
     }
 
     // Set data type tag
-    if (tag_set || !archi_pointer_attr_parse__opaque_data(context_data->attr, NULL, NULL))
-        context_data->attr = (context_data->attr & ARCHI_POINTER_TYPE_MASK) | archi_pointer_attr__opaque_data(tag);
+    if (tag_set || !archi_pointer_attr_unpk__cdata(context_data->attr, NULL, NULL))
+        context_data->attr = (context_data->attr & ARCHI_POINTER_TYPE_MASK) | archi_pointer_attr__cdata(tag);
 
     ARCHI_ERROR_RESET();
     return context_data;
 }
 
 static
-ARCHI_CONTEXT_EVAL_FUNC(archi_context_eval__odpointer)
+ARCHI_CONTEXT_EVAL_FUNC(archi_context_eval__cdpointer)
 {
     (void) params;
 
@@ -1201,7 +1159,7 @@ ARCHI_CONTEXT_EVAL_FUNC(archi_context_eval__odpointer)
         archi_rcpointer_t value = {
             .ptr = &writable,
             .attr = ARCHI_POINTER_TYPE__DATA_ON_STACK |
-                ARCHI_POINTER_ATTR__DATA_TYPE(1, char),
+                ARCHI_POINTER_ATTR__PDATA(1, char),
         };
 
         ARCHI_CONTEXT_YIELD(value);
@@ -1215,13 +1173,13 @@ ARCHI_CONTEXT_EVAL_FUNC(archi_context_eval__odpointer)
         }
 
         archi_pointer_attr_t tag;
-        if (!archi_pointer_attr_parse__opaque_data(context->attr, &tag, ARCHI_ERROR_PARAMETER))
+        if (!archi_pointer_attr_unpk__cdata(context->attr, &tag, ARCHI_ERROR_PARAM))
             return;
 
         archi_rcpointer_t value = {
             .ptr = &tag,
             .attr = ARCHI_POINTER_TYPE__DATA_ON_STACK |
-                ARCHI_POINTER_ATTR__DATA_TYPE(1, archi_pointer_attr_t),
+                ARCHI_POINTER_ATTR__PDATA(1, archi_pointer_attr_t),
         };
 
         ARCHI_CONTEXT_YIELD(value);
@@ -1231,8 +1189,14 @@ ARCHI_CONTEXT_EVAL_FUNC(archi_context_eval__odpointer)
 }
 
 static
-ARCHI_CONTEXT_SET_FUNC(archi_context_set__odpointer)
+ARCHI_CONTEXT_SET_FUNC(archi_context_set__cdpointer)
 {
+    if (unset)
+    {
+        ARCHI_ERROR_SET(ARCHI__ECONSTRAINT, "slot unsetting is not supported");
+        return;
+    }
+
     if (ARCHI_STRING_COMPARE("pointee", ==, slot.name))
     {
         if (slot.num_indices != 0)
@@ -1246,12 +1210,12 @@ ARCHI_CONTEXT_SET_FUNC(archi_context_set__odpointer)
             return;
         }
 
-        value = archi_rcpointer_own_disown(value, *context, ARCHI_ERROR_PARAMETER);
-        if (!value.attr) // failed to own
+        value = archi_rcpointer_own_disown(value, *context, ARCHI_ERROR_PARAM);
+        if (!value.attr)
             return;
 
-        if (!archi_pointer_attr_parse__opaque_data(value.attr, NULL, NULL))
-            value.attr = (value.attr & ARCHI_POINTER_TYPE_MASK) | archi_pointer_attr__opaque_data(0);
+        if (!archi_pointer_attr_unpk__cdata(value.attr, NULL, NULL))
+            value.attr = (value.attr & ARCHI_POINTER_TYPE_MASK) | archi_pointer_attr__cdata(0);
 
         *context = value;
     }
@@ -1263,7 +1227,7 @@ ARCHI_CONTEXT_SET_FUNC(archi_context_set__odpointer)
             return;
         }
         else if (!archi_pointer_attr_compatible(value.attr,
-                    ARCHI_POINTER_ATTR__DATA_TYPE(1, char)))
+                    ARCHI_POINTER_ATTR__PDATA(1, char)))
         {
             ARCHI_ERROR_SET(ARCHI__ECONSTRAINT, "assigned value is not a boolean");
             return;
@@ -1283,7 +1247,7 @@ ARCHI_CONTEXT_SET_FUNC(archi_context_set__odpointer)
             return;
         }
         else if (!archi_pointer_attr_compatible(value.attr,
-                    ARCHI_POINTER_ATTR__DATA_TYPE(1, archi_pointer_attr_t)))
+                    ARCHI_POINTER_ATTR__PDATA(1, archi_pointer_attr_t)))
         {
             ARCHI_ERROR_SET(ARCHI__ECONSTRAINT, "assigned value is not pointer attributes");
             return;
@@ -1292,12 +1256,12 @@ ARCHI_CONTEXT_SET_FUNC(archi_context_set__odpointer)
         archi_pointer_attr_t tag = *(archi_pointer_attr_t*)value.ptr;
         if (tag > ARCHI_POINTER_DATA_TAG_MAX)
         {
-            ARCHI_ERROR_SET(ARCHI__ECONSTRAINT, "opaque data type tag (%llu) exceeds ARCHI_POINTER_DATA_TAG_MAX",
+            ARCHI_ERROR_SET(ARCHI__ECONSTRAINT, "data type tag (%llu) exceeds ARCHI_POINTER_DATA_TAG_MAX",
                     (unsigned long long)tag);
             return;
         }
 
-        context->attr = (context->attr & ARCHI_POINTER_TYPE_MASK) | archi_pointer_attr__opaque_data(tag);
+        context->attr = (context->attr & ARCHI_POINTER_TYPE_MASK) | archi_pointer_attr__cdata(tag);
     }
     else
     {
@@ -1309,11 +1273,11 @@ ARCHI_CONTEXT_SET_FUNC(archi_context_set__odpointer)
 }
 
 const archi_context_interface_t
-archi_context_interface__odpointer = {
-    .init_fn = archi_context_init__odpointer,
+archi_context_interface__cdpointer = {
+    .init_fn = archi_context_init__cdpointer,
     .final_fn = archi_context_final__pointer,
-    .eval_fn = archi_context_eval__odpointer,
-    .set_fn = archi_context_set__odpointer,
+    .eval_fn = archi_context_eval__cdpointer,
+    .set_fn = archi_context_set__cdpointer,
 };
 
 /*****************************************************************************/
@@ -1322,32 +1286,28 @@ static
 ARCHI_CONTEXT_INIT_FUNC(archi_context_init__fpointer)
 {
     // Parse parameters
-    archi_rcpointer_t function = {.attr = archi_pointer_attr__function(0)};
+    archi_rcpointer_t function = {.attr = archi_pointer_attr__func(0)};
     archi_pointer_attr_t tag = 0;
     bool tag_set = false;
     {
-        archi_kvlist_parameter_t parsed[] = {
-            {.name = "pointee", .value.attr = archi_pointer_attr__function(0)}, // any function type
-            {.name = "tag", .value.attr = ARCHI_POINTER_ATTR__DATA_TYPE(1, archi_pointer_attr_t)},
+        archi_plist_param_t parsed[] = {
+            {.name = "pointee",
+                .check = {archi_value_check__attr, (archi_pointer_attr_t[]){archi_pointer_attr__func(0)}},
+                .assign = {archi_plist_assign__rcpointer, &function, sizeof(function)}},
+            {.name = "tag",
+                .check = {archi_value_check__attr, (archi_pointer_attr_t[]){ARCHI_POINTER_ATTR__PDATA(1, archi_pointer_attr_t)}},
+                .assign = {archi_plist_assign__value, &tag, sizeof(tag), &tag_set}},
+            {0},
         };
 
-        if (!archi_kvlist_parameters_parse(params, parsed, ARCHI_LENGTH_ARRAY(parsed), false, NULL,
-                    ARCHI_ERROR_PARAMETER))
+        if (!archi_plist_parse(&params->n, true, parsed, false, ARCHI_ERROR_PARAM))
             return NULL;
-
-        size_t index = 0;
-        if (parsed[index].value_set)
-            function = parsed[index].value;
-        index++;
-        tag_set = parsed[index].value_set;
-        if (tag_set)
-            tag = *(archi_pointer_attr_t*)parsed[index].value.ptr;
     }
 
-    // Check validity of parameters
-    if (tag > ARCHI_POINTER_FUNCTION_TAG_MAX)
+    // Check validness of parameters
+    if (tag > ARCHI_POINTER_FUNC_TAG_MAX)
     {
-        ARCHI_ERROR_SET(ARCHI__ECONSTRAINT, "function type tag (%llu) exceeds ARCHI_POINTER_FUNCTION_TAG_MAX",
+        ARCHI_ERROR_SET(ARCHI__ECONSTRAINT, "function type tag (%llu) exceeds ARCHI_POINTER_FUNC_TAG_MAX",
                 (unsigned long long)tag);
         return NULL;
     }
@@ -1361,8 +1321,8 @@ ARCHI_CONTEXT_INIT_FUNC(archi_context_init__fpointer)
     }
 
     // Own the data
-    *context_data = archi_rcpointer_own(function, ARCHI_ERROR_PARAMETER);
-    if (!context_data->attr) // failed to own
+    *context_data = archi_rcpointer_own(function, ARCHI_ERROR_PARAM);
+    if (!context_data->attr)
     {
         free(context_data);
         return NULL;
@@ -1370,7 +1330,7 @@ ARCHI_CONTEXT_INIT_FUNC(archi_context_init__fpointer)
 
     // Set function type tag
     if (tag_set)
-        context_data->attr = archi_pointer_attr__function(tag);
+        context_data->attr = archi_pointer_attr__func(tag);
 
     ARCHI_ERROR_RESET();
     return context_data;
@@ -1406,13 +1366,13 @@ ARCHI_CONTEXT_EVAL_FUNC(archi_context_eval__fpointer)
         }
 
         archi_pointer_attr_t tag;
-        if (!archi_pointer_attr_parse__function(context->attr, &tag, ARCHI_ERROR_PARAMETER))
+        if (!archi_pointer_attr_unpk__func(context->attr, &tag, ARCHI_ERROR_PARAM))
             return;
 
         archi_rcpointer_t value = {
             .ptr = &tag,
             .attr = ARCHI_POINTER_TYPE__DATA_ON_STACK |
-                ARCHI_POINTER_ATTR__DATA_TYPE(1, archi_pointer_attr_t),
+                ARCHI_POINTER_ATTR__PDATA(1, archi_pointer_attr_t),
         };
 
         ARCHI_CONTEXT_YIELD(value);
@@ -1424,6 +1384,12 @@ ARCHI_CONTEXT_EVAL_FUNC(archi_context_eval__fpointer)
 static
 ARCHI_CONTEXT_SET_FUNC(archi_context_set__fpointer)
 {
+    if (unset)
+    {
+        ARCHI_ERROR_SET(ARCHI__ECONSTRAINT, "slot unsetting is not supported");
+        return;
+    }
+
     if (ARCHI_STRING_COMPARE("pointee", ==, slot.name))
     {
         if (slot.num_indices != 0)
@@ -1437,8 +1403,8 @@ ARCHI_CONTEXT_SET_FUNC(archi_context_set__fpointer)
             return;
         }
 
-        value = archi_rcpointer_own_disown(value, *context, ARCHI_ERROR_PARAMETER);
-        if (!value.attr) // failed to own
+        value = archi_rcpointer_own_disown(value, *context, ARCHI_ERROR_PARAM);
+        if (!value.attr)
             return;
 
         *context = value;
@@ -1451,21 +1417,21 @@ ARCHI_CONTEXT_SET_FUNC(archi_context_set__fpointer)
             return;
         }
         else if (!archi_pointer_attr_compatible(value.attr,
-                    ARCHI_POINTER_ATTR__DATA_TYPE(1, archi_pointer_attr_t)))
+                    ARCHI_POINTER_ATTR__PDATA(1, archi_pointer_attr_t)))
         {
             ARCHI_ERROR_SET(ARCHI__ECONSTRAINT, "assigned value is not pointer attributes");
             return;
         }
 
         archi_pointer_attr_t tag = *(archi_pointer_attr_t*)value.ptr;
-        if (tag > ARCHI_POINTER_FUNCTION_TAG_MAX)
+        if (tag > ARCHI_POINTER_FUNC_TAG_MAX)
         {
-            ARCHI_ERROR_SET(ARCHI__ECONSTRAINT, "function type tag (%llu) exceeds ARCHI_POINTER_FUNCTION_TAG_MAX",
+            ARCHI_ERROR_SET(ARCHI__ECONSTRAINT, "function type tag (%llu) exceeds ARCHI_POINTER_FUNC_TAG_MAX",
                     (unsigned long long)tag);
             return;
         }
 
-        context->attr = archi_pointer_attr__function(tag);
+        context->attr = archi_pointer_attr__func(tag);
     }
     else
     {

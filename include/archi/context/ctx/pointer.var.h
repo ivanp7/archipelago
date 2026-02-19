@@ -29,8 +29,9 @@
 
 #include "archi/context/api/interface.typ.h"
 
+
 /**
- * @brief Context interface: any pointer.
+ * @brief Context interface: arbitrary pointer.
  *
  * Initialization parameters:
  * - "pointee"  : entity to store
@@ -65,11 +66,11 @@ const archi_context_interface_t
 archi_context_interface__dpointer;
 
 /**
- * @brief Context interface: pointer to transparent data.
+ * @brief Context interface: pointer to primitive data.
  *
  * Initialization parameters:
  * - "pointee"      : data to store
- * - "offset"       : (ptrdiff_t) offset applied to the pointer
+ * - "offset"       : (long long) offset applied to the pointer
  * - "offset_unit"  : (size_t) unit of the offset applied to the pointer
  * - "writable"     : (char) data writability flag
  * - "length"       : (size_t) number of data elements
@@ -78,7 +79,7 @@ archi_context_interface__dpointer;
  *
  * Getter slots:
  * - "pointee"      : stored data
- * - [offset]       : stored data at offset
+ * - [offset]       : data stored at offset
  * - "writable"     : (char) data writability flag
  * - "length"       : (size_t) number of data elements
  * - "stride"       : (size_t) size of a data element in bytes
@@ -88,7 +89,7 @@ archi_context_interface__dpointer;
  * Calls:
  * - "shift_ptr"    : shift the pointer by arbitrary number of strides
  *      parameters:
- *        - "offset"    : (ptrdiff_t) offset within pointee in strides
+ *        - "offset"    : (long long) offset within pointee in strides
  * - "set_attr"     : change length, stride, alignment requirement
  *      parameters:
  *        - "length"    : (size_t) number of data elements
@@ -96,10 +97,10 @@ archi_context_interface__dpointer;
  *        - "alignment" : (size_t) data alignment requirement
  * - "copy"         : copy memory
  *      parameters:
- *        - "from"          : source
- *        - "from_offset"   : (size_t) offset within source
+ *        - "src"           : source
+ *        - "src_offset"    : (size_t) offset within source
  *        - "offset"        : (size_t) offset within destination
- *        - "length"        : (size_t) number of strides to copy
+ *        - "length"        : (size_t) number of destination strides to copy
  * - "fill"         : fill memory with pattern
  *      parameters:
  *        - "pattern"   : pattern
@@ -115,31 +116,31 @@ archi_context_interface__dpointer;
  */
 extern
 const archi_context_interface_t
-archi_context_interface__tdpointer;
+archi_context_interface__pdpointer;
 
 /**
- * @brief Context interface: pointer to opaque data.
+ * @brief Context interface: pointer to complex data.
  *
  * Initialization parameters:
  * - "pointee"      : data to store
- * - "offset"       : (ptrdiff_t) offset applied to the pointer
+ * - "offset"       : (long long) offset applied to the pointer
  * - "offset_unit"  : (size_t) unit of the offset applied to the pointer
  * - "writable"     : (char) data writability flag
- * - "tag"          : (archi_pointer_attr_t) opaque data type tag
+ * - "tag"          : (archi_pointer_attr_t) data type tag
  *
  * Getter slots:
  * - "pointee"  : stored data
  * - "writable" : (char) data writability flag
- * - "tag"      : (archi_pointer_attr_t) opaque data type tag
+ * - "tag"      : (archi_pointer_attr_t) data type tag
  *
  * Setter slots:
  * - "pointee"  : data to store
  * - "writable" : (char) data writability flag
- * - "tag"      : (archi_pointer_attr_t) opaque data type tag
+ * - "tag"      : (archi_pointer_attr_t) data type tag
  */
 extern
 const archi_context_interface_t
-archi_context_interface__odpointer;
+archi_context_interface__cdpointer;
 
 /**
  * @brief Context interface: pointer to function.

@@ -29,6 +29,7 @@
 
 #include "archi/context/api/interface.typ.h"
 
+
 /**
  * @brief Context interface: hashmap.
  *
@@ -38,12 +39,8 @@
  *
  * Getter slots: any (without indices only) -- find a value associated with the key.
  *
- * Calls:
- * - <empty> : perform an action on a key
- *   parameters:
- *     - "unset"    : (char[]) key to unset
- *
  * Setter slots: any (without indices only) -- set a value associated with the key.
+ * All setter slots are unsettable.
  */
 extern
 const archi_context_interface_t

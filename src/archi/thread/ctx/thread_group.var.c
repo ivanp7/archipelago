@@ -25,15 +25,17 @@
 
 #include "archi/thread/ctx/thread_group.var.h"
 #include "archi/thread/api/thread_group.fun.h"
+#include "archi/thread/api/tag.def.h"
 #include "archi/context/api/interface.def.h"
-#include "archipelago/util/parameters.fun.h"
-#include "archipelago/base/pointer.fun.h"
-#include "archipelago/base/pointer.def.h"
-#include "archipelago/util/size.def.h"
-#include "archipelago/util/string.fun.h"
+#include "archi_base/pointer.fun.h"
+#include "archi_base/pointer.def.h"
+#include "archi_base/util/plist.fun.h"
+#include "archi_base/util/check.fun.h"
+#include "archi_base/util/string.fun.h"
 
 #include <stdlib.h> // for malloc(), free()
 #include <stdalign.h>
+
 
 static
 ARCHI_CONTEXT_INIT_FUNC(archi_context_init__thread_group)
@@ -41,21 +43,18 @@ ARCHI_CONTEXT_INIT_FUNC(archi_context_init__thread_group)
     // Parse parameters
     archi_thread_group_start_params_t thread_group_params = {0};
     {
-        archi_kvlist_parameter_t parsed[] = {
-            {.name = "params", .value.attr = ARCHI_POINTER_ATTR__DATA_TYPE(1, archi_thread_group_start_params_t)},
-            {.name = "num_threads", .value.attr = ARCHI_POINTER_ATTR__DATA_TYPE(1, size_t)},
+        archi_plist_param_t parsed[] = {
+            {.name = "params",
+                .check = {archi_value_check__attr, (archi_pointer_attr_t[]){ARCHI_POINTER_ATTR__PDATA(1, archi_thread_group_start_params_t)}},
+                .assign = {archi_plist_assign__value, &thread_group_params, sizeof(thread_group_params)}},
+            {.name = "num_threads",
+                .check = {archi_value_check__attr, (archi_pointer_attr_t[]){ARCHI_POINTER_ATTR__PDATA(1, size_t)}},
+                .assign = {archi_plist_assign__value, &thread_group_params.num_threads, sizeof(thread_group_params.num_threads)}},
+            {0},
         };
 
-        if (!archi_kvlist_parameters_parse(params, parsed, ARCHI_LENGTH_ARRAY(parsed), false, NULL,
-                    ARCHI_ERROR_PARAMETER))
+        if (!archi_plist_parse(&params->n, true, parsed, false, ARCHI_ERROR_PARAM))
             return NULL;
-
-        size_t index = 0;
-        if (parsed[index].value_set)
-            thread_group_params = *(archi_thread_group_start_params_t*)parsed[index].value.ptr;
-        index++;
-        if (parsed[index].value_set)
-            thread_group_params.num_threads = *(size_t*)parsed[index].value.ptr;
     }
 
     // Construct the context
@@ -66,7 +65,7 @@ ARCHI_CONTEXT_INIT_FUNC(archi_context_init__thread_group)
         return NULL;
     }
 
-    archi_thread_group_t thread_group = archi_thread_group_create(thread_group_params, ARCHI_ERROR_PARAMETER);
+    archi_thread_group_t thread_group = archi_thread_group_create(thread_group_params, ARCHI_ERROR_PARAM);
     if (thread_group == NULL)
     {
         free(context_data);
@@ -76,7 +75,7 @@ ARCHI_CONTEXT_INIT_FUNC(archi_context_init__thread_group)
     *context_data = (archi_rcpointer_t){
         .ptr = thread_group,
         .attr = ARCHI_POINTER_TYPE__DATA_WRITABLE |
-            archi_pointer_attr__opaque_data(ARCHI_POINTER_DATA_TAG__THREAD_GROUP),
+            archi_pointer_attr__cdata(ARCHI_POINTER_DATA_TAG__THREAD_GROUP),
     };
 
     ARCHI_ERROR_RESET();
@@ -114,7 +113,7 @@ ARCHI_CONTEXT_EVAL_FUNC(archi_context_eval__thread_group)
         archi_rcpointer_t value = {
             .ptr = &num_threads,
             .attr = ARCHI_POINTER_TYPE__DATA_ON_STACK |
-                ARCHI_POINTER_ATTR__DATA_TYPE(1, size_t),
+                ARCHI_POINTER_ATTR__PDATA(1, size_t),
         };
 
         ARCHI_CONTEXT_YIELD(value);

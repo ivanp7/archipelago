@@ -29,20 +29,21 @@ TEST_DIR = "test"
 TEST_HEADER_FILE = "test.h"
 TEST_SOURCE_FILE = "test.c"
 
-BUILD_DIR = "build"
+BUILD_DIR = "../../build"
 
 
-ARCHI_IDIR  = os.environ.get('ARCHI_IDIR', "../../include") ### <<<<<<<<<<<<<<<<<<<< INPUT ENVIRONMENT VARIABLE <<<<<<<<<<<<<<<<<<<<
-ARCHI_LDIR  = os.environ.get('ARCHI_LDIR', "../../build/")  ### <<<<<<<<<<<<<<<<<<<< INPUT ENVIRONMENT VARIABLE <<<<<<<<<<<<<<<<<<<<
+ARCHI_IDIR  = "../../include"
+ARCHI_LDIR  = "../../build"
 
 # }}}
 # modules to build {{{
 
 MODULES = [
-        "opencl/api",
-        "opencl/ctx",
-        "opencl/mem",
-        "opencl/hsp",
+        "archi/opencl/api",
+        "archi/opencl/mem",
+        "archi/opencl/exe",
+        "archi/opencl/agg",
+        "archi/opencl/ctx",
         ]
 
 # }}}
@@ -62,7 +63,7 @@ LFLAGS += [f'-L{ARCHI_LDIR}']
 CFLAGS += pkgconfig.cflags('OpenCL').split(' ')
 CFLAGS += ['-DCL_TARGET_OPENCL_VERSION=300']
 
-LIBS = ['-larchipelago-base', '-larchipelago-util', '-larchipelago-log', '-larchi-hsp-api', '-larchi-ds_hashmap-api']
+LIBS = ['-larchi_base', '-larchi_log']
 LIBS += pkgconfig.libs('OpenCL').split(' ')
 
 ## }}}

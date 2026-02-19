@@ -25,14 +25,16 @@
 
 #include "archi/memory/ctx/memory.var.h"
 #include "archi/memory/api/interface.fun.h"
+#include "archi/memory/api/tag.def.h"
 #include "archi/context/api/interface.def.h"
-#include "archipelago/util/parameters.fun.h"
-#include "archipelago/base/pointer.fun.h"
-#include "archipelago/base/pointer.def.h"
-#include "archipelago/util/size.def.h"
-#include "archipelago/util/string.fun.h"
+#include "archi_base/pointer.fun.h"
+#include "archi_base/pointer.def.h"
+#include "archi_base/util/plist.fun.h"
+#include "archi_base/util/check.fun.h"
+#include "archi_base/util/string.fun.h"
 
 #include <stdlib.h> // for malloc(), free()
+
 
 static
 ARCHI_CONTEXT_INIT_FUNC(archi_context_init__memory)
@@ -40,42 +42,32 @@ ARCHI_CONTEXT_INIT_FUNC(archi_context_init__memory)
     // Parse parameters
     archi_rcpointer_t interface = {0};
     void *alloc_data = NULL;
-    size_t length = 0;
-    size_t stride = 0;
-    size_t alignment = 0;
-    size_t overalignment = 0;
+    size_t length = 0, stride = 0, alignment = 0, ext_alignment = 0;
     {
-        archi_kvlist_parameter_t parsed[] = {
-            {.name = "interface", .value.attr = ARCHI_POINTER_ATTR__DATA_TYPE(1, archi_memory_interface_t)},
-            {.name = "alloc_data", .value.attr = archi_pointer_attr__opaque_data(0)},
-            {.name = "length", .value.attr = ARCHI_POINTER_ATTR__DATA_TYPE(1, size_t)},
-            {.name = "stride", .value.attr = ARCHI_POINTER_ATTR__DATA_TYPE(1, size_t)},
-            {.name = "alignment", .value.attr = ARCHI_POINTER_ATTR__DATA_TYPE(1, size_t)},
-            {.name = "overalignment", .value.attr = ARCHI_POINTER_ATTR__DATA_TYPE(1, size_t)},
+        archi_plist_param_t parsed[] = {
+            {.name = "interface",
+                .check = {archi_value_check__attr, (archi_pointer_attr_t[]){archi_pointer_attr__cdata(ARCHI_POINTER_DATA_TAG__MEMORY_INTERFACE)}},
+                .assign = {archi_plist_assign__rcpointer, &interface, sizeof(interface)}},
+            {.name = "alloc_data",
+                .check = {archi_value_check__attr, (archi_pointer_attr_t[]){archi_pointer_attr__cdata(0)}},
+                .assign = {archi_plist_assign__dptr_n, &alloc_data, sizeof(alloc_data)}},
+            {.name = "length",
+                .check = {archi_value_check__attr, (archi_pointer_attr_t[]){ARCHI_POINTER_ATTR__PDATA(1, size_t)}},
+                .assign = {archi_plist_assign__value, &length, sizeof(length)}},
+            {.name = "stride",
+                .check = {archi_value_check__attr, (archi_pointer_attr_t[]){ARCHI_POINTER_ATTR__PDATA(1, size_t)}},
+                .assign = {archi_plist_assign__value, &stride, sizeof(stride)}},
+            {.name = "alignment",
+                .check = {archi_value_check__attr, (archi_pointer_attr_t[]){ARCHI_POINTER_ATTR__PDATA(1, size_t)}},
+                .assign = {archi_plist_assign__value, &alignment, sizeof(alignment)}},
+            {.name = "ext_alignment",
+                .check = {archi_value_check__attr, (archi_pointer_attr_t[]){ARCHI_POINTER_ATTR__PDATA(1, size_t)}},
+                .assign = {archi_plist_assign__value, &ext_alignment, sizeof(ext_alignment)}},
+            {0},
         };
 
-        if (!archi_kvlist_parameters_parse(params, parsed, ARCHI_LENGTH_ARRAY(parsed), false, NULL,
-                    ARCHI_ERROR_PARAMETER))
+        if (!archi_plist_parse(&params->n, true, parsed, false, ARCHI_ERROR_PARAM))
             return NULL;
-
-        size_t index = 0;
-        if (parsed[index].value_set)
-            interface = parsed[index].value;
-        index++;
-        if (parsed[index].value_set)
-            alloc_data = parsed[index].value.ptr;
-        index++;
-        if (parsed[index].value_set)
-            length = *(size_t*)parsed[index].value.ptr;
-        index++;
-        if (parsed[index].value_set)
-            stride = *(size_t*)parsed[index].value.ptr;
-        index++;
-        if (parsed[index].value_set)
-            alignment = *(size_t*)parsed[index].value.ptr;
-        index++;
-        if (parsed[index].value_set)
-            overalignment = *(size_t*)parsed[index].value.ptr;
     }
 
     // Construct the context
@@ -87,7 +79,7 @@ ARCHI_CONTEXT_INIT_FUNC(archi_context_init__memory)
     }
 
     archi_memory_t memory = archi_memory_allocate(interface, alloc_data,
-            length, stride, alignment, overalignment, ARCHI_ERROR_PARAMETER);
+            length, stride, alignment, ext_alignment, ARCHI_ERROR_PARAM);
     if (memory == NULL)
     {
         free(context_data);
@@ -97,7 +89,7 @@ ARCHI_CONTEXT_INIT_FUNC(archi_context_init__memory)
     *context_data = (archi_rcpointer_t){
         .ptr = memory,
         .attr = ARCHI_POINTER_TYPE__DATA_WRITABLE |
-            archi_pointer_attr__opaque_data(ARCHI_POINTER_DATA_TAG__MEMORY),
+            archi_pointer_attr__cdata(ARCHI_POINTER_DATA_TAG__MEMORY),
     };
 
     ARCHI_ERROR_RESET();
@@ -155,7 +147,7 @@ ARCHI_CONTEXT_EVAL_FUNC(archi_context_eval__memory)
         archi_rcpointer_t value = {
             .ptr = &length,
             .attr = ARCHI_POINTER_TYPE__DATA_ON_STACK |
-                ARCHI_POINTER_ATTR__DATA_TYPE(1, size_t),
+                ARCHI_POINTER_ATTR__PDATA(1, size_t),
         };
 
         ARCHI_CONTEXT_YIELD(value);
@@ -173,7 +165,7 @@ ARCHI_CONTEXT_EVAL_FUNC(archi_context_eval__memory)
         archi_rcpointer_t value = {
             .ptr = &stride,
             .attr = ARCHI_POINTER_TYPE__DATA_ON_STACK |
-                ARCHI_POINTER_ATTR__DATA_TYPE(1, size_t),
+                ARCHI_POINTER_ATTR__PDATA(1, size_t),
         };
 
         ARCHI_CONTEXT_YIELD(value);
@@ -191,7 +183,7 @@ ARCHI_CONTEXT_EVAL_FUNC(archi_context_eval__memory)
         archi_rcpointer_t value = {
             .ptr = &size,
             .attr = ARCHI_POINTER_TYPE__DATA_ON_STACK |
-                ARCHI_POINTER_ATTR__DATA_TYPE(1, size_t),
+                ARCHI_POINTER_ATTR__PDATA(1, size_t),
         };
 
         ARCHI_CONTEXT_YIELD(value);
@@ -209,12 +201,12 @@ ARCHI_CONTEXT_EVAL_FUNC(archi_context_eval__memory)
         archi_rcpointer_t value = {
             .ptr = &alignment,
             .attr = ARCHI_POINTER_TYPE__DATA_ON_STACK |
-                ARCHI_POINTER_ATTR__DATA_TYPE(1, size_t),
+                ARCHI_POINTER_ATTR__PDATA(1, size_t),
         };
 
         ARCHI_CONTEXT_YIELD(value);
     }
-    else if (ARCHI_STRING_COMPARE("overalignment", ==, slot.name))
+    else if (ARCHI_STRING_COMPARE("ext_alignment", ==, slot.name))
     {
         if (slot.num_indices != 0)
         {
@@ -222,12 +214,12 @@ ARCHI_CONTEXT_EVAL_FUNC(archi_context_eval__memory)
             return;
         }
 
-        size_t overalignment = archi_memory_overalignment(context->ptr);
+        size_t ext_alignment = archi_memory_ext_alignment(context->ptr);
 
         archi_rcpointer_t value = {
-            .ptr = &overalignment,
+            .ptr = &ext_alignment,
             .attr = ARCHI_POINTER_TYPE__DATA_ON_STACK |
-                ARCHI_POINTER_ATTR__DATA_TYPE(1, size_t),
+                ARCHI_POINTER_ATTR__PDATA(1, size_t),
         };
 
         ARCHI_CONTEXT_YIELD(value);

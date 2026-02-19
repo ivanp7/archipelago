@@ -25,14 +25,16 @@
 
 #include "archi/memory/ctx/mapping.var.h"
 #include "archi/memory/api/interface.fun.h"
+#include "archi/memory/api/tag.def.h"
 #include "archi/context/api/interface.def.h"
-#include "archipelago/util/parameters.fun.h"
-#include "archipelago/base/pointer.fun.h"
-#include "archipelago/base/pointer.def.h"
-#include "archipelago/util/size.def.h"
-#include "archipelago/util/string.fun.h"
+#include "archi_base/pointer.fun.h"
+#include "archi_base/pointer.def.h"
+#include "archi_base/util/plist.fun.h"
+#include "archi_base/util/check.fun.h"
+#include "archi_base/util/string.fun.h"
 
 #include <stdlib.h> // for malloc(), free()
+
 
 struct archi_context_data__memory_mapping {
     archi_rcpointer_t mapping;
@@ -47,32 +49,26 @@ ARCHI_CONTEXT_INIT_FUNC(archi_context_init__memory_mapping)
     // Parse parameters
     archi_rcpointer_t memory = {0};
     void *map_data = NULL;
-    size_t offset = 0;
-    size_t length = 0;
+    size_t offset = 0, length = 0;
     {
-        archi_kvlist_parameter_t parsed[] = {
-            {.name = "memory", .value.attr = archi_pointer_attr__opaque_data(ARCHI_POINTER_DATA_TAG__MEMORY)},
-            {.name = "map_data", .value.attr = archi_pointer_attr__opaque_data(0)},
-            {.name = "offset", .value.attr = ARCHI_POINTER_ATTR__DATA_TYPE(1, size_t)},
-            {.name = "length", .value.attr = ARCHI_POINTER_ATTR__DATA_TYPE(1, size_t)},
+        archi_plist_param_t parsed[] = {
+            {.name = "memory",
+                .check = {archi_value_check__attr, (archi_pointer_attr_t[]){archi_pointer_attr__cdata(ARCHI_POINTER_DATA_TAG__MEMORY)}},
+                .assign = {archi_plist_assign__rcpointer, &memory, sizeof(memory)}},
+            {.name = "map_data",
+                .check = {archi_value_check__attr, (archi_pointer_attr_t[]){archi_pointer_attr__cdata(0)}},
+                .assign = {archi_plist_assign__dptr_n, &map_data, sizeof(map_data)}},
+            {.name = "offset",
+                .check = {archi_value_check__attr, (archi_pointer_attr_t[]){ARCHI_POINTER_ATTR__PDATA(1, size_t)}},
+                .assign = {archi_plist_assign__value, &offset, sizeof(offset)}},
+            {.name = "length",
+                .check = {archi_value_check__attr, (archi_pointer_attr_t[]){ARCHI_POINTER_ATTR__PDATA(1, size_t)}},
+                .assign = {archi_plist_assign__value, &length, sizeof(length)}},
+            {0},
         };
 
-        if (!archi_kvlist_parameters_parse(params, parsed, ARCHI_LENGTH_ARRAY(parsed), false, NULL,
-                    ARCHI_ERROR_PARAMETER))
+        if (!archi_plist_parse(&params->n, true, parsed, false, ARCHI_ERROR_PARAM))
             return NULL;
-
-        size_t index = 0;
-        if (parsed[index].value_set)
-            memory = parsed[index].value;
-        index++;
-        if (parsed[index].value_set)
-            map_data = parsed[index].value.ptr;
-        index++;
-        if (parsed[index].value_set)
-            offset = *(size_t*)parsed[index].value.ptr;
-        index++;
-        if (parsed[index].value_set)
-            length = *(size_t*)parsed[index].value.ptr;
     }
 
     // Construct the context
@@ -84,7 +80,7 @@ ARCHI_CONTEXT_INIT_FUNC(archi_context_init__memory_mapping)
     }
 
     archi_memory_mapping_t mapping = archi_memory_map(memory.ptr,
-            map_data, offset, length, ARCHI_ERROR_PARAMETER);
+            map_data, offset, length, ARCHI_ERROR_PARAM);
     if (mapping == NULL)
     {
         free(context_data);
@@ -95,7 +91,7 @@ ARCHI_CONTEXT_INIT_FUNC(archi_context_init__memory_mapping)
         .mapping = {
             .ptr = mapping,
             .attr = ARCHI_POINTER_TYPE__DATA_WRITABLE |
-                archi_pointer_attr__opaque_data(ARCHI_POINTER_DATA_TAG__MEMORY_MAPPING),
+                archi_pointer_attr__cdata(ARCHI_POINTER_DATA_TAG__MEMORY_MAPPING),
         },
         .offset = offset,
         .length = length,
@@ -143,7 +139,7 @@ ARCHI_CONTEXT_EVAL_FUNC(archi_context_eval__memory_mapping)
             .ptr = memory,
             .ref_count = archi_memory_allocation(memory).ref_count,
             .attr = ARCHI_POINTER_TYPE__DATA_WRITABLE |
-                archi_pointer_attr__opaque_data(ARCHI_POINTER_DATA_TAG__MEMORY),
+                archi_pointer_attr__cdata(ARCHI_POINTER_DATA_TAG__MEMORY),
         };
 
         ARCHI_CONTEXT_YIELD(value);
@@ -171,7 +167,7 @@ ARCHI_CONTEXT_EVAL_FUNC(archi_context_eval__memory_mapping)
         archi_rcpointer_t value = {
             .ptr = &offset,
             .attr = ARCHI_POINTER_TYPE__DATA_ON_STACK |
-                ARCHI_POINTER_ATTR__DATA_TYPE(1, size_t),
+                ARCHI_POINTER_ATTR__PDATA(1, size_t),
         };
 
         ARCHI_CONTEXT_YIELD(value);
@@ -189,7 +185,7 @@ ARCHI_CONTEXT_EVAL_FUNC(archi_context_eval__memory_mapping)
         archi_rcpointer_t value = {
             .ptr = &length,
             .attr = ARCHI_POINTER_TYPE__DATA_ON_STACK |
-                ARCHI_POINTER_ATTR__DATA_TYPE(1, size_t),
+                ARCHI_POINTER_ATTR__PDATA(1, size_t),
         };
 
         ARCHI_CONTEXT_YIELD(value);
@@ -208,7 +204,7 @@ ARCHI_CONTEXT_EVAL_FUNC(archi_context_eval__memory_mapping)
         archi_rcpointer_t value = {
             .ptr = &size,
             .attr = ARCHI_POINTER_TYPE__DATA_ON_STACK |
-                ARCHI_POINTER_ATTR__DATA_TYPE(1, size_t),
+                ARCHI_POINTER_ATTR__PDATA(1, size_t),
         };
 
         ARCHI_CONTEXT_YIELD(value);

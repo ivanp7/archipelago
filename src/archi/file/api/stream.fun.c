@@ -27,11 +27,12 @@
 
 #include <fcntl.h> // for O_*
 
+
 archi_file_stream_t
 archi_file_stream_open(
         archi_file_descriptor_t fd,
         archi_file_open_params_t params,
-        ARCHI_ERROR_PARAMETER_DECL)
+        ARCHI_ERROR_PARAM_DECL)
 {
     if (fd < 0)
     {
@@ -95,7 +96,7 @@ archi_file_stream_open(
 void
 archi_file_stream_close(
         archi_file_stream_t file,
-        ARCHI_ERROR_PARAMETER_DECL)
+        ARCHI_ERROR_PARAM_DECL)
 {
     if (file == NULL)
     {
