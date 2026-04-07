@@ -30,8 +30,6 @@
 #include "archi/exec/api/frame.typ.h"
 #include "archi_base/error.typ.h"
 
-#include <stdbool.h>
-
 
 /**
  * @brief Directed execution graph execution mode.

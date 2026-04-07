@@ -18,13 +18,14 @@ from archi.builtin import (
         EnvVariableContext,
         )
 from archi.opencl import (
+        PLUGIN_OPENCL,
         OpenCLContext,
         OpenCLProgramSrcContext,
         OpenCLProgramBinContext,
         )
 
 ###############################################################################
-# Parse command line arguments
+# Command line argument parser
 
 class DirFileGroupAction(argparse.Action):
     """Generalized Action for grouping files under directories for a specific pair.
@@ -53,6 +54,7 @@ class DirFileGroupAction(argparse.Action):
             files = values if isinstance(values, list) else [values]
             last_dir = getattr(namespace, last_dir_name)
             file_map[last_dir].extend(files)
+
 
 parser = argparse.ArgumentParser(
         description="Build an OpenCL library program and write the binaries to file system.")
@@ -84,6 +86,10 @@ parser.add_argument('--lib', nargs='+', metavar="PATHNAME",  action=DirFileGroup
 parser.add_argument('--out', nargs='+', default=[], metavar="PATHNAME", required=True, help="Build output file(s)")
 
 parser.set_defaults(hdr_map={}, src_map={}, lib_map={})
+
+###############################################################################
+# Parse command line arguments
+
 args = parser.parse_args()
 
 errprint(f"Generated file: {f"'{args.file}'" if args.file is not None else '<stdout>'}")
@@ -113,9 +119,11 @@ if len(args.devices) != len(args.out):
     raise ValueError(f"Number of output files ({len(args.out)}) must be the same as the number of devices ({len(args.devices)})")
 
 ###############################################################################
-# Read contents of all input files
+# Functions for reading input files
 
 def read_sources(path_map):
+    """Read source files as strings and create a map from file names to contents.
+    """
     content = {}
 
     for dirpath, filepaths in path_map.items():
@@ -139,7 +147,10 @@ def read_sources(path_map):
 
     return content
 
+
 def read_binaries(path_map):
+    """Read binary files as bytes and create a list of contents.
+    """
     content = []
 
     for dirpath, filepaths in path_map.items():
@@ -149,85 +160,93 @@ def read_binaries(path_map):
 
     return content
 
-content_headers = read_sources(args.hdr_map)
-content_sources = read_sources(args.src_map)
-content_libraries = read_binaries(args.lib_map)
-
 ###############################################################################
-# Forming the list of operations
+# Form the list of registry operations
 
-PLUGIN_OPENCL_PATHNAME = "libarchi_opencl.so"
+def key(k):
+    return f'program_builder.{k}'
+
+PLUGIN_OPENCL_PATHNAME = f'lib{PLUGIN_OPENCL}.so'
+
 
 app = Registry()
 executable = app.require_context(Registry.KEY_EXECUTABLE, LibraryContext)
 
 # Prepare built-in interfaces
-library_interface = LibraryContext.interface(library=executable)
-file_interface = FileContext.interface(library=executable)
-envvar_interface = EnvVariableContext.interface(library=executable)
+I_LIBRARY = LibraryContext.interface(library=executable)
+I_FILE = FileContext.interface(library=executable)
+I_ENVVAR = EnvVariableContext.interface(library=executable)
 
 # Load OpenCL plugin
-with app.temp_context(library_interface(pathname=PLUGIN_OPENCL_PATHNAME), key='plugin.opencl') as plugin_opencl:
+with app.temp_context(I_LIBRARY(pathname=PLUGIN_OPENCL_PATHNAME), key=key('plugin.opencl')) as plugin_opencl:
     # Prepare OpenCL plugin interfaces
-    opencl_context_interface = OpenCLContext.interface(library=plugin_opencl)
-    opencl_program_src_interface = OpenCLProgramSrcContext.interface(library=plugin_opencl)
-    opencl_program_bin_interface = OpenCLProgramBinContext.interface(library=plugin_opencl)
+    I_OPENCL_CONTEXT = OpenCLContext.interface(library=plugin_opencl)
+    I_OPENCL_PROGRAM_SRC = OpenCLProgramSrcContext.interface(library=plugin_opencl)
+    I_OPENCL_PROGRAM_BIN = OpenCLProgramBinContext.interface(library=plugin_opencl)
 
     # Create the OpenCL context
-    with app.temp_context(opencl_context_interface(platform=args.platform, device=args.devices),
-                          key='context.opencl') as opencl_context:
+    with app.temp_context(I_OPENCL_CONTEXT(platform=args.platform, device=args.devices),
+                          key=key('cl_context')) as opencl_context:
         # Prepare the list of dependency libraries of the program
-        map_libraries = {}
-        with app.temp_context(OpenCLProgramBinContext.InitParameters( \
-                context=opencl_context, device_id=opencl_context.device_id), key='params.library') as params_library:
-            for i, binary in enumerate(content_libraries):
-                with app.temp_context([PrimitiveData.from_bytes(binary)], key='array.binaries') as array_binaries, \
-                        app.temp_context(PrimitiveData((c.c_size_t * 1)(len(binary))), key='array.binary_sizes') as array_binary_sizes:
-                    params_library.binaries = array_binaries
-                    params_library.binary_sizes = array_binary_sizes
+        list_libraries = []
 
-                library_key = f'context.program_library[{i}]'
-                app[library_key] = opencl_program_bin_interface(params_library)
-                map_libraries[library_key] = app[library_key]
+        with app.temp_context(OpenCLProgramBinContext.InitParameters(context=opencl_context,
+                                                                     device_id=opencl_context.device_id),
+                              key=key('library.params')) as params_library:
+            # Read binaries of the program libraries
+            list_binaries = [PrimitiveData.from_bytes(binary) for binary in read_binaries(args.lib_map)]
+
+            # Create program libraries from binaries and append them to the list
+            for i, binary in enumerate(list_binaries):
+                with app.temp_context([binary], key=key('array_binary[{i}]')) as array_binary:
+                    list_libraries.append(app.new_context(I_OPENCL_PROGRAM_BIN(params_library,
+                                                                               binaries=array_binary,
+                                                                               binary_sizes=[binary.total_size]),
+                                                          key=key('library[{i}]')))
+
+            del list_binaries
 
         # Prepare program headers, sources, and library dependencies
-        with app.temp_context(list(map_libraries.values()), key='array.program_libraries') as libraries, \
-                app.temp_context(Parameters(**{path: String(content) for path, content in content_headers.items()}),
-                                 key='params.headers') as headers, \
-                app.temp_context(Parameters(**{path: String(content) for path, content in content_sources.items()}),
-                                 key='params.sources') as sources, \
-                app.temp_context(envvar_interface(default_value=args.cflags), key='envvar.cflags') as cflags_env, \
-                app.temp_context(envvar_interface(default_value=args.lflags), key='envvar.lflags') as lflags_env:
-            # Release the temporary contexts
-            for library_key in map_libraries.keys():
-                del app[library_key]
+        dict_headers = {path: String(content) for path, content in read_sources(args.hdr_map).items()}
+        dict_sources = {path: String(content) for path, content in read_sources(args.src_map).items()}
 
-            del map_libraries
+        with app.temp_context(list_libraries, key=key('array_libraries')) as libraries, \
+                app.temp_context(Parameters(**dict_headers), key=key('kvlist_headers')) as headers, \
+                app.temp_context(Parameters(**dict_sources), key=key('kvlist_sources')) as sources, \
+                app.temp_context(I_ENVVAR(default_value=args.cflags), key=key('env_cflags')) as env_cflags, \
+                app.temp_context(I_ENVVAR(default_value=args.lflags), key=key('env_lflags')) as env_lflags:
+            # Delete contexts of program libraries
+            for library_context in list_libraries:
+                app.del_context(library_context)
+
+            del list_libraries
+            del dict_headers
+            del dict_sources
 
             # Build the program
-            app['context.program'] = opencl_program_src_interface(context=opencl_context,
-                                                                  device_id=opencl_context.device_id,
-                                                                  headers=headers,
-                                                                  sources=sources,
-                                                                  libraries=libraries,
-                                                                  cflags=cflags_env.CFLAGS,
-                                                                  lflags=lflags_env.LFLAGS)
+            app[key('program')] = I_OPENCL_PROGRAM_SRC(context=opencl_context,
+                                                       device_id=opencl_context.device_id,
+                                                       headers=headers,
+                                                       sources=sources,
+                                                       libraries=libraries,
+                                                       cflags=env_cflags.CFLAGS,
+                                                       lflags=env_lflags.LFLAGS)
 
-    with app.deleted_context('context.program') as opencl_program:
+    with app.deleted_context(key('program')) as opencl_program:
         # Write program binaries to output files
         for i, out_file in enumerate(args.out):
-            # Open an output file and map it to memory
-            with app.temp_context(file_interface(pathname=out_file,
-                                                 size=opencl_program.binary.size[i],
-                                                 readable=True, writable=True,
-                                                 create=True, truncate=True,
-                                                 mode=0o644), key='context.out_file') as file:
+            with app.temp_context(I_FILE(pathname=out_file,
+                                         size=opencl_program.binary.size[i],
+                                         readable=True, writable=True,
+                                         create=True, truncate=True,
+                                         mode=0o644),
+                                  key=key('out_file[{i}]')) as file:
                 # Write the program binary for the current device into the output file
-                app.eval(file.write(src=opencl_program.binary[i]))
+                app(file.write(src=opencl_program.binary[i]))
 
 ###############################################################################
 # Generate the .archi file
 
-file_contents = [(Registry.INPUT_FILE_KEY, KeyValueList.construct(app.operation_kvlist()))]
+file_contents = [(Registry.INPUT_FILE_KEY, KeyValueList.construct(app.operations()))]
 write_input_file(file_contents, pathname=args.file, mapaddr=args.mapaddr, print_report=True)
 

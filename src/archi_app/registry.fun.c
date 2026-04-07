@@ -35,8 +35,9 @@
 #include "archi_log/print.fun.h"
 
 
-#define INDENTATION     8
-#define INDENTATION2    (INDENTATION + 4)
+#define INDENTATION_STEP    4
+#define INDENTATION         (INDENTATION_STEP * 1)
+#define INDENTATION2        (INDENTATION_STEP * 3)
 
 static
 void
@@ -265,7 +266,7 @@ archi_print_params(
 
             for (; params != NULL; params = params->next)
             {
-                archi_print("  ");
+                archi_print("%*s", INDENTATION_STEP, "");
                 archi_print_pointer_with_contents(params->key, params->value);
             }
         }

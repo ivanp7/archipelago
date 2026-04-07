@@ -398,11 +398,18 @@ archi_opencl_program_build(
         }
 
         for (size_t i = 0; i < headers.num_files; i++)
+        {
             if (headers.pathname[i] == NULL)
             {
                 ARCHI_ERROR_SET(ARCHI__ECONSTRAINT, "header pathname is NULL");
                 return NULL;
             }
+            else if (headers.content[i] == NULL)
+            {
+                ARCHI_ERROR_SET(ARCHI__ECONSTRAINT, "header content is NULL");
+                return NULL;
+            }
+        }
     }
 
     if (sources.num_files != 0)
@@ -424,11 +431,18 @@ archi_opencl_program_build(
         }
 
         for (size_t i = 0; i < sources.num_files; i++)
+        {
             if (sources.pathname[i] == NULL)
             {
                 ARCHI_ERROR_SET(ARCHI__ECONSTRAINT, "source pathname is NULL");
                 return NULL;
             }
+            else if (sources.content[i] == NULL)
+            {
+                ARCHI_ERROR_SET(ARCHI__ECONSTRAINT, "source content is NULL");
+                return NULL;
+            }
+        }
     }
 
     cl_program program = NULL;

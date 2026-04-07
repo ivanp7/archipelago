@@ -28,6 +28,10 @@ from .object import PrimitiveData, String
 from .context import TypeAttributes, ContextWhitelist, ParametersWhitelist
 
 
+PLUGIN_SDL = 'archi_sdl'
+
+##############################################################################
+
 _TYPE_DATA = TypeAttributes.complex_data()
 _TYPE_BOOL = (TypeAttributes.from_type(c.c_char), lambda value: PrimitiveData(c.c_char(bool(value))))
 _TYPE_INT = (TypeAttributes.from_type(c.c_int), lambda value: PrimitiveData(c.c_int(value)))

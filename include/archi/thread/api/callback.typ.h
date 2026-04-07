@@ -31,7 +31,7 @@
 
 
 /**
- * @brief Declare/define a concurrent work completion callback.
+ * @brief Signature of a concurrent work completion callback.
  *
  * This function is called when all work items have been complete.
  */

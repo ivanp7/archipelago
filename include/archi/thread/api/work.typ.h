@@ -31,7 +31,7 @@
 
 
 /**
- * @brief Declare/define a concurrent work function.
+ * @brief Signature of a concurrent work function.
  *
  * This function is called for each work item concurrently.
  */

@@ -394,7 +394,7 @@ class Context:
 
         if target_attr is not ... and source_attr is not ... \
                 and not source_attr.is_compatible_to(target_attr):
-            raise TypeError("Cannot assign value={value} to slot {_slot_str(slot_name, slot_indices)} of context '{context._.key}': types are incompatible")
+            raise TypeError(f"Cannot assign value={value} to slot {_slot_str(slot_name, slot_indices)} of context '{context._.key}': types are incompatible")
 
         context._.registry._set_slot(context._.key, slot_name, slot_indices, value)
 
@@ -645,7 +645,7 @@ class Parameters:
 
             if param_attr is not ... and value_attr is not ... \
                     and not value_attr.is_compatible_to(param_attr):
-                raise TypeError("{cls}: cannot assign value={value} to parameter '{key}': types are incompatible")
+                raise TypeError(f"{type(self)}: cannot assign value={value} to parameter '{key}': types are incompatible")
 
             if isinstance(value, (Context, _ContextSlot)):
                 self._params_dynamic[key] = value
@@ -947,7 +947,7 @@ class Registry:
                     context = method(self, key, entity)
                     break
             else:
-                raise TypeError("Can't create context from {entity}")
+                raise TypeError(f"Can't create context from {entity}")
 
             if not isinstance(context, Context):
                 raise TypeError
@@ -958,13 +958,13 @@ class Registry:
             self._contexts[key] = context
 
         else:
-            for typespec, method in type(self).EVAL_METHOD.items():
+            for typespec, method in type(self).INVOKE_METHOD.items():
                 if isinstance(entity, typespec):
                     if method is not None:
                         method(self, entity)
                     break
             else:
-                raise TypeError("Can't evaluate {entity}")
+                raise TypeError(f"Can't invoke {entity}")
 
     def __delitem__(self, key):
         """Remove a context from the registry.
@@ -985,6 +985,11 @@ class Registry:
             self._prerequisites.remove(key)
 
         self._delete_context(key)
+
+    def __call__(self, entity, /):
+        """Invoke an entity (causing side effects only, context not created).
+        """
+        self[None] = entity
 
     def __contains__(self, item):
         """Check if a context (key) is in the registry.
@@ -1025,11 +1030,6 @@ class Registry:
 
         self[new] = self[old]
         del self[old]
-
-    def eval(self, entity, /):
-        """Evaluate an entity (side effects only, not creating a context).
-        """
-        self[None] = entity
 
     def interface_of(self, item, /):
         """Create a representation of a context interface.
@@ -1115,18 +1115,18 @@ class Registry:
             del self[key]
 
     @contextmanager
-    def temp_context(self, entity, /, key=None):
+    def temp_context(self, entity, /, key):
         """Create a temporary context.
         """
         if key is None:
-            key = type(self).random_key()
+            raise KeyError
 
         self[key] = entity
 
         with self.deleted_context(key) as context:
             yield context
 
-    def operation_kvlist(self):
+    def operations(self):
         """Get the current list of operations.
         """
         return self._operations
@@ -1137,6 +1137,17 @@ class Registry:
         self._operations = []
         self._contexts = {}
         self._prerequisites = set()
+
+    def temp_key(self, prefix, rnd_len=4):
+        """Generate a temporary context key with the specified prefix.
+        """
+        import random
+        import string
+
+        postfix = ''.join(random.choice(string.ascii_letters + string.digits) \
+                for _ in range(rnd_len))
+
+        return f'.{prefix}_{postfix}:{len(self._operations)}'
 
     def _delete_context(self, key):
         """Append context deletion operation to the list.
@@ -1326,7 +1337,7 @@ class Registry:
         if not params.dynamic_params:
             yield (params.base_context_key, params.static_params)
         else:
-            temp_context_key = type(self).random_key(prefix='params')
+            temp_context_key = self.temp_key(prefix='params')
 
             self._create_parameter_list(temp_context_key, params.base_context_key, params.static_params)
 
@@ -1338,18 +1349,6 @@ class Registry:
             finally:
                 self._delete_context(temp_context_key)
 
-    @staticmethod
-    def random_key(prefix='context', postfix_len=4):
-        """Generate a random context key with the specified prefix.
-        """
-        import random
-        import string
-
-        postfix = ''.join(random.choice(string.ascii_letters + string.digits) \
-                for _ in range(postfix_len))
-
-        return f'.{prefix}_{postfix}'
-
 # Map of context creation methods (entity type(s) -> method)
 Registry.ADD_METHOD = {Context: Registry._alias_context,
                        _ContextSpec: Registry._create_context,
@@ -1357,8 +1356,8 @@ Registry.ADD_METHOD = {Context: Registry._alias_context,
                        (type(None), Object, _ContextSlot): Registry._create_ptr,
                        (tuple, list): Registry._create_dptr_array}
 
-# Map of entity evaluation methods (entity type(s) -> method or None)
-Registry.EVAL_METHOD = {_ContextSlot: Registry._call_slot}
+# Map of entity invokation methods (entity type(s) -> method or None)
+Registry.INVOKE_METHOD = {_ContextSlot: Registry._call_slot}
 
 ##############################################################################
 
@@ -1366,7 +1365,7 @@ def _get_entity_attr(entity, /):
     """Get type attributes of an entity.
     """
     if entity is None:
-        return TypeAttributes()
+        return ...
 
     elif isinstance(entity, Context):
         return type(entity).slot_attr()

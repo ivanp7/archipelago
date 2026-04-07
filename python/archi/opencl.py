@@ -28,6 +28,10 @@ from .object import PrimitiveData, String
 from .context import TypeAttributes, ContextWhitelist, ParametersWhitelist
 
 
+PLUGIN_OPENCL = 'archi_opencl'
+
+##############################################################################
+
 _TYPE_DATA = TypeAttributes.complex_data()
 _TYPE_BOOL = (TypeAttributes.from_type(c.c_char), lambda value: PrimitiveData(c.c_char(bool(value))))
 _TYPE_CL_UINT = (TypeAttributes.from_type(c.c_uint32), lambda value: PrimitiveData(c.c_uint32(value)))
