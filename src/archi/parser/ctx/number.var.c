@@ -31,6 +31,7 @@
 #include "archi_base/util/string.fun.h"
 
 #include <stdlib.h> // for malloc(), free(), strto*()
+#include <stdint.h> // for uint*_t, int*_t
 #include <limits.h> // *_MAX, *_MIN
 #include <errno.h>
 
@@ -82,54 +83,130 @@ ARCHI_CONTEXT_INIT_FUNC(archi_context_init__number_parser)
             {.name = "float", .check = {archi_value_check__attr, (archi_pointer_attr_t[]){ARCHI_POINTER_ATTR__PDATA(2, char)}}},
             {.name = "double", .check = {archi_value_check__attr, (archi_pointer_attr_t[]){ARCHI_POINTER_ATTR__PDATA(2, char)}}},
             {.name = "long_double", .check = {archi_value_check__attr, (archi_pointer_attr_t[]){ARCHI_POINTER_ATTR__PDATA(2, char)}}},
+            // aliases of target types
+            {.name = "size_t", .check = {archi_value_check__attr, (archi_pointer_attr_t[]){ARCHI_POINTER_ATTR__PDATA(2, char)}}},
+            {.name = "uint8_t", .check = {archi_value_check__attr, (archi_pointer_attr_t[]){ARCHI_POINTER_ATTR__PDATA(2, char)}}},
+            {.name = "uint16_t", .check = {archi_value_check__attr, (archi_pointer_attr_t[]){ARCHI_POINTER_ATTR__PDATA(2, char)}}},
+            {.name = "uint32_t", .check = {archi_value_check__attr, (archi_pointer_attr_t[]){ARCHI_POINTER_ATTR__PDATA(2, char)}}},
+            {.name = "uint64_t", .check = {archi_value_check__attr, (archi_pointer_attr_t[]){ARCHI_POINTER_ATTR__PDATA(2, char)}}},
+            {.name = "int8_t", .check = {archi_value_check__attr, (archi_pointer_attr_t[]){ARCHI_POINTER_ATTR__PDATA(2, char)}}},
+            {.name = "int16_t", .check = {archi_value_check__attr, (archi_pointer_attr_t[]){ARCHI_POINTER_ATTR__PDATA(2, char)}}},
+            {.name = "int32_t", .check = {archi_value_check__attr, (archi_pointer_attr_t[]){ARCHI_POINTER_ATTR__PDATA(2, char)}}},
+            {.name = "int64_t", .check = {archi_value_check__attr, (archi_pointer_attr_t[]){ARCHI_POINTER_ATTR__PDATA(2, char)}}},
             {0},
         };
 
         if (!archi_plist_parse(&params->n, true, parsed, false, ARCHI_ERROR_PARAM))
             return NULL;
 
-        size_t index = 0;
+        // Check if only one target type has been specified
+        const char *type = NULL;
 
-#define PARAMETER(type, base_allowed)   do {    \
-        index++;                                \
-        if (parsed[index].value_set) {          \
-            if (parsed_type != UNSPECIFIED) {   \
-                ARCHI_ERROR_SET(ARCHI__ECONSTRAINT, "more than one number type is specified");  \
-                return NULL;                    \
-            }                                   \
-            if (!(base_allowed) && base_set) {  \
-                ARCHI_ERROR_SET(ARCHI__ECONSTRAINT, "number base is specified, but not accepted for the number type '%s'",  \
-                        parsed[index].name);    \
-                return NULL;                    \
-            }                                   \
-            parsed_type = (type);               \
-            string = parsed[index].value.ptr;   \
-        }                                       \
-    } while (0)
+        for (size_t index = 1 /*skip base*/; parsed[index].name != NULL; index++)
+        {
+            if (!parsed[index].value_set)
+                continue;
+            else if (type == NULL)
+            {
+                type = parsed[index].name;
+                string = parsed[index].value.cptr;
+            }
+            else
+            {
+                ARCHI_ERROR_SET(ARCHI__ECONSTRAINT, "more than one number type is specified");
+                return NULL;
+            }
+        }
 
-        PARAMETER(UNSIGNED_CHAR, true);
-        PARAMETER(UNSIGNED_SHORT, true);
-        PARAMETER(UNSIGNED_INT, true);
-        PARAMETER(UNSIGNED_LONG, true);
-        PARAMETER(UNSIGNED_LONG_LONG, true);
+        if (type == NULL)
+        {
+            ARCHI_ERROR_SET(ARCHI__ECONSTRAINT, "no number type is specified");
+            return NULL;
+        }
 
-        PARAMETER(SIGNED_CHAR, true);
-        PARAMETER(SIGNED_SHORT, true);
-        PARAMETER(SIGNED_INT, true);
-        PARAMETER(SIGNED_LONG, true);
-        PARAMETER(SIGNED_LONG_LONG, true);
+        // Assign parsed type ID
+#define DISALLOW_BASE() do {    \
+            ARCHI_ERROR_SET(ARCHI__ECONSTRAINT, "number base is specified, but not accepted for the number type '%s'", type);   \
+            return NULL;    \
+        } while (0)
 
-        PARAMETER(FLOAT, false);
-        PARAMETER(DOUBLE, false);
-        PARAMETER(LONG_DOUBLE, false);
+#define INTEGER_ALIAS(type) do {    \
+            if (sizeof(type) == sizeof(unsigned char)) parsed_type = UNSIGNED_CHAR;                 \
+            else if (sizeof(type) == sizeof(unsigned short)) parsed_type = UNSIGNED_SHORT;          \
+            else if (sizeof(type) == sizeof(unsigned int)) parsed_type = UNSIGNED_INT;              \
+            else if (sizeof(type) == sizeof(unsigned long)) parsed_type = UNSIGNED_LONG;            \
+            else if (sizeof(type) == sizeof(unsigned long long)) parsed_type = UNSIGNED_LONG_LONG;  \
+        } while (0)
 
-#undef PARAMETER
+#define FLOAT_ALIAS(type) do {      \
+            if (sizeof(type) == sizeof(float)) parsed_type = FLOAT;                     \
+            else if (sizeof(type) == sizeof(double)) parsed_type = DOUBLE;              \
+            else if (sizeof(type) == sizeof(long double)) parsed_type = LONG_DOUBLE;    \
+        } while (0)
+
+        if (ARCHI_STRING_COMPARE("unsigned_char", ==, type))
+            parsed_type = UNSIGNED_CHAR;
+        else if (ARCHI_STRING_COMPARE("unsigned_short", ==, type))
+            parsed_type = UNSIGNED_SHORT;
+        else if (ARCHI_STRING_COMPARE("unsigned_int", ==, type))
+            parsed_type = UNSIGNED_INT;
+        else if (ARCHI_STRING_COMPARE("unsigned_long", ==, type))
+            parsed_type = UNSIGNED_LONG;
+        else if (ARCHI_STRING_COMPARE("unsigned_long_long", ==, type))
+            parsed_type = UNSIGNED_LONG_LONG;
+        else if (ARCHI_STRING_COMPARE("singed_char", ==, type))
+            parsed_type = SIGNED_CHAR;
+        else if (ARCHI_STRING_COMPARE("singed_short", ==, type))
+            parsed_type = SIGNED_SHORT;
+        else if (ARCHI_STRING_COMPARE("singed_int", ==, type))
+            parsed_type = SIGNED_INT;
+        else if (ARCHI_STRING_COMPARE("singed_long", ==, type))
+            parsed_type = SIGNED_LONG;
+        else if (ARCHI_STRING_COMPARE("singed_long_long", ==, type))
+            parsed_type = SIGNED_LONG_LONG;
+        else if (ARCHI_STRING_COMPARE("float", ==, type))
+        {
+            DISALLOW_BASE();
+            parsed_type = FLOAT;
+        }
+        else if (ARCHI_STRING_COMPARE("double", ==, type))
+        {
+            DISALLOW_BASE();
+            parsed_type = DOUBLE;
+        }
+        else if (ARCHI_STRING_COMPARE("long_double", ==, type))
+        {
+            DISALLOW_BASE();
+            parsed_type = LONG_DOUBLE;
+        }
+        else if (ARCHI_STRING_COMPARE("size_t", ==, type))
+            INTEGER_ALIAS(size_t);
+        else if (ARCHI_STRING_COMPARE("uint8_t", ==, type))
+            INTEGER_ALIAS(uint8_t);
+        else if (ARCHI_STRING_COMPARE("uint16_t", ==, type))
+            INTEGER_ALIAS(uint16_t);
+        else if (ARCHI_STRING_COMPARE("uint32_t", ==, type))
+            INTEGER_ALIAS(uint32_t);
+        else if (ARCHI_STRING_COMPARE("uint64_t", ==, type))
+            INTEGER_ALIAS(uint64_t);
+        else if (ARCHI_STRING_COMPARE("int8_t", ==, type))
+            INTEGER_ALIAS(int8_t);
+        else if (ARCHI_STRING_COMPARE("int16_t", ==, type))
+            INTEGER_ALIAS(int16_t);
+        else if (ARCHI_STRING_COMPARE("int32_t", ==, type))
+            INTEGER_ALIAS(int32_t);
+        else if (ARCHI_STRING_COMPARE("int64_t", ==, type))
+            INTEGER_ALIAS(int64_t);
+
+#undef DISALLOW_BASE
+#undef INTEGER_ALIAS
+#undef FLOAT_ALIAS
     }
 
     // Check validness of parameters
     if (parsed_type == UNSPECIFIED)
     {
-        ARCHI_ERROR_SET(ARCHI__ECONSTRAINT, "string and type of a parsed number is not specified");
+        ARCHI_ERROR_SET(ARCHI__ECONSTRAINT, "type of a parsed number is not recognized");
         return NULL;
     }
     else if (base < 0)

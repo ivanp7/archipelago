@@ -49,6 +49,15 @@
  * - "float"                : (char[]) string parsed as float
  * - "double"               : (char[]) string parsed as double
  * - "long_double"          : (char[]) string parsed as long double
+ * - "size_t"               : (char[]) string parsed as size_t
+ * - "uint8_t"              : (char[]) string parsed as uint8_t
+ * - "uint16_t"             : (char[]) string parsed as uint16_t
+ * - "uint32_t"             : (char[]) string parsed as uint32_t
+ * - "uint64_t"             : (char[]) string parsed as uint64_t
+ * - "int8_t"               : (char[]) string parsed as int8_t
+ * - "int16_t"              : (char[]) string parsed as int16_t
+ * - "int32_t"              : (char[]) string parsed as int32_t
+ * - "int64_t"              : (char[]) string parsed as int64_t
  */
 extern
 const archi_context_interface_t

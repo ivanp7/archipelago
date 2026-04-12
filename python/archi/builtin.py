@@ -555,7 +555,16 @@ class NumberParserContext(ContextWhitelist):
                   'signed_long_long': _TYPE_STRING,
                   'float': _TYPE_STRING,
                   'double': _TYPE_STRING,
-                  'long_double': _TYPE_STRING}
+                  'long_double': _TYPE_STRING,
+                  'size_t': _TYPE_STRING,
+                  'uint8_t': _TYPE_STRING,
+                  'uint16_t': _TYPE_STRING,
+                  'uint32_t': _TYPE_STRING,
+                  'uint64_t': _TYPE_STRING,
+                  'int8_t': _TYPE_STRING,
+                  'int16_t': _TYPE_STRING,
+                  'int32_t': _TYPE_STRING,
+                  'int64_t': _TYPE_STRING}
 
 ### archi/timer ###
 
