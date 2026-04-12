@@ -19,7 +19,7 @@
  #############################################################################
 
 # @file
-# @brief High-level wrapper for DEG node and node array contexts.
+# @brief High-level wrapper for DEG node/node array contexts.
 
 from contextlib import contextmanager
 from types import MappingProxyType

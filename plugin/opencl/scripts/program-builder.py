@@ -15,7 +15,6 @@ from archi.script import errprint, write_input_file
 from archi.builtin import (
         FileContext,
         LibraryContext,
-        EnvVariableContext,
         )
 from archi.opencl import (
         PLUGIN_OPENCL,
@@ -23,6 +22,7 @@ from archi.opencl import (
         OpenCLProgramSrcContext,
         OpenCLProgramBinContext,
         )
+from archi.wrapper.env import env_variables
 
 ###############################################################################
 # Command line argument parser
@@ -175,7 +175,6 @@ executable = app.require_context(Registry.KEY_EXECUTABLE, LibraryContext)
 # Prepare built-in interfaces
 I_LIBRARY = LibraryContext.interface(library=executable)
 I_FILE = FileContext.interface(library=executable)
-I_ENVVAR = EnvVariableContext.interface(library=executable)
 
 # Load OpenCL plugin
 with app.temp_context(I_LIBRARY(pathname=PLUGIN_OPENCL_PATHNAME), key=key('plugin.opencl')) as plugin_opencl:
@@ -213,8 +212,7 @@ with app.temp_context(I_LIBRARY(pathname=PLUGIN_OPENCL_PATHNAME), key=key('plugi
         with app.temp_context(list_libraries, key=key('array_libraries')) as libraries, \
                 app.temp_context(Parameters(**dict_headers), key=key('kvlist_headers')) as headers, \
                 app.temp_context(Parameters(**dict_sources), key=key('kvlist_sources')) as sources, \
-                app.temp_context(I_ENVVAR(default_value=args.cflags), key=key('env_cflags')) as env_cflags, \
-                app.temp_context(I_ENVVAR(default_value=args.lflags), key=key('env_lflags')) as env_lflags:
+                env_variables(app, CFLAGS=args.cflags, LFLAGS=args.lflags) as (cflags, lflags):
             # Delete contexts of program libraries
             for library_context in list_libraries:
                 app.del_context(library_context)
@@ -229,8 +227,8 @@ with app.temp_context(I_LIBRARY(pathname=PLUGIN_OPENCL_PATHNAME), key=key('plugi
                                                        headers=headers,
                                                        sources=sources,
                                                        libraries=libraries,
-                                                       cflags=env_cflags.CFLAGS,
-                                                       lflags=env_lflags.LFLAGS)
+                                                       cflags=cflags,
+                                                       lflags=lflags)
 
     with app.deleted_context(key('program')) as opencl_program:
         # Write program binaries to output files
