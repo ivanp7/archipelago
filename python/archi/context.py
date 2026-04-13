@@ -182,7 +182,7 @@ class Context:
             if not isinstance(context_or_slot, (Context, _ContextSlot)):
                 raise TypeError
 
-            attr = _get_entity_attr(context_or_slot)
+            attr = get_entity_attr(context_or_slot)
 
             if isinstance(attr, TypeAttributes) and not attr.is_compatible_to(
                     TypeAttributes.complex_data(ARCHI_POINTER_DATA_TAG__CONTEXT_INTERFACE)):
@@ -386,7 +386,7 @@ class Context:
             raise AttributeError("Cannot set an empty slot")
 
         target_attr = type(context).slot_attr(slot_name, slot_indices, setter=True)
-        source_attr = _get_entity_attr(value)
+        source_attr = get_entity_attr(value)
 
         if source_attr is None:
             value = type(context).slot_object(value, slot_name, slot_indices)
@@ -637,7 +637,7 @@ class Parameters:
 
         for key, value in params.items():
             param_attr = type(self).param_attr(key)
-            value_attr = _get_entity_attr(value)
+            value_attr = get_entity_attr(value)
 
             if value_attr is None:
                 value = type(self).param_object(value, key)
@@ -1361,7 +1361,7 @@ Registry.INVOKE_METHOD = {_ContextSlot: Registry._call_slot}
 
 ##############################################################################
 
-def _get_entity_attr(entity, /):
+def get_entity_attr(entity, /):
     """Get type attributes of an entity.
     """
     if entity is None:
