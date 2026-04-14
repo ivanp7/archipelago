@@ -38,11 +38,6 @@
 #include <stdlib.h> // for malloc(), free()
 
 
-struct archi_context_data__library {
-    archi_rcpointer_t handle;
-    archi_pointer_attr_t default_attr;
-};
-
 static
 ARCHI_CONTEXT_INIT_FUNC(archi_context_init__library)
 {
@@ -74,7 +69,7 @@ ARCHI_CONTEXT_INIT_FUNC(archi_context_init__library)
     }
 
     // Construct the context
-    struct archi_context_data__library *context_data = malloc(sizeof(*context_data));
+    archi_rcpointer_t *context_data = malloc(sizeof(*context_data));
     if (context_data == NULL)
     {
         ARCHI_ERROR_SET(ARCHI__EMEMORY, "couldn't allocate context data");
@@ -88,14 +83,10 @@ ARCHI_CONTEXT_INIT_FUNC(archi_context_init__library)
         return NULL;
     }
 
-    *context_data = (struct archi_context_data__library){
-        .handle = {
-            .ptr = library,
-            .attr = ARCHI_POINTER_TYPE__DATA_WRITABLE |
-                archi_pointer_attr__cdata(ARCHI_POINTER_DATA_TAG__LIBRARY_HANDLE),
-        },
-        .default_attr = ARCHI_POINTER_TYPE__DATA_READONLY |
-            archi_pointer_attr__cdata(0),
+    *context_data = (archi_rcpointer_t){
+        .ptr = library,
+        .attr = ARCHI_POINTER_TYPE__DATA_WRITABLE |
+            archi_pointer_attr__cdata(ARCHI_POINTER_DATA_TAG__LIBRARY_HANDLE),
     };
 
     // Initialize static context pointers in the loaded library
@@ -103,7 +94,7 @@ ARCHI_CONTEXT_INIT_FUNC(archi_context_init__library)
         archi_library_initialize_global(library, archi_global_init_specs[i]);
 
     ARCHI_ERROR_RESET();
-    return (archi_rcpointer_t*)context_data;
+    return context_data;
 }
 
 static
@@ -122,32 +113,40 @@ ARCHI_CONTEXT_EVAL_FUNC(archi_context_eval__library)
         return;
     }
 
-    struct archi_context_data__library *context_data =
-        (struct archi_context_data__library*)context;
+    // Extract symbol name and type
+    bool function;
+    const char *symbol_name;
+    {
+        if (strncmp("data.", slot.name, 5) == 0)
+        {
+            function = false;
+            symbol_name = &slot.name[5];
+        }
+        else if (strncmp("function.", slot.name, 9) == 0)
+        {
+            function = true;
+            symbol_name = &slot.name[9];
+        }
+        else
+        {
+            ARCHI_ERROR_SET(ARCHI__EKEY, "unknown slot '%s' encountered", slot.name);
+            return;
+        }
+    }
 
-    // Prepare symbol pointer attributes
-    archi_pointer_attr_t attr = context_data->default_attr;
+    // Compute symbol attributes
+    archi_pointer_attr_t symbol_attr;
+
+    archi_pointer_attr_t tag = 0;
+    size_t length = 1, stride = 1, alignment = 1;
+    bool tag_set = false, length_stride_alignment_set = false;
 
     if (call)
     {
         // Parse parameters
-        bool function = false;
-        archi_pointer_attr_t tag = 0;
-        size_t length = 1, stride = 1, alignment = 1;
-        bool tag_set = false, length_stride_alignment_set = false;
-
-        bool prev_function = false;
-
-        if (archi_pointer_attr_unpk__func(attr, &tag, NULL))
-            function = prev_function = true;
-        else if (!archi_pointer_attr_unpk__cdata(attr, &tag, NULL))
-            archi_pointer_attr_unpk__pdata(attr, &length, &stride, &alignment, NULL);
-
+        if (!function)
         {
             archi_plist_param_t parsed[] = {
-                {.name = "function",
-                    .check = {archi_value_check__attr, (archi_pointer_attr_t[]){ARCHI_POINTER_ATTR__PDATA(1, char)}},
-                    .assign = {archi_plist_assign__bool, &function, sizeof(function)}},
                 {.name = "tag",
                     .check = {archi_value_check__attr, (archi_pointer_attr_t[]){ARCHI_POINTER_ATTR__PDATA(1, archi_pointer_attr_t)}},
                     .assign = {archi_plist_assign__value, &tag, sizeof(tag), &tag_set}},
@@ -165,94 +164,84 @@ ARCHI_CONTEXT_EVAL_FUNC(archi_context_eval__library)
 
             if (!archi_plist_parse(&params->n, true, parsed, false, ARCHI_ERROR_PARAM))
                 return;
-        }
 
-        if (!function) // data
-        {
             if (tag_set && length_stride_alignment_set)
             {
                 ARCHI_ERROR_SET(ARCHI__ECONSTRAINT, "data symbol can't have tag specified simultaneously with length/stride/alignment");
                 return;
             }
-
-            if (length_stride_alignment_set) // primitive data
-            {
-                ARCHI_ERROR_VAR(error);
-
-                attr = ARCHI_POINTER_TYPE__DATA_READONLY |
-                    archi_pointer_attr__pdata(length, stride, alignment, &error);
-                if (attr == (archi_pointer_attr_t)-1)
-                {
-                    ARCHI_ERROR_SET(error.code, "primitive data pointer attributes are invalid: %s", error.message);
-                    return;
-                }
-            }
-            else if (tag_set) // complex data
-            {
-                attr = ARCHI_POINTER_TYPE__DATA_READONLY | archi_pointer_attr__cdata(tag);
-                if (attr == (archi_pointer_attr_t)-1)
-                {
-                    ARCHI_ERROR_SET(ARCHI__ECONSTRAINT, "complex data type tag (%llu) exceeds maximum value",
-                            (unsigned long long)tag);
-                    return;
-                }
-            }
-            else
-            {
-                if (prev_function)
-                    attr = ARCHI_POINTER_TYPE__DATA_READONLY | archi_pointer_attr__cdata(0);
-            }
         }
-        else // function
+        else
         {
-            if (length_stride_alignment_set)
-            {
-                ARCHI_ERROR_SET(ARCHI__ECONSTRAINT, "function symbol cannot have length/stride/alignment specified");
-                return;
-            }
+            archi_plist_param_t parsed[] = {
+                {.name = "tag",
+                    .check = {archi_value_check__attr, (archi_pointer_attr_t[]){ARCHI_POINTER_ATTR__PDATA(1, archi_pointer_attr_t)}},
+                    .assign = {archi_plist_assign__value, &tag, sizeof(tag), &tag_set}},
+                {0},
+            };
 
-            if (tag_set)
-            {
-                attr = archi_pointer_attr__func(tag);
-                if (attr == 0)
-                {
-                    ARCHI_ERROR_SET(ARCHI__ECONSTRAINT, "function type tag (%llu) exceeds maximum value",
-                            (unsigned long long)tag);
-                    return;
-                }
-            }
-            else
-            {
-                if (!prev_function)
-                    attr = archi_pointer_attr__func(0);
-            }
+            if (!archi_plist_parse(&params->n, true, parsed, false, ARCHI_ERROR_PARAM))
+                return;
         }
     }
 
-    if (ARCHI_STRING_COMPARE("", !=, slot.name))
+    if (!function)
     {
-        // Extract the symbol
-        archi_rcpointer_t symbol = {
-            .ptr = archi_library_get_symbol(context_data->handle.ptr, slot.name),
-            .attr = attr,
-            .ref_count = ARCHI_CONTEXT_REF_COUNT,
-        };
-
-        if (symbol.ptr == NULL)
+        if (length_stride_alignment_set) // primitive data
         {
-            ARCHI_ERROR_SET(ARCHI__EKEY, "symbol '%s' not found", slot.name);
-            return;
-        }
+            ARCHI_ERROR_VAR(error);
 
-        ARCHI_CONTEXT_YIELD(symbol);
+            symbol_attr = ARCHI_POINTER_TYPE__DATA_READONLY |
+                archi_pointer_attr__pdata(length, stride, alignment, &error);
+            if (symbol_attr == (archi_pointer_attr_t)-1)
+            {
+                ARCHI_ERROR_SET(error.code, "primitive data pointer attributes are invalid: %s", error.message);
+                return;
+            }
+        }
+        else // complex data
+        {
+            symbol_attr = ARCHI_POINTER_TYPE__DATA_READONLY | archi_pointer_attr__cdata(tag);
+            if (symbol_attr == (archi_pointer_attr_t)-1)
+            {
+                ARCHI_ERROR_SET(ARCHI__ECONSTRAINT, "complex data type tag (%llu) exceeds maximum value",
+                        (unsigned long long)tag);
+                return;
+            }
+        }
     }
     else
     {
-        // Update default attributes
-        context_data->default_attr = attr;
-
-        ARCHI_ERROR_RESET();
+        symbol_attr = archi_pointer_attr__func(tag);
+        if (symbol_attr == 0)
+        {
+            ARCHI_ERROR_SET(ARCHI__ECONSTRAINT, "function type tag (%llu) exceeds maximum value",
+                    (unsigned long long)tag);
+            return;
+        }
     }
+
+    // Extract the symbol
+    archi_rcpointer_t symbol = {
+        .ptr = archi_library_get_symbol(context->ptr, symbol_name),
+        .attr = symbol_attr,
+        .ref_count = ARCHI_CONTEXT_REF_COUNT,
+    };
+
+    if (symbol.ptr == NULL)
+    {
+        ARCHI_ERROR_SET(ARCHI__EKEY, "symbol '%s' not found", symbol_name);
+        return;
+    }
+
+    ARCHI_ERROR_VAR(error);
+    if (!archi_pointer_valid(symbol.p, &error))
+    {
+        ARCHI_ERROR_SET(error.code, "symbol '%s' pointer is invalid: %s", symbol_name, error.message);
+        return;
+    }
+
+    ARCHI_CONTEXT_YIELD(symbol);
 }
 
 const archi_context_interface_t

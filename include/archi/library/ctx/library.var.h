@@ -40,18 +40,20 @@
  * - "global"       : (char) defined symbols are available to subsequently loaded libraries
  * - "flags"        : (int) other library loading flags
  *
- * Getter slots: any (without indices only) -- extract the specified symbol from the library.
+ * Getters:
+ * - "data.***"     : data symbol named ***
+ * - "function.***" : function symbol named ***
  *
- * Calls: any (without indices only) -- extract the specified symbol from the library.
+ * Calls:
+ * - "data.***"     : data symbol named ***
  *      parameters:
- *        - "function"  : (char) whether symbol type is function
- *        - "tag"       : (archi_pointer_attr_t) symbol type tag
+ *        - "tag"       : (archi_pointer_attr_t) data type tag
  *        - "length"    : (size_t) number of data elements
  *        - "stride"    : (size_t) size of a data element in bytes
  *        - "alignment" : (size_t) data alignment requirement in bytes
- *
- * Call with empty name sets the default pointer attributes used for
- * symbols obtained from getter slots.
+ * - "function.***" : function symbol named ***
+ *      parameters:
+ *        - "tag"       : (archi_pointer_attr_t) function type tag
  */
 extern
 const archi_context_interface_t

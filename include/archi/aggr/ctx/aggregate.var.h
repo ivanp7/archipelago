@@ -48,8 +48,8 @@
  * - "fam_length"           : (size_t) flexible array length
  * - "full_size"            : (size_t) full size of aggregate object including flexible array member
  * - "object"               : aggregate object itself
- * - "member.***" <indices> : value of aggregate object member
- * - "ref.***" <indices>    : object referenced by aggregate object member
+ * - "member.***" <indices> : value of aggregate object member ***
+ * - "ref.***" <indices>    : object referenced by aggregate object member ***
  *
  * Setter slots:
  * - "member.***" <indices> : aggregate object member
