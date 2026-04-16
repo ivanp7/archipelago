@@ -652,6 +652,7 @@ ARCHI_AGGR_SET_FUNC(archi_aggr_set__generic)
 
 const archi_aggr_interface_t
 archi_aggr_interface__generic = {
+    .metadata_tag = ARCHI_POINTER_DATA_TAG__AGGR_TYPE,
     .layout_fn = archi_aggr_layout__generic,
     .numref_fn = archi_aggr_numref__generic,
     .refindex_fn = archi_aggr_refindex__generic,

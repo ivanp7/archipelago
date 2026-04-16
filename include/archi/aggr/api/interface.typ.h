@@ -162,6 +162,8 @@ typedef ARCHI_AGGR_SET_FUNC((*archi_aggr_set_func_t));
  * @brief Aggregate type interface functions.
  */
 typedef struct archi_aggr_interface {
+    archi_pointer_attr_t metadata_tag;  ///< Data tag of aggregate type metadata.
+
     archi_aggr_layout_func_t layout_fn; ///< Aggregate type layout function.
 
     archi_aggr_numref_func_t numref_fn;     ///< Aggregate object function for obtaining number of references.

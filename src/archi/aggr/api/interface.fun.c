@@ -176,7 +176,7 @@ archi_aggr_allocate(
 
         ARCHI_ERROR_PARAM_DECL)
 {
-    // Perform necessary checks
+    // Check the aggregate type interface
     ARCHI_ERROR_VAR(error);
 
     if (!archi_pointer_valid(interface.p, &error))
@@ -184,13 +184,7 @@ archi_aggr_allocate(
         ARCHI_ERROR_SET(error.code, "aggregate type interface pointer is invalid: %s", error.message);
         return NULL;
     }
-    else if (!archi_pointer_valid(metadata.p, &error))
-    {
-        ARCHI_ERROR_SET(error.code, "aggregate type metadata pointer is invalid: %s", error.message);
-        return NULL;
-    }
-
-    if (!archi_pointer_attr_compatible(interface.attr,
+    else if (!archi_pointer_attr_compatible(interface.attr,
                 archi_pointer_attr__cdata(ARCHI_POINTER_DATA_TAG__AGGR_INTERFACE)))
     {
         ARCHI_ERROR_SET(ARCHI__ECONSTRAINT, "aggregate type interface pointer attributes are incorrect");
@@ -207,20 +201,14 @@ archi_aggr_allocate(
         return NULL;
     }
 
-    if (ARCHI_POINTER_TO_FUNCTION(metadata.attr))
-    {
-        ARCHI_ERROR_SET(ARCHI__ECONSTRAINT, "aggregate type metadata is not data");
-        return NULL;
-    }
-    else if (ARCHI_POINTER_TO_STACK(metadata.attr))
-    {
-        ARCHI_ERROR_SET(ARCHI__ECONSTRAINT, "aggregate type metadata is on stack");
-        return NULL;
-    }
-
-    // Check pointer to interface
     const archi_aggr_interface_t *interface_ptr = interface.cptr;
-    if (interface_ptr->layout_fn == NULL)
+
+    if (interface_ptr->metadata_tag > ARCHI_POINTER_DATA_TAG_MAX)
+    {
+        ARCHI_ERROR_SET(ARCHI__ECONSTRAINT, "aggregate type metadata tag is invalid");
+        return NULL;
+    }
+    else if (interface_ptr->layout_fn == NULL)
     {
         ARCHI_ERROR_SET(ARCHI__ECONSTRAINT, "aggregate type interface doesn't have layout_fn()");
         return NULL;
@@ -233,6 +221,24 @@ archi_aggr_allocate(
     else if (interface_ptr->init_fn == NULL)
     {
         ARCHI_ERROR_SET(ARCHI__ECONSTRAINT, "aggregate type interface doesn't have init_fn()");
+        return NULL;
+    }
+
+    // Check the aggregate type metadata
+    if (!archi_pointer_valid(metadata.p, &error))
+    {
+        ARCHI_ERROR_SET(error.code, "aggregate type metadata pointer is invalid: %s", error.message);
+        return NULL;
+    }
+    else if (!archi_pointer_attr_compatible(metadata.attr,
+                archi_pointer_attr__cdata(interface_ptr->metadata_tag)))
+    {
+        ARCHI_ERROR_SET(ARCHI__ECONSTRAINT, "aggregate type metadata attributes are incorrect");
+        return NULL;
+    }
+    else if (ARCHI_POINTER_TO_STACK(metadata.attr))
+    {
+        ARCHI_ERROR_SET(ARCHI__ECONSTRAINT, "aggregate type metadata is on stack");
         return NULL;
     }
 
