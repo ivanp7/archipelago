@@ -62,7 +62,8 @@ MEMBERS_thread_group_work[] = {
 
 const archi_aggr_type_t
 archi_aggr_type__thread_group_work = ARCHI_AGGR_TYPE(
-        archi_thread_group_work_t, MEMBERS_thread_group_work);
+        archi_thread_group_work_t, 0,
+        MEMBERS_thread_group_work);
 
 /*****************************************************************************/
 
@@ -75,7 +76,8 @@ MEMBERS_thread_group_callback[] = {
 
 const archi_aggr_type_t
 archi_aggr_type__thread_group_callback = ARCHI_AGGR_TYPE(
-        archi_thread_group_callback_t, MEMBERS_thread_group_callback);
+        archi_thread_group_callback_t, 0,
+        MEMBERS_thread_group_callback);
 
 /*****************************************************************************/
 
@@ -89,7 +91,8 @@ MEMBERS_thread_group_dispatch_params[] = {
 
 const archi_aggr_type_t
 archi_aggr_type__thread_group_dispatch_params = ARCHI_AGGR_TYPE(
-        archi_thread_group_dispatch_params_t, MEMBERS_thread_group_dispatch_params);
+        archi_thread_group_dispatch_params_t, 0,
+        MEMBERS_thread_group_dispatch_params);
 
 /*****************************************************************************/
 
@@ -107,5 +110,6 @@ MEMBERS_dexgraph_node_data__thread_group_dispatch[] = {
 
 const archi_aggr_type_t
 archi_aggr_type__dexgraph_node_data__thread_group_dispatch = ARCHI_AGGR_TYPE(
-        archi_dexgraph_op_data__thread_group_dispatch_t, MEMBERS_dexgraph_node_data__thread_group_dispatch);
+        archi_dexgraph_op_data__thread_group_dispatch_t, 0,
+        MEMBERS_dexgraph_node_data__thread_group_dispatch);
 

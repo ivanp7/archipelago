@@ -29,6 +29,7 @@
 
 #include "archi/memory/api/handle.typ.h"
 #include "archi/exec/api/operation.typ.h"
+#include "archi_base/pointer.typ.h"
 
 
 /**
@@ -36,7 +37,7 @@
  */
 typedef struct archi_dexgraph_op_data__memory_map_unmap_wrapper {
     archi_memory_t memory; ///< Memory object.
-    void *map_data; ///< Interface-specific data for mapping memory.
+    archi_pointer_t map_data; ///< Interface-specific data for mapping memory.
     size_t map_offset; ///< Offset of mapped region in data elements.
     size_t map_length; ///< Number of mapped data elements.
 

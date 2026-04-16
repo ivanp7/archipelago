@@ -252,6 +252,14 @@ archi_aggr_allocate(
         return NULL;
     }
 
+    size_t full_size = layout.base.size + layout.fam_stride * fam_length;
+    if (full_size == 0)
+    {
+        ARCHI_ERROR_SET(ARCHI__ECONSTRAINT, "full size of aggregate object is zero");
+        return NULL;
+    }
+
+    // Construct aggregate object attributes
     archi_pointer_attr_t attr;
 
     if (layout.base.size != 0)
@@ -265,11 +273,20 @@ archi_aggr_allocate(
         return NULL;
     }
 
-    size_t full_size = layout.base.size + layout.fam_stride * fam_length;
-    if (full_size == 0)
     {
-        ARCHI_ERROR_SET(ARCHI__ECONSTRAINT, "full size of aggregate object is zero");
-        return NULL;
+        /**************************************************************/
+        archi_pointer_attr_t tag = interface_ptr->tag_fn(metadata.cptr);
+        /**************************************************************/
+        if (tag != 0)
+        {
+            attr = archi_pointer_attr__cdata(tag);
+
+            if (attr == (archi_pointer_attr_t)-1)
+            {
+                ARCHI_ERROR_SET(ARCHI__ECONSTRAINT, "aggregate type tag (%llx) is invalid", (unsigned long long)tag);
+                return NULL;
+            }
+        }
     }
 
     // Obtain number of references in the aggregate object

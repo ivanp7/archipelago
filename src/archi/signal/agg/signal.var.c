@@ -63,7 +63,8 @@ MEMBERS_signal_handler[] = {
 
 const archi_aggr_type_t
 archi_aggr_type__signal_handler = ARCHI_AGGR_TYPE(
-        archi_signal_handler_t, MEMBERS_signal_handler);
+        archi_signal_handler_t, 0,
+        MEMBERS_signal_handler);
 
 /*****************************************************************************/
 
@@ -92,5 +93,6 @@ MEMBERS_dexgraph_transition_data__signal_detect[] = {
 
 const archi_aggr_type_t
 archi_aggr_type__dexgraph_transition_data__signal_detect = ARCHI_AGGR_TYPE(
-        archi_dexgraph_transition_data__signal_detect_t, MEMBERS_dexgraph_transition_data__signal_detect);
+        archi_dexgraph_transition_data__signal_detect_t, 0,
+        MEMBERS_dexgraph_transition_data__signal_detect);
 

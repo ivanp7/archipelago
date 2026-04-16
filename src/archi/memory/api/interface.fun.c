@@ -151,7 +151,7 @@ ARCHI_DESTRUCTOR_FUNC(archi_memory_deallocator)
 archi_memory_t
 archi_memory_allocate(
         archi_rcpointer_t interface,
-        void *alloc_data,
+        archi_pointer_t alloc_data,
 
         size_t length,
         size_t stride,
@@ -162,29 +162,6 @@ archi_memory_allocate(
 {
     // Perform necessary checks
     ARCHI_ERROR_VAR(error);
-
-    if (!archi_pointer_valid(interface.p, &error))
-    {
-        ARCHI_ERROR_SET(error.code, "memory interface pointer is invalid: %s", error.message);
-        return NULL;
-    }
-
-    if (!archi_pointer_attr_compatible(interface.attr,
-                archi_pointer_attr__cdata(ARCHI_POINTER_DATA_TAG__MEMORY_INTERFACE)))
-    {
-        ARCHI_ERROR_SET(ARCHI__ECONSTRAINT, "memory interface pointer attributes are incorrect");
-        return NULL;
-    }
-    else if (interface.cptr == NULL)
-    {
-        ARCHI_ERROR_SET(ARCHI__ECONSTRAINT, "memory interface pointer is NULL");
-        return NULL;
-    }
-    else if (ARCHI_POINTER_TO_STACK(interface.attr))
-    {
-        ARCHI_ERROR_SET(ARCHI__ECONSTRAINT, "memory interface is on stack");
-        return NULL;
-    }
 
     if (ext_alignment == 0)
         ext_alignment = alignment;
@@ -214,11 +191,57 @@ archi_memory_allocate(
         return NULL;
     }
 
-    // Check pointer to interface
+    // Check the memory interface
+    if (!archi_pointer_valid(interface.p, &error))
+    {
+        ARCHI_ERROR_SET(error.code, "memory interface pointer is invalid: %s", error.message);
+        return NULL;
+    }
+    else if (!archi_pointer_attr_compatible(interface.attr,
+                archi_pointer_attr__cdata(ARCHI_POINTER_DATA_TAG__MEMORY_INTERFACE)))
+    {
+        ARCHI_ERROR_SET(ARCHI__ECONSTRAINT, "memory interface pointer attributes are incorrect");
+        return NULL;
+    }
+    else if (interface.cptr == NULL)
+    {
+        ARCHI_ERROR_SET(ARCHI__ECONSTRAINT, "memory interface pointer is NULL");
+        return NULL;
+    }
+    else if (ARCHI_POINTER_TO_STACK(interface.attr))
+    {
+        ARCHI_ERROR_SET(ARCHI__ECONSTRAINT, "memory interface is on stack");
+        return NULL;
+    }
+
     const archi_memory_interface_t *interface_ptr = interface.cptr;
-    if (interface_ptr->alloc_fn == NULL)
+
+    if (interface_ptr->alloc_data_tag > ARCHI_POINTER_DATA_TAG_MAX)
+    {
+        ARCHI_ERROR_SET(ARCHI__ECONSTRAINT, "memory allocation data tag is invalid");
+        return NULL;
+    }
+    else if (interface_ptr->map_data_tag > ARCHI_POINTER_DATA_TAG_MAX)
+    {
+        ARCHI_ERROR_SET(ARCHI__ECONSTRAINT, "memory mapping data tag is invalid");
+        return NULL;
+    }
+    else if (interface_ptr->alloc_fn == NULL)
     {
         ARCHI_ERROR_SET(ARCHI__ECONSTRAINT, "memory interface doesn't have alloc_fn()");
+        return NULL;
+    }
+
+    // Check the memory allocation data
+    if (!archi_pointer_valid(alloc_data, &error))
+    {
+        ARCHI_ERROR_SET(error.code, "memory allocation data pointer is invalid: %s", error.message);
+        return NULL;
+    }
+    else if (!archi_pointer_attr_compatible(alloc_data.attr,
+                archi_pointer_attr__cdata(interface_ptr->alloc_data_tag)))
+    {
+        ARCHI_ERROR_SET(ARCHI__ECONSTRAINT, "memory allocation data attributes are incorrect");
         return NULL;
     }
 
@@ -250,10 +273,10 @@ archi_memory_allocate(
 
     // Allocate the memory itself
     ARCHI_ERROR_VAR_UNSET(&error);
-    /*************************************************************/
+    /**************************************************************/
     archi_memory_alloc_info_t alloc_info = interface_ptr->alloc_fn(
-            length * stride, ext_alignment, alloc_data, &error);
-    /*************************************************************/
+            length * stride, ext_alignment, alloc_data.ptr, &error);
+    /**************************************************************/
     ARCHI_ERROR_ASSIGN(error);
 
     if (alloc_info.allocation.ptr == NULL)
@@ -383,7 +406,7 @@ ARCHI_DESTRUCTOR_FUNC(archi_memory_mapping_destructor)
 archi_memory_mapping_t
 archi_memory_map(
         archi_memory_t memory,
-        void *map_data,
+        archi_pointer_t map_data,
 
         size_t offset,
         size_t length,
@@ -412,10 +435,27 @@ archi_memory_map(
         return NULL;
     }
 
+    // Check the memory interface
     const archi_memory_interface_t *interface_ptr = memory->interface.cptr;
+
     if (interface_ptr->map_fn == NULL)
     {
         ARCHI_ERROR_SET(ARCHI__ECONSTRAINT, "memory interface doesn't have map_fn()");
+        return NULL;
+    }
+
+    // Check the memory mapping data
+    ARCHI_ERROR_VAR(error);
+
+    if (!archi_pointer_valid(map_data, &error))
+    {
+        ARCHI_ERROR_SET(error.code, "memory mapping data pointer is invalid: %s", error.message);
+        return NULL;
+    }
+    else if (!archi_pointer_attr_compatible(map_data.attr,
+                archi_pointer_attr__cdata(interface_ptr->map_data_tag)))
+    {
+        ARCHI_ERROR_SET(ARCHI__ECONSTRAINT, "memory mapping data attributes are incorrect");
         return NULL;
     }
 
@@ -451,12 +491,11 @@ archi_memory_map(
     };
     archi_pointer_attr_unpk__cdata(memory->allocation.attr, &alloc_info.allocation.tag, NULL);
 
-    ARCHI_ERROR_VAR(error);
-
-    /**************************************************************************/
+    ARCHI_ERROR_VAR_UNSET(&error);
+    /******************************************************************************/
     archi_memory_map_info_t map_info = interface_ptr->map_fn(alloc_info,
-            offset * memory->stride, length * memory->stride, map_data, &error);
-    /**************************************************************************/
+            offset * memory->stride, length * memory->stride, map_data.ptr, &error);
+    /******************************************************************************/
     ARCHI_ERROR_ASSIGN(error);
 
     if (map_info.mapping.ptr == NULL)

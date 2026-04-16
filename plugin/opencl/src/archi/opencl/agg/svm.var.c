@@ -57,7 +57,8 @@ MEMBERS_memory_alloc_data__opencl_svm[] = {
 
 const archi_aggr_type_t
 archi_aggr_type__memory_alloc_data__opencl_svm = ARCHI_AGGR_TYPE(
-        archi_memory_alloc_data__opencl_svm_t, MEMBERS_memory_alloc_data__opencl_svm);
+        archi_memory_alloc_data__opencl_svm_t, ARCHI_POINTER_DATA_TAG__OPENCL_SVM_ALLOC_DATA,
+        MEMBERS_memory_alloc_data__opencl_svm);
 
 /*****************************************************************************/
 
@@ -70,5 +71,6 @@ MEMBERS_memory_map_data__opencl_svm[] = {
 
 const archi_aggr_type_t
 archi_aggr_type__memory_map_data__opencl_svm = ARCHI_AGGR_TYPE(
-        archi_memory_map_data__opencl_svm_t, MEMBERS_memory_map_data__opencl_svm);
+        archi_memory_map_data__opencl_svm_t, ARCHI_POINTER_DATA_TAG__OPENCL_SVM_MAP_DATA,
+        MEMBERS_memory_map_data__opencl_svm);
 

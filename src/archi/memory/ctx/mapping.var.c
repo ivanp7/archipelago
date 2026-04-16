@@ -48,7 +48,7 @@ ARCHI_CONTEXT_INIT_FUNC(archi_context_init__memory_mapping)
 {
     // Parse parameters
     archi_rcpointer_t memory = {0};
-    void *map_data = NULL;
+    archi_pointer_t map_data = {0};
     size_t offset = 0, length = 0;
     {
         archi_plist_param_t parsed[] = {
@@ -57,7 +57,7 @@ ARCHI_CONTEXT_INIT_FUNC(archi_context_init__memory_mapping)
                 .assign = {archi_plist_assign__rcpointer, &memory, sizeof(memory)}},
             {.name = "map_data",
                 .check = {archi_value_check__attr, (archi_pointer_attr_t[]){archi_pointer_attr__cdata(0)}},
-                .assign = {archi_plist_assign__dptr_n, &map_data, sizeof(map_data)}},
+                .assign = {archi_plist_assign__pointer, &map_data, sizeof(map_data)}},
             {.name = "offset",
                 .check = {archi_value_check__attr, (archi_pointer_attr_t[]){ARCHI_POINTER_ATTR__PDATA(1, size_t)}},
                 .assign = {archi_plist_assign__value, &offset, sizeof(offset)}},

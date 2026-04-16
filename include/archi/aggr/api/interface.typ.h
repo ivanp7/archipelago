@@ -43,6 +43,19 @@ typedef struct archi_aggr_member_spec {
 /*****************************************************************************/
 
 /**
+ * @brief Signature of an aggregate type tag function.
+ *
+ * @return Data type tag.
+ */
+#define ARCHI_AGGR_TAG_FUNC(func_name)          archi_pointer_attr_t func_name(     \
+        const void *metadata) /* [in] Aggregate type metadata. */
+
+/**
+ * @brief Type of aggregate type tag function.
+ */
+typedef ARCHI_AGGR_TAG_FUNC((*archi_aggr_tag_func_t));
+
+/**
  * @brief Signature of an aggregate type layout function.
  *
  * @return Valid type layout structure, or default-initialized in case of error.
@@ -164,6 +177,7 @@ typedef ARCHI_AGGR_SET_FUNC((*archi_aggr_set_func_t));
 typedef struct archi_aggr_interface {
     archi_pointer_attr_t metadata_tag;  ///< Data tag of aggregate type metadata.
 
+    archi_aggr_tag_func_t tag_fn;       ///< Aggregate type tag function.
     archi_aggr_layout_func_t layout_fn; ///< Aggregate type layout function.
 
     archi_aggr_numref_func_t numref_fn;     ///< Aggregate object function for obtaining number of references.

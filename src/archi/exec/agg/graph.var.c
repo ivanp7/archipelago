@@ -72,7 +72,8 @@ MEMBERS_dexgraph_transition[] = {
 
 const archi_aggr_type_t
 archi_aggr_type__dexgraph_transition = ARCHI_AGGR_TYPE(
-        archi_dexgraph_transition_t, MEMBERS_dexgraph_transition);
+        archi_dexgraph_transition_t, 0,
+        MEMBERS_dexgraph_transition);
 
 /*****************************************************************************/
 
@@ -85,7 +86,8 @@ MEMBERS_dexgraph_operation[] = {
 
 const archi_aggr_type_t
 archi_aggr_type__dexgraph_operation = ARCHI_AGGR_TYPE(
-        archi_dexgraph_operation_t, MEMBERS_dexgraph_operation);
+        archi_dexgraph_operation_t, 0,
+        MEMBERS_dexgraph_operation);
 
 /*****************************************************************************/
 
@@ -103,7 +105,8 @@ MEMBERS_dexgraph_node[] = {
 
 const archi_aggr_type_t
 archi_aggr_type__dexgraph_node = ARCHI_AGGR_TYPE(
-        archi_dexgraph_node_t, MEMBERS_dexgraph_node);
+        archi_dexgraph_node_t, ARCHI_POINTER_DATA_TAG__DEXGRAPH_NODE,
+        MEMBERS_dexgraph_node);
 
 /*****************************************************************************/
 
@@ -116,5 +119,6 @@ MEMBERS_dexgraph_node_array[] = {
 
 const archi_aggr_type_t
 archi_aggr_type__dexgraph_node_array = ARCHI_AGGR_TYPE(
-        archi_dexgraph_node_array_t, MEMBERS_dexgraph_node_array);
+        archi_dexgraph_node_array_t, ARCHI_POINTER_DATA_TAG__DEXGRAPH_NODE_ARRAY,
+        MEMBERS_dexgraph_node_array);
 

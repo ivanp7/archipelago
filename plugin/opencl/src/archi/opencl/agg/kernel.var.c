@@ -73,5 +73,6 @@ MEMBERS_dexgraph_node_data__opencl_kernel_enqueue[] = {
 
 const archi_aggr_type_t
 archi_aggr_type__dexgraph_node_data__opencl_kernel_enqueue = ARCHI_AGGR_TYPE(
-        archi_dexgraph_op_data__opencl_kernel_enqueue_t, MEMBERS_dexgraph_node_data__opencl_kernel_enqueue);
+        archi_dexgraph_op_data__opencl_kernel_enqueue_t, 0,
+        MEMBERS_dexgraph_node_data__opencl_kernel_enqueue);
 

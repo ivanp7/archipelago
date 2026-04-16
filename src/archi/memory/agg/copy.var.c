@@ -52,5 +52,6 @@ MEMBERS_dexgraph_node_data__memory_copy[] = {
 
 const archi_aggr_type_t
 archi_aggr_type__dexgraph_node_data__memory_copy = ARCHI_AGGR_TYPE(
-        archi_dexgraph_op_data__memory_copy_t, MEMBERS_dexgraph_node_data__memory_copy);
+        archi_dexgraph_op_data__memory_copy_t, 0,
+        MEMBERS_dexgraph_node_data__memory_copy);
 

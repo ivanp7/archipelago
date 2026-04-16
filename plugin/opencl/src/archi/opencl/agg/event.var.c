@@ -46,5 +46,6 @@ MEMBERS_dexgraph_node_data__opencl_event_wait[] = {
 
 const archi_aggr_type_t
 archi_aggr_type__dexgraph_node_data__opencl_event_wait = ARCHI_AGGR_TYPE(
-        archi_dexgraph_op_data__opencl_event_wait_t, MEMBERS_dexgraph_node_data__opencl_event_wait);
+        archi_dexgraph_op_data__opencl_event_wait_t, 0,
+        MEMBERS_dexgraph_node_data__opencl_event_wait);
 

@@ -50,7 +50,8 @@ MEMBERS_dexgraph_node_data__print_string__token[] = {
 
 const archi_aggr_type_t
 archi_aggr_type__dexgraph_node_data__print_string__token = ARCHI_AGGR_TYPE(
-        archi_dexgraph_op_data__print_string__token_t, MEMBERS_dexgraph_node_data__print_string__token);
+        archi_dexgraph_op_data__print_string__token_t, 0,
+        MEMBERS_dexgraph_node_data__print_string__token);
 
 /*****************************************************************************/
 
@@ -64,6 +65,7 @@ MEMBERS_dexgraph_node_data__print_string[] = {
 
 const archi_aggr_type_t
 archi_aggr_type__dexgraph_node_data__print_string = ARCHI_AGGR_TYPE_WITH_FAM(
-        archi_dexgraph_op_data__print_string_t, archi_dexgraph_op_data__print_string__token_t,
+        archi_dexgraph_op_data__print_string_t, 0,
+        archi_dexgraph_op_data__print_string__token_t,
         MEMBERS_dexgraph_node_data__print_string);
 

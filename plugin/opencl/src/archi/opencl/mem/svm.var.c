@@ -125,6 +125,8 @@ ARCHI_MEMORY_UNMAP_FUNC(archi_memory_unmap__opencl_svm)
 
 const archi_memory_interface_t
 archi_memory_interface__opencl_svm = {
+    .alloc_data_tag = ARCHI_POINTER_DATA_TAG__OPENCL_SVM_ALLOC_DATA,
+    .map_data_tag = ARCHI_POINTER_DATA_TAG__OPENCL_SVM_MAP_DATA,
     .alloc_fn = archi_memory_alloc__opencl_svm,
     .free_fn = archi_memory_free__opencl_svm,
     .map_fn = archi_memory_map__opencl_svm,

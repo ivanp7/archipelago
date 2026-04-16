@@ -41,7 +41,7 @@ ARCHI_CONTEXT_INIT_FUNC(archi_context_init__memory)
 {
     // Parse parameters
     archi_rcpointer_t interface = {0};
-    void *alloc_data = NULL;
+    archi_pointer_t alloc_data = {0};
     size_t length = 0, stride = 0, alignment = 0, ext_alignment = 0;
     {
         archi_plist_param_t parsed[] = {
@@ -50,7 +50,7 @@ ARCHI_CONTEXT_INIT_FUNC(archi_context_init__memory)
                 .assign = {archi_plist_assign__rcpointer, &interface, sizeof(interface)}},
             {.name = "alloc_data",
                 .check = {archi_value_check__attr, (archi_pointer_attr_t[]){archi_pointer_attr__cdata(0)}},
-                .assign = {archi_plist_assign__dptr_n, &alloc_data, sizeof(alloc_data)}},
+                .assign = {archi_plist_assign__pointer, &alloc_data, sizeof(alloc_data)}},
             {.name = "length",
                 .check = {archi_value_check__attr, (archi_pointer_attr_t[]){ARCHI_POINTER_ATTR__PDATA(1, size_t)}},
                 .assign = {archi_plist_assign__value, &length, sizeof(length)}},

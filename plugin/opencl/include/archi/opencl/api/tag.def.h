@@ -36,6 +36,8 @@
 #define ARCHI_POINTER_DATA_TAG__OPENCL_EVENT            0x1006 ///< Data type tag for cl_event.
 #define ARCHI_POINTER_DATA_TAG__OPENCL_MEM_OBJECT       0x1007 ///< Data type tag for cl_mem.
 #define ARCHI_POINTER_DATA_TAG__OPENCL_SVM              0x1008 ///< Data type tag for SVM memory allocation.
+#define ARCHI_POINTER_DATA_TAG__OPENCL_SVM_ALLOC_DATA   0x1009 ///< Data type tag for archi_memory_alloc_data__opencl_svm_t.
+#define ARCHI_POINTER_DATA_TAG__OPENCL_SVM_MAP_DATA     0x100A ///< Data type tag for archi_memory_map_data__opencl_svm_t.
 
 #endif // _ARCHI_OPENCL_API_TAG_DEF_H_
 

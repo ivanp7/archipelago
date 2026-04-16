@@ -211,6 +211,7 @@ typedef struct archi_aggr_member {
  */
 typedef struct archi_aggr_type {
     archi_aggr_member_type__aggregate_t top_level; ///< Description of top-level members.
+    archi_pointer_attr_t tag; ///< Data type tag of the aggregate type.
 
     const void *init_value; ///< Object initialization value.
     const void *init_value_fam; ///< Flexible array element initialization value.
@@ -219,15 +220,17 @@ typedef struct archi_aggr_type {
 /**
  * @brief Literal of an aggregate type description (without flexible array member).
  */
-#define ARCHI_AGGR_TYPE(aggr_type, member_array)                                   \
-    {.top_level = ARCHI_AGGR_MEMBER_TYPE__AGGREGATE(aggr_type, (member_array)),    \
+#define ARCHI_AGGR_TYPE(aggr_type, aggr_type_tag, member_array)                     \
+    {.top_level = ARCHI_AGGR_MEMBER_TYPE__AGGREGATE(aggr_type, (member_array)),     \
+        .tag = (aggr_type_tag),                                                     \
         .init_value = &(aggr_type){0}}
 
 /**
  * @brief Literal of an aggregate type description (with flexible array member).
  */
-#define ARCHI_AGGR_TYPE_WITH_FAM(aggr_type, fam_elt_type, member_array)            \
-    {.top_level = ARCHI_AGGR_MEMBER_TYPE__AGGREGATE(aggr_type, (member_array)),    \
+#define ARCHI_AGGR_TYPE_WITH_FAM(aggr_type, aggr_type_tag, fam_elt_type, member_array)  \
+    {.top_level = ARCHI_AGGR_MEMBER_TYPE__AGGREGATE(aggr_type, (member_array)),     \
+        .tag = (aggr_type_tag),                                                     \
         .init_value = &(aggr_type){0}, .init_value_fam = &(fam_elt_type){0}}
 
 #endif // _ARCHI_AGGR_AGG_GENERIC_TYP_H_

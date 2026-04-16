@@ -63,7 +63,8 @@ MEMBERS_sdl2_rect[] = {
 
 const archi_aggr_type_t
 archi_aggr_type__sdl2_rect = ARCHI_AGGR_TYPE(
-        SDL_Rect, MEMBERS_sdl2_rect);
+        SDL_Rect, 0,
+        MEMBERS_sdl2_rect);
 
 /*****************************************************************************/
 
@@ -80,7 +81,8 @@ MEMBERS_dexgraph_node_data__sdl2_texture_copy[] = {
 
 const archi_aggr_type_t
 archi_aggr_type__dexgraph_node_data__sdl2_texture_copy = ARCHI_AGGR_TYPE(
-        archi_dexgraph_op_data__sdl2_texture_copy_t, MEMBERS_dexgraph_node_data__sdl2_texture_copy);
+        archi_dexgraph_op_data__sdl2_texture_copy_t, 0,
+        MEMBERS_dexgraph_node_data__sdl2_texture_copy);
 
 /*****************************************************************************/
 
@@ -99,4 +101,6 @@ MEMBERS_dexgraph_node_data__sdl2_render_copy[] = {
 
 const archi_aggr_type_t
 archi_aggr_type__dexgraph_node_data__sdl2_render_copy = ARCHI_AGGR_TYPE(
-        archi_dexgraph_op_data__sdl2_render_copy_t, MEMBERS_dexgraph_node_data__sdl2_render_copy);
+        archi_dexgraph_op_data__sdl2_render_copy_t, 0,
+        MEMBERS_dexgraph_node_data__sdl2_render_copy);
+

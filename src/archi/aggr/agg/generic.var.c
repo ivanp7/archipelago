@@ -100,6 +100,16 @@ archi_aggr_type_walk(
 }
 
 static
+ARCHI_AGGR_TAG_FUNC(archi_aggr_tag__generic)
+{
+    const archi_aggr_type_t *aggregate = metadata;
+    if (aggregate == NULL)
+        return 0;
+
+    return aggregate->tag;
+}
+
+static
 ARCHI_AGGR_LAYOUT_FUNC(archi_aggr_layout__generic)
 {
     const archi_aggr_type_t *aggregate = metadata;
@@ -653,6 +663,7 @@ ARCHI_AGGR_SET_FUNC(archi_aggr_set__generic)
 const archi_aggr_interface_t
 archi_aggr_interface__generic = {
     .metadata_tag = ARCHI_POINTER_DATA_TAG__AGGR_TYPE,
+    .tag_fn = archi_aggr_tag__generic,
     .layout_fn = archi_aggr_layout__generic,
     .numref_fn = archi_aggr_numref__generic,
     .refindex_fn = archi_aggr_refindex__generic,

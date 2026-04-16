@@ -117,7 +117,7 @@ archi_memory_ext_alignment(
 archi_memory_t
 archi_memory_allocate(
         archi_rcpointer_t interface, ///< [in] Memory interface.
-        void *alloc_data, ///< [in] Interface-specific data for allocation.
+        archi_pointer_t alloc_data, ///< [in] Interface-specific data for allocation.
 
         size_t length, ///< [in] Number of data elements to allocate.
         size_t stride, ///< [in] Size of each data element.
@@ -187,7 +187,7 @@ archi_memory_mapping_offset(
 archi_memory_mapping_t
 archi_memory_map(
         archi_memory_t memory, ///< [in] Memory handle.
-        void *map_data, ///< [in] Interface-specific data for mapping.
+        archi_pointer_t map_data, ///< [in] Interface-specific data for mapping.
 
         size_t offset, ///< [in] Offset to the mapped area in data elements.
         size_t length, ///< [in] Number of mapped data elements.

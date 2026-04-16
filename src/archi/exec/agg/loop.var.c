@@ -42,5 +42,6 @@ MEMBERS_dexgraph_transition_data__loop_times[] = {
 
 const archi_aggr_type_t
 archi_aggr_type__dexgraph_transition_data__loop_times = ARCHI_AGGR_TYPE(
-        archi_dexgraph_transition_data__loop_times_t, MEMBERS_dexgraph_transition_data__loop_times);
+        archi_dexgraph_transition_data__loop_times_t, 0,
+        MEMBERS_dexgraph_transition_data__loop_times);
 

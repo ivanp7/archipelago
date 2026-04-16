@@ -151,6 +151,9 @@ typedef ARCHI_MEMORY_UNMAP_FUNC((*archi_memory_unmap_func_t));
  * @brief Memory interface functions.
  */
 typedef struct archi_memory_interface {
+    archi_pointer_attr_t alloc_data_tag; ///< Data tag for memory allocation data.
+    archi_pointer_attr_t map_data_tag;   ///< Data tag for memory mapping data.
+
     archi_memory_alloc_func_t alloc_fn; ///< Memory allocation function.
     archi_memory_free_func_t free_fn;   ///< Memory deallocation function.
 
