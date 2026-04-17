@@ -24,7 +24,7 @@
 import ctypes as c
 from types import MappingProxyType
 
-import archi.ctypes as actype
+import archi.ctypes as ac
 
 
 class _ObjectReferencesMixin:
@@ -141,9 +141,9 @@ class Object:
     def __init__(self, length, stride, alignment, tag=None, refs=None):
         """Initialize an object.
         """
-        actype.archi_pointer_attr_t.primitive_data(length, stride, alignment)
+        self._attr = ac.archi_pointer_attr_t.primitive_data(length, stride, alignment)
         if tag is not None:
-            actype.archi_pointer_attr_t.complex_data(tag)
+            self._attr = ac.archi_pointer_attr_t.complex_data(tag)
 
         self._refs = _ObjectReferencesMixin(self, refs if refs is not None else {})
         self._eqv = _ObjectEquivalentsMixin(self)
@@ -154,6 +154,12 @@ class Object:
         self._tag = tag
 
         self._reset_address()
+
+    @property
+    def attributes(self):
+        """Get type attributes.
+        """
+        return self._attr
 
     @property
     def tag(self):
@@ -736,7 +742,7 @@ class ComplexData(Object):
             raise TypeError
         elif not isinstance(cls.TAG, (type(None), int)):
             raise TypeError
-        elif cls.TAG is not None and (cls.TAG < 0 or cls.TAG > actype.archi_pointer_attr_t.DATA_TAG_MAX):
+        elif cls.TAG is not None and (cls.TAG < 0 or cls.TAG > ac.archi_pointer_attr_t.DATA_TAG_MAX):
             raise ValueError
         elif not isinstance(cls.REFS, dict):
             raise TypeError
@@ -809,14 +815,14 @@ class ComplexData(Object):
 class KeyValueList(ComplexData):
     """Representation of a key-value list node.
     """
-    TYPE = actype.archi_kvlist_t
-    TAG = actype.archi_kvlist_t.TAG
+    TYPE = ac.archi_kvlist_t
+    TAG = ac.archi_kvlist_t.TAG
     REFS = {# 'next': KeyValueList,
             'key': String,
             'value': Object}
 
     def _write_fields(self, cobject, /):
-        cobject.next = c.cast(self.address_of('next'), c.POINTER(actype.archi_kvlist_t))
+        cobject.next = c.cast(self.address_of('next'), c.POINTER(ac.archi_kvlist_t))
         cobject.key = self.address_of('key')
         cobject.value.assign(self['value'])
 
@@ -847,7 +853,7 @@ KeyValueList.REFS['next'] = KeyValueList
 class AggregateMemberType(ComplexData):
     """Base class for descriptions of aggregate member types.
     """
-    TYPE = actype.archi_layout_type_t
+    TYPE = ac.archi_layout_type_t
     REFS = {}
 
     KIND = None
@@ -856,7 +862,7 @@ class AggregateMemberType(ComplexData):
 class AggregateMember(ComplexData):
     """Description of an aggregate member.
     """
-    TYPE = actype.archi_aggr_member_t
+    TYPE = ac.archi_aggr_member_t
     REFS = {'name': String,
             'member_type': AggregateMemberType}
 
@@ -864,7 +870,7 @@ class AggregateMember(ComplexData):
         cobject.name = self.address_of('name')
         if self['member_type'] is not None:
             cobject.kind = self['member_type'].KIND
-        cobject.layout = c.cast(self.address_of('member_type'), c.POINTER(actype.archi_layout_type_t))
+        cobject.layout = c.cast(self.address_of('member_type'), c.POINTER(ac.archi_layout_type_t))
 
 
 class AggregateMembers(ObjectSequence):
@@ -894,10 +900,10 @@ class AggregateMembers(ObjectSequence):
 class AggregateMemberType_Value(AggregateMemberType):
     """Description of a value type of an aggregate member.
     """
-    TYPE = actype.archi_aggr_member_type__value_t
+    TYPE = ac.archi_aggr_member_type__value_t
     REFS = {}
 
-    KIND = actype.archi_aggr_member_t.KIND_VALUE
+    KIND = ac.archi_aggr_member_t.KIND_VALUE
 
     def _write_fields(self, cobject, /):
         pass # nothing to do
@@ -906,10 +912,10 @@ class AggregateMemberType_Value(AggregateMemberType):
 class AggregateMemberType_Pointer(AggregateMemberType):
     """Description of a pointer type of an aggregate member.
     """
-    TYPE = actype.archi_aggr_member_type__pointer_t
+    TYPE = ac.archi_aggr_member_type__pointer_t
     REFS = {}
 
-    KIND = actype.archi_aggr_member_t.KIND_POINTER
+    KIND = ac.archi_aggr_member_t.KIND_POINTER
 
     def _write_fields(self, cobject, /):
         pass # nothing to do
@@ -918,28 +924,28 @@ class AggregateMemberType_Pointer(AggregateMemberType):
 class AggregateMemberType_Aggregate(AggregateMemberType):
     """Description of an aggregate member type.
     """
-    TYPE = actype.archi_aggr_member_type__aggregate_t
+    TYPE = ac.archi_aggr_member_type__aggregate_t
     REFS = {'members': AggregateMembers}
 
-    KIND = actype.archi_aggr_member_t.KIND_AGGREGATE
+    KIND = ac.archi_aggr_member_t.KIND_AGGREGATE
 
     def _write_fields(self, cobject, /):
         cobject.num_members = self['members'].num_members if self['members'] is not None else 0
-        cobject.members = c.cast(self.address_of('members'), c.POINTER(actype.archi_aggr_member_t))
+        cobject.members = c.cast(self.address_of('members'), c.POINTER(ac.archi_aggr_member_t))
 
 
 class AggregateType(ComplexData):
     """Description of an aggregate type.
     """
-    TYPE = actype.archi_aggr_type_t
-    TAG = actype.archi_aggr_type_t.TAG
+    TYPE = ac.archi_aggr_type_t
+    TAG = ac.archi_aggr_type_t.TAG
     REFS = {'members': AggregateMembers,
             'init_value': Object,
             'init_value_fam': Object}
 
     def _write_fields(self, cobject, /):
         cobject.top_level.num_members = self['members'].num_members if self['members'] is not None else 0
-        cobject.top_level.members = c.cast(self.address_of('members'), c.POINTER(actype.archi_aggr_member_t))
+        cobject.top_level.members = c.cast(self.address_of('members'), c.POINTER(ac.archi_aggr_member_t))
 
         cobject.init_value = self.address_of('init_value')
         cobject.init_value_fam = self.address_of('init_value_fam')
@@ -951,11 +957,11 @@ class AggregateType(ComplexData):
 class AppInputFileHeader(ComplexData):
     """Immutable representation of an application input file header.
     """
-    TYPE = actype.archi_app_input_file_header_t
+    TYPE = ac.archi_app_input_file_header_t
     REFS = {'contents': KeyValueList}
 
     def _write_fields(self, cobject, /):
-        cobject.contents = c.cast(self.address_of('contents'), c.POINTER(actype.archi_kvlist_t))
+        cobject.contents = c.cast(self.address_of('contents'), c.POINTER(ac.archi_kvlist_t))
 
 
 class AppInputFile(ObjectRefTree):
@@ -974,7 +980,7 @@ class AppInputFile(ObjectRefTree):
         """
         super()._write(eff_address)
 
-        header = actype.archi_app_input_file_header_t.from_address(eff_address)
+        header = ac.archi_app_input_file_header_t.from_address(eff_address)
 
         header.header.addr = self.address_of()
         header.header.size = self.total_size - c.sizeof(header.header)
@@ -991,7 +997,7 @@ class ContextSlotIndices(PrimitiveData):
         """
         if not isinstance(cobject, c.Array):
             raise TypeError
-        elif not issubclass(cobject._type_, actype.archi_context_slot_index_t):
+        elif not issubclass(cobject._type_, ac.archi_context_slot_index_t):
             raise TypeError
 
         super().__init__(cobject)
@@ -1003,13 +1009,13 @@ class ContextSlotIndices(PrimitiveData):
         if not indices:
             return None
 
-        return ContextSlotIndices((actype.archi_context_slot_index_t * len(indices))(*indices))
+        return ContextSlotIndices((ac.archi_context_slot_index_t * len(indices))(*indices))
 
 
 class RegistryOpData_delete(ComplexData):
     """Registry operation data: delete a context.
     """
-    TYPE = actype.archi_app_registry_op_data__delete_t
+    TYPE = ac.archi_app_registry_op_data__delete_t
     REFS = {'key': String}
 
     def _write_fields(self, cobject, /):
@@ -1024,7 +1030,7 @@ class RegistryOpData_delete(ComplexData):
 class RegistryOpData_alias(ComplexData):
     """Registry operation data: create a context alias.
     """
-    TYPE = actype.archi_app_registry_op_data__alias_t
+    TYPE = ac.archi_app_registry_op_data__alias_t
     REFS = {'key': String,
             'original_key': String}
 
@@ -1042,7 +1048,7 @@ class RegistryOpData_alias(ComplexData):
 class RegistryOpData_create_as(ComplexData):
     """Registry operation data: create a context using interface of another context.
     """
-    TYPE = actype.archi_app_registry_op_data__create_as_t
+    TYPE = ac.archi_app_registry_op_data__create_as_t
     REFS = {'key': String,
             'sample_key': String,
             'init_params_context_key': String,
@@ -1052,7 +1058,7 @@ class RegistryOpData_create_as(ComplexData):
         cobject.key = self.address_of('key')
         cobject.sample_key = self.address_of('sample_key')
         cobject.init_params.context_key = self.address_of('init_params_context_key')
-        cobject.init_params.list = c.cast(self.address_of('init_params_list'), c.POINTER(actype.archi_kvlist_t))
+        cobject.init_params.list = c.cast(self.address_of('init_params_list'), c.POINTER(ac.archi_kvlist_t))
 
     @classmethod
     def construct(cls, *, key, sample_key, init_params_context_key, init_params_list):
@@ -1066,7 +1072,7 @@ class RegistryOpData_create_as(ComplexData):
 class RegistryOpData_create_from(ComplexData):
     """Registry operation data: create a context using interface obtained from another context slot.
     """
-    TYPE = actype.archi_app_registry_op_data__create_from_t
+    TYPE = ac.archi_app_registry_op_data__create_from_t
     REFS = {'key': String,
             'source_key': String,
             'source_slot_name': String,
@@ -1078,10 +1084,10 @@ class RegistryOpData_create_from(ComplexData):
         cobject.key = self.address_of('key')
         cobject.source_key = self.address_of('source_key')
         cobject.source_slot.name = self.address_of('source_slot_name')
-        cobject.source_slot.index = c.cast(self.address_of('source_slot_indices'), c.POINTER(actype.archi_context_slot_index_t))
+        cobject.source_slot.index = c.cast(self.address_of('source_slot_indices'), c.POINTER(ac.archi_context_slot_index_t))
         cobject.source_slot.num_indices = self['source_slot_indices'].length if self['source_slot_indices'] is not None else 0
         cobject.init_params.context_key = self.address_of('init_params_context_key')
-        cobject.init_params.list = c.cast(self.address_of('init_params_list'), c.POINTER(actype.archi_kvlist_t))
+        cobject.init_params.list = c.cast(self.address_of('init_params_list'), c.POINTER(ac.archi_kvlist_t))
 
     @classmethod
     def construct(cls, *, key, source_key, source_slot_name, source_slot_indices,
@@ -1098,7 +1104,7 @@ class RegistryOpData_create_from(ComplexData):
 class RegistryOpData_create_params(ComplexData):
     """Registry operation data: create a parameter list context.
     """
-    TYPE = actype.archi_app_registry_op_data__create_params_t
+    TYPE = ac.archi_app_registry_op_data__create_params_t
     REFS = {'key': String,
             'params_context_key': String,
             'params_list': KeyValueList}
@@ -1106,7 +1112,7 @@ class RegistryOpData_create_params(ComplexData):
     def _write_fields(self, cobject, /):
         cobject.key = self.address_of('key')
         cobject.params.context_key = self.address_of('params_context_key')
-        cobject.params.list = c.cast(self.address_of('params_list'), c.POINTER(actype.archi_kvlist_t))
+        cobject.params.list = c.cast(self.address_of('params_list'), c.POINTER(ac.archi_kvlist_t))
 
     @classmethod
     def construct(cls, *, key, params_context_key, params_list):
@@ -1119,7 +1125,7 @@ class RegistryOpData_create_params(ComplexData):
 class RegistryOpData_create_ptr(ComplexData):
     """Registry operation data: create a pointer context.
     """
-    TYPE = actype.archi_app_registry_op_data__create_ptr_t
+    TYPE = ac.archi_app_registry_op_data__create_ptr_t
     REFS = {'key': String,
             'pointee': Object}
 
@@ -1137,7 +1143,7 @@ class RegistryOpData_create_ptr(ComplexData):
 class RegistryOpData_create_dptr_array(ComplexData):
     """Registry operation data: create a data pointer array context.
     """
-    TYPE = actype.archi_app_registry_op_data__create_dptr_array_t
+    TYPE = ac.archi_app_registry_op_data__create_dptr_array_t
     REFS = {'key': String}
 
     def _write_fields(self, cobject, /):
@@ -1152,7 +1158,7 @@ class RegistryOpData_create_dptr_array(ComplexData):
 class RegistryOpData_invoke(ComplexData):
     """Registry operation data: invoke context call.
     """
-    TYPE = actype.archi_app_registry_op_data__invoke_t
+    TYPE = ac.archi_app_registry_op_data__invoke_t
     REFS = {'key': String,
             'slot_name': String,
             'slot_indices': ContextSlotIndices,
@@ -1162,10 +1168,10 @@ class RegistryOpData_invoke(ComplexData):
     def _write_fields(self, cobject, /):
         cobject.key = self.address_of('key')
         cobject.slot.name = self.address_of('slot_name')
-        cobject.slot.index = c.cast(self.address_of('slot_indices'), c.POINTER(actype.archi_context_slot_index_t))
+        cobject.slot.index = c.cast(self.address_of('slot_indices'), c.POINTER(ac.archi_context_slot_index_t))
         cobject.slot.num_indices = self['slot_indices'].length if self['slot_indices'] is not None else 0
         cobject.call_params.context_key = self.address_of('call_params_context_key')
-        cobject.call_params.list = c.cast(self.address_of('call_params_list'), c.POINTER(actype.archi_kvlist_t))
+        cobject.call_params.list = c.cast(self.address_of('call_params_list'), c.POINTER(ac.archi_kvlist_t))
 
     @classmethod
     def construct(cls, *, key, slot_name, slot_indices,
@@ -1181,7 +1187,7 @@ class RegistryOpData_invoke(ComplexData):
 class RegistryOpData_unassign(ComplexData):
     """Registry operation data: unset context slot.
     """
-    TYPE = actype.archi_app_registry_op_data__unassign_t
+    TYPE = ac.archi_app_registry_op_data__unassign_t
     REFS = {'key': String,
             'slot_name': String,
             'slot_indices': ContextSlotIndices}
@@ -1189,7 +1195,7 @@ class RegistryOpData_unassign(ComplexData):
     def _write_fields(self, cobject, /):
         cobject.key = self.address_of('key')
         cobject.slot.name = self.address_of('slot_name')
-        cobject.slot.index = c.cast(self.address_of('slot_indices'), c.POINTER(actype.archi_context_slot_index_t))
+        cobject.slot.index = c.cast(self.address_of('slot_indices'), c.POINTER(ac.archi_context_slot_index_t))
         cobject.slot.num_indices = self['slot_indices'].length if self['slot_indices'] is not None else 0
 
     @classmethod
@@ -1203,7 +1209,7 @@ class RegistryOpData_unassign(ComplexData):
 class RegistryOpData_assign(ComplexData):
     """Registry operation data: set context slot to value.
     """
-    TYPE = actype.archi_app_registry_op_data__assign_t
+    TYPE = ac.archi_app_registry_op_data__assign_t
     REFS = {'key': String,
             'slot_name': String,
             'slot_indices': ContextSlotIndices,
@@ -1212,7 +1218,7 @@ class RegistryOpData_assign(ComplexData):
     def _write_fields(self, cobject, /):
         cobject.key = self.address_of('key')
         cobject.slot.name = self.address_of('slot_name')
-        cobject.slot.index = c.cast(self.address_of('slot_indices'), c.POINTER(actype.archi_context_slot_index_t))
+        cobject.slot.index = c.cast(self.address_of('slot_indices'), c.POINTER(ac.archi_context_slot_index_t))
         cobject.slot.num_indices = self['slot_indices'].length if self['slot_indices'] is not None else 0
         cobject.value.assign(self['value'])
 
@@ -1228,7 +1234,7 @@ class RegistryOpData_assign(ComplexData):
 class RegistryOpData_assign_slot(ComplexData):
     """Registry operation data: set context slot to value of another context slot.
     """
-    TYPE = actype.archi_app_registry_op_data__assign_slot_t
+    TYPE = ac.archi_app_registry_op_data__assign_slot_t
     REFS = {'key': String,
             'slot_name': String,
             'slot_indices': ContextSlotIndices,
@@ -1239,11 +1245,11 @@ class RegistryOpData_assign_slot(ComplexData):
     def _write_fields(self, cobject, /):
         cobject.key = self.address_of('key')
         cobject.slot.name = self.address_of('slot_name')
-        cobject.slot.index = c.cast(self.address_of('slot_indices'), c.POINTER(actype.archi_context_slot_index_t))
+        cobject.slot.index = c.cast(self.address_of('slot_indices'), c.POINTER(ac.archi_context_slot_index_t))
         cobject.slot.num_indices = self['slot_indices'].length if self['slot_indices'] is not None else 0
         cobject.source_key = self.address_of('source_key')
         cobject.source_slot.name = self.address_of('source_slot_name')
-        cobject.source_slot.index = c.cast(self.address_of('source_slot_indices'), c.POINTER(actype.archi_context_slot_index_t))
+        cobject.source_slot.index = c.cast(self.address_of('source_slot_indices'), c.POINTER(ac.archi_context_slot_index_t))
         cobject.source_slot.num_indices = self['source_slot_indices'].length if self['source_slot_indices'] is not None else 0
 
     @classmethod
@@ -1260,7 +1266,7 @@ class RegistryOpData_assign_slot(ComplexData):
 class RegistryOpData_assign_call(ComplexData):
     """Registry operation data: set context slot to result of another context call.
     """
-    TYPE = actype.archi_app_registry_op_data__assign_call_t
+    TYPE = ac.archi_app_registry_op_data__assign_call_t
     REFS = {'key': String,
             'slot_name': String,
             'slot_indices': ContextSlotIndices,
@@ -1273,14 +1279,14 @@ class RegistryOpData_assign_call(ComplexData):
     def _write_fields(self, cobject, /):
         cobject.key = self.address_of('key')
         cobject.slot.name = self.address_of('slot_name')
-        cobject.slot.index = c.cast(self.address_of('slot_indices'), c.POINTER(actype.archi_context_slot_index_t))
+        cobject.slot.index = c.cast(self.address_of('slot_indices'), c.POINTER(ac.archi_context_slot_index_t))
         cobject.slot.num_indices = self['slot_indices'].length if self['slot_indices'] is not None else 0
         cobject.source_key = self.address_of('source_key')
         cobject.source_slot.name = self.address_of('source_slot_name')
-        cobject.source_slot.index = c.cast(self.address_of('source_slot_indices'), c.POINTER(actype.archi_context_slot_index_t))
+        cobject.source_slot.index = c.cast(self.address_of('source_slot_indices'), c.POINTER(ac.archi_context_slot_index_t))
         cobject.source_slot.num_indices = self['source_slot_indices'].length if self['source_slot_indices'] is not None else 0
         cobject.source_call_params.context_key = self.address_of('source_call_params_context_key')
-        cobject.source_call_params.list = c.cast(self.address_of('source_call_params_list'), c.POINTER(actype.archi_kvlist_t))
+        cobject.source_call_params.list = c.cast(self.address_of('source_call_params_list'), c.POINTER(ac.archi_kvlist_t))
 
     @classmethod
     def construct(cls, *, key, slot_name, slot_indices, source_key, source_slot_name, source_slot_indices,
@@ -1308,7 +1314,7 @@ class SignalSet(PrimitiveData):
     def __init__(self, cobject, /):
         """Initialize a representation of a set of POSIX signals.
         """
-        if not isinstance(cobject, actype.archi_signal_set_t):
+        if not isinstance(cobject, ac.archi_signal_set_t):
             raise TypeError
 
         super().__init__(cobject)
@@ -1317,10 +1323,10 @@ class SignalSet(PrimitiveData):
     def construct(cls, **signals):
         """Construct a set of POSIX signals.
         """
-        signal_set = actype.archi_signal_set_t()
+        signal_set = ac.archi_signal_set_t()
 
         for signal, value in signals.items():
-            if signal == actype.SIGNAL_RT_MIN or signal == actype.SIGNAL_RT_MAX:
+            if signal == ac.SIGNAL_RT_MIN or signal == ac.SIGNAL_RT_MAX:
                 for index in value:
                     getattr(signal_set, signal)[index] = True
             else:

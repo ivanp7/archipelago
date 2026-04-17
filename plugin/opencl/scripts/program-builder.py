@@ -10,9 +10,10 @@ from pathlib import Path
 import subprocess
 
 from archi.object import PrimitiveData, String, KeyValueList
-from archi.context import Parameters, Registry
 from archi.script import errprint, write_input_file
-from archi.builtin import (
+from archi.context import (
+        Parameters,
+        Registry,
         FileContext,
         LibraryContext,
         )
@@ -22,7 +23,7 @@ from archi.opencl import (
         OpenCLProgramSrcContext,
         OpenCLProgramBinContext,
         )
-from archi.wrapper.env import env_variables
+from archi.helper.env import env_variables
 
 ###############################################################################
 # Command line argument parser
@@ -170,7 +171,7 @@ PLUGIN_OPENCL_PATHNAME = f'lib{PLUGIN_OPENCL}.so'
 
 
 app = Registry()
-executable = app.require_context(Registry.KEY_EXECUTABLE, LibraryContext)
+executable = app[Registry.KEY_EXECUTABLE]
 
 # Prepare built-in interfaces
 I_LIBRARY = LibraryContext.interface(library=executable)
@@ -222,13 +223,9 @@ with app.temp_context(I_LIBRARY(pathname=PLUGIN_OPENCL_PATHNAME), key=key('plugi
             del dict_sources
 
             # Build the program
-            app[key('program')] = I_OPENCL_PROGRAM_SRC(context=opencl_context,
-                                                       device_id=opencl_context.device_id,
-                                                       headers=headers,
-                                                       sources=sources,
-                                                       libraries=libraries,
-                                                       cflags=cflags,
-                                                       lflags=lflags)
+            app[key('program')] = I_OPENCL_PROGRAM_SRC(context=opencl_context, device_id=opencl_context.device_id,
+                                                       headers=headers, sources=sources, libraries=libraries,
+                                                       cflags=cflags, lflags=lflags)
 
     with app.deleted_context(key('program')) as opencl_program:
         # Write program binaries to output files

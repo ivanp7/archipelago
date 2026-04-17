@@ -19,21 +19,20 @@
  #############################################################################
 
 # @file
-# @brief High-level wrapper for DEG node/node array contexts.
+# @brief Helpers for DEG node/node array contexts.
 
 from contextlib import contextmanager
 from types import MappingProxyType
 
-from archi.ctypes import (
-        ARCHI_POINTER_FUNC_TAG__DEXGRAPH_OPERATION,
-        ARCHI_POINTER_FUNC_TAG__DEXGRAPH_TRANSITION,
+from archi.context import (
+        Registry,
+        DexgraphNodeContext,
+        DexgraphNodeArrayContext,
         )
-from archi.context import Registry
-from archi.builtin import DexgraphNodeContext, DexgraphNodeArrayContext
 
 
 class DexgraphNode:
-    """Directed execution graph node.
+    """Helper class representing a directed execution graph node.
     """
     def __init__(self, name=None, sequence=(), transition=None):
         """Initialize a DEG node.
@@ -207,16 +206,4 @@ class DexgraphNode:
 
             for context in node_contexts.values():
                 registry.del_context(context)
-
-    @staticmethod
-    def operation_fn(slot):
-        """Set operation function tag for a library slot.
-        """
-        return slot(function=True, tag=ARCHI_POINTER_FUNC_TAG__DEXGRAPH_OPERATION)
-
-    @staticmethod
-    def transition_fn(slot):
-        """Set transition function tag for a library slot.
-        """
-        return slot(function=True, tag=ARCHI_POINTER_FUNC_TAG__DEXGRAPH_TRANSITION)
 

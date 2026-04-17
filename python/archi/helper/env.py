@@ -19,13 +19,16 @@
  #############################################################################
 
 # @file
-# @brief High-level wrapper for environment variable contexts.
+# @brief Helpers for environment variable contexts.
 
 
 from contextlib import contextmanager
 
-from archi.context import Registry
-from archi.builtin import EnvVariableContext, NumberParserContext
+from archi.context import (
+        Registry,
+        EnvVariableContext,
+        NumberParserContext,
+        )
 
 
 @contextmanager

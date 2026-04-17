@@ -19,40 +19,26 @@
  #############################################################################
 
 # @file
-# @brief High-level wrapper for aggregate object contexts.
+# @brief Helpers for aggregate object contexts.
 
 from contextlib import contextmanager
 
-from archi.ctypes import (
-        ARCHI_POINTER_DATA_TAG__AGGR_INTERFACE,
-        ARCHI_POINTER_DATA_TAG__AGGR_TYPE,
+from archi.context import (
+        Registry,
+        AggregateContext,
+        AggregateInterfaceSymbol,
+        AggregateTypeSymbol,
         )
-from archi.context import Registry, TypeAttributes, get_entity_attr
-from archi.builtin import AggregateContext
-
-
-def aggregate_type(slot):
-    """Set aggregate type data tag for a library slot.
-    """
-    return slot(function=False, tag=ARCHI_POINTER_DATA_TAG__AGGR_TYPE)
 
 
 @contextmanager
-def aggregate_object(registry, aggr_type, /, fam_length=None, key=None):
+def aggregate_object(registry, plugin, type_name, /, fam_length=None, key=None):
     """Context manager of an aggregate object context (generic aggregate type interface).
     """
     if not isinstance(registry, Registry):
         raise TypeError
 
-    attr = get_entity_attr(aggr_type)
-
-    if attr is not ... and not attr.is_compatible_to(
-            TypeAttributes.complex_data(ARCHI_POINTER_DATA_TAG__AGGR_TYPE)):
-        raise TypeError("Metadata is not an aggregate type description")
-
-    executable = registry[Registry.KEY_EXECUTABLE]
-
-    I_AGGREGATE = AggregateContext.interface(library=executable)
+    I_AGGREGATE = AggregateContext.interface(library=registry[Registry.KEY_EXECUTABLE])
 
     params = {}
     if fam_length is not None:
@@ -61,9 +47,9 @@ def aggregate_object(registry, aggr_type, /, fam_length=None, key=None):
     if key is None:
         key = registry.temp_key(prefix='aggregate', rnd_len=6)
 
-    with registry.temp_context(I_AGGREGATE(interface=executable.archi_aggr_interface__generic(
-                                                function=False, tag=ARCHI_POINTER_DATA_TAG__AGGR_INTERFACE),
-                                           metadata=aggr_type,
+    with registry.temp_context(I_AGGREGATE(interface=AggregateInterfaceSymbol.slot(
+                                                registry[Registry.KEY_EXECUTABLE], 'generic'),
+                                           metadata=AggregateTypeSymbol.slot(plugin, type_name),
                                            **params),
                                key=key) as aggregate:
         yield aggregate
