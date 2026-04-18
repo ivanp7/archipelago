@@ -29,6 +29,7 @@
 
 #define ARCHI_POINTER_DATA_TAG__POINTER     0x02 ///< Data type tag for archi_pointer_t.
 #define ARCHI_POINTER_DATA_TAG__RCPOINTER   0x03 ///< Data type tag for archi_rcpointer_t.
+#define ARCHI_POINTER_DATA_TAG__DPTR_ARRAY  0x04 ///< Data type tag for struct archi_dptr_array.
 #define ARCHI_POINTER_DATA_TAG__KVLIST      0x06 ///< Data type tag for archi_kvlist_t.
 #define ARCHI_POINTER_DATA_TAG__KRCVLIST    0x07 ///< Data type tag for archi_krcvlist_t.
 

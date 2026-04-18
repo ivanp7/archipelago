@@ -20,36 +20,49 @@
 
 /**
  * @file
- * @brief Context interface for arrays of data pointers.
+ * @brief Operations on arrays of data pointers.
  */
 
-#pragma once
-#ifndef _ARCHI_CONTEXT_CTX_DPTR_ARRAY_VAR_H_
-#define _ARCHI_CONTEXT_CTX_DPTR_ARRAY_VAR_H_
+#include "archi_base/dptr_array.fun.h"
+#include "archi_base/util/size.def.h"
 
-#include "archi/context/api/interface.typ.h"
+#include <stdlib.h> // for realloc()
 
 
-/**
- * @brief Context interface: array of pointers to data.
- *
- * Initialization parameters:
- * - "length" : (size_t) array length
- *
- * Getter slots:
- * - [index]        : array element #index
- * - "ptr" [index]  : (void**) pointer to array element #index
- * - "ptrs"         : (void*[]) array of pointers to array elements starting at #0
- * - "ptrs" [index] : (void*[]) array of pointers to array elements starting at #index
- * - "length"       : (size_t) array length
- *
- * Setter slots:
- * - [index]    : array element #index
- * - "length"   : (size_t) array length
- */
-extern
-const archi_context_interface_t
-archi_context_interface__dptr_array;
+archi_dptr_array_t
+archi_dptr_array_alloc(
+        size_t length)
+{
+    archi_dptr_array_t array = NULL;
+    if (!archi_dptr_array_set_length(&array, length))
+        return NULL;
 
-#endif // _ARCHI_CONTEXT_CTX_DPTR_ARRAY_VAR_H_
+    return array;
+}
+
+bool
+archi_dptr_array_set_length(
+        archi_dptr_array_t *array,
+        size_t new_length)
+{
+    if (array == NULL)
+        return false;
+
+    size_t old_length = (*array != NULL) ? (*array)->length : 0;
+
+    archi_dptr_array_t new_array = realloc(*array,
+            ARCHI_SIZEOF_FLEXIBLE(struct archi_dptr_array, ptr, new_length));
+    if (new_array == NULL)
+        return false;
+
+    {
+        size_t *length_ptr = &new_array->length;
+        *length_ptr = new_length;
+    }
+    for (size_t i = old_length; i < new_length; i++)
+        new_array->ptr[i] = NULL;
+
+    *array = new_array;
+    return true;
+}
 

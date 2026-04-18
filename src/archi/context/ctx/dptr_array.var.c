@@ -25,8 +25,10 @@
 
 #include "archi/context/ctx/dptr_array.var.h"
 #include "archi/context/api/interface.def.h"
+#include "archi_base/dptr_array.fun.h"
 #include "archi_base/pointer.fun.h"
 #include "archi_base/pointer.def.h"
+#include "archi_base/tag.def.h"
 #include "archi_base/util/plist.fun.h"
 #include "archi_base/util/check.fun.h"
 #include "archi_base/util/string.fun.h"
@@ -36,7 +38,9 @@
 
 struct archi_context_data__dptr_array {
     archi_rcpointer_t array;
-    archi_rcpointer_t *element;
+
+    // References
+    archi_rcpointer_t *ref_element;
 };
 
 static
@@ -74,23 +78,23 @@ ARCHI_CONTEXT_INIT_FUNC(archi_context_init__dptr_array)
     *context_data = (struct archi_context_data__dptr_array){
         .array = {
             .attr = ARCHI_POINTER_TYPE__DATA_WRITABLE |
-                ARCHI_POINTER_ATTR__PDATA(length, archi_data_t),
+                archi_pointer_attr__cdata(ARCHI_POINTER_DATA_TAG__DPTR_ARRAY),
         },
     };
 
+    context_data->array.ptr = archi_dptr_array_alloc(length);
+    if (context_data->array.ptr == NULL)
+    {
+        free(context_data);
+
+        ARCHI_ERROR_SET(ARCHI__EMEMORY, "couldn't allocate array [%zu] of data pointers", length);
+        return NULL;
+    }
+
     if (length > 0)
     {
-        context_data->array.ptr = malloc(sizeof(archi_data_t) * length);
-        if (context_data->array.ptr == NULL)
-        {
-            free(context_data);
-
-            ARCHI_ERROR_SET(ARCHI__EMEMORY, "couldn't allocate array [%zu] of pointers", length);
-            return NULL;
-        }
-
-        context_data->element = malloc(sizeof(archi_rcpointer_t) * length);
-        if (context_data->element == NULL)
+        context_data->ref_element = malloc(sizeof(archi_rcpointer_t) * length);
+        if (context_data->ref_element == NULL)
         {
             free(context_data->array.ptr);
             free(context_data);
@@ -99,12 +103,8 @@ ARCHI_CONTEXT_INIT_FUNC(archi_context_init__dptr_array)
             return NULL;
         }
 
-        archi_data_t *array = context_data->array.ptr;
         for (size_t i = 0; i < length; i++)
-        {
-            array[i] = NULL;
-            context_data->element[i] = (archi_rcpointer_t){0};
-        }
+            context_data->ref_element[i] = (archi_rcpointer_t){0};
     }
 
     ARCHI_ERROR_RESET();
@@ -117,13 +117,12 @@ ARCHI_CONTEXT_FINAL_FUNC(archi_context_final__dptr_array)
     struct archi_context_data__dptr_array *context_data =
         (struct archi_context_data__dptr_array*)context;
 
-    size_t length;
-    archi_pointer_attr_unpk__pdata(context_data->array.attr, &length, NULL, NULL, NULL);
+    archi_dptr_array_t array = context_data->array.ptr;
 
-    for (size_t i = 0; i < length; i++)
-        archi_rcpointer_disown(context_data->element[i]);
+    for (size_t i = 0; i < array->length; i++)
+        archi_rcpointer_disown(context_data->ref_element[i]);
 
-    free(context_data->element);
+    free(context_data->ref_element);
     free(context_data->array.ptr);
     free(context_data);
 }
@@ -142,8 +141,7 @@ ARCHI_CONTEXT_EVAL_FUNC(archi_context_eval__dptr_array)
     struct archi_context_data__dptr_array *context_data =
         (struct archi_context_data__dptr_array*)context;
 
-    size_t length;
-    archi_pointer_attr_unpk__pdata(context_data->array.attr, &length, NULL, NULL, NULL);
+    archi_dptr_array_t array = context_data->array.ptr;
 
     if (ARCHI_STRING_COMPARE("", ==, slot.name))
     {
@@ -154,13 +152,13 @@ ARCHI_CONTEXT_EVAL_FUNC(archi_context_eval__dptr_array)
         }
 
         archi_context_slot_index_t index = slot.index[0];
-        if ((index < 0) || ((size_t)index >= length))
+        if ((index < 0) || ((size_t)index >= array->length))
         {
-            ARCHI_ERROR_SET(ARCHI__EINDEX, "index (%lli) out of range [0; %zu)", index, length);
+            ARCHI_ERROR_SET(ARCHI__EINDEX, "index (%lli) out of range [0; %zu)", index, array->length);
             return;
         }
 
-        ARCHI_CONTEXT_YIELD(context_data->element[index]);
+        ARCHI_CONTEXT_YIELD(context_data->ref_element[index]);
     }
     else if (ARCHI_STRING_COMPARE("ptr", ==, slot.name))
     {
@@ -171,16 +169,44 @@ ARCHI_CONTEXT_EVAL_FUNC(archi_context_eval__dptr_array)
         }
 
         archi_context_slot_index_t index = slot.index[0];
-        if ((index < 0) || ((size_t)index >= length))
+        if ((index < 0) || ((size_t)index >= array->length))
         {
-            ARCHI_ERROR_SET(ARCHI__EINDEX, "index (%lli) out of range [0; %zu)", index, length);
+            ARCHI_ERROR_SET(ARCHI__EINDEX, "index (%lli) out of range [0; %zu)", index, array->length);
             return;
         }
 
         archi_rcpointer_t value = {
-            .ptr = &((archi_data_t*)context_data->array.ptr)[index],
+            .ptr = &array->ptr[index],
             .attr = ARCHI_POINTER_TYPE__DATA_WRITABLE |
-                ARCHI_POINTER_ATTR__PDATA(length - index, archi_data_t),
+                ARCHI_POINTER_ATTR__PDATA(1, archi_data_t),
+            .ref_count = ARCHI_CONTEXT_REF_COUNT,
+        };
+
+        ARCHI_CONTEXT_YIELD(value);
+    }
+    else if (ARCHI_STRING_COMPARE("ptrs", ==, slot.name))
+    {
+        if (slot.num_indices > 1)
+        {
+            ARCHI_ERROR_SET(ARCHI__EINDEX, "number of slot indices isn't 0 or 1");
+            return;
+        }
+
+        archi_context_slot_index_t index = 0;
+        if (slot.num_indices > 0)
+        {
+            index = slot.index[0];
+            if ((index < 0) || ((size_t)index >= array->length))
+            {
+                ARCHI_ERROR_SET(ARCHI__EINDEX, "index (%lli) out of range [0; %zu)", index, array->length);
+                return;
+            }
+        }
+
+        archi_rcpointer_t value = {
+            .ptr = &array->ptr[index],
+            .attr = ARCHI_POINTER_TYPE__DATA_WRITABLE |
+                ARCHI_POINTER_ATTR__PDATA(array->length - index, archi_data_t),
             .ref_count = ARCHI_CONTEXT_REF_COUNT,
         };
 
@@ -193,6 +219,8 @@ ARCHI_CONTEXT_EVAL_FUNC(archi_context_eval__dptr_array)
             ARCHI_ERROR_SET(ARCHI__EINDEX, "number of slot indices isn't 0");
             return;
         }
+
+        size_t length = array->length;
 
         archi_rcpointer_t value = {
             .ptr = &length,
@@ -218,8 +246,7 @@ ARCHI_CONTEXT_SET_FUNC(archi_context_set__dptr_array)
     struct archi_context_data__dptr_array *context_data =
         (struct archi_context_data__dptr_array*)context;
 
-    size_t length;
-    archi_pointer_attr_unpk__pdata(context_data->array.attr, &length, NULL, NULL, NULL);
+    archi_dptr_array_t array = context_data->array.ptr;
 
     if (ARCHI_STRING_COMPARE("", ==, slot.name))
     {
@@ -235,20 +262,18 @@ ARCHI_CONTEXT_SET_FUNC(archi_context_set__dptr_array)
         }
 
         archi_context_slot_index_t index = slot.index[0];
-        if ((index < 0) || ((size_t)index >= length))
+        if ((index < 0) || ((size_t)index >= array->length))
         {
-            ARCHI_ERROR_SET(ARCHI__EINDEX, "index (%lli) out of range [0; %zu)", index, length);
+            ARCHI_ERROR_SET(ARCHI__EINDEX, "index (%lli) out of range [0; %zu)", index, array->length);
             return;
         }
 
-        value = archi_rcpointer_own_disown(value, context_data->element[index], ARCHI_ERROR_PARAM);
+        value = archi_rcpointer_own_disown(value, context_data->ref_element[index], ARCHI_ERROR_PARAM);
         if (!value.attr)
             return;
 
-        archi_data_t *array = context_data->array.ptr;
-
-        array[index] = value.ptr;
-        context_data->element[index] = value;
+        array->ptr[index] = value.ptr;
+        context_data->ref_element[index] = value;
     }
     else if (ARCHI_STRING_COMPARE("length", ==, slot.name))
     {
@@ -272,22 +297,20 @@ ARCHI_CONTEXT_SET_FUNC(archi_context_set__dptr_array)
         }
 
         // Allocate new arrays
-        archi_data_t *ptr_array = NULL;
-        archi_rcpointer_t *element_array = NULL;
+        archi_dptr_array_t new_array = archi_dptr_array_alloc(new_length);
+        if (new_array == NULL)
+        {
+            ARCHI_ERROR_SET(ARCHI__EMEMORY, "couldn't allocate array [%zu] of pointers", new_length);
+            return;
+        }
 
+        archi_rcpointer_t *new_ref_element = NULL;
         if (new_length > 0)
         {
-            ptr_array = malloc(sizeof(archi_data_t) * new_length);
-            if (ptr_array == NULL)
+            new_ref_element = malloc(sizeof(archi_rcpointer_t) * new_length);
+            if (new_ref_element == NULL)
             {
-                ARCHI_ERROR_SET(ARCHI__EMEMORY, "couldn't allocate array [%zu] of pointers", new_length);
-                return;
-            }
-
-            element_array = malloc(sizeof(archi_rcpointer_t) * new_length);
-            if (element_array == NULL)
-            {
-                free(ptr_array);
+                free(new_array);
 
                 ARCHI_ERROR_SET(ARCHI__EMEMORY, "couldn't allocate array [%zu] of pointer wrappers", new_length);
                 return;
@@ -295,41 +318,35 @@ ARCHI_CONTEXT_SET_FUNC(archi_context_set__dptr_array)
         }
 
         // Copy contents of the arrays
-        if (new_length <= length)
+        if (new_length <= array->length)
         {
             for (size_t i = 0; i < new_length; i++)
             {
-                ptr_array[i] = ((archi_data_t*)context_data->array.ptr)[i];
-                element_array[i] = context_data->element[i];
+                new_array->ptr[i] = array->ptr[i];
+                new_ref_element[i] = context_data->ref_element[i];
             }
 
-            for (size_t i = new_length; i < length; i++)
-                archi_rcpointer_disown(context_data->element[i]);
+            for (size_t i = new_length; i < array->length; i++)
+                archi_rcpointer_disown(context_data->ref_element[i]);
         }
         else
         {
-            for (size_t i = 0; i < length; i++)
+            for (size_t i = 0; i < array->length; i++)
             {
-                ptr_array[i] = ((archi_data_t*)context_data->array.ptr)[i];
-                element_array[i] = context_data->element[i];
+                new_array->ptr[i] = array->ptr[i];
+                new_ref_element[i] = context_data->ref_element[i];
             }
 
-            for (size_t i = length; i < new_length; i++)
-            {
-                ptr_array[i] = NULL;
-                element_array[i] = (archi_rcpointer_t){0};
-            }
+            for (size_t i = array->length; i < new_length; i++)
+                new_ref_element[i] = (archi_rcpointer_t){0};
         }
 
         // Deallocate old arrays and replace the pointers
         free(context_data->array.ptr);
-        free(context_data->element);
+        free(context_data->ref_element);
 
-        context_data->array.ptr = ptr_array;
-        context_data->array.attr = ARCHI_POINTER_TYPE__DATA_WRITABLE |
-            ARCHI_POINTER_ATTR__PDATA(new_length, archi_data_t);
-
-        context_data->element = element_array;
+        context_data->array.ptr = new_array;
+        context_data->ref_element = new_ref_element;
     }
     else
     {

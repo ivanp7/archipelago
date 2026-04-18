@@ -20,36 +20,40 @@
 
 /**
  * @file
- * @brief Context interface for arrays of data pointers.
+ * @brief Operations on arrays of data pointers.
  */
 
 #pragma once
-#ifndef _ARCHI_CONTEXT_CTX_DPTR_ARRAY_VAR_H_
-#define _ARCHI_CONTEXT_CTX_DPTR_ARRAY_VAR_H_
+#ifndef _ARCHI_BASE_DPTR_ARRAY_FUN_H_
+#define _ARCHI_BASE_DPTR_ARRAY_FUN_H_
 
-#include "archi/context/api/interface.typ.h"
+#include "archi_base/dptr_array.typ.h"
+
+#include <stdbool.h>
 
 
 /**
- * @brief Context interface: array of pointers to data.
+ * @brief Allocate an array of data pointers.
  *
- * Initialization parameters:
- * - "length" : (size_t) array length
+ * @note Returned pointer must be eventually released using free().
  *
- * Getter slots:
- * - [index]        : array element #index
- * - "ptr" [index]  : (void**) pointer to array element #index
- * - "ptrs"         : (void*[]) array of pointers to array elements starting at #0
- * - "ptrs" [index] : (void*[]) array of pointers to array elements starting at #index
- * - "length"       : (size_t) array length
- *
- * Setter slots:
- * - [index]    : array element #index
- * - "length"   : (size_t) array length
+ * @return Newly allocated array.
  */
-extern
-const archi_context_interface_t
-archi_context_interface__dptr_array;
+archi_dptr_array_t
+archi_dptr_array_alloc(
+        size_t length ///< [in] Length of the array.
+);
 
-#endif // _ARCHI_CONTEXT_CTX_DPTR_ARRAY_VAR_H_
+/**
+ * @brief Change length of an array of data pointers.
+ *
+ * @return True on success, false on failure.
+ */
+bool
+archi_dptr_array_set_length(
+        archi_dptr_array_t *array, ///< [in,out] Data pointer array.
+        size_t new_length ///< [in] New length of the array.
+);
+
+#endif // _ARCHI_BASE_DPTR_ARRAY_FUN_H_
 

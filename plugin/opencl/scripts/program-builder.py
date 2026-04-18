@@ -200,7 +200,7 @@ with app.temp_context(I_LIBRARY(pathname=PLUGIN_OPENCL_PATHNAME), key=key('plugi
             for i, binary in enumerate(list_binaries):
                 with app.temp_context([binary], key=key('array_binary[{i}]')) as array_binary:
                     list_libraries.append(app.new_context(I_OPENCL_PROGRAM_BIN(params_library,
-                                                                               binaries=array_binary,
+                                                                               binaries=array_binary.ptrs,
                                                                                binary_sizes=[binary.total_size]),
                                                           key=key('library[{i}]')))
 
@@ -224,7 +224,7 @@ with app.temp_context(I_LIBRARY(pathname=PLUGIN_OPENCL_PATHNAME), key=key('plugi
 
             # Build the program
             app[key('program')] = I_OPENCL_PROGRAM_SRC(context=opencl_context, device_id=opencl_context.device_id,
-                                                       headers=headers, sources=sources, libraries=libraries,
+                                                       headers=headers, sources=sources, libraries=libraries.ptrs,
                                                        cflags=cflags, lflags=lflags)
 
     with app.deleted_context(key('program')) as opencl_program:

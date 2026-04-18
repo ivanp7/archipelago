@@ -20,36 +20,30 @@
 
 /**
  * @file
- * @brief Context interface for arrays of data pointers.
+ * @brief The data pointer array type.
  */
 
 #pragma once
-#ifndef _ARCHI_CONTEXT_CTX_DPTR_ARRAY_VAR_H_
-#define _ARCHI_CONTEXT_CTX_DPTR_ARRAY_VAR_H_
+#ifndef _ARCHI_BASE_DPTR_ARRAY_TYP_H_
+#define _ARCHI_BASE_DPTR_ARRAY_TYP_H_
 
-#include "archi/context/api/interface.typ.h"
+#include <stddef.h> // for size_t
 
 
 /**
- * @brief Context interface: array of pointers to data.
- *
- * Initialization parameters:
- * - "length" : (size_t) array length
- *
- * Getter slots:
- * - [index]        : array element #index
- * - "ptr" [index]  : (void**) pointer to array element #index
- * - "ptrs"         : (void*[]) array of pointers to array elements starting at #0
- * - "ptrs" [index] : (void*[]) array of pointers to array elements starting at #index
- * - "length"       : (size_t) array length
- *
- * Setter slots:
- * - [index]    : array element #index
- * - "length"   : (size_t) array length
+ * @struct archi_dptr_array
+ * @brief Array of pointers to data.
  */
-extern
-const archi_context_interface_t
-archi_context_interface__dptr_array;
+struct archi_dptr_array {
+    const size_t length; ///< Length of the array.
+    void *ptr[]; ///< Array of data pointers.
+};
 
-#endif // _ARCHI_CONTEXT_CTX_DPTR_ARRAY_VAR_H_
+/**
+ * @typedef archi_dptr_array_t
+ * @brief Pointer to array of pointers to data.
+ */
+typedef struct archi_dptr_array *archi_dptr_array_t;
+
+#endif // _ARCHI_BASE_DPTR_ARRAY_TYP_H_
 

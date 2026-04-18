@@ -1543,13 +1543,15 @@ class DataPointerArrayContext(ContextWhitelist):
     """
     C_NAME = 'dptr_array'
 
-    CONTEXT_TYPE = _TYPE_DATA_PTR
+    CONTEXT_TYPE = TypeAttributes.complex_data(ac.ARCHI_POINTER_DATA_TAG__DPTR_ARRAY)
 
     class InitParameters(ParametersWhitelist):
         PARAMS = {'length': _TYPE_SIZE}
 
     GETTER_SLOTS = {'': {1: _TYPE_DATA},
                     'ptr': {1: _TYPE_DATA_PTR},
+                    'ptrs': {0: _TYPE_DATA_PTR,
+                             1: _TYPE_DATA_PTR},
                     'length': _TYPE_SIZE}
 
     SETTER_SLOTS = {'': {1: _TYPE_DATA},
