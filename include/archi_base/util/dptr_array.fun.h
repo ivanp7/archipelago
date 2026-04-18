@@ -20,32 +20,40 @@
 
 /**
  * @file
- * @brief Context interface for parameter lists.
+ * @brief Operations on arrays of data pointers.
  */
 
 #pragma once
-#ifndef _ARCHI_CONTEXT_CTX_PARAMETERS_VAR_H_
-#define _ARCHI_CONTEXT_CTX_PARAMETERS_VAR_H_
+#ifndef _ARCHI_BASE_UTIL_DPTR_ARRAY_FUN_H_
+#define _ARCHI_BASE_UTIL_DPTR_ARRAY_FUN_H_
 
-#include "archi/context/api/interface.typ.h"
+#include "archi_base/util/dptr_array.typ.h"
+
+#include <stdbool.h>
 
 
 /**
- * @brief Context interface: key-value (reference-counted) list.
+ * @brief Allocate an array of data pointers.
  *
- * Initialization parameters: any -- add all to the list.
+ * @note Returned pointer must be eventually released using free().
  *
- * Getter slots: any (without indices only) -- find the value with slot name as the key.
- *
- * Calls:
- * - <empty> : prepend the key-value list with the parameters.
- *      parameters: any.
- *
- * Setter slots: any (without indices only) -- add the value with slot name as the key.
+ * @return Newly allocated array.
  */
-extern
-const archi_context_interface_t
-archi_context_interface__parameters;
+archi_dptr_array_t
+archi_dptr_array_alloc(
+        size_t length ///< [in] Length of the array.
+);
 
-#endif // _ARCHI_CONTEXT_CTX_PARAMETERS_VAR_H_
+/**
+ * @brief Change length of an array of data pointers.
+ *
+ * @return True on success, false on failure.
+ */
+bool
+archi_dptr_array_set_length(
+        archi_dptr_array_t *array, ///< [in,out] Data pointer array.
+        size_t new_length ///< [in] New length of the array.
+);
+
+#endif // _ARCHI_BASE_UTIL_DPTR_ARRAY_FUN_H_
 

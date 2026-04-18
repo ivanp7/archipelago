@@ -20,30 +20,32 @@
 
 /**
  * @file
- * @brief The data pointer array type.
+ * @brief Context interface for parameter lists.
  */
 
 #pragma once
-#ifndef _ARCHI_BASE_DPTR_ARRAY_TYP_H_
-#define _ARCHI_BASE_DPTR_ARRAY_TYP_H_
+#ifndef _ARCHI_CONTEXT_CTX_PLIST_VAR_H_
+#define _ARCHI_CONTEXT_CTX_PLIST_VAR_H_
 
-#include <stddef.h> // for size_t
+#include "archi/context/api/interface.typ.h"
 
-
-/**
- * @struct archi_dptr_array
- * @brief Array of pointers to data.
- */
-struct archi_dptr_array {
-    const size_t length; ///< Length of the array.
-    void *ptr[]; ///< Array of data pointers.
-};
 
 /**
- * @typedef archi_dptr_array_t
- * @brief Pointer to array of pointers to data.
+ * @brief Context interface: reference-counted parameter list.
+ *
+ * Initialization parameters: any -- add all to the list.
+ *
+ * Getter slots: any (without indices only) -- find the value with slot name as the key.
+ *
+ * Calls:
+ * - <empty> : prepend the list with the parameters.
+ *      parameters: any.
+ *
+ * Setter slots: any (without indices only) -- add the value with slot name as the key.
  */
-typedef struct archi_dptr_array *archi_dptr_array_t;
+extern
+const archi_context_interface_t
+archi_context_interface__plist;
 
-#endif // _ARCHI_BASE_DPTR_ARRAY_TYP_H_
+#endif // _ARCHI_CONTEXT_CTX_PLIST_VAR_H_
 

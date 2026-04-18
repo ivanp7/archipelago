@@ -630,7 +630,7 @@ class Parameters:
 
         This class is derived automatically in subclasses of Parameters class.
         """
-        C_NAME = 'parameters'
+        C_NAME = 'plist'
 
         @classmethod
         def _call_params_class(cls, name, indices):

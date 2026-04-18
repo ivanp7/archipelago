@@ -25,10 +25,10 @@
 
 #include "archi/context/ctx/dptr_array.var.h"
 #include "archi/context/api/interface.def.h"
-#include "archi_base/dptr_array.fun.h"
 #include "archi_base/pointer.fun.h"
 #include "archi_base/pointer.def.h"
 #include "archi_base/tag.def.h"
+#include "archi_base/util/dptr_array.fun.h"
 #include "archi_base/util/plist.fun.h"
 #include "archi_base/util/check.fun.h"
 #include "archi_base/util/string.fun.h"

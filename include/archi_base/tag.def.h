@@ -33,7 +33,7 @@
 #define ARCHI_POINTER_DATA_TAG__KVLIST      0x06 ///< Data type tag for archi_kvlist_t.
 #define ARCHI_POINTER_DATA_TAG__KRCVLIST    0x07 ///< Data type tag for archi_krcvlist_t.
 
-#define ARCHI_POINTER_FUNC_TAG__STRING_COMP 0x04 ///< Function type tag for archi_string_comp_func_t.
+#define ARCHI_POINTER_FUNC_TAG__STRING_COMP 0x05 ///< Function type tag for archi_string_comp_func_t.
 
 #endif // _ARCHI_BASE_TAG_DEF_H_
 

@@ -23,37 +23,46 @@
  * @brief Operations on arrays of data pointers.
  */
 
-#pragma once
-#ifndef _ARCHI_BASE_DPTR_ARRAY_FUN_H_
-#define _ARCHI_BASE_DPTR_ARRAY_FUN_H_
+#include "archi_base/util/dptr_array.fun.h"
+#include "archi_base/util/size.def.h"
 
-#include "archi_base/dptr_array.typ.h"
-
-#include <stdbool.h>
+#include <stdlib.h> // for realloc()
 
 
-/**
- * @brief Allocate an array of data pointers.
- *
- * @note Returned pointer must be eventually released using free().
- *
- * @return Newly allocated array.
- */
 archi_dptr_array_t
 archi_dptr_array_alloc(
-        size_t length ///< [in] Length of the array.
-);
+        size_t length)
+{
+    archi_dptr_array_t array = NULL;
+    if (!archi_dptr_array_set_length(&array, length))
+        return NULL;
 
-/**
- * @brief Change length of an array of data pointers.
- *
- * @return True on success, false on failure.
- */
+    return array;
+}
+
 bool
 archi_dptr_array_set_length(
-        archi_dptr_array_t *array, ///< [in,out] Data pointer array.
-        size_t new_length ///< [in] New length of the array.
-);
+        archi_dptr_array_t *array,
+        size_t new_length)
+{
+    if (array == NULL)
+        return false;
 
-#endif // _ARCHI_BASE_DPTR_ARRAY_FUN_H_
+    size_t old_length = (*array != NULL) ? (*array)->length : 0;
+
+    archi_dptr_array_t new_array = realloc(*array,
+            ARCHI_SIZEOF_FLEXIBLE(struct archi_dptr_array, ptr, new_length));
+    if (new_array == NULL)
+        return false;
+
+    {
+        size_t *length_ptr = &new_array->length;
+        *length_ptr = new_length;
+    }
+    for (size_t i = old_length; i < new_length; i++)
+        new_array->ptr[i] = NULL;
+
+    *array = new_array;
+    return true;
+}
 

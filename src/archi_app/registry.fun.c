@@ -26,7 +26,7 @@
 #include "archi_app/registry.fun.h"
 #include "archi/context/api/registry.fun.h"
 #include "archi/context/api/tag.def.h"
-#include "archi/context/ctx/parameters.var.h"
+#include "archi/context/ctx/plist.var.h"
 #include "archi/context/ctx/pointer.var.h"
 #include "archi/context/ctx/dptr_array.var.h"
 #include "archi_base/kvlist.fun.h"
@@ -453,7 +453,7 @@ ARCHI_APP_REGISTRY_OPERATION_FUNC(archi_app_registry_op__create_params)
 
     // Prepare the interface
     archi_rcpointer_t interface = {
-        .cptr = &archi_context_interface__parameters,
+        .cptr = &archi_context_interface__plist,
         .attr = ARCHI_POINTER_TYPE__DATA_READONLY |
             archi_pointer_attr__cdata(ARCHI_POINTER_DATA_TAG__CONTEXT_INTERFACE),
     };

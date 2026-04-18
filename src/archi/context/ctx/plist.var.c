@@ -23,7 +23,7 @@
  * @brief Context interface for parameter lists.
  */
 
-#include "archi/context/ctx/parameters.var.h"
+#include "archi/context/ctx/plist.var.h"
 #include "archi/context/api/interface.def.h"
 #include "archi_base/kvlist.fun.h"
 #include "archi_base/pointer.fun.h"
@@ -77,7 +77,7 @@ archi_context_parameters_copy(
 }
 
 static
-ARCHI_CONTEXT_INIT_FUNC(archi_context_init__parameters)
+ARCHI_CONTEXT_INIT_FUNC(archi_context_init__plist)
 {
     // Construct the context
     archi_rcpointer_t *context_data = malloc(sizeof(*context_data));
@@ -106,14 +106,14 @@ ARCHI_CONTEXT_INIT_FUNC(archi_context_init__parameters)
 }
 
 static
-ARCHI_CONTEXT_FINAL_FUNC(archi_context_final__parameters)
+ARCHI_CONTEXT_FINAL_FUNC(archi_context_final__plist)
 {
     archi_krcvlist_free(context->ptr, true);
     free(context);
 }
 
 static
-ARCHI_CONTEXT_EVAL_FUNC(archi_context_eval__parameters)
+ARCHI_CONTEXT_EVAL_FUNC(archi_context_eval__plist)
 {
     if (!call)
     {
@@ -163,7 +163,7 @@ ARCHI_CONTEXT_EVAL_FUNC(archi_context_eval__parameters)
 }
 
 static
-ARCHI_CONTEXT_SET_FUNC(archi_context_set__parameters)
+ARCHI_CONTEXT_SET_FUNC(archi_context_set__plist)
 {
     if (unset)
     {
@@ -215,10 +215,10 @@ ARCHI_CONTEXT_SET_FUNC(archi_context_set__parameters)
 }
 
 const archi_context_interface_t
-archi_context_interface__parameters = {
-    .init_fn = archi_context_init__parameters,
-    .final_fn = archi_context_final__parameters,
-    .eval_fn = archi_context_eval__parameters,
-    .set_fn = archi_context_set__parameters,
+archi_context_interface__plist = {
+    .init_fn = archi_context_init__plist,
+    .final_fn = archi_context_final__plist,
+    .eval_fn = archi_context_eval__plist,
+    .set_fn = archi_context_set__plist,
 };
 
