@@ -56,7 +56,7 @@ archi_dptr_array_set_length(
         return false;
 
     {
-        size_t *length_ptr = &new_array->length;
+        size_t *length_ptr = (size_t*)&new_array->length;
         *length_ptr = new_length;
     }
     for (size_t i = old_length; i < new_length; i++)

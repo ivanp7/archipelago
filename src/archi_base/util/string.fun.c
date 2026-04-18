@@ -97,7 +97,7 @@ archi_string_concat(
     // Construct the resulting string
     size_t position = 0;
 
-    for (size_t i = 0; num_strings; i++)
+    for (size_t i = 0; i < num_strings; i++)
     {
         if (i > 0)
         {
