@@ -46,10 +46,10 @@ ARCHI_CONTEXT_INIT_FUNC(archi_context_init__thread_group)
         archi_plist_param_t parsed[] = {
             {.name = "params",
                 .check = {archi_value_check__attr, (archi_pointer_attr_t[]){ARCHI_POINTER_ATTR__PDATA(1, archi_thread_group_start_params_t)}},
-                .assign = {archi_plist_assign__value, &thread_group_params, sizeof(thread_group_params)}},
+                .assign = {archi_plist_assign__value, &thread_group_params, sizeof(thread_group_params), NULL}},
             {.name = "num_threads",
                 .check = {archi_value_check__attr, (archi_pointer_attr_t[]){ARCHI_POINTER_ATTR__PDATA(1, size_t)}},
-                .assign = {archi_plist_assign__value, &thread_group_params.num_threads, sizeof(thread_group_params.num_threads)}},
+                .assign = {archi_plist_assign__value, &thread_group_params.num_threads, sizeof(thread_group_params.num_threads), NULL}},
             {0},
         };
 

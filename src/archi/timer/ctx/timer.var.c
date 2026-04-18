@@ -44,7 +44,7 @@ ARCHI_CONTEXT_INIT_FUNC(archi_context_init__timer)
         archi_plist_param_t parsed[] = {
             {.name = "name",
                 .check = {archi_value_check__attr, (archi_pointer_attr_t[]){ARCHI_POINTER_ATTR__PDATA(0, char)}},
-                .assign = {archi_plist_assign__dptr_n, &name, sizeof(name)}},
+                .assign = {archi_plist_assign__dptr_n, &name, sizeof(name), NULL}},
             {0},
         };
 

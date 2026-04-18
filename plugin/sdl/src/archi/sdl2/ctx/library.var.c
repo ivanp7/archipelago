@@ -53,7 +53,7 @@ ARCHI_CONTEXT_INIT_FUNC(archi_context_init__sdl2_library)
         archi_plist_param_t parsed[] = {
             {.name = "everything",
                 .check = {archi_value_check__attr, (archi_pointer_attr_t[]){ARCHI_POINTER_ATTR__PDATA(1, char)}},
-                .assign = {archi_plist_assign__bool, &everything, sizeof(everything)}},
+                .assign = {archi_plist_assign__bool, &everything, sizeof(everything), NULL}},
             // subsystems
             {.name = "timer", .check = {archi_value_check__attr, (archi_pointer_attr_t[]){ARCHI_POINTER_ATTR__PDATA(1, char)}}},
             {.name = "audio", .check = {archi_value_check__attr, (archi_pointer_attr_t[]){ARCHI_POINTER_ATTR__PDATA(1, char)}}},

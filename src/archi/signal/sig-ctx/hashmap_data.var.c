@@ -47,10 +47,10 @@ ARCHI_CONTEXT_INIT_FUNC(archi_context_init__signal_handler_data__hashmap)
         archi_plist_param_t parsed[] = {
             {.name = "params",
                 .check = {archi_value_check__attr, (archi_pointer_attr_t[]){ARCHI_POINTER_ATTR__PDATA(1, archi_hashmap_alloc_params_t)}},
-                .assign = {archi_plist_assign__value, &hashmap_alloc_params, sizeof(hashmap_alloc_params)}},
+                .assign = {archi_plist_assign__value, &hashmap_alloc_params, sizeof(hashmap_alloc_params), NULL}},
             {.name = "capacity",
                 .check = {archi_value_check__attr, (archi_pointer_attr_t[]){ARCHI_POINTER_ATTR__PDATA(1, size_t)}},
-                .assign = {archi_plist_assign__value, &hashmap_alloc_params.capacity, sizeof(hashmap_alloc_params.capacity)}},
+                .assign = {archi_plist_assign__value, &hashmap_alloc_params.capacity, sizeof(hashmap_alloc_params.capacity), NULL}},
             {0},
         };
 

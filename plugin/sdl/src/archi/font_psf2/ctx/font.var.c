@@ -44,7 +44,7 @@ ARCHI_CONTEXT_INIT_FUNC(archi_context_init__font_psf2)
         archi_plist_param_t parsed[] = {
             {.name = "data",
                 .check = {archi_value_check__attr, (archi_pointer_attr_t[]){ARCHI_POINTER_ATTR__PDATA(sizeof(archi_font_psf2_header_t), char)}},
-                .assign = {archi_plist_assign__rcpointer, &data, sizeof(data)}},
+                .assign = {archi_plist_assign__rcpointer, &data, sizeof(data), NULL}},
             {0},
         };
 

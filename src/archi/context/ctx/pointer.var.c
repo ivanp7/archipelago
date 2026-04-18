@@ -44,7 +44,7 @@ ARCHI_CONTEXT_INIT_FUNC(archi_context_init__pointer)
     {
         archi_plist_param_t parsed[] = {
             {.name = "pointee",
-                .assign = {archi_plist_assign__rcpointer, &entity, sizeof(entity)}},
+                .assign = {archi_plist_assign__rcpointer, &entity, sizeof(entity), NULL}},
             {0},
         };
 
@@ -157,7 +157,7 @@ ARCHI_CONTEXT_INIT_FUNC(archi_context_init__dpointer)
         archi_plist_param_t parsed[] = {
             {.name = "pointee",
                 .check = {archi_value_check__attr, (archi_pointer_attr_t[]){archi_pointer_attr__cdata(0)}},
-                .assign = {archi_plist_assign__rcpointer, &data, sizeof(data)}},
+                .assign = {archi_plist_assign__rcpointer, &data, sizeof(data), NULL}},
             {.name = "writable",
                 .check = {archi_value_check__attr, (archi_pointer_attr_t[]){ARCHI_POINTER_ATTR__PDATA(1, char)}},
                 .assign = {archi_plist_assign__bool, &writable, sizeof(writable), &writable_set}},
@@ -320,13 +320,13 @@ ARCHI_CONTEXT_INIT_FUNC(archi_context_init__pdpointer)
         archi_plist_param_t parsed[] = {
             {.name = "pointee",
                 .check = {archi_value_check__attr, (archi_pointer_attr_t[]){archi_pointer_attr__cdata(0)}},
-                .assign = {archi_plist_assign__rcpointer, &data, sizeof(data)}},
+                .assign = {archi_plist_assign__rcpointer, &data, sizeof(data), NULL}},
             {.name = "offset",
                 .check = {archi_value_check__attr, (archi_pointer_attr_t[]){ARCHI_POINTER_ATTR__PDATA(1, long long)}},
-                .assign = {archi_plist_assign__value, &offset, sizeof(offset)}},
+                .assign = {archi_plist_assign__value, &offset, sizeof(offset), NULL}},
             {.name = "offset_unit",
                 .check = {archi_value_check__attr, (archi_pointer_attr_t[]){ARCHI_POINTER_ATTR__PDATA(1, size_t)}},
-                .assign = {archi_plist_assign__value, &offset_unit, sizeof(offset_unit)}},
+                .assign = {archi_plist_assign__value, &offset_unit, sizeof(offset_unit), NULL}},
             {.name = "writable",
                 .check = {archi_value_check__attr, (archi_pointer_attr_t[]){ARCHI_POINTER_ATTR__PDATA(1, char)}},
                 .assign = {archi_plist_assign__bool, &writable, sizeof(writable), &writable_set}},
@@ -605,7 +605,7 @@ ARCHI_CONTEXT_EVAL_FUNC(archi_context_eval__pdpointer)
                 archi_plist_param_t parsed[] = {
                     {.name = "offset",
                         .check = {archi_value_check__attr, (archi_pointer_attr_t[]){ARCHI_POINTER_ATTR__PDATA(1, long long)}},
-                        .assign = {archi_plist_assign__value, &offset, sizeof(offset)}},
+                        .assign = {archi_plist_assign__value, &offset, sizeof(offset), NULL}},
                     {0},
                 };
 
@@ -640,13 +640,13 @@ ARCHI_CONTEXT_EVAL_FUNC(archi_context_eval__pdpointer)
                 archi_plist_param_t parsed[] = {
                     {.name = "length",
                         .check = {archi_value_check__attr, (archi_pointer_attr_t[]){ARCHI_POINTER_ATTR__PDATA(1, size_t)}},
-                        .assign = {archi_plist_assign__value, &length, sizeof(length)}},
+                        .assign = {archi_plist_assign__value, &length, sizeof(length), NULL}},
                     {.name = "stride",
                         .check = {archi_value_check__attr, (archi_pointer_attr_t[]){ARCHI_POINTER_ATTR__PDATA(1, size_t)}},
-                        .assign = {archi_plist_assign__value, &stride, sizeof(stride)}},
+                        .assign = {archi_plist_assign__value, &stride, sizeof(stride), NULL}},
                     {.name = "alignment",
                         .check = {archi_value_check__attr, (archi_pointer_attr_t[]){ARCHI_POINTER_ATTR__PDATA(1, size_t)}},
-                        .assign = {archi_plist_assign__value, &alignment, sizeof(alignment)}},
+                        .assign = {archi_plist_assign__value, &alignment, sizeof(alignment), NULL}},
                     {0},
                 };
 
@@ -697,10 +697,10 @@ ARCHI_CONTEXT_EVAL_FUNC(archi_context_eval__pdpointer)
                         .assign = {archi_plist_assign__rcpointer, &source, sizeof(source), &source_set}},
                     {.name = "src_offset",
                         .check = {archi_value_check__attr, (archi_pointer_attr_t[]){ARCHI_POINTER_ATTR__PDATA(1, size_t)}},
-                        .assign = {archi_plist_assign__value, &src_offset, sizeof(src_offset)}},
+                        .assign = {archi_plist_assign__value, &src_offset, sizeof(src_offset), NULL}},
                     {.name = "offset",
                         .check = {archi_value_check__attr, (archi_pointer_attr_t[]){ARCHI_POINTER_ATTR__PDATA(1, size_t)}},
-                        .assign = {archi_plist_assign__value, &dest_offset, sizeof(dest_offset)}},
+                        .assign = {archi_plist_assign__value, &dest_offset, sizeof(dest_offset), NULL}},
                     {.name = "length",
                         .check = {archi_value_check__attr, (archi_pointer_attr_t[]){ARCHI_POINTER_ATTR__PDATA(1, size_t)}},
                         .assign = {archi_plist_assign__value, &copy_length, sizeof(copy_length), &copy_length_set}},
@@ -815,7 +815,7 @@ ARCHI_CONTEXT_EVAL_FUNC(archi_context_eval__pdpointer)
                         .assign = {archi_plist_assign__rcpointer, &pattern, sizeof(pattern), &pattern_set}},
                     {.name = "offset",
                         .check = {archi_value_check__attr, (archi_pointer_attr_t[]){ARCHI_POINTER_ATTR__PDATA(1, size_t)}},
-                        .assign = {archi_plist_assign__value, &offset, sizeof(offset)}},
+                        .assign = {archi_plist_assign__value, &offset, sizeof(offset), NULL}},
                     {.name = "length",
                         .check = {archi_value_check__attr, (archi_pointer_attr_t[]){ARCHI_POINTER_ATTR__PDATA(1, size_t)}},
                         .assign = {archi_plist_assign__value, &fill_length, sizeof(fill_length), &fill_length_set}},
@@ -1051,13 +1051,13 @@ ARCHI_CONTEXT_INIT_FUNC(archi_context_init__cdpointer)
         archi_plist_param_t parsed[] = {
             {.name = "pointee",
                 .check = {archi_value_check__attr, (archi_pointer_attr_t[]){archi_pointer_attr__cdata(0)}},
-                .assign = {archi_plist_assign__rcpointer, &data, sizeof(data)}},
+                .assign = {archi_plist_assign__rcpointer, &data, sizeof(data), NULL}},
             {.name = "offset",
                 .check = {archi_value_check__attr, (archi_pointer_attr_t[]){ARCHI_POINTER_ATTR__PDATA(1, long long)}},
-                .assign = {archi_plist_assign__value, &offset, sizeof(offset)}},
+                .assign = {archi_plist_assign__value, &offset, sizeof(offset), NULL}},
             {.name = "offset_unit",
                 .check = {archi_value_check__attr, (archi_pointer_attr_t[]){ARCHI_POINTER_ATTR__PDATA(1, size_t)}},
-                .assign = {archi_plist_assign__value, &offset_unit, sizeof(offset_unit)}},
+                .assign = {archi_plist_assign__value, &offset_unit, sizeof(offset_unit), NULL}},
             {.name = "writable",
                 .check = {archi_value_check__attr, (archi_pointer_attr_t[]){ARCHI_POINTER_ATTR__PDATA(1, char)}},
                 .assign = {archi_plist_assign__bool, &writable, sizeof(writable), &writable_set}},
@@ -1293,7 +1293,7 @@ ARCHI_CONTEXT_INIT_FUNC(archi_context_init__fpointer)
         archi_plist_param_t parsed[] = {
             {.name = "pointee",
                 .check = {archi_value_check__attr, (archi_pointer_attr_t[]){archi_pointer_attr__func(0)}},
-                .assign = {archi_plist_assign__rcpointer, &function, sizeof(function)}},
+                .assign = {archi_plist_assign__rcpointer, &function, sizeof(function), NULL}},
             {.name = "tag",
                 .check = {archi_value_check__attr, (archi_pointer_attr_t[]){ARCHI_POINTER_ATTR__PDATA(1, archi_pointer_attr_t)}},
                 .assign = {archi_plist_assign__value, &tag, sizeof(tag), &tag_set}},

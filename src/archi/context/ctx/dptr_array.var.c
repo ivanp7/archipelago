@@ -52,7 +52,7 @@ ARCHI_CONTEXT_INIT_FUNC(archi_context_init__dptr_array)
         archi_plist_param_t parsed[] = {
             {.name = "length",
                 .check = {archi_value_check__attr, (archi_pointer_attr_t[]){ARCHI_POINTER_ATTR__PDATA(1, size_t)}},
-                .assign = {archi_plist_assign__value, &length, sizeof(length)}},
+                .assign = {archi_plist_assign__value, &length, sizeof(length), NULL}},
             {0},
         };
 

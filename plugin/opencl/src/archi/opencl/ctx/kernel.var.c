@@ -56,10 +56,10 @@ ARCHI_CONTEXT_INIT_FUNC(archi_context_init__opencl_kernel_new)
         archi_plist_param_t parsed[] = {
             {.name = "program",
                 .check = {archi_value_check__attr, (archi_pointer_attr_t[]){archi_pointer_attr__cdata(ARCHI_POINTER_DATA_TAG__OPENCL_PROGRAM)}},
-                .assign = {archi_plist_assign__rcpointer, &program, sizeof(program)}},
+                .assign = {archi_plist_assign__rcpointer, &program, sizeof(program), NULL}},
             {.name = "name",
                 .check = {archi_value_check__attr, (archi_pointer_attr_t[]){ARCHI_POINTER_ATTR__PDATA(2, char)}},
-                .assign = {archi_plist_assign__dptr, &kernel_name, sizeof(kernel_name)}},
+                .assign = {archi_plist_assign__dptr, &kernel_name, sizeof(kernel_name), NULL}},
             {0},
         };
 
@@ -145,7 +145,7 @@ ARCHI_CONTEXT_INIT_FUNC(archi_context_init__opencl_kernel_clone)
         archi_plist_param_t parsed[] = {
             {.name = "kernel",
                 .check = {archi_value_check__attr, (archi_pointer_attr_t[]){archi_pointer_attr__cdata(ARCHI_POINTER_DATA_TAG__OPENCL_KERNEL)}},
-                .assign = {archi_plist_assign__rcpointer, &source_kernel, sizeof(source_kernel)}},
+                .assign = {archi_plist_assign__rcpointer, &source_kernel, sizeof(source_kernel), NULL}},
             {0},
         };
 

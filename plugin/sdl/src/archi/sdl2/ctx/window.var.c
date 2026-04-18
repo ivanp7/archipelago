@@ -54,7 +54,7 @@ ARCHI_CONTEXT_INIT_FUNC(archi_context_init__sdl2_window)
         archi_plist_param_t parsed[] = {
             {.name = "title",
                 .check = {archi_value_check__attr, (archi_pointer_attr_t[]){ARCHI_POINTER_ATTR__PDATA(0, char)}},
-                .assign = {archi_plist_assign__dptr_n, &title, sizeof(title)}},
+                .assign = {archi_plist_assign__dptr_n, &title, sizeof(title), NULL}},
             {.name = "width",
                 .check = {archi_value_check__attr, (archi_pointer_attr_t[]){ARCHI_POINTER_ATTR__PDATA(1, int)}},
                 .assign = {archi_plist_assign__value, &width, sizeof(width), &width_set}},
@@ -69,15 +69,15 @@ ARCHI_CONTEXT_INIT_FUNC(archi_context_init__sdl2_window)
                 .assign = {archi_plist_assign__value, &coord_y, sizeof(coord_y), &coord_y_set}},
             {.name = "center_x",
                 .check = {archi_value_check__attr, (archi_pointer_attr_t[]){ARCHI_POINTER_ATTR__PDATA(1, char)}},
-                .assign = {archi_plist_assign__bool, &center_x, sizeof(center_x)}},
+                .assign = {archi_plist_assign__bool, &center_x, sizeof(center_x), NULL}},
             {.name = "center_y",
                 .check = {archi_value_check__attr, (archi_pointer_attr_t[]){ARCHI_POINTER_ATTR__PDATA(1, char)}},
-                .assign = {archi_plist_assign__bool, &center_y, sizeof(center_y)}},
+                .assign = {archi_plist_assign__bool, &center_y, sizeof(center_y), NULL}},
 
 #define FLAG(var)                                                                                                   \
             {.name = #var,                                                                                          \
                 .check = {archi_value_check__attr, (archi_pointer_attr_t[]){ARCHI_POINTER_ATTR__PDATA(1, char)}},   \
-                .assign = {archi_plist_assign__bool, &var, sizeof(var)}}
+                .assign = {archi_plist_assign__bool, &var, sizeof(var), NULL}}
 
             FLAG(fullscreen),
             FLAG(hidden),
@@ -101,7 +101,7 @@ ARCHI_CONTEXT_INIT_FUNC(archi_context_init__sdl2_window)
 
             {.name = "flags",
                 .check = {archi_value_check__attr, (archi_pointer_attr_t[]){ARCHI_POINTER_ATTR__PDATA(1, uint32_t)}},
-                .assign = {archi_plist_assign__value, &flags, sizeof(flags)}},
+                .assign = {archi_plist_assign__value, &flags, sizeof(flags), NULL}},
             {0},
         };
 

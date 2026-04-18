@@ -60,19 +60,19 @@ ARCHI_CONTEXT_INIT_FUNC(archi_context_init__dexgraph_node)
         archi_plist_param_t parsed[] = {
             {.name = "name",
                 .check = {archi_value_check__attr, (archi_pointer_attr_t[]){ARCHI_POINTER_ATTR__PDATA(0, char)}},
-                .assign = {archi_plist_assign__dptr_n, &name, sizeof(name)}},
+                .assign = {archi_plist_assign__dptr_n, &name, sizeof(name), NULL}},
             {.name = "sequence_length",
                 .check = {archi_value_check__attr, (archi_pointer_attr_t[]){ARCHI_POINTER_ATTR__PDATA(1, size_t)}},
-                .assign = {archi_plist_assign__value, &sequence_length, sizeof(sequence_length)}},
+                .assign = {archi_plist_assign__value, &sequence_length, sizeof(sequence_length), NULL}},
             {.name = "transition_func",
                 .check = {archi_value_check__attr, (archi_pointer_attr_t[]){archi_pointer_attr__func(ARCHI_POINTER_FUNC_TAG__DEXGRAPH_TRANSITION)}},
-                .assign = {archi_plist_assign__rcpointer, &transition_func, sizeof(transition_func)}},
+                .assign = {archi_plist_assign__rcpointer, &transition_func, sizeof(transition_func), NULL}},
             {.name = "transition_data",
                 .check = {archi_value_check__attr, (archi_pointer_attr_t[]){archi_pointer_attr__cdata(0)}},
-                .assign = {archi_plist_assign__rcpointer, &transition_data, sizeof(transition_data)}},
+                .assign = {archi_plist_assign__rcpointer, &transition_data, sizeof(transition_data), NULL}},
             {.name = "branches",
                 .check = {archi_value_check__attr, (archi_pointer_attr_t[]){archi_pointer_attr__cdata(ARCHI_POINTER_DATA_TAG__DEXGRAPH_NODE_ARRAY)}},
-                .assign = {archi_plist_assign__rcpointer, &branch_array, sizeof(branch_array)}},
+                .assign = {archi_plist_assign__rcpointer, &branch_array, sizeof(branch_array), NULL}},
             {0},
         };
 
@@ -319,7 +319,7 @@ ARCHI_CONTEXT_EVAL_FUNC(archi_context_eval__dexgraph_node)
                 archi_plist_param_t parsed[] = {
                     {.name = "index",
                         .check = {archi_value_check__attr, (archi_pointer_attr_t[]){ARCHI_POINTER_ATTR__PDATA(1, archi_dexgraph_branch_index_t)}},
-                        .assign = {archi_plist_assign__value, &index, sizeof(index)}},
+                        .assign = {archi_plist_assign__value, &index, sizeof(index), NULL}},
                     {0},
                 };
 
@@ -521,7 +521,7 @@ ARCHI_CONTEXT_INIT_FUNC(archi_context_init__dexgraph_node_array)
         archi_plist_param_t parsed[] = {
             {.name = "num_nodes",
                 .check = {archi_value_check__attr, (archi_pointer_attr_t[]){ARCHI_POINTER_ATTR__PDATA(1, size_t)}},
-                .assign = {archi_plist_assign__value, &num_nodes, sizeof(num_nodes)}},
+                .assign = {archi_plist_assign__value, &num_nodes, sizeof(num_nodes), NULL}},
             {0},
         };
 

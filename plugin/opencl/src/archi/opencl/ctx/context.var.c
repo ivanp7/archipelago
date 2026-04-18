@@ -56,10 +56,10 @@ ARCHI_CONTEXT_INIT_FUNC(archi_context_init__opencl_context)
         archi_plist_param_t parsed[] = {
             {.name = "platform",
                 .check = {archi_value_check__attr, (archi_pointer_attr_t[]){ARCHI_POINTER_ATTR__PDATA(1, cl_uint)}},
-                .assign = {archi_plist_assign__value, &platform_idx, sizeof(platform_idx)}},
+                .assign = {archi_plist_assign__value, &platform_idx, sizeof(platform_idx), NULL}},
             {.name = "device",
                 .check = {archi_value_check__attr, (archi_pointer_attr_t[]){ARCHI_POINTER_ATTR__PDATA(1, cl_uint)}},
-                .assign = {archi_plist_assign__rcpointer, &devices, sizeof(devices)}},
+                .assign = {archi_plist_assign__rcpointer, &devices, sizeof(devices), NULL}},
             {0},
         };
 

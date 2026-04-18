@@ -46,13 +46,13 @@ ARCHI_CONTEXT_INIT_FUNC(archi_context_init__aggregate)
         archi_plist_param_t parsed[] = {
             {.name = "interface",
                 .check = {archi_value_check__attr, (archi_pointer_attr_t[]){archi_pointer_attr__cdata(ARCHI_POINTER_DATA_TAG__AGGR_INTERFACE)}},
-                .assign = {archi_plist_assign__rcpointer, &interface, sizeof(interface)}},
+                .assign = {archi_plist_assign__rcpointer, &interface, sizeof(interface), NULL}},
             {.name = "metadata",
                 .check = {archi_value_check__attr, (archi_pointer_attr_t[]){archi_pointer_attr__cdata(0)}},
-                .assign = {archi_plist_assign__rcpointer, &metadata, sizeof(metadata)}},
+                .assign = {archi_plist_assign__rcpointer, &metadata, sizeof(metadata), NULL}},
             {.name = "fam_length",
                 .check = {archi_value_check__attr, (archi_pointer_attr_t[]){ARCHI_POINTER_ATTR__PDATA(1, size_t)}},
-                .assign = {archi_plist_assign__value, &fam_length, sizeof(fam_length)}},
+                .assign = {archi_plist_assign__value, &fam_length, sizeof(fam_length), NULL}},
             {0},
         };
 

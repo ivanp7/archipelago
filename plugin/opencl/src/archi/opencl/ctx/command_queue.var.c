@@ -63,25 +63,25 @@ ARCHI_CONTEXT_INIT_FUNC(archi_context_init__opencl_command_queue)
         archi_plist_param_t parsed[] = {
             {.name = "context",
                 .check = {archi_value_check__attr, (archi_pointer_attr_t[]){archi_pointer_attr__cdata(ARCHI_POINTER_DATA_TAG__OPENCL_CONTEXT)}},
-                .assign = {archi_plist_assign__rcpointer, &opencl_context, sizeof(opencl_context)}},
+                .assign = {archi_plist_assign__rcpointer, &opencl_context, sizeof(opencl_context), NULL}},
             {.name = "device_id",
                 .check = {archi_value_check__attr, (archi_pointer_attr_t[]){archi_pointer_attr__cdata(ARCHI_POINTER_DATA_TAG__OPENCL_DEVICE_ID)}},
-                .assign = {archi_plist_assign__dptr, &device_id, sizeof(device_id)}},
+                .assign = {archi_plist_assign__dptr, &device_id, sizeof(device_id), NULL}},
             {.name = "out_of_order_exec",
                 .check = {archi_value_check__attr, (archi_pointer_attr_t[]){ARCHI_POINTER_ATTR__PDATA(1, char)}},
-                .assign = {archi_plist_assign__bool, &out_of_order_exec, sizeof(out_of_order_exec)}},
+                .assign = {archi_plist_assign__bool, &out_of_order_exec, sizeof(out_of_order_exec), NULL}},
             {.name = "profiling",
                 .check = {archi_value_check__attr, (archi_pointer_attr_t[]){ARCHI_POINTER_ATTR__PDATA(1, char)}},
-                .assign = {archi_plist_assign__bool, &profiling, sizeof(profiling)}},
+                .assign = {archi_plist_assign__bool, &profiling, sizeof(profiling), NULL}},
 #if defined(cl_khr_priority_hints)
             {.name = "priority_hint",
                 .check = {archi_value_check__attr, (archi_pointer_attr_t[]){ARCHI_POINTER_ATTR__PDATA(1, cl_queue_priority_khr)}},
-                .assign = {archi_plist_assign__value, &priority_hint, sizeof(priority_hint)}},
+                .assign = {archi_plist_assign__value, &priority_hint, sizeof(priority_hint), NULL}},
 #endif
 #if defined(cl_khr_throttle_hints)
             {.name = "throttle_hint",
                 .check = {archi_value_check__attr, (archi_pointer_attr_t[]){ARCHI_POINTER_ATTR__PDATA(1, cl_queue_throttle_khr)}},
-                .assign = {archi_plist_assign__value, &throttle_hint, sizeof(throttle_hint)}},
+                .assign = {archi_plist_assign__value, &throttle_hint, sizeof(throttle_hint), NULL}},
 #endif
             {0},
         };

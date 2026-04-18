@@ -54,16 +54,16 @@ ARCHI_CONTEXT_INIT_FUNC(archi_context_init__memory_mapping)
         archi_plist_param_t parsed[] = {
             {.name = "memory",
                 .check = {archi_value_check__attr, (archi_pointer_attr_t[]){archi_pointer_attr__cdata(ARCHI_POINTER_DATA_TAG__MEMORY)}},
-                .assign = {archi_plist_assign__rcpointer, &memory, sizeof(memory)}},
+                .assign = {archi_plist_assign__rcpointer, &memory, sizeof(memory), NULL}},
             {.name = "map_data",
                 .check = {archi_value_check__attr, (archi_pointer_attr_t[]){archi_pointer_attr__cdata(0)}},
-                .assign = {archi_plist_assign__pointer, &map_data, sizeof(map_data)}},
+                .assign = {archi_plist_assign__pointer, &map_data, sizeof(map_data), NULL}},
             {.name = "offset",
                 .check = {archi_value_check__attr, (archi_pointer_attr_t[]){ARCHI_POINTER_ATTR__PDATA(1, size_t)}},
-                .assign = {archi_plist_assign__value, &offset, sizeof(offset)}},
+                .assign = {archi_plist_assign__value, &offset, sizeof(offset), NULL}},
             {.name = "length",
                 .check = {archi_value_check__attr, (archi_pointer_attr_t[]){ARCHI_POINTER_ATTR__PDATA(1, size_t)}},
-                .assign = {archi_plist_assign__value, &length, sizeof(length)}},
+                .assign = {archi_plist_assign__value, &length, sizeof(length), NULL}},
             {0},
         };
 

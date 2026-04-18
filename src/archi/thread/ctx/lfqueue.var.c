@@ -46,13 +46,13 @@ ARCHI_CONTEXT_INIT_FUNC(archi_context_init__thread_lfqueue)
         archi_plist_param_t parsed[] = {
             {.name = "params",
                 .check = {archi_value_check__attr, (archi_pointer_attr_t[]){ARCHI_POINTER_ATTR__PDATA(1, archi_thread_lfqueue_alloc_params_t)}},
-                .assign = {archi_plist_assign__value, &lfqueue_alloc_params, sizeof(lfqueue_alloc_params)}},
+                .assign = {archi_plist_assign__value, &lfqueue_alloc_params, sizeof(lfqueue_alloc_params), NULL}},
             {.name = "capacity",
                 .check = {archi_value_check__attr, (archi_pointer_attr_t[]){ARCHI_POINTER_ATTR__PDATA(1, size_t)}},
-                .assign = {archi_plist_assign__value, &lfqueue_alloc_params.capacity, sizeof(lfqueue_alloc_params.capacity)}},
+                .assign = {archi_plist_assign__value, &lfqueue_alloc_params.capacity, sizeof(lfqueue_alloc_params.capacity), NULL}},
             {.name = "elt_size",
                 .check = {archi_value_check__attr, (archi_pointer_attr_t[]){ARCHI_POINTER_ATTR__PDATA(1, size_t)}},
-                .assign = {archi_plist_assign__value, &lfqueue_alloc_params.elt_size, sizeof(lfqueue_alloc_params.elt_size)}},
+                .assign = {archi_plist_assign__value, &lfqueue_alloc_params.elt_size, sizeof(lfqueue_alloc_params.elt_size), NULL}},
             {0},
         };
 
