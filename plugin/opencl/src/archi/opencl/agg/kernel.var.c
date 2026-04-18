@@ -24,6 +24,7 @@
  */
 
 #include "archi/opencl/agg/kernel.var.h"
+#include "archi/opencl/agg/event.var.h"
 #include "archi/opencl/exe/kernel.typ.h"
 #include "archi/opencl/api/tag.def.h"
 
@@ -35,14 +36,6 @@ VTYPE_size = ARCHI_AGGR_MEMBER_TYPE__VALUE(size_t, 0);
 static
 const archi_aggr_member_type__pointer_t
 PTYPE_size = ARCHI_AGGR_MEMBER_TYPE__POINTER_TO_PDATA(size_t*, size_t, 0);
-
-static
-const archi_aggr_member_type__pointer_t
-PTYPE_event_ptr = ARCHI_AGGR_MEMBER_TYPE__POINTER_TO_PDATA(cl_event*, cl_event, 0);
-
-static
-const archi_aggr_member_type__pointer_t
-PTYPE_event_ptr_ptr = ARCHI_AGGR_MEMBER_TYPE__POINTER_TO_PDATA(cl_event**, cl_event*, 0);
 
 static
 const archi_aggr_member_type__pointer_t
@@ -58,21 +51,30 @@ PTYPE_kernel = ARCHI_AGGR_MEMBER_TYPE__POINTER_TO_CDATA(cl_kernel,
 
 static
 const archi_aggr_member_t
-MEMBERS_dexgraph_node_data__opencl_kernel_enqueue[] = {
-    ARCHI_AGGR_MEMBER__POINTER(archi_dexgraph_op_data__opencl_kernel_enqueue_t, kernel, 1, PTYPE_kernel),
+MEMBERS_dexgraph_op_data__opencl_kernel_enqueue[] = {
+    ARCHI_AGGR_MEMBER__AGGREGATE(archi_dexgraph_op_data__opencl_kernel_enqueue_t, wait_list, 1,
+            archi_aggr_type__opencl_event_array.top_level),
+    ARCHI_AGGR_MEMBER__AGGREGATE(archi_dexgraph_op_data__opencl_kernel_enqueue_t, out_list, 1,
+            archi_aggr_type__opencl_event_ptr_array.top_level),
     ARCHI_AGGR_MEMBER__POINTER(archi_dexgraph_op_data__opencl_kernel_enqueue_t, command_queue, 1, PTYPE_command_queue),
+    ARCHI_AGGR_MEMBER__POINTER(archi_dexgraph_op_data__opencl_kernel_enqueue_t, kernel, 1, PTYPE_kernel),
     ARCHI_AGGR_MEMBER__VALUE(archi_dexgraph_op_data__opencl_kernel_enqueue_t, num_work_dimensions, 1, VTYPE_size),
     ARCHI_AGGR_MEMBER__POINTER(archi_dexgraph_op_data__opencl_kernel_enqueue_t, work_offset_global, 1, PTYPE_size),
     ARCHI_AGGR_MEMBER__POINTER(archi_dexgraph_op_data__opencl_kernel_enqueue_t, work_size_global, 1, PTYPE_size),
     ARCHI_AGGR_MEMBER__POINTER(archi_dexgraph_op_data__opencl_kernel_enqueue_t, work_size_local, 1, PTYPE_size),
-    ARCHI_AGGR_MEMBER__VALUE(archi_dexgraph_op_data__opencl_kernel_enqueue_t, wait_list_length, 1, VTYPE_size),
-    ARCHI_AGGR_MEMBER__POINTER(archi_dexgraph_op_data__opencl_kernel_enqueue_t, wait_list, 1, PTYPE_event_ptr),
-    ARCHI_AGGR_MEMBER__VALUE(archi_dexgraph_op_data__opencl_kernel_enqueue_t, num_out_event_ptrs, 1, VTYPE_size),
-    ARCHI_AGGR_MEMBER__POINTER(archi_dexgraph_op_data__opencl_kernel_enqueue_t, out_event_ptr, 1, PTYPE_event_ptr_ptr),
 };
 
+#ifdef __GNUC__
+#  pragma GCC diagnostic push
+#  pragma GCC diagnostic ignored "-Wmissing-braces"
+#endif
+
 const archi_aggr_type_t
-archi_aggr_type__dexgraph_node_data__opencl_kernel_enqueue = ARCHI_AGGR_TYPE(
+archi_aggr_type__dexgraph_op_data__opencl_kernel_enqueue = ARCHI_AGGR_TYPE(
         archi_dexgraph_op_data__opencl_kernel_enqueue_t, 0,
-        MEMBERS_dexgraph_node_data__opencl_kernel_enqueue);
+        MEMBERS_dexgraph_op_data__opencl_kernel_enqueue);
+
+#ifdef __GNUC__
+#  pragma GCC diagnostic pop
+#endif
 

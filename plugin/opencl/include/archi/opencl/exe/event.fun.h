@@ -33,7 +33,7 @@
 /**
  * @brief Operation function: wait for a group of events.
  *
- * Function data type: archi_dexgraph_op_data__opencl_event_wait_t.
+ * Function data type: archi_opencl_event_array_t.
  */
 ARCHI_DEXGRAPH_OPERATION_FUNC(archi_dexgraph_op__opencl_event_wait);
 

@@ -20,23 +20,31 @@
 
 /**
  * @file
- * @brief Data for DEG operation functions for OpenCL event operations.
+ * @brief Types for OpenCL operation events.
  */
 
 #pragma once
-#ifndef _ARCHI_OPENCL_EXE_EVENT_TYP_H_
-#define _ARCHI_OPENCL_EXE_EVENT_TYP_H_
+#ifndef _ARCHI_OPENCL_API_EVENT_TYP_H_
+#define _ARCHI_OPENCL_API_EVENT_TYP_H_
 
 #include <CL/cl.h>
 
 
 /**
- * @brief Operation function data: wait for a group of events.
+ * @brief Array of OpenCL operation events.
  */
-typedef struct archi_dexgraph_op_data__opencl_event_wait {
-    size_t wait_list_length; ///< Number of events to wait for before enqueueing.
-    cl_event *wait_list;     ///< Array of events to wait for before enqueueing.
-} archi_dexgraph_op_data__opencl_event_wait_t;
+typedef struct archi_opencl_event_array {
+    size_t num_events; ///< Wait list length.
+    cl_event *event;   ///< Array of events to wait for.
+} archi_opencl_event_array_t;
 
-#endif // _ARCHI_OPENCL_EXE_EVENT_TYP_H_
+/**
+ * @brief Array of pointers to OpenCL operation events.
+ */
+typedef struct archi_opencl_event_ptr_array {
+    size_t num_event_ptrs; ///< Number of pointers to output event.
+    cl_event **event_ptr;  ///< Array of output event pointers.
+} archi_opencl_event_ptr_array_t;
+
+#endif // _ARCHI_OPENCL_API_EVENT_TYP_H_
 

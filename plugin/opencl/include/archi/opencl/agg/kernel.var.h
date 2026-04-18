@@ -35,7 +35,7 @@
  */
 extern
 const archi_aggr_type_t
-archi_aggr_type__dexgraph_node_data__opencl_kernel_enqueue;
+archi_aggr_type__dexgraph_op_data__opencl_kernel_enqueue;
 
 #endif // _ARCHI_OPENCL_AGG_KERNEL_VAR_H_
 

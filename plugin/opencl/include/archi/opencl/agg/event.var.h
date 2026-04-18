@@ -31,11 +31,18 @@
 
 
 /**
- * @brief Aggregate type description for archi_dexgraph_op_data__opencl_event_wait_t.
+ * @brief Aggregate type description for archi_opencl_event_array_t.
  */
 extern
 const archi_aggr_type_t
-archi_aggr_type__dexgraph_node_data__opencl_event_wait;
+archi_aggr_type__opencl_event_array;
+
+/**
+ * @brief Aggregate type description for archi_opencl_event_ptr_array_t.
+ */
+extern
+const archi_aggr_type_t
+archi_aggr_type__opencl_event_ptr_array;
 
 #endif // _ARCHI_OPENCL_AGG_EVENT_VAR_H_
 

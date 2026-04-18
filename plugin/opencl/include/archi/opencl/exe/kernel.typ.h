@@ -27,7 +27,7 @@
 #ifndef _ARCHI_OPENCL_EXE_KERNEL_TYP_H_
 #define _ARCHI_OPENCL_EXE_KERNEL_TYP_H_
 
-#include <CL/cl.h>
+#include "archi/opencl/api/event.typ.h"
 
 
 /**
@@ -37,19 +37,16 @@
  * `work_size_local` may be NULL, which is equivalent to local work size picked automatically.
  */
 typedef struct archi_dexgraph_op_data__opencl_kernel_enqueue {
-    cl_kernel kernel; ///< Kernel to execute.
+    archi_opencl_event_array_t wait_list; ///< Events to wait for before enqueueing.
+    archi_opencl_event_ptr_array_t out_list; ///< List of pointers to write output event to.
+
     cl_command_queue command_queue; ///< Command queue to enqueue the kernel to.
+    cl_kernel kernel; ///< Kernel to execute.
 
     size_t num_work_dimensions; ///< Number of work dimensions.
     const size_t *work_offset_global; ///< Global work offset (or NULL).
     const size_t *work_size_global;   ///< Global work size.
     const size_t *work_size_local;    ///< Local work size (or NULL).
-
-    size_t wait_list_length; ///< Number of events to wait for before enqueueing.
-    cl_event *wait_list;     ///< Array of events to wait for before enqueueing.
-
-    size_t num_out_event_ptrs; ///< Number of locations to write output event to.
-    cl_event **out_event_ptr;  ///< Array of pointers to locations to write output event to.
 } archi_dexgraph_op_data__opencl_kernel_enqueue_t;
 
 #endif // _ARCHI_OPENCL_EXE_KERNEL_TYP_H_

@@ -24,31 +24,31 @@
  */
 
 #include "archi/opencl/exe/event.fun.h"
-#include "archi/opencl/exe/event.typ.h"
+#include "archi/opencl/api/event.typ.h"
 
 
 ARCHI_DEXGRAPH_OPERATION_FUNC(archi_dexgraph_op__opencl_event_wait)
 {
-    const archi_dexgraph_op_data__opencl_event_wait_t *wait_data = data;
+    const archi_opencl_event_array_t *wait_list = data;
 
-    if (wait_data == NULL)
+    if (wait_list == NULL)
     {
         ARCHI_ERROR_SET(ARCHI__ECONSTRAINT, "OpenCL event wait operation parameters is NULL");
         return;
     }
-    else if ((wait_data->wait_list_length != 0) && (wait_data->wait_list == NULL))
+    else if ((wait_list->num_events != 0) && (wait_list->event == NULL))
     {
         ARCHI_ERROR_SET(ARCHI__ECONSTRAINT, "event wait list is NULL");
         return;
     }
-    else if (wait_data->wait_list_length > (cl_uint)-1)
+    else if (wait_list->num_events > (cl_uint)-1)
     {
         ARCHI_ERROR_SET(ARCHI__ECONSTRAINT, "event wait list length is doesn't fit into cl_uint");
         return;
     }
 
     // Wait for events
-    cl_int ret = clWaitForEvents(wait_data->wait_list_length, wait_data->wait_list);
+    cl_int ret = clWaitForEvents(wait_list->num_events, wait_list->event);
 
     if (ret != CL_SUCCESS)
     {
@@ -57,10 +57,10 @@ ARCHI_DEXGRAPH_OPERATION_FUNC(archi_dexgraph_op__opencl_event_wait)
     }
 
     // Release the events
-    for (size_t i = 0; i < wait_data->wait_list_length; i++)
+    for (size_t i = 0; i < wait_list->num_events; i++)
     {
-        clReleaseEvent(wait_data->wait_list[i]);
-        wait_data->wait_list[i] = NULL;
+        clReleaseEvent(wait_list->event[i]);
+        wait_list->event[i] = NULL;
     }
 
     ARCHI_ERROR_RESET();

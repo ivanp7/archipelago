@@ -24,7 +24,7 @@
  */
 
 #include "archi/opencl/agg/event.var.h"
-#include "archi/opencl/exe/event.typ.h"
+#include "archi/opencl/api/event.typ.h"
 
 
 static
@@ -35,17 +35,35 @@ static
 const archi_aggr_member_type__pointer_t
 PTYPE_event_ptr = ARCHI_AGGR_MEMBER_TYPE__POINTER_TO_PDATA(cl_event*, cl_event, 0);
 
+static
+const archi_aggr_member_type__pointer_t
+PTYPE_event_ptr_ptr = ARCHI_AGGR_MEMBER_TYPE__POINTER_TO_PDATA(cl_event**, cl_event*, 0);
+
 /*****************************************************************************/
 
 static
 const archi_aggr_member_t
-MEMBERS_dexgraph_node_data__opencl_event_wait[] = {
-    ARCHI_AGGR_MEMBER__VALUE(archi_dexgraph_op_data__opencl_event_wait_t, wait_list_length, 1, VTYPE_size),
-    ARCHI_AGGR_MEMBER__POINTER(archi_dexgraph_op_data__opencl_event_wait_t, wait_list, 1, PTYPE_event_ptr),
+MEMBERS_opencl_event_array[] = {
+    ARCHI_AGGR_MEMBER__VALUE(archi_opencl_event_array_t, num_events, 1, VTYPE_size),
+    ARCHI_AGGR_MEMBER__POINTER(archi_opencl_event_array_t, event, 1, PTYPE_event_ptr),
 };
 
 const archi_aggr_type_t
-archi_aggr_type__dexgraph_node_data__opencl_event_wait = ARCHI_AGGR_TYPE(
-        archi_dexgraph_op_data__opencl_event_wait_t, 0,
-        MEMBERS_dexgraph_node_data__opencl_event_wait);
+archi_aggr_type__opencl_event_array = ARCHI_AGGR_TYPE(
+        archi_opencl_event_array_t, 0,
+        MEMBERS_opencl_event_array);
+
+/*****************************************************************************/
+
+static
+const archi_aggr_member_t
+MEMBERS_opencl_event_ptr_array[] = {
+    ARCHI_AGGR_MEMBER__VALUE(archi_opencl_event_ptr_array_t, num_event_ptrs, 1, VTYPE_size),
+    ARCHI_AGGR_MEMBER__POINTER(archi_opencl_event_ptr_array_t, event_ptr, 1, PTYPE_event_ptr_ptr),
+};
+
+const archi_aggr_type_t
+archi_aggr_type__opencl_event_ptr_array = ARCHI_AGGR_TYPE(
+        archi_opencl_event_ptr_array_t, 0,
+        MEMBERS_opencl_event_ptr_array);
 

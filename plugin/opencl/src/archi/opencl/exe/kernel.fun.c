@@ -36,14 +36,14 @@ ARCHI_DEXGRAPH_OPERATION_FUNC(archi_dexgraph_op__opencl_kernel_enqueue)
         ARCHI_ERROR_SET(ARCHI__ECONSTRAINT, "OpenCL kernel enqueue operation parameters is NULL");
         return;
     }
-    else if (enqueue_data->kernel == NULL)
-    {
-        ARCHI_ERROR_SET(ARCHI__ECONSTRAINT, "OpenCL kernel is NULL");
-        return;
-    }
     else if (enqueue_data->command_queue == NULL)
     {
         ARCHI_ERROR_SET(ARCHI__ECONSTRAINT, "OpenCL command queue is NULL");
+        return;
+    }
+    else if (enqueue_data->kernel == NULL)
+    {
+        ARCHI_ERROR_SET(ARCHI__ECONSTRAINT, "OpenCL kernel is NULL");
         return;
     }
     else if (enqueue_data->num_work_dimensions == 0)
@@ -56,17 +56,17 @@ ARCHI_DEXGRAPH_OPERATION_FUNC(archi_dexgraph_op__opencl_kernel_enqueue)
         ARCHI_ERROR_SET(ARCHI__ECONSTRAINT, "number of work dimensions is greater than CL_DEVICE_MAX_WORK_ITEM_DIMENSIONS");
         return;
     }
-    else if ((enqueue_data->wait_list_length != 0) && (enqueue_data->wait_list == NULL))
+    else if ((enqueue_data->wait_list.num_events != 0) && (enqueue_data->wait_list.event == NULL))
     {
         ARCHI_ERROR_SET(ARCHI__ECONSTRAINT, "event wait list is NULL");
         return;
     }
-    else if (enqueue_data->wait_list_length > (cl_uint)-1)
+    else if (enqueue_data->wait_list.num_events > (cl_uint)-1)
     {
         ARCHI_ERROR_SET(ARCHI__ECONSTRAINT, "event wait list length is doesn't fit into cl_uint");
         return;
     }
-    else if ((enqueue_data->num_out_event_ptrs != 0) && (enqueue_data->out_event_ptr == NULL))
+    else if ((enqueue_data->out_list.num_event_ptrs != 0) && (enqueue_data->out_list.event_ptr == NULL))
     {
         ARCHI_ERROR_SET(ARCHI__ECONSTRAINT, "array of pointers to locations to write output event to is NULL");
         return;
@@ -78,8 +78,8 @@ ARCHI_DEXGRAPH_OPERATION_FUNC(archi_dexgraph_op__opencl_kernel_enqueue)
     cl_int ret = clEnqueueNDRangeKernel(enqueue_data->command_queue, enqueue_data->kernel,
             enqueue_data->num_work_dimensions, enqueue_data->work_offset_global,
             enqueue_data->work_size_global, enqueue_data->work_size_local,
-            enqueue_data->wait_list_length, enqueue_data->wait_list,
-            enqueue_data->num_out_event_ptrs != 0 ? &output_event : NULL);
+            enqueue_data->wait_list.num_events, enqueue_data->wait_list.event,
+            enqueue_data->out_list.num_event_ptrs != 0 ? &output_event : NULL);
 
     if (ret != CL_SUCCESS)
     {
@@ -88,22 +88,22 @@ ARCHI_DEXGRAPH_OPERATION_FUNC(archi_dexgraph_op__opencl_kernel_enqueue)
     }
 
     // Release the events
-    for (size_t i = 0; i < enqueue_data->wait_list_length; i++)
+    for (size_t i = 0; i < enqueue_data->wait_list.num_events; i++)
     {
-        clReleaseEvent(enqueue_data->wait_list[i]);
-        enqueue_data->wait_list[i] = NULL;
+        clReleaseEvent(enqueue_data->wait_list.event[i]);
+        enqueue_data->wait_list.event[i] = NULL;
     }
 
     // Write output event to the designated locations
-    if (enqueue_data->num_out_event_ptrs != 0)
+    if (enqueue_data->out_list.num_event_ptrs != 0)
     {
-        for (size_t i = 0; i < enqueue_data->num_out_event_ptrs; i++)
+        for (size_t i = 0; i < enqueue_data->out_list.num_event_ptrs; i++)
         {
-            if (enqueue_data->out_event_ptr[i] == NULL)
+            if (enqueue_data->out_list.event_ptr[i] == NULL)
                 continue;
 
             clRetainEvent(output_event);
-            *enqueue_data->out_event_ptr[i] = output_event;
+            *enqueue_data->out_list.event_ptr[i] = output_event;
         }
 
         clReleaseEvent(output_event);
