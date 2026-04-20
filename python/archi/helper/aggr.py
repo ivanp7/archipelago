@@ -21,8 +21,6 @@
 # @file
 # @brief Helpers for aggregate object contexts.
 
-from contextlib import contextmanager
-
 from archi.context import (
         Registry,
         AggregateContext,
@@ -31,9 +29,8 @@ from archi.context import (
         )
 
 
-@contextmanager
-def aggregate_object(registry, plugin, type_name, /, fam_length=None, key=None):
-    """Context manager of an aggregate object context (generic aggregate type interface).
+def aggregate_object_spec(registry, plugin, type_name, /, fam_length=None):
+    """Context specification for an aggregate object context (generic aggregate type interface).
     """
     if not isinstance(registry, Registry):
         raise TypeError
@@ -44,13 +41,7 @@ def aggregate_object(registry, plugin, type_name, /, fam_length=None, key=None):
     if fam_length is not None:
         params['fam_length'] = fam_length
 
-    if key is None:
-        key = registry.temp_key(prefix='aggregate', rnd_len=6)
-
-    with registry.temp_context(I_AGGREGATE(interface=AggregateInterfaceSymbol.slot(
-                                                registry[Registry.KEY_EXECUTABLE], 'generic'),
-                                           metadata=AggregateTypeSymbol.slot(plugin, type_name),
-                                           **params),
-                               key=key) as aggregate:
-        yield aggregate
+    return I_AGGREGATE(interface=AggregateInterfaceSymbol.slot(registry[Registry.KEY_EXECUTABLE], 'generic'),
+                       metadata=AggregateTypeSymbol.slot(plugin, type_name),
+                       **params)
 

@@ -1991,6 +1991,7 @@ class TimerContext(ContextWhitelist):
 class _Symbol:
     """Representation of an arbitrary symbol.
     """
+    NAMESPACE_PREFIX = 'archi_'
     PREFIX = ''
     POSTFIX = ''
     TAG = 0
@@ -1998,7 +1999,9 @@ class _Symbol:
     def __init_subclass__(cls):
         """Initialize a subclass.
         """
-        if not isinstance(cls.PREFIX, str):
+        if not isinstance(cls.NAMESPACE_PREFIX, str):
+            raise TypeError
+        elif not isinstance(cls.PREFIX, str):
             raise TypeError
         elif not isinstance(cls.POSTFIX, str):
             raise TypeError
@@ -2025,7 +2028,8 @@ class _Symbol:
         elif not name:
             raise ValueError
 
-        return getattr(cls._symbol_type(library), f'{cls.PREFIX}{name}{cls.POSTFIX}')(tag=cls.TAG)
+        return getattr(cls._symbol_type(library),
+                       f'{cls.NAMESPACE_PREFIX}{cls.PREFIX}{name}{cls.POSTFIX}')(tag=cls.TAG)
 
     @classmethod
     def _symbol_type(cls, library):
@@ -2101,7 +2105,7 @@ class FunctionSymbol(_Symbol):
 class ContextInterfaceSymbol(DataSymbol):
     """Context interface symbol.
     """
-    PREFIX = 'archi_context_interface__'
+    PREFIX = 'context_interface__'
     TAG = ac.ARCHI_POINTER_DATA_TAG__CONTEXT_INTERFACE
 
 ### archi/aggr ###
@@ -2109,14 +2113,14 @@ class ContextInterfaceSymbol(DataSymbol):
 class AggregateInterfaceSymbol(DataSymbol):
     """Aggregate type interface symbol.
     """
-    PREFIX = 'archi_aggr_interface__'
+    PREFIX = 'aggr_interface__'
     TAG = ac.ARCHI_POINTER_DATA_TAG__AGGR_INTERFACE
 
 
 class AggregateTypeSymbol(DataSymbol):
     """Aggregate type description symbol.
     """
-    PREFIX = 'archi_aggr_type__'
+    PREFIX = 'aggr_type__'
     TAG = ac.ARCHI_POINTER_DATA_TAG__AGGR_TYPE
 
 ### archi/exec ###
@@ -2124,74 +2128,86 @@ class AggregateTypeSymbol(DataSymbol):
 class DexgraphOperationFuncSymbol(FunctionSymbol):
     """DEG operation function symbol.
     """
-    PREFIX = 'archi_dexgraph_op__'
+    PREFIX = 'dexgraph_op__'
     TAG = ac.ARCHI_POINTER_FUNC_TAG__DEXGRAPH_OPERATION
 
 
 class DexgraphOperationDataSymbol(DataSymbol):
     """DEG operation function data symbol.
     """
-    PREFIX = 'archi_dexgraph_op_data__'
+    PREFIX = 'dexgraph_op_data__'
 
 
 class DexgraphTransitionFuncSymbol(FunctionSymbol):
     """DEG transition function symbol.
     """
-    PREFIX = 'archi_dexgraph_transition__'
+    PREFIX = 'dexgraph_transition__'
     TAG = ac.ARCHI_POINTER_FUNC_TAG__DEXGRAPH_TRANSITION
 
 
 class DexgraphTransitionDataSymbol(DataSymbol):
     """DEG transition function data symbol.
     """
-    PREFIX = 'archi_dexgraph_transition_data__'
+    PREFIX = 'dexgraph_transition_data__'
 
 ### archi/thread ###
 
 class ThreadGroupWorkFuncSymbol(FunctionSymbol):
     """Thread group work function symbol.
     """
-    PREFIX = 'archi_thread_group_work__'
+    PREFIX = 'thread_group_work__'
     TAG = ac.ARCHI_POINTER_FUNC_TAG__THREAD_WORK
 
 
 class ThreadGroupWorkDataSymbol(DataSymbol):
     """Thread group work function data symbol.
     """
-    PREFIX = 'archi_thread_group_work_data__'
+    PREFIX = 'thread_group_work_data__'
 
 
 class ThreadGroupCallbackFuncSymbol(FunctionSymbol):
     """Thread group callback function symbol.
     """
-    PREFIX = 'archi_thread_group_callback__'
+    PREFIX = 'thread_group_callback__'
     TAG = ac.ARCHI_POINTER_FUNC_TAG__THREAD_WORK
 
 
 class ThreadGroupCallbackDataSymbol(DataSymbol):
     """Thread group callback function data symbol.
     """
-    PREFIX = 'archi_thread_group_callback_data__'
+    PREFIX = 'thread_group_callback_data__'
 
 ### archi/signal ###
 
 class SignalHandlerFuncSymbol(FunctionSymbol):
     """Signal handler function symbol.
     """
-    PREFIX = 'archi_signal_handler__'
+    PREFIX = 'signal_handler__'
     TAG = ac.ARCHI_POINTER_FUNC_TAG__SIGNAL_HANDLER
 
 
 class SignalHandlerDataSymbol(DataSymbol):
     """Signal handler function data symbol.
     """
-    PREFIX = 'archi_signal_handler_data__'
+    PREFIX = 'signal_handler_data__'
 
 ### archi/memory ###
 
 class MemoryInterfaceSymbol(DataSymbol):
     """Memory interface symbol.
     """
-    PREFIX = 'archi_memory_interface__'
+    PREFIX = 'memory_interface__'
     TAG = ac.ARCHI_POINTER_DATA_TAG__MEMORY_INTERFACE
+
+
+class MemoryAllocDataSymbol(DataSymbol):
+    """Memory allocation function data symbol.
+    """
+    PREFIX = 'memory_alloc_data__'
+
+
+class MemoryMapDataSymbol(DataSymbol):
+    """Memory mapping function data symbol.
+    """
+    PREFIX = 'memory_map_data__'
 
