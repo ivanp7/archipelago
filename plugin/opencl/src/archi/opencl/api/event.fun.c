@@ -20,26 +20,79 @@
 
 /**
  * @file
- * @brief DEG operation functions for OpenCL event operations.
+ * @brief Operations with OpenCL events.
  */
 
-#include "archi/opencl/exe/event.fun.h"
 #include "archi/opencl/api/event.fun.h"
 
 
-ARCHI_DEXGRAPH_OPERATION_FUNC(archi_dexgraph_op__opencl_event_wait)
+bool
+archi_opencl_event_wait(
+        archi_opencl_event_array_t wait_list,
+        ARCHI_ERROR_PARAM_DECL)
 {
-    if (data == NULL)
+    if (wait_list.num_events == 0)
     {
-        ARCHI_ERROR_SET(ARCHI__ECONSTRAINT, "OpenCL event wait operation parameters is NULL");
-        return;
+        ARCHI_ERROR_RESET();
+        return true;
     }
 
-    archi_opencl_event_array_t wait_list = *(archi_opencl_event_array_t*)data;
+    if (wait_list.event == NULL)
+    {
+        ARCHI_ERROR_SET(ARCHI__ECONSTRAINT, "event wait list is NULL");
+        return false;
+    }
+    else if (wait_list.num_events > (cl_uint)-1)
+    {
+        ARCHI_ERROR_SET(ARCHI__ECONSTRAINT, "event wait list length is doesn't fit into cl_uint");
+        return false;
+    }
 
-    if (!archi_opencl_event_wait(wait_list, ARCHI_ERROR_PARAM))
+    // Wait for events
+    cl_int ret = clWaitForEvents(wait_list.num_events, wait_list.event);
+
+    if (ret != CL_SUCCESS)
+    {
+        ARCHI_ERROR_SET(ARCHI__ESYSTEM, "couldn't wait for OpenCL events: error %i", ret);
+        return false;
+    }
+
+    ARCHI_ERROR_RESET();
+    return true;
+}
+
+void
+archi_opencl_event_release(
+        archi_opencl_event_array_t wait_list)
+{
+    if (wait_list.event == NULL)
         return;
 
-    archi_opencl_event_release(wait_list);
+    for (size_t i = 0; i < wait_list.num_events; i++)
+    {
+        if (wait_list.event[i] == NULL)
+            continue;
+
+        clReleaseEvent(wait_list.event[i]);
+        wait_list.event[i] = NULL;
+    }
+}
+
+void
+archi_opencl_event_assign(
+        archi_opencl_event_ptr_array_t out_list,
+        cl_event event)
+{
+    if (out_list.event_ptr == NULL)
+        return;
+
+    for (size_t i = 0; i < out_list.num_event_ptrs; i++)
+    {
+        if (out_list.event_ptr[i] == NULL)
+            continue;
+
+        clRetainEvent(event);
+        *out_list.event_ptr[i] = event;
+    }
 }
 

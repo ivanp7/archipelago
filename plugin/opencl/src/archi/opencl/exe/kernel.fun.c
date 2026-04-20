@@ -25,6 +25,7 @@
 
 #include "archi/opencl/exe/kernel.fun.h"
 #include "archi/opencl/exe/kernel.typ.h"
+#include "archi/opencl/api/event.fun.h"
 
 
 ARCHI_DEXGRAPH_OPERATION_FUNC(archi_dexgraph_op__opencl_kernel_enqueue)
@@ -88,24 +89,12 @@ ARCHI_DEXGRAPH_OPERATION_FUNC(archi_dexgraph_op__opencl_kernel_enqueue)
     }
 
     // Release the events
-    for (size_t i = 0; i < enqueue_data->wait_list.num_events; i++)
-    {
-        clReleaseEvent(enqueue_data->wait_list.event[i]);
-        enqueue_data->wait_list.event[i] = NULL;
-    }
+    archi_opencl_event_release(enqueue_data->wait_list);
 
     // Write output event to the designated locations
     if (enqueue_data->out_list.num_event_ptrs != 0)
     {
-        for (size_t i = 0; i < enqueue_data->out_list.num_event_ptrs; i++)
-        {
-            if (enqueue_data->out_list.event_ptr[i] == NULL)
-                continue;
-
-            clRetainEvent(output_event);
-            *enqueue_data->out_list.event_ptr[i] = output_event;
-        }
-
+        archi_opencl_event_assign(enqueue_data->out_list, output_event);
         clReleaseEvent(output_event);
     }
 

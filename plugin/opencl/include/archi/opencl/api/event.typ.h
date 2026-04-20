@@ -20,7 +20,7 @@
 
 /**
  * @file
- * @brief Types for OpenCL operation events.
+ * @brief Types for OpenCL events.
  */
 
 #pragma once

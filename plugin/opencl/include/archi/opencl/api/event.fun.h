@@ -20,26 +20,48 @@
 
 /**
  * @file
- * @brief DEG operation functions for OpenCL event operations.
+ * @brief Operations with OpenCL events.
  */
 
-#include "archi/opencl/exe/event.fun.h"
-#include "archi/opencl/api/event.fun.h"
+#pragma once
+#ifndef _ARCHI_OPENCL_API_EVENT_FUN_H_
+#define _ARCHI_OPENCL_API_EVENT_FUN_H_
+
+#include "archi/opencl/api/event.typ.h"
+#include "archi_base/error.typ.h"
+
+#include <stdbool.h>
 
 
-ARCHI_DEXGRAPH_OPERATION_FUNC(archi_dexgraph_op__opencl_event_wait)
-{
-    if (data == NULL)
-    {
-        ARCHI_ERROR_SET(ARCHI__ECONSTRAINT, "OpenCL event wait operation parameters is NULL");
-        return;
-    }
+/**
+ * @brief Wait for a list of events.
+ *
+ * @return True on success, false on failure.
+ */
+bool
+archi_opencl_event_wait(
+        archi_opencl_event_array_t wait_list, ///< [in] Wait list.
+        ARCHI_ERROR_PARAM_DECL ///< [out] Error.
+);
 
-    archi_opencl_event_array_t wait_list = *(archi_opencl_event_array_t*)data;
+/**
+ * @brief Release events and reset pointers in the array.
+ */
+void
+archi_opencl_event_release(
+        archi_opencl_event_array_t wait_list ///< [in,out] Wait list.
+);
 
-    if (!archi_opencl_event_wait(wait_list, ARCHI_ERROR_PARAM))
-        return;
+/**
+ * @brief Assign an event to the specified locations.
+ *
+ * Event is retained on each assignment.
+ */
+void
+archi_opencl_event_assign(
+        archi_opencl_event_ptr_array_t out_list, ///< [in] List of locations to assign the event to..
+        cl_event event ///< [in] Event.
+);
 
-    archi_opencl_event_release(wait_list);
-}
+#endif // _ARCHI_OPENCL_API_EVENT_FUN_H_
 
