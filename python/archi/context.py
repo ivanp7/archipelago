@@ -598,6 +598,18 @@ class _ContextSpec:
         self._context_cls = cls
         return self
 
+    @property
+    def context_cls(self):
+        """Obtain the context class.
+        """
+        return self._context_cls
+
+    @property
+    def params(self):
+        """Obtain the context initialization parameters.
+        """
+        return self._params
+
 
 class _ContextInterface:
     """Representation of a context slot.
@@ -616,7 +628,13 @@ class _ContextInterface:
     def __call__(self, _=None, /, **params):
         """Create a context specification instance.
         """
-        return _ContextSpec(self, self._context_cls.init_params_class()(_, **params))
+        return _ContextSpec(self, self.context_cls.init_params_class()(_, **params))
+
+    @property
+    def context_cls(self):
+        """Obtain the context class.
+        """
+        return self._context_cls
 
 ##############################################################################
 
@@ -800,9 +818,299 @@ class Parameters:
 
 ##############################################################################
 
+class RegistryOperationList:
+    """Implementation of the list of of registry operations.
+    """
+    def __init__(self):
+        """Initialize the list of registry operations.
+        """
+        self.reset()
+
+    @property
+    def op_list(self):
+        """Obtain the list of registry operations.
+        """
+        return self._operations
+
+    def reset(self):
+        """Reset the list of registry operations.
+        """
+        self._operations = []
+
+    def temp_key(self, prefix, rnd_len=4):
+        """Generate a temporary context key with the specified prefix.
+        """
+        import random
+        import string
+
+        postfix = ''.join(random.choice(string.ascii_letters + string.digits) \
+                for _ in range(rnd_len))
+
+        return f'.{prefix}_{postfix}:{len(self.op_list)}'
+
+    def create(self, key, entity):
+        """Create a context from an entity.
+        """
+        if not isinstance(key, str):
+            raise TypeError
+
+        if isinstance(entity, Context):
+            return self.alias_context(key, entity)
+        elif isinstance(entity, _ContextSpec):
+            return self.create_context(key, entity)
+        elif isinstance(entity, Parameters):
+            return self.create_plist_context(key, entity)
+        elif isinstance(entity, (type(None), Object, _ContextSlot)):
+            return self.create_ptr_context(key, entity)
+        elif isinstance(entity, (tuple, list)):
+            return self.create_dptr_array_context(key, entity)
+        else:
+            raise TypeError(f"Cannot create context from {entity}")
+
+    def invoke(self, entity):
+        """Invoke an entity (causing side effects only, no context created).
+        """
+        if isinstance(entity, _ContextSlot):
+            self.call_slot(entity)
+        else:
+            raise TypeError(f"Cannot invoke {entity}")
+
+    def append_op(self, op, data, /):
+        """Append an operation to the list.
+        """
+        if not isinstance(op, str):
+            raise TypeError
+        elif not isinstance(data, Object):
+            raise TypeError
+
+        self.op_list.append((op, data))
+
+    def delete_context(self, key):
+        """Append context deletion operation to the list.
+        """
+        from .object import RegistryOpData_delete
+
+        self.append_op('delete', RegistryOpData_delete.construct(
+            key=key))
+
+    def alias_context(self, key, context):
+        """Append context aliasing operation to the list.
+        """
+        from .object import RegistryOpData_alias
+
+        self.append_op('alias', RegistryOpData_alias.construct(
+            key=key,
+            original_key=Context.key_of(context)))
+
+        return type(context)()
+
+    def create_context(self, key, spec):
+        """Append context creation operation(s) to the list.
+        """
+        from .object import RegistryOpData_create_as, RegistryOpData_create_from
+
+        if not isinstance(spec, _ContextSpec):
+            raise TypeError
+
+        if isinstance(spec._context_or_slot, Context):
+            with self.parameters(spec.params) as (params_context_key, params_list):
+                self.append_op('create_as', RegistryOpData_create_as.construct(
+                    key=key,
+                    sample_key=Context.key_of(spec._context_or_slot),
+                    init_params_context_key=params_context_key,
+                    init_params_list=params_list))
+
+        elif isinstance(spec._context_or_slot, _ContextSlot):
+            slot = spec._context_or_slot
+
+            with self.parameters(spec.params) as (params_context_key, params_list):
+                if slot._.call_params is None:
+                    temp_context_key = None
+
+                    source_key = Context.key_of(slot._.context)
+                    source_slot_name = slot._.name
+                    source_slot_indices = slot._.indices
+                else:
+                    temp_context_key = self.temp_key('context_interface')
+
+                    self.create_ptr_context(temp_context_key, slot)
+
+                    source_key = temp_context_key
+                    source_slot_name = ''
+                    source_slot_indices = ()
+
+                self.append_op('create_from', RegistryOpData_create_from.construct(
+                    key=key,
+                    source_key=source_key,
+                    source_slot_name=source_slot_name,
+                    source_slot_indices=source_slot_indices,
+                    init_params_context_key=params_context_key,
+                    init_params_list=params_list))
+
+                if temp_context_key is not None:
+                    self.delete_context(temp_context_key)
+
+        else:
+            raise TypeError
+
+        return spec.context_cls()
+
+    def create_plist_context(self, key, params):
+        """Append parameter list creation operation(s) to the list.
+        """
+        with self.parameters(params) as (params_context_key, params_list):
+            self.create_params(key, params_context_key, params_list)
+
+        return type(params).Context()
+
+    def create_ptr_context(self, key, entity):
+        """Append pointer creation operation(s) to the list.
+        """
+        from .object import RegistryOpData_create_ptr
+
+        if isinstance(entity, (type(None), Object)):
+            self.append_op('create_ptr', RegistryOpData_create_ptr.construct(
+                key=key,
+                pointee=entity))
+
+        elif isinstance(entity, _ContextSlot):
+            self.append_op('create_ptr', RegistryOpData_create_ptr.construct(
+                key=key,
+                pointee=None))
+
+            self.set_slot(key, 'pointee', (), entity)
+
+        else:
+            raise TypeError
+
+        return PointerContext()
+
+    def create_dptr_array_context(self, key, seq):
+        """Append data pointer array create operation(s) to the list.
+        """
+        from .object import RegistryOpData_create_dptr_array
+
+        self.append_op('create_dptr_array', RegistryOpData_create_dptr_array.construct(
+            key=key,
+            length=len(seq)))
+
+        for index, entity in enumerate(seq):
+            if entity is not None:
+                self.set_slot(key, '', (index,), entity)
+
+        return DataPointerArrayContext()
+
+    def unset_slot(self, context_key, slot_name, slot_indices):
+        """Append slot unassignment operation to the list.
+        """
+        from .object import RegistryOpData_unassign
+
+        self.append_op('unassign', RegistryOpData_unassign.construct(
+            key=context_key,
+            slot_name=slot_name,
+            slot_indices=slot_indices))
+
+    def set_slot(self, context_key, slot_name, slot_indices, value):
+        """Append slot assignment operation to the list.
+        """
+        from .object import RegistryOpData_assign, RegistryOpData_assign_slot, RegistryOpData_assign_call
+
+        if isinstance(value, (type(None), Object)):
+            self.append_op('assign', RegistryOpData_assign.construct(
+                key=context_key,
+                slot_name=slot_name,
+                slot_indices=slot_indices,
+                value=value))
+
+        elif isinstance(value, Context):
+            self.append_op('assign_slot', RegistryOpData_assign_slot.construct(
+                key=context_key,
+                slot_name=slot_name,
+                slot_indices=slot_indices,
+                source_key=Context.key_of(value),
+                source_slot_name='',
+                source_slot_indices=()))
+
+        elif isinstance(value, _ContextSlot):
+            if value._.call_params is None:
+                self.append_op('assign_slot' if not value._.weak_ref else 'assign_slot_weak',
+                               RegistryOpData_assign_slot.construct(
+                                   key=context_key,
+                                   slot_name=slot_name,
+                                   slot_indices=slot_indices,
+                                   source_key=Context.key_of(value._.context),
+                                   source_slot_name=value._.name,
+                                   source_slot_indices=value._.indices))
+
+            else:
+                with self.parameters(value._.call_params) as (params_context_key, params_list):
+                    self.append_op('assign_call' if not value._.weak_ref else 'assign_call_weak',
+                                   RegistryOpData_assign_call.construct(
+                                       key=context_key,
+                                       slot_name=slot_name,
+                                       slot_indices=slot_indices,
+                                       source_key=Context.key_of(value._.context),
+                                       source_slot_name=value._.name,
+                                       source_slot_indices=value._.indices,
+                                       source_call_params_context_key=params_context_key,
+                                       source_call_params_list=params_list))
+
+        else:
+            raise TypeError
+
+    def call_slot(self, slot):
+        """Append context call invokation operation to the list.
+        """
+        from .object import RegistryOpData_invoke
+
+        if slot._.call_params is None:
+            raise AttributeError(f"Slot {_slot_str(slot._.name, slot._.indices)} of context '{Context.key_of(slot._.context)}' is not called")
+
+        with self.parameters(slot._.call_params) as (params_context_key, params_list):
+            self.append_op('invoke', RegistryOpData_invoke.construct(
+                key=Context.key_of(slot._.context),
+                slot_name=slot._.name,
+                slot_indices=slot._.indices,
+                call_params_context_key=params_context_key,
+                call_params_list=params_list))
+
+    def create_params(self, key, params_context_key, params_list):
+        """Append parameter list context creation operation to the list.
+        """
+        from .object import RegistryOpData_create_params
+
+        self.append_op('create_params', RegistryOpData_create_params.construct(
+            key=key,
+            params_context_key=params_context_key,
+            params_list=params_list))
+
+    @contextmanager
+    def parameters(self, params):
+        """Prepare the temporary parameter list if needed and append necessary
+        list forming operations.
+        """
+        if not params.dynamic_params:
+            yield (params.base_context_key, params.static_params)
+        else:
+            temp_context_key = self.temp_key('params')
+
+            self.create_params(temp_context_key, params.base_context_key, params.static_params)
+
+            try:
+                for name, value in params.dynamic_params.items():
+                    self.set_slot(temp_context_key, name, (), value)
+
+                yield (temp_context_key, {})
+            finally:
+                self.delete_context(temp_context_key)
+
+
 class Registry:
     """Representation of a context registry.
     """
+    # Registry operations support
+    OPERATIONS = RegistryOperationList
+
     # Input file contents key for lists of registry operations
     INPUT_FILE_KEY = 'reg_ops'
 
@@ -812,6 +1120,12 @@ class Registry:
     KEY_INPUT_FILE     = 'archi.input_file'
     KEY_SIGNAL_HANDLER = 'archi.signal_handler'
 
+    def __init_subclass__(cls):
+        """Initialize a subclass.
+        """
+        if not isinstance(cls.OPERATIONS, RegistryOperationList):
+            raise TypeError
+
     def __init__(self, require_builtins=True, protect_builtins=True):
         """Initialize a context registry instance.
         """
@@ -820,14 +1134,12 @@ class Registry:
         elif not isinstance(protect_builtins, bool):
             raise TypeError
 
+        self._ops = type(self).OPERATIONS()
+
         self.reset()
 
         if require_builtins:
-            # Require built-in contexts
-            self.require_context(Registry.KEY_REGISTRY, HashmapContext, protect=protect_builtins)
-            self.require_context(Registry.KEY_EXECUTABLE, LibraryContext, protect=protect_builtins)
-            self.require_context(Registry.KEY_INPUT_FILE, FileContext, protect=protect_builtins)
-            self.require_context(Registry.KEY_SIGNAL_HANDLER, SignalHandlerDataHashmapContext, protect=protect_builtins)
+            self.require_builtins(protect=protect_builtins)
 
     def __getitem__(self, key):
         """Obtain a context from the context registry.
@@ -849,12 +1161,7 @@ class Registry:
         elif key in self._contexts:
             raise KeyError(f"Context '{key}' is already in the registry")
 
-        for typespec, method in type(self).ADD_METHOD.items():
-            if isinstance(entity, typespec):
-                context = method(self, key, entity)
-                break
-        else:
-            raise TypeError(f"Can't create context from {entity}")
+        context = self._ops.create(key, entity)
 
         if not isinstance(context, Context):
             raise TypeError
@@ -877,6 +1184,7 @@ class Registry:
             raise KeyError(f"Prerequisite context '{key}' is protected from deletion")
 
         context = self._contexts[key]
+
         context._.registry = None
         context._.key = None
 
@@ -884,18 +1192,12 @@ class Registry:
         if key in self._prerequisites:
             del self._prerequisites[key]
 
-        self._delete_context(key)
+        self._ops.delete_context(key)
 
     def __call__(self, entity, /):
         """Invoke an entity (causing side effects only, context not created).
         """
-        for typespec, method in type(self).INVOKE_METHOD.items():
-            if isinstance(entity, typespec):
-                if method is not None:
-                    method(self, entity)
-                break
-        else:
-            raise TypeError(f"Can't invoke {entity}")
+        self._ops.invoke(entity)
 
     def __contains__(self, item):
         """Check if a context (key) is in the registry.
@@ -915,6 +1217,14 @@ class Registry:
         """Return an iterator.
         """
         return iter(self._contexts)
+
+    def reset(self):
+        """Clear the context registry instance state.
+        """
+        self._ops.reset()
+
+        self._contexts = {}
+        self._prerequisites = {}
 
     def contexts(self, cls=Context, /, is_prereq=True, is_new=True):
         """Obtain the dictionary of known contexts of the specified type.
@@ -992,6 +1302,14 @@ class Registry:
 
         return context
 
+    def require_builtins(self, protect=True):
+        """Require built-in contexts.
+        """
+        self.require_context(type(self).KEY_REGISTRY, HashmapContext, protect=protect)
+        self.require_context(type(self).KEY_EXECUTABLE, LibraryContext, protect=protect)
+        self.require_context(type(self).KEY_INPUT_FILE, FileContext, protect=protect)
+        self.require_context(type(self).KEY_SIGNAL_HANDLER, SignalHandlerDataHashmapContext, protect=protect)
+
     def new_context(self, entity, /, key):
         """Create a new context and add it to the registry.
         """
@@ -1031,256 +1349,25 @@ class Registry:
         with self.deleted_context(key) as context:
             yield context
 
-    def operations(self):
-        """Get the current list of operations.
-        """
-        return self._operations
-
-    def reset(self):
-        """Clear the context registry instance state.
-        """
-        self._operations = []
-        self._contexts = {}
-        self._prerequisites = {}
-
     def temp_key(self, prefix, rnd_len=4):
         """Generate a temporary context key with the specified prefix.
         """
-        import random
-        import string
+        return self._ops.temp_key(prefix, rnd_len)
 
-        postfix = ''.join(random.choice(string.ascii_letters + string.digits) \
-                for _ in range(rnd_len))
-
-        return f'.{prefix}_{postfix}:{len(self._operations)}'
-
-    def _delete_context(self, key):
-        """Append context deletion operation to the list.
+    def operations(self):
+        """Get the current list of operations.
         """
-        from .object import RegistryOpData_delete
-
-        self._operations.append(('delete', RegistryOpData_delete.construct(
-            key=key)))
-
-    def _alias_context(self, key, context):
-        """Append context aliasing operation to the list.
-        """
-        from .object import RegistryOpData_alias
-
-        self._operations.append(('alias', RegistryOpData_alias.construct(
-            key=key,
-            original_key=Context.key_of(context))))
-
-        return type(context)()
-
-    def _create_context(self, key, spec):
-        """Append context creation operation(s) to the list.
-        """
-        from .object import RegistryOpData_create_as, RegistryOpData_create_from
-
-        if isinstance(spec._context_or_slot, Context):
-            with self._parameter_list(spec._params) as (params_context_key, params_list):
-                self._operations.append(('create_as', RegistryOpData_create_as.construct(
-                    key=key,
-                    sample_key=Context.key_of(spec._context_or_slot),
-                    init_params_context_key=params_context_key,
-                    init_params_list=params_list)))
-
-        elif isinstance(spec._context_or_slot, _ContextSlot):
-            slot = spec._context_or_slot
-
-            with self._parameter_list(spec._params) as (params_context_key, params_list):
-                if slot._.call_params is None:
-                    temp_context_key = None
-
-                    source_key = Context.key_of(slot._.context)
-                    source_slot_name = slot._.name
-                    source_slot_indices = slot._.indices
-                else:
-                    temp_context_key = self.temp_key(prefix='context_interface')
-
-                    self._create_ptr(temp_context_key, slot)
-
-                    source_key = temp_context_key
-                    source_slot_name = ''
-                    source_slot_indices = ()
-
-                self._operations.append(('create_from', RegistryOpData_create_from.construct(
-                    key=key,
-                    source_key=source_key,
-                    source_slot_name=source_slot_name,
-                    source_slot_indices=source_slot_indices,
-                    init_params_context_key=params_context_key,
-                    init_params_list=params_list)))
-
-                if temp_context_key is not None:
-                    self._delete_context(temp_context_key)
-
-        else:
-            raise TypeError
-
-        return spec._context_cls()
-
-    def _create_params(self, key, params):
-        """Append parameter list creation operation(s) to the list.
-        """
-        with self._parameter_list(params) as (params_context_key, params_list):
-            self._create_parameter_list(key, params_context_key, params_list)
-
-        return type(params).Context()
-
-    def _create_ptr(self, key, entity):
-        """Append pointer creation operation(s) to the list.
-        """
-        from .object import RegistryOpData_create_ptr
-
-        if isinstance(entity, (type(None), Object)):
-            self._operations.append(('create_ptr', RegistryOpData_create_ptr.construct(
-                key=key,
-                pointee=entity)))
-
-        elif isinstance(entity, _ContextSlot):
-            self._operations.append(('create_ptr', RegistryOpData_create_ptr.construct(
-                key=key,
-                pointee=None)))
-
-            self._set_slot(key, 'pointee', (), entity)
-
-        else:
-            raise TypeError
-
-        return PointerContext()
-
-    def _create_dptr_array(self, key, seq):
-        """Append data pointer array create operation(s) to the list.
-        """
-        from .object import RegistryOpData_create_dptr_array
-
-        self._operations.append(('create_dptr_array', RegistryOpData_create_dptr_array.construct(
-            key=key,
-            length=len(seq))))
-
-        for index, entity in enumerate(seq):
-            if entity is not None:
-                self._set_slot(key, '', (index,), entity)
-
-        return DataPointerArrayContext()
+        return self._ops.op_list
 
     def _unset_slot(self, context_key, slot_name, slot_indices):
-        """Append slot unassignment operation to the list.
+        """Unassign a context slot.
         """
-        from .object import RegistryOpData_unassign
-
-        self._operations.append(('unassign', RegistryOpData_unassign.construct(
-            key=context_key,
-            slot_name=slot_name,
-            slot_indices=slot_indices)))
+        self._ops.unset_slot(context_key, slot_name, slot_indices)
 
     def _set_slot(self, context_key, slot_name, slot_indices, value):
-        """Append slot assignment operation to the list.
+        """Assign a value to a context slot.
         """
-        from .object import RegistryOpData_assign, RegistryOpData_assign_slot, RegistryOpData_assign_call
-
-        if isinstance(value, (type(None), Object)):
-            self._operations.append(('assign', RegistryOpData_assign.construct(
-                key=context_key,
-                slot_name=slot_name,
-                slot_indices=slot_indices,
-                value=value)))
-
-        elif isinstance(value, Context):
-            self._operations.append(('assign_slot', RegistryOpData_assign_slot.construct(
-                key=context_key,
-                slot_name=slot_name,
-                slot_indices=slot_indices,
-                source_key=Context.key_of(value),
-                source_slot_name='',
-                source_slot_indices=())))
-
-        elif isinstance(value, _ContextSlot):
-            if value._.call_params is None:
-                self._operations.append(
-                        ('assign_slot' if not value._.weak_ref else 'assign_slot_weak',
-                         RegistryOpData_assign_slot.construct(
-                             key=context_key,
-                             slot_name=slot_name,
-                             slot_indices=slot_indices,
-                             source_key=Context.key_of(value._.context),
-                             source_slot_name=value._.name,
-                             source_slot_indices=value._.indices)))
-
-            else:
-                with self._parameter_list(value._.call_params) as (params_context_key, params_list):
-                    self._operations.append(
-                            ('assign_call' if not value._.weak_ref else 'assign_call_weak',
-                             RegistryOpData_assign_call.construct(
-                                 key=context_key,
-                                 slot_name=slot_name,
-                                 slot_indices=slot_indices,
-                                 source_key=Context.key_of(value._.context),
-                                 source_slot_name=value._.name,
-                                 source_slot_indices=value._.indices,
-                                 source_call_params_context_key=params_context_key,
-                                 source_call_params_list=params_list)))
-
-        else:
-            raise TypeError
-
-    def _call_slot(self, slot):
-        """Append context call invokation operation to the list.
-        """
-        from .object import RegistryOpData_invoke
-
-        if slot._.call_params is None:
-            raise AttributeError(f"Slot {_slot_str(slot._.name, slot._.indices)} of context '{Context.key_of(slot._.context)}' is not called")
-
-        with self._parameter_list(slot._.call_params) as (params_context_key, params_list):
-            self._operations.append(('invoke', RegistryOpData_invoke.construct(
-                key=Context.key_of(slot._.context),
-                slot_name=slot._.name,
-                slot_indices=slot._.indices,
-                call_params_context_key=params_context_key,
-                call_params_list=params_list)))
-
-    def _create_parameter_list(self, key, params_context_key, params_list):
-        """Append parameter list context creation operation to the list.
-        """
-        from .object import RegistryOpData_create_params
-
-        self._operations.append(('create_params', RegistryOpData_create_params.construct(
-            key=key,
-            params_context_key=params_context_key,
-            params_list=params_list)))
-
-    @contextmanager
-    def _parameter_list(self, params):
-        """Prepare the temporary parameter list if needed and append necessary
-        list forming operations.
-        """
-        if not params.dynamic_params:
-            yield (params.base_context_key, params.static_params)
-        else:
-            temp_context_key = self.temp_key(prefix='params')
-
-            self._create_parameter_list(temp_context_key, params.base_context_key, params.static_params)
-
-            try:
-                for name, value in params.dynamic_params.items():
-                    self._set_slot(temp_context_key, name, (), value)
-
-                yield (temp_context_key, {})
-            finally:
-                self._delete_context(temp_context_key)
-
-# Map of context creation methods (entity type(s) -> method)
-Registry.ADD_METHOD = {Context: Registry._alias_context,
-                       _ContextSpec: Registry._create_context,
-                       Parameters: Registry._create_params,
-                       (type(None), Object, _ContextSlot): Registry._create_ptr,
-                       (tuple, list): Registry._create_dptr_array}
-
-# Map of entity invokation methods (entity type(s) -> method or None)
-Registry.INVOKE_METHOD = {_ContextSlot: Registry._call_slot}
+        self._ops.set_slot(context_key, slot_name, slot_indices, value)
 
 ##############################################################################
 # Built-in context types
