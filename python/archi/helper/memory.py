@@ -103,6 +103,8 @@ def memory_mapping(registry, memory, /, map_data=None, offset=None, length=None)
     elif length is not None and length < 0:
         raise ValueError
 
+    executable = registry[Registry.KEY_EXECUTABLE]
+
     I_MEMORY_MAPPING = MemoryMappingContext.interface(library=executable)
 
     params = {}
