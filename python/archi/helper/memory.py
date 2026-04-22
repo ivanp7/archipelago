@@ -41,7 +41,7 @@ def heap_memory_interface(plugin):
 
 def allocate_memory(registry, key, c_type, interface, /,
                     alloc_data=None, ext_alignment=None,
-                    map_data=None, contents=None):
+                    map_data=None, contents=None, file_contents=None):
     """Create a new memory context.
     """
     if not isinstance(registry, Registry):
@@ -51,6 +51,8 @@ def allocate_memory(registry, key, c_type, interface, /,
     elif not isinstance(ext_alignment, (type(None), int)):
         raise TypeError
     elif ext_alignment is not None and ext_alignment <= 0:
+        raise ValueError
+    elif contents is not None and file_contents is not None:
         raise ValueError
 
     if isinstance(c_type, c.Array):
@@ -77,11 +79,14 @@ def allocate_memory(registry, key, c_type, interface, /,
                                                    **params),
                                           key=key)
 
-    if contents is not None:
-        with memory_mapping(registry, memory_context, map_data=map_data) as mapping_context, \
-                primitive_data_pointer(registry, mapping_context.ptr, writable=True) as mapping_ptr_context:
-            # Initialize the memory
-            registry(mapping_ptr_context.copy(src=contents))
+    if contents is not None or file_contents is not None:
+        # Initialize the memory
+        with memory_mapping(registry, memory_context, map_data=map_data) as mapping_context:
+            if contents is not None:
+                with primitive_data_pointer(registry, mapping_context.ptr, writable=True) as mapping_ptr_context:
+                    registry(mapping_ptr_context.copy(src=contents))
+            elif file_contents is not None:
+                registry(file_contents.read(dest=mapping_context.ptr))
 
     return memory_context
 

@@ -1123,7 +1123,7 @@ class Registry:
     def __init_subclass__(cls):
         """Initialize a subclass.
         """
-        if not isinstance(cls.OPERATIONS, RegistryOperationList):
+        if not issubclass(cls.OPERATIONS, RegistryOperationList):
             raise TypeError
 
     def __init__(self, require_builtins=True, protect_builtins=True):
