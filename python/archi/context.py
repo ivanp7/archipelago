@@ -428,7 +428,7 @@ class Context:
         if not type_attributes_compatible(source_attr, target_attr):
             raise TypeError(f"Cannot assign value={value} to slot {_slot_str(slot_name, slot_indices)} of context '{context._.key}': types are incompatible")
 
-        context._.registry._set_slot(context._.key, slot_name, slot_indices, value)
+        context._.registry._ops.set_slot(context._.key, slot_name, slot_indices, value)
 
     @staticmethod
     def _unset(context, slot_name, slot_indices):
@@ -442,7 +442,7 @@ class Context:
         if not type(context).slot_unsettable(slot_name, slot_indices):
             raise AttributeError(f"Slot {_slot_str(slot_name, slot_indices)} of context '{context._.key}' is not unsettable")
 
-        context._.registry._unset_slot(context._.key, slot_name, slot_indices)
+        context._.registry._ops.unset_slot(context._.key, slot_name, slot_indices)
 
 
 class _ContextSlot:
@@ -1358,16 +1358,6 @@ class Registry:
         """Get the current list of operations.
         """
         return self._ops.op_list
-
-    def _unset_slot(self, context_key, slot_name, slot_indices):
-        """Unassign a context slot.
-        """
-        self._ops.unset_slot(context_key, slot_name, slot_indices)
-
-    def _set_slot(self, context_key, slot_name, slot_indices, value):
-        """Assign a value to a context slot.
-        """
-        self._ops.set_slot(context_key, slot_name, slot_indices, value)
 
 ##############################################################################
 # Built-in context types
