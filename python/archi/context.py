@@ -1354,7 +1354,7 @@ class Registry:
     def cleanup(self):
         """Delete all created contexts from the registry.
         """
-        for key in self.contexts(is_prereq=False).keys():
+        for key in reversed(self.contexts(is_prereq=False).keys()):
             del self[key]
 
     @contextmanager
