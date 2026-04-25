@@ -207,6 +207,28 @@ class Context:
         else:
             return entity
 
+    @staticmethod
+    def set(slot, value, /):
+        """Assign a value to the specified slot.
+        """
+        if not isinstance(slot, _ContextSlot):
+            raise TypeError
+        elif slot._.call_params is not None:
+            raise AttributeError
+
+        Context._set(slot._.context, slot._.name, slot._.indices, value)
+
+    @staticmethod
+    def unset(slot, /):
+        """Unset a context slot.
+        """
+        if not isinstance(slot, _ContextSlot):
+            raise TypeError
+        elif slot._.call_params is not None:
+            raise AttributeError
+
+        Context._unset(slot._.context, slot._.name, slot._.indices)
+
     @classmethod
     def interface(cls, context_or_slot=None, /, *, library=None):
         """Create a representation of a context interface.
