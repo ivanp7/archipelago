@@ -1329,6 +1329,12 @@ class Registry:
 
         del self[Context.key_of(context)]
 
+    def cleanup(self):
+        """Delete all created contexts from the registry.
+        """
+        for key in self.contexts(is_prereq=False).keys():
+            del self[key]
+
     @contextmanager
     def deleted_context(self, key):
         """Obtain a context and delete it afterwards.
