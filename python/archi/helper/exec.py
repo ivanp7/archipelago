@@ -54,7 +54,7 @@ class DexgraphNode:
             raise ValueError
 
         self._name = name
-        self._sequence = sequence
+        self._sequence = tuple(elt for elt in sequence if elt is not None)
         self._transition = transition
 
         self._branches = {}
@@ -104,6 +104,8 @@ class DexgraphNode:
         if not isinstance(registry, Registry):
             raise TypeError
 
+        executable = registry[Registry.KEY_EXECUTABLE]
+
         # Gather all nodes of the whole graph
         all_nodes = {self}
 
@@ -139,7 +141,7 @@ class DexgraphNode:
         del all_nodes
 
         # Create node array contexts for tuples of branches
-        I_DEXGRAPH_NODE_ARRAY = DexgraphNodeArrayContext.interface(library=registry[Registry.KEY_EXECUTABLE])
+        I_DEXGRAPH_NODE_ARRAY = DexgraphNodeArrayContext.interface(library=executable)
 
         node_array_contexts = {}
 
@@ -147,14 +149,12 @@ class DexgraphNode:
             if branches:
                 node_array_contexts[branches] = registry.new_context(
                         I_DEXGRAPH_NODE_ARRAY(num_nodes=len(branches)),
-                        key=registry.temp_key(prefix='dexgraph_node_array', rnd_len=6))
+                        key=registry.key(tmp_prefix='dexgraph_node_array', tmp_rnd_len=6))
             else:
                 node_array_contexts[branches] = None
 
-        del I_DEXGRAPH_NODE_ARRAY
-
         # Create node contexts, set operations and transitions
-        I_DEXGRAPH_NODE = DexgraphNodeContext.interface(library=registry[Registry.KEY_EXECUTABLE])
+        I_DEXGRAPH_NODE = DexgraphNodeContext.interface(library=executable)
 
         node_contexts = {}
 
@@ -175,7 +175,7 @@ class DexgraphNode:
             context = registry.new_context(I_DEXGRAPH_NODE(sequence_length=len(node.sequence),
                                                            branches=node_array_contexts[branches],
                                                            **params),
-                                           key=registry.temp_key(prefix='dexgraph_node', rnd_len=6))
+                                           key=registry.key(tmp_prefix='dexgraph_node', tmp_rnd_len=6))
 
             node_contexts[node] = context
 
@@ -187,8 +187,6 @@ class DexgraphNode:
 
                     if operation[1] is not None:
                         context.sequence.data[index] = operation[1]
-
-        del I_DEXGRAPH_NODE
 
         # Fill node arrays
         for branches, context in node_array_contexts.items():

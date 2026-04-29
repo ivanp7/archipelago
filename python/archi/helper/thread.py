@@ -21,7 +21,6 @@
 # @file
 # @brief Helpers for concurrent execution contexts.
 
-from contextlib import contextmanager
 import ctypes as c
 
 from .object import PrimitiveData
@@ -29,18 +28,15 @@ from archi.context import (
         Registry,
         DexgraphOperationDataSymbol,
         )
-from archi.helper.aggr import aggregate_object_spec
+from archi.helper.aggr import aggregate_object
 
 
-@contextmanager
 def thread_group_dispatch_data(registry, thread_group, work_func, work_data,
                                work_size, /, work_offset=0, batch_size=0,
-                               callback_func=None, callback_data=None):
+                               callback_func=None, callback_data=None, key=None):
     """Context manager for thread group dispatch operation data.
     """
-    if not isinstance(registry, Registry):
-        raise TypeError
-    elif not isinstance(work_size, int):
+    if not isinstance(work_size, int):
         raise TypeError
     elif work_size < 0:
         raise ValueError
@@ -53,19 +49,20 @@ def thread_group_dispatch_data(registry, thread_group, work_func, work_data,
     elif batch_size < 0:
         raise ValueError
 
-    with registry.temp_context(aggregate_object_spec(registry, registry[Registry.KEY_EXECUTABLE],
-                                                     DexgraphOperationDataSymbol.PREFIX + 'thread_group_dispatch'),
-                               key=registry.temp_key(prefix='thread_group_dispatch_data')) as dispatch_data:
-        dispatch_data.member.thread_group = thread_group
-        dispatch_data.member.work.function = work_func
-        dispatch_data.member.work.data = work_data
-        if callback_func is not None:
-            dispatch_data.member.callback.function = callback_func
-        if callback_data is not None:
-            dispatch_data.member.callback.data = callback_data
-        dispatch_data.member.param.offset = PrimitiveData(c.c_size_t(work_offset))
-        dispatch_data.member.param.size = PrimitiveData(c.c_size_t(work_size))
-        dispatch_data.member.param.batch_size = PrimitiveData(c.c_size_t(batch_size))
+    dispatch_data = aggregate_object(registry, registry[Registry.KEY_EXECUTABLE],
+                                     DexgraphOperationDataSymbol.PREFIX + 'thread_group_dispatch',
+                                     key=registry.key(key, tmp_prefix='thread_group_dispatch_data'))
 
-        yield dispatch_data
+    dispatch_data.member.thread_group = thread_group
+    dispatch_data.member.work.function = work_func
+    dispatch_data.member.work.data = work_data
+    if callback_func is not None:
+        dispatch_data.member.callback.function = callback_func
+    if callback_data is not None:
+        dispatch_data.member.callback.data = callback_data
+    dispatch_data.member.param.offset = PrimitiveData(c.c_size_t(work_offset))
+    dispatch_data.member.param.size = PrimitiveData(c.c_size_t(work_size))
+    dispatch_data.member.param.batch_size = PrimitiveData(c.c_size_t(batch_size))
+
+    return dispatch_data
 

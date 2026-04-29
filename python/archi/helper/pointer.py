@@ -21,8 +21,6 @@
 # @file
 # @brief Helpers for pointer contexts.
 
-from contextlib import contextmanager
-
 from archi.context import (
         Registry,
         DataPointerContext,
@@ -32,8 +30,7 @@ from archi.context import (
         )
 
 
-@contextmanager
-def data_pointer(registry, pointee, /, writable=False):
+def data_pointer(registry, pointee, /, writable=False, key=None):
     """Context manager for arbitrary data pointers.
     """
     if not isinstance(registry, Registry):
@@ -45,15 +42,13 @@ def data_pointer(registry, pointee, /, writable=False):
 
     I_DPOINTER = DataPointerContext.interface(library=executable)
 
-    with registry.temp_context(I_DPOINTER(pointee=pointee, writable=writable),
-                               key=registry.temp_key(prefix='dptr')) as pointer_context:
-        yield pointer_context
+    return registry.new_context(I_DPOINTER(pointee=pointee, writable=writable),
+                                key=registry.key(key, tmp_prefix='dptr'))
 
 
-@contextmanager
 def primitive_data_pointer(registry, pointee, /, writable=False,
                            offset=None, offset_unit=None,
-                           length=None, stride=None, alignment=None):
+                           length=None, stride=None, alignment=None, key=None):
     """Context manager for primitive data pointers.
     """
     if not isinstance(registry, Registry):
@@ -95,15 +90,12 @@ def primitive_data_pointer(registry, pointee, /, writable=False,
     if alignment is not None:
         params['alignment'] = alignment
 
-    with registry.temp_context(I_PDPOINTER(pointee=pointee, writable=writable, **params),
-                               key=registry.temp_key(prefix='pdptr')) as pointer_context:
-        yield pointer_context
+    return registry.new_context(I_PDPOINTER(pointee=pointee, writable=writable, **params),
+                                key=registry.key(key, tmp_prefix='pdptr'))
 
 
-@contextmanager
 def complex_data_pointer(registry, pointee, /, writable=False,
-                         offset=None, offset_unit=None,
-                         tag=None):
+                         offset=None, offset_unit=None, tag=None, key=None):
     """Context manager for complex data pointers.
     """
     if not isinstance(registry, Registry):
@@ -133,13 +125,11 @@ def complex_data_pointer(registry, pointee, /, writable=False,
     if tag is not None:
         params['tag'] = tag
 
-    with registry.temp_context(I_CDPOINTER(pointee=pointee, writable=writable, **params),
-                               key=registry.temp_key(prefix='cdptr')) as pointer_context:
-        yield pointer_context
+    return registry.new_context(I_CDPOINTER(pointee=pointee, writable=writable, **params),
+                                key=registry.key(key, tmp_prefix='cdptr'))
 
 
-@contextmanager
-def function_pointer(registry, pointee, /, tag=None):
+def function_pointer(registry, pointee, /, tag=None, key=None):
     """Context manager for function pointers.
     """
     if not isinstance(registry, Registry):
@@ -157,7 +147,6 @@ def function_pointer(registry, pointee, /, tag=None):
     if tag is not None:
         params['tag'] = tag
 
-    with registry.temp_context(I_FPOINTER(pointee=pointee, **params),
-                               key=registry.temp_key(prefix='fptr')) as pointer_context:
-        yield pointer_context
+    return registry.new_context(I_FPOINTER(pointee=pointee, **params),
+                                key=registry.key(key, tmp_prefix='fptr'))
 

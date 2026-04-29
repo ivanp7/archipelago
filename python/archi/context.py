@@ -19,7 +19,7 @@
  #############################################################################
 
 # @file
-# @brief Archipelago application context & registry operations.
+# @brief Archipelago application contexts & registry.
 
 import ctypes as c
 from contextlib import contextmanager
@@ -450,7 +450,7 @@ class Context:
         if not type_attributes_compatible(source_attr, target_attr):
             raise TypeError(f"Cannot assign value={value} to slot {_slot_str(slot_name, slot_indices)} of context '{context._.key}': types are incompatible")
 
-        context._.registry._ops.set_slot(context._.key, slot_name, slot_indices, value)
+        context._.registry.operations.set_slot(context._.key, slot_name, slot_indices, value)
 
     @staticmethod
     def _unset(context, slot_name, slot_indices):
@@ -464,7 +464,7 @@ class Context:
         if not type(context).slot_unsettable(slot_name, slot_indices):
             raise AttributeError(f"Slot {_slot_str(slot_name, slot_indices)} of context '{context._.key}' is not unsettable")
 
-        context._.registry._ops.unset_slot(context._.key, slot_name, slot_indices)
+        context._.registry.operations.unset_slot(context._.key, slot_name, slot_indices)
 
 
 class _ContextSlot:
@@ -849,15 +849,15 @@ class RegistryOperationList:
         self.reset()
 
     @property
-    def op_list(self):
+    def list(self):
         """Obtain the list of registry operations.
         """
-        return self._operations
+        return self._ops
 
     def reset(self):
         """Reset the list of registry operations.
         """
-        self._operations = []
+        self._ops = []
 
     def temp_key(self, prefix, rnd_len=4):
         """Generate a temporary context key with the specified prefix.
@@ -868,7 +868,7 @@ class RegistryOperationList:
         postfix = ''.join(random.choice(string.ascii_letters + string.digits) \
                 for _ in range(rnd_len))
 
-        return f'.{prefix}_{postfix}:{len(self.op_list)}'
+        return f'.{prefix}_{postfix}:{len(self.list)}'
 
     def create(self, key, entity):
         """Create a context from an entity.
@@ -905,7 +905,7 @@ class RegistryOperationList:
         elif not isinstance(data, Object):
             raise TypeError
 
-        self.op_list.append((op, data))
+        self.list.append((op, data))
 
     def delete_context(self, key):
         """Append context deletion operation to the list.
@@ -1156,7 +1156,7 @@ class Registry:
         elif not isinstance(protect_builtins, bool):
             raise TypeError
 
-        self._ops = type(self).OPERATIONS()
+        self._operations = type(self).OPERATIONS()
 
         self.reset()
 
@@ -1183,7 +1183,7 @@ class Registry:
         elif key in self._contexts:
             raise KeyError(f"Context '{key}' is already in the registry")
 
-        context = self._ops.create(key, entity)
+        context = self.operations.create(key, entity)
 
         if not isinstance(context, Context):
             raise TypeError
@@ -1214,12 +1214,12 @@ class Registry:
         if key in self._prerequisites:
             del self._prerequisites[key]
 
-        self._ops.delete_context(key)
+        self.operations.delete_context(key)
 
     def __call__(self, entity, /):
         """Invoke an entity (causing side effects only, context not created).
         """
-        self._ops.invoke(entity)
+        self.operations.invoke(entity)
 
     def __contains__(self, item):
         """Check if a context (key) is in the registry.
@@ -1240,10 +1240,21 @@ class Registry:
         """
         return iter(self._contexts)
 
+    @property
+    def operations(self):
+        """Get the current list of operations.
+        """
+        return self._operations
+
+    def key(self, key=None, /, tmp_prefix='context', tmp_rnd_len=4):
+        """Generate a temporary context key with the specified prefix.
+        """
+        return key if key is not None else self.operations.temp_key(tmp_prefix, tmp_rnd_len)
+
     def reset(self):
         """Clear the context registry instance state.
         """
-        self._ops.reset()
+        self.operations.reset()
 
         self._contexts = {}
         self._prerequisites = {}
@@ -1259,17 +1270,6 @@ class Registry:
         return {key: context for key, context in self._contexts.items() if isinstance(context, cls) \
                 and ((is_prereq and key in self._prerequisites) \
                 or (is_new and key not in self._prerequisites))}
-
-    def change_key(self, new, old):
-        """Replace key of a context.
-        """
-        if not isinstance(new, str) or not isinstance(old, str):
-            raise TypeError
-        elif self._prerequisites.get(old, False):
-            raise KeyError(f"Prerequisite context '{old}' is protected from key changing")
-
-        self[new] = self[old]
-        del self[old]
 
     def interface_of(self, item, /):
         """Create a representation of a context interface.
@@ -1332,6 +1332,25 @@ class Registry:
         self.require_context(type(self).KEY_INPUT_FILE, FileContext, protect=protect)
         self.require_context(type(self).KEY_SIGNAL_HANDLER, SignalHandlerDataHashmapContext, protect=protect)
 
+    def rekey_context(self, item, /, key):
+        """Replace key of a context.
+        """
+        if not isinstance(key, str):
+            raise TypeError
+
+        if isinstance(item, str):
+            old_key = item
+        elif isinstance(item, Context):
+            old_key = Context.key_of(item)
+        else:
+            raise TypeError
+
+        if self._prerequisites.get(old_key, False):
+            raise KeyError(f"Prerequisite context '{old_key}' is protected from key changing")
+
+        self[key] = self[old_key]
+        del self[old_key]
+
     def new_context(self, entity, /, key):
         """Create a new context and add it to the registry.
         """
@@ -1358,34 +1377,27 @@ class Registry:
             del self[key]
 
     @contextmanager
-    def deleted_context(self, key):
+    def deleted_context(self, item):
         """Obtain a context and delete it afterwards.
         """
-        context = self[key]
+        if isinstance(item, str):
+            context = self[item]
+        elif isinstance(item, Context):
+            context = item
+        else:
+            raise TypeError
 
         try:
             yield context
         finally:
-            del self[key]
+            self.del_context(context)
 
     @contextmanager
     def temp_context(self, entity, /, key):
         """Create a temporary context.
         """
-        self[key] = entity
-
-        with self.deleted_context(key) as context:
+        with self.deleted_context(self.new_context(entity, key)) as context:
             yield context
-
-    def temp_key(self, prefix, rnd_len=4):
-        """Generate a temporary context key with the specified prefix.
-        """
-        return self._ops.temp_key(prefix, rnd_len)
-
-    def operations(self):
-        """Get the current list of operations.
-        """
-        return self._ops.op_list
 
 ##############################################################################
 # Built-in context types

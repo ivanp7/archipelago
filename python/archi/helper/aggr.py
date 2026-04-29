@@ -29,19 +29,22 @@ from archi.context import (
         )
 
 
-def aggregate_object_spec(registry, plugin, type_name, /, fam_length=None):
-    """Context specification for an aggregate object context (generic aggregate type interface).
+def aggregate_object(registry, plugin, type_name, /, fam_length=None, key=None):
+    """Create an aggregate object context (generic aggregate type interface).
     """
     if not isinstance(registry, Registry):
         raise TypeError
 
-    I_AGGREGATE = AggregateContext.interface(library=registry[Registry.KEY_EXECUTABLE])
+    executable = registry[Registry.KEY_EXECUTABLE]
+
+    I_AGGREGATE = AggregateContext.interface(library=executable)
 
     params = {}
     if fam_length is not None:
         params['fam_length'] = fam_length
 
-    return I_AGGREGATE(interface=AggregateInterfaceSymbol.slot(registry[Registry.KEY_EXECUTABLE], 'generic'),
-                       metadata=AggregateTypeSymbol.slot(plugin, type_name),
-                       **params)
+    return registry.new_context(I_AGGREGATE(interface=AggregateInterfaceSymbol.slot(executable, 'generic'),
+                                            metadata=AggregateTypeSymbol.slot(plugin, type_name),
+                                            **params),
+                                key=registry.key(key, tmp_prefix='aggregate'))
 

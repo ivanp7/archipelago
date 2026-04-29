@@ -51,6 +51,8 @@ def env_variables(registry, /, **vars):
     if not isinstance(registry, Registry):
         raise TypeError
 
+    executable = registry[Registry.KEY_EXECUTABLE]
+
     # Check variable specifications for correctness
     for spec in vars.values():
         if isinstance(spec, tuple):
@@ -73,18 +75,17 @@ def env_variables(registry, /, **vars):
     default_values = {(str(spec[0]) if isinstance(spec, tuple) else spec) for spec in vars.values()}
 
     # Create environment variable contexts
-    I_ENV_VARIABLE = EnvVariableContext.interface(library=registry[Registry.KEY_EXECUTABLE])
+    I_ENV_VARIABLE = EnvVariableContext.interface(library=executable)
 
     envvar_contexts = {}
     for default_value in default_values:
         envvar_contexts[default_value] = registry.new_context(I_ENV_VARIABLE(default_value=default_value),
-                                                              key=registry.temp_key(prefix='env_var'))
+                                                              key=registry.key(tmp_prefix='env_var'))
 
-    del I_ENV_VARIABLE
     del default_values
 
     # Parse the numbers and form the resulting list of contexts
-    I_NUMBER_PARSER = NumberParserContext.interface(library=registry[Registry.KEY_EXECUTABLE])
+    I_NUMBER_PARSER = NumberParserContext.interface(library=executable)
 
     parser_contexts = []
     values = []
@@ -95,14 +96,12 @@ def env_variables(registry, /, **vars):
             if len(spec) > 2:
                 params['base'] = spec[2]
 
-            context = registry.new_context(I_NUMBER_PARSER(**params), key=registry.temp_key(prefix='number'))
+            context = registry.new_context(I_NUMBER_PARSER(**params), key=registry.key(tmp_prefix='number'))
             parser_contexts.append(context)
 
             values.append(context)
         else:
             values.append(getattr(envvar_contexts[spec], var))
-
-    del I_NUMBER_PARSER
 
     # Yield the values
     try:

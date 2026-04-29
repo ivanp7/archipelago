@@ -21,7 +21,6 @@
 # @file
 # @brief Helpers for file contexts.
 
-from contextlib import contextmanager
 import ctypes as c
 
 from archi.context import (
@@ -31,11 +30,10 @@ from archi.context import (
         )
 
 
-@contextmanager
-def existing_file_mapping(registry, pathname, elt_type, /,
-                          readable=True, writable=False, shared=False,
-                          open_flags=None, map_flags=None):
-    """Context manager for an existing file mapping.
+def map_new_file(registry, pathname, elt_type, length, /,
+                 mode=0o644, shared=False,
+                 open_flags=None, map_flags=None, key=None):
+    """Create a file mapping (of new file).
     """
     if not isinstance(registry, Registry):
         raise TypeError
@@ -51,26 +49,30 @@ def existing_file_mapping(registry, pathname, elt_type, /,
     if open_flags is not None:
         params['flags'] = open_flags
 
-    with registry.temp_context(I_FILE(pathname=pathname, readable=readable, writable=writable,
-                                      **params),
-                               key=registry.temp_key(prefix='file')) as file:
+    with registry.deleted_context(registry.new_context(I_FILE(pathname=pathname,
+                                                              size=c.sizeof(elt_type) * length,
+                                                              readable=True, writable=True,
+                                                              create=True, exclusive=True, truncate=True,
+                                                              mode=mode, **params),
+                                                       key=registry.key(tmp_prefix='file'))) as file:
+
         params = {}
         if map_flags is not None:
             params['flags'] = map_flags
 
-        with registry.temp_context(I_FILE_MAPPING(fd=file.fd, stride=c.sizeof(elt_type),
-                                                  alignment=c.alignment(elt_type),
-                                                  readable=readable, writable=writable,
-                                                  shared=shared, **params),
-                                   key=registry.temp_key(prefix='file_mapping')) as file_mapping:
-            yield file_mapping
+        file_mapping = registry.new_context(I_FILE_MAPPING(fd=file.fd, stride=c.sizeof(elt_type),
+                                                           alignment=c.alignment(elt_type),
+                                                           readable=True, writable=True,
+                                                           shared=shared, **params),
+                                            key=registry.key(key, tmp_prefix='file_mapping'))
+
+    return file_mapping
 
 
-@contextmanager
-def new_file_mapping(registry, pathname, elt_type, length, /,
-                     mode=0o644, shared=False,
-                     open_flags=None, map_flags=None):
-    """Context manager for a new file mapping.
+def map_existing_file(registry, pathname, elt_type, /,
+                      readable=True, writable=False, shared=False,
+                      open_flags=None, map_flags=None, key=None):
+    """Create a file mapping (of existing file).
     """
     if not isinstance(registry, Registry):
         raise TypeError
@@ -86,19 +88,20 @@ def new_file_mapping(registry, pathname, elt_type, length, /,
     if open_flags is not None:
         params['flags'] = open_flags
 
-    with registry.temp_context(I_FILE(pathname=pathname, size=c.sizeof(elt_type) * length,
-                                      readable=True, writable=True,
-                                      create=True, exclusive=True, truncate=True,
-                                      mode=mode, **params),
-                               key=registry.temp_key(prefix='file')) as file:
+    with registry.deleted_context(registry.new_context(I_FILE(pathname=pathname,
+                                                              readable=readable, writable=writable,
+                                                              **params),
+                                                       key=registry.key(tmp_prefix='file'))) as file:
+
         params = {}
         if map_flags is not None:
             params['flags'] = map_flags
 
-        with registry.temp_context(I_FILE_MAPPING(fd=file.fd, stride=c.sizeof(elt_type),
-                                                  alignment=c.alignment(elt_type),
-                                                  readable=True, writable=True,
-                                                  shared=shared, **params),
-                                   key=registry.temp_key(prefix='file_mapping')) as file_mapping:
-            yield file_mapping
+        file_mapping = registry.new_context(I_FILE_MAPPING(fd=file.fd, stride=c.sizeof(elt_type),
+                                                           alignment=c.alignment(elt_type),
+                                                           readable=readable, writable=writable,
+                                                           shared=shared, **params),
+                                            key=registry.key(key, tmp_prefix='file_mapping'))
+
+    return file_mapping
 

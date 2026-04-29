@@ -21,7 +21,6 @@
 # @file
 # @brief Helpers for memory contexts.
 
-from contextlib import contextmanager
 import ctypes as c
 
 from archi.context import (
@@ -39,20 +38,19 @@ def heap_memory_interface(plugin):
     return MemoryInterfaceSymbol.slot(plugin, 'heap')
 
 
-def allocate_memory(registry, key, c_type, interface, /,
-                    alloc_data=None, ext_alignment=None,
-                    map_data=None, contents=None, file_contents=None):
-    """Create a new memory context.
+def allocate_memory(registry, c_type, interface, /, ext_alignment=None,
+                    alloc_data=None, map_data=None, contents=None, contents_file=None, key=None):
+    """Create a memory context.
     """
     if not isinstance(registry, Registry):
         raise TypeError
-    elif not isinstance(key, str):
+    elif not isinstance(key, (type(None), str)):
         raise TypeError
     elif not isinstance(ext_alignment, (type(None), int)):
         raise TypeError
     elif ext_alignment is not None and ext_alignment <= 0:
         raise ValueError
-    elif contents is not None and file_contents is not None:
+    elif contents is not None and contents_file is not None:
         raise ValueError
 
     if isinstance(c_type, c.Array):
@@ -74,26 +72,27 @@ def allocate_memory(registry, key, c_type, interface, /,
     if ext_alignment is not None:
         params['ext_alignment'] = ext_alignment
 
-    memory_context = registry.new_context(I_MEMORY(interface=interface, length=length,
-                                                   stride=stride, alignment=alignment,
-                                                   **params),
-                                          key=key)
+    memory = registry.new_context(I_MEMORY(interface=interface, length=length,
+                                           stride=stride, alignment=alignment,
+                                           **params),
+                                  key=registry.key(key, tmp_prefix='memory'))
 
-    if contents is not None or file_contents is not None:
+    if contents is not None or contents_file is not None:
         # Initialize the memory
-        with memory_mapping(registry, memory_context, map_data=map_data) as mapping_context:
+        with registry.deleted_context(map_memory(registry, memory, map_data=map_data)) as memory_mapping:
             if contents is not None:
-                with primitive_data_pointer(registry, mapping_context.ptr, writable=True) as mapping_ptr_context:
+                with registry.deleted_context(primitive_data_pointer(registry,
+                                                                     memory_mapping.ptr,
+                                                                     writable=True)) as mapping_ptr_context:
                     registry(mapping_ptr_context.copy(src=contents))
-            elif file_contents is not None:
-                registry(file_contents.read(dest=mapping_context.ptr))
+            elif contents_file is not None:
+                registry(contents_file.read(dest=memory_mapping.ptr))
 
-    return memory_context
+    return memory
 
 
-@contextmanager
-def memory_mapping(registry, memory, /, map_data=None, offset=None, length=None):
-    """Context manager for a memory mapping.
+def map_memory(registry, memory, /, map_data=None, offset=None, length=None, key=None):
+    """Create a memory mapping context.
     """
     if not isinstance(registry, Registry):
         raise TypeError
@@ -120,7 +119,6 @@ def memory_mapping(registry, memory, /, map_data=None, offset=None, length=None)
     if length is not None:
         params['length'] = length
 
-    with registry.temp_context(I_MEMORY_MAPPING(memory=memory, **params),
-                               key=registry.temp_key(prefix='memory_mapping')) as memory_mapping:
-        yield memory_mapping
+    return registry.new_context(I_MEMORY_MAPPING(memory=memory, **params),
+                                key=registry.key(key, tmp_prefix='memory_mapping'))
 

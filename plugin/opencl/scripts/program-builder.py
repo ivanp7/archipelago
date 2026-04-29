@@ -165,7 +165,7 @@ def read_binaries(path_map):
 # Form the list of registry operations
 
 def key(k):
-    return f'program_builder.{k}'
+    return f'cl_program_builder.{k}'
 
 PLUGIN_OPENCL_PATHNAME = f'lib{PLUGIN_OPENCL}.so'
 
@@ -198,11 +198,11 @@ with app.temp_context(I_LIBRARY(pathname=PLUGIN_OPENCL_PATHNAME), key=key('plugi
 
             # Create program libraries from binaries and append them to the list
             for i, binary in enumerate(list_binaries):
-                with app.temp_context([binary], key=key('array_binary[{i}]')) as array_binary:
+                with app.temp_context([binary], key=key(f'array_binary[{i}]')) as array_binary:
                     list_libraries.append(app.new_context(I_OPENCL_PROGRAM_BIN(params_library,
                                                                                binaries=array_binary.ptrs,
                                                                                binary_sizes=[binary.total_size]),
-                                                          key=key('library[{i}]')))
+                                                          key=key(f'library[{i}]')))
 
             del list_binaries
 
@@ -235,13 +235,13 @@ with app.temp_context(I_LIBRARY(pathname=PLUGIN_OPENCL_PATHNAME), key=key('plugi
                                          readable=True, writable=True,
                                          create=True, truncate=True,
                                          mode=0o644),
-                                  key=key('out_file[{i}]')) as file:
+                                  key=key(f'out_file[{i}]')) as file:
                 # Write the program binary for the current device into the output file
                 app(file.write(src=opencl_program.binary[i]))
 
 ###############################################################################
 # Generate the .archi file
 
-file_contents = [(Registry.INPUT_FILE_KEY, KeyValueList.construct(app.operations()))]
+file_contents = [(Registry.INPUT_FILE_KEY, KeyValueList.construct(app.operations.list))]
 write_input_file(file_contents, pathname=args.file, mapaddr=args.mapaddr, print_report=True)
 
