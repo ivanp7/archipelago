@@ -1142,6 +1142,15 @@ class Registry:
     KEY_INPUT_FILE     = 'archi.input_file'
     KEY_SIGNAL_HANDLER = 'archi.signal_handler'
 
+    @classmethod
+    def builtin_contexts(cls):
+        """Get the dictionary of built-in contexts.
+        """
+        return {cls.KEY_REGISTRY: HashmapContext,
+                cls.KEY_EXECUTABLE: LibraryContext,
+                cls.KEY_INPUT_FILE: FileMappingContext,
+                cls.KEY_SIGNAL_HANDLER: SignalHandlerDataHashmapContext}
+
     def __init_subclass__(cls):
         """Initialize a subclass.
         """
@@ -1161,7 +1170,8 @@ class Registry:
         self.reset()
 
         if require_builtins:
-            self.require_builtins(protect=protect_builtins)
+            for key, context_cls in type(self).builtin_contexts().items():
+                self.require_context(key, cls=context_cls, protect=protect_builtins)
 
     def __getitem__(self, key):
         """Obtain a context from the context registry.
@@ -1323,14 +1333,6 @@ class Registry:
                 raise TypeError(f"Required context '{key}' has type {type(context)} (want {cls})")
 
         return context
-
-    def require_builtins(self, protect=True):
-        """Require built-in contexts.
-        """
-        self.require_context(type(self).KEY_REGISTRY, HashmapContext, protect=protect)
-        self.require_context(type(self).KEY_EXECUTABLE, LibraryContext, protect=protect)
-        self.require_context(type(self).KEY_INPUT_FILE, FileContext, protect=protect)
-        self.require_context(type(self).KEY_SIGNAL_HANDLER, SignalHandlerDataHashmapContext, protect=protect)
 
     def rekey_context(self, item, /, key):
         """Replace key of a context.
