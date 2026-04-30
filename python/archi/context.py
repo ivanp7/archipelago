@@ -39,10 +39,10 @@ def type_attributes_of(entity, /):
         return ... # nothingness can be of any type
 
     elif isinstance(entity, Context):
-        return type(entity).slot_attr()
+        return entity.__class__.slot_attr()
 
     elif isinstance(entity, _ContextSlot):
-        attr = type(entity._.context).slot_attr(
+        attr = entity._.context.__class__.slot_attr(
                 entity._.name, entity._.indices, call=entity._.call_params is not None)
         if attr is None:
             raise RuntimeError(f"Call slot {_slot_str(entity._.name, entity._.indices)} of context '{entity._.context._.key}' doesn't return a value")
@@ -440,11 +440,11 @@ class Context:
         elif not slot_name and not slot_indices:
             raise AttributeError("Cannot set an empty slot")
 
-        target_attr = type(context).slot_attr(slot_name, slot_indices, setter=True)
+        target_attr = context.__class__.slot_attr(slot_name, slot_indices, setter=True)
         source_attr = type_attributes_of(value)
 
         if source_attr is None:
-            value = type(context).slot_object(value, slot_name, slot_indices)
+            value = context.__class__.slot_object(value, slot_name, slot_indices)
             source_attr = value.attributes
 
         if not type_attributes_compatible(source_attr, target_attr):
@@ -461,7 +461,7 @@ class Context:
         elif not slot_name and not slot_indices:
             raise AttributeError("Cannot unset an empty slot")
 
-        if not type(context).slot_unsettable(slot_name, slot_indices):
+        if not context.__class__.slot_unsettable(slot_name, slot_indices):
             raise AttributeError(f"Slot {_slot_str(slot_name, slot_indices)} of context '{context._.key}' is not unsettable")
 
         context._.registry.operations.unset_slot(context._.key, slot_name, slot_indices)
@@ -574,7 +574,7 @@ class _ContextSlot:
         elif not isinstance(_, (type(None), Parameters.Context)):
             raise TypeError
 
-        call_params_cls = type(self._.context).call_params_class(self._.name, self._.indices)
+        call_params_cls = self._.context.__class__.call_params_class(self._.name, self._.indices)
 
         return _ContextSlot(self._.context, self._.name, self._.indices,
                             call_params=call_params_cls(_, **params))
@@ -848,16 +848,23 @@ class RegistryOperationList:
         """
         self.reset()
 
+    def reset(self):
+        """Reset the list of registry operations.
+        """
+        self._ops = []
+
     @property
     def list(self):
         """Obtain the list of registry operations.
         """
         return self._ops
 
-    def reset(self):
-        """Reset the list of registry operations.
+    def pop_list(self):
+        """Obtain the copy of the list of registry operations, clearing the original.
         """
-        self._ops = []
+        ops = self.list.copy()
+        self.list.clear()
+        return ops
 
     def temp_key(self, prefix, rnd_len=4):
         """Generate a temporary context key with the specified prefix.
@@ -924,7 +931,7 @@ class RegistryOperationList:
             key=key,
             original_key=Context.key_of(context)))
 
-        return type(context)()
+        return context.__class__()
 
     def create_context(self, key, spec):
         """Append context creation operation(s) to the list.
@@ -953,7 +960,7 @@ class RegistryOperationList:
                     source_slot_name = slot._.name
                     source_slot_indices = slot._.indices
                 else:
-                    temp_context_key = self.temp_key('context_interface')
+                    temp_context_key = self.temp_key('iface')
 
                     self.create_ptr_context(temp_context_key, slot)
 
@@ -983,7 +990,7 @@ class RegistryOperationList:
         with self.parameters(params) as (params_context_key, params_list):
             self.create_params(key, params_context_key, params_list)
 
-        return type(params).Context()
+        return params.__class__.Context()
 
     def create_ptr_context(self, key, entity):
         """Append pointer creation operation(s) to the list.
@@ -1157,9 +1164,14 @@ class Registry:
         if not issubclass(cls.OPERATIONS, RegistryOperationList):
             raise TypeError
 
-    def __init__(self):
+    def __init__(self, namespace=''):
         """Initialize a context registry instance.
         """
+        if not isinstance(namespace, str):
+            raise TypeError
+
+        self._namespace = namespace
+
         self._operations = self.__class__.OPERATIONS()
         self.reset()
 
@@ -1180,6 +1192,12 @@ class Registry:
             raise KeyError("Cannot create a context without a key")
         elif not isinstance(key, str):
             raise TypeError
+        elif not key:
+            raise KeyError(f"Cannot create a context with an empty key")
+        elif key.startswith('.'):
+            raise KeyError(f"Cannot create a context with a temporary key explicitly")
+        elif self.namespace and not key.startswith(f'{self.namespace}.'):
+            raise KeyError(f"Key '{key}' is not is the registry namespace '{self.namespace}'")
         elif key in self._contexts:
             raise KeyError(f"Context '{key}' is already in the registry")
 
@@ -1200,6 +1218,12 @@ class Registry:
             return
         elif not isinstance(key, str):
             raise TypeError
+        elif not key:
+            raise KeyError(f"Cannot delete a context with an empty key")
+        elif key.startswith('.'):
+            raise KeyError(f"Cannot delete a context with a temporary key explicitly")
+        elif self.namespace and not key.startswith(f'{self.namespace}.'):
+            raise KeyError(f"Key '{key}' is not is the registry namespace '{self.namespace}'")
         elif key not in self._contexts:
             raise KeyError(f"Context '{key}' is not in the registry")
         elif self._prerequisites.get(key, False):
@@ -1231,7 +1255,7 @@ class Registry:
         elif isinstance(item, Context):
             return Context.registry_of(item) is self \
                     and Context.key_of(item) in self._contexts \
-                    and isinstance(self._contexts[Context.key_of(item)], type(item))
+                    and isinstance(self._contexts[Context.key_of(item)], item.__class__)
         else:
             raise TypeError
 
@@ -1246,11 +1270,6 @@ class Registry:
         """
         return self._operations
 
-    def key(self, key=None, /, tmp_prefix='context', tmp_rnd_len=4):
-        """Generate a temporary context key with the specified prefix.
-        """
-        return key if key is not None else self.operations.temp_key(tmp_prefix, tmp_rnd_len)
-
     def reset(self):
         """Clear the context registry instance state.
         """
@@ -1258,6 +1277,36 @@ class Registry:
 
         self._contexts = {}
         self._prerequisites = {}
+
+    @property
+    def namespace(self):
+        """Get namespace of the registry.
+        """
+        return self._namespace
+
+    def key(self, key, /):
+        """Get a context key prefixed by the registry namespace.
+        """
+        if not isinstance(key, str):
+            raise TypeError
+        elif not key:
+            raise ValueError
+
+        return f'{self.namespace}.{key}' if self.namespace else key
+
+    def interface_of(self, item, /):
+        """Create a representation of a context interface.
+        """
+        if isinstance(item, str):
+            context = self[item]
+            return _ContextInterface(context, context.__class__)
+        elif isinstance(item, Context):
+            if item not in self:
+                raise KeyError(f"Context '{Context.key_of(item)}' is not in the registry")
+
+            return _ContextInterface(item, item.__class__)
+        else:
+            raise TypeError
 
     def contexts(self, cls=Context, /, is_prereq=True, is_new=True):
         """Obtain the dictionary of known contexts of the specified type.
@@ -1271,19 +1320,26 @@ class Registry:
                 and ((is_prereq and key in self._prerequisites) \
                 or (is_new and key not in self._prerequisites))}
 
-    def interface_of(self, item, /):
-        """Create a representation of a context interface.
+    def on_top_of(self, other, /):
+        """Check if another registry contains all the prerequisite contexts of correct types.
         """
-        if isinstance(item, str):
-            context = self[item]
-            return _ContextInterface(context, type(context))
-        elif isinstance(item, Context):
-            if item not in self:
-                raise KeyError(f"Context '{Context.key_of(item)}' is not in the registry")
-
-            return _ContextInterface(item, type(item))
-        else:
+        if not isinstance(other, Registry):
             raise TypeError
+
+        if self.namespace != other.namespace \
+                and not self.namespace.startswith(f'{other.namespace}.'):
+            return False
+
+        for context in self.contexts(is_new=False).values():
+            try:
+                other_context = other[Context.key_of(context)]
+
+                if not isinstance(other_context, context.__class__):
+                    return False
+            except KeyError:
+                return False
+
+        return True
 
     def is_prerequisite(self, item, /):
         """Check if a context (key) was added to the registry by require_context().
@@ -1331,7 +1387,7 @@ class Registry:
             context = self._contexts[key]
 
             if not isinstance(context, cls):
-                raise TypeError(f"Required context '{key}' has type {type(context)} (want {cls})")
+                raise TypeError(f"Required context '{key}' has type {context.__class__} (want {cls})")
 
         return context
 
