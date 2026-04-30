@@ -793,7 +793,7 @@ class archi_app_input_file_header_t(c.Structure):
                 ('contents', c.POINTER(archi_kvlist_t))]
 
     def __init__(self):
-        self.magic = type(self).MAGIC
+        self.magic = self.__class__.MAGIC
 
 ##############################################################################
 # Registry operations: auxiliary structures

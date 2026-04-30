@@ -171,7 +171,7 @@ PLUGIN_OPENCL_PATHNAME = f'lib{PLUGIN_OPENCL}.so'
 
 
 app = Registry()
-executable = app[Registry.KEY_EXECUTABLE]
+executable = app.require_context(Registry.KEY_EXECUTABLE)
 
 # Prepare built-in interfaces
 I_LIBRARY = LibraryContext.interface(library=executable)

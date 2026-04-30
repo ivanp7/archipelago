@@ -167,7 +167,7 @@ class Context:
         if not isinstance(_, (type(None), Parameters.Context)):
             raise TypeError
 
-        call_params_cls = type(self).call_params_class('', ())
+        call_params_cls = self.__class__.call_params_class('', ())
 
         return _ContextSlot(self, '', (), call_params=call_params_cls(_, **params))
 
@@ -716,7 +716,7 @@ class Parameters:
     def __init__(self, _=None, /, **params):
         """Initialize a context parameter list instance.
         """
-        if not isinstance(_, (type(None), type(self).Context)):
+        if not isinstance(_, (type(None), self.__class__.Context)):
             raise TypeError
 
         self._params_base = _
@@ -724,15 +724,15 @@ class Parameters:
         self._params_static = {}
 
         for key, value in params.items():
-            param_attr = type(self).param_attr(key)
+            param_attr = self.__class__.param_attr(key)
             value_attr = type_attributes_of(value)
 
             if value_attr is None:
-                value = type(self).param_object(value, key)
+                value = self.__class__.param_object(value, key)
                 value_attr = value.attributes
 
             if not type_attributes_compatible(value_attr, param_attr):
-                raise TypeError(f"{type(self)}: cannot assign value={value} to parameter '{key}': types are incompatible")
+                raise TypeError(f"{self.__class__}: cannot assign value={value} to parameter '{key}': types are incompatible")
 
             if isinstance(value, (Context, _ContextSlot)):
                 self._params_dynamic[key] = value
@@ -1157,21 +1157,11 @@ class Registry:
         if not issubclass(cls.OPERATIONS, RegistryOperationList):
             raise TypeError
 
-    def __init__(self, require_builtins=True, protect_builtins=True):
+    def __init__(self):
         """Initialize a context registry instance.
         """
-        if not isinstance(require_builtins, bool):
-            raise TypeError
-        elif not isinstance(protect_builtins, bool):
-            raise TypeError
-
-        self._operations = type(self).OPERATIONS()
-
+        self._operations = self.__class__.OPERATIONS()
         self.reset()
-
-        if require_builtins:
-            for key, context_cls in type(self).builtin_contexts().items():
-                self.require_context(key, cls=context_cls, protect=protect_builtins)
 
     def __getitem__(self, key):
         """Obtain a context from the context registry.
@@ -1318,6 +1308,17 @@ class Registry:
         elif not isinstance(protect, bool):
             raise TypeError
 
+        try:
+            builtin_cls = self.__class__.builtin_contexts()[key]
+
+            if not issubclass(builtin_cls, cls):
+                raise TypeError(f"Required context '{key}' has type {builtin_cls} (want {cls})")
+
+            cls = builtin_cls
+
+        except KeyError:
+            pass
+
         if key not in self._contexts:
             context = cls()
             context._.registry = self
@@ -1375,7 +1376,7 @@ class Registry:
     def cleanup(self):
         """Delete all created contexts from the registry.
         """
-        for key in reversed(self.contexts(is_prereq=False).keys()):
+        for key in list(reversed(self.contexts(is_prereq=False).keys())):
             del self[key]
 
     @contextmanager
@@ -2173,7 +2174,7 @@ class _Symbol:
     def slot_of(self, library):
         """Obtain the correctly typed symbol slot from the specified library.
         """
-        return type(self).slot(self._name, library=library)
+        return self.__class__.slot(self._name, library=library)
 
 
 class DataSymbol(_Symbol):

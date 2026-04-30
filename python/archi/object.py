@@ -756,24 +756,24 @@ class ComplexData(Object):
     def __init__(self, _=None, /, **kwargs):
         """Initialize a complex data representation instance.
         """
-        if not isinstance(_, (type(None), type(self).TYPE)):
+        if not isinstance(_, (type(None), self.__class__.TYPE)):
             raise TypeError
 
         for key, obj in kwargs.items():
-            if key not in type(self).REFS:
+            if key not in self.__class__.REFS:
                 raise KeyError(f"Complex data object: unrecognized reference key '{key}'")
-            elif not isinstance(obj, (type(None), type(self).REFS[key])):
+            elif not isinstance(obj, (type(None), self.__class__.REFS[key])):
                 raise TypeError(f"Complex data object: reference '{key}' has incorrect type")
 
         if _ is None:
-            _ = type(self).TYPE()
+            _ = self.__class__.TYPE()
 
         self._buffer = bytes(_)
 
-        refs = {key: (kwargs[key] if key in kwargs else None) for key in type(self).REFS}
+        refs = {key: (kwargs[key] if key in kwargs else None) for key in self.__class__.REFS}
 
         super().__init__(length=1, stride=c.sizeof(_), alignment=c.alignment(_),
-                         tag=type(self).TAG, refs=refs)
+                         tag=self.__class__.TAG, refs=refs)
 
     @property
     def buffer(self):
@@ -785,14 +785,14 @@ class ComplexData(Object):
     def c_object(self):
         """Get copy of the original ctypes object.
         """
-        return type(self).TYPE.from_buffer_copy(self.buffer)
+        return self.__class__.TYPE.from_buffer_copy(self.buffer)
 
     def _write(self, eff_address, /):
         """Write object to memory.
         """
         c.memmove(eff_address, self._buffer, len(self._buffer))
 
-        cobject = type(self).TYPE.from_address(eff_address)
+        cobject = self.__class__.TYPE.from_address(eff_address)
         self._write_fields(cobject)
 
     def _write_fields(self, cobject, /):
