@@ -172,18 +172,6 @@ class Context:
         return _ContextSlot(self, '', (), call_params=call_params_cls(_, **params))
 
     @staticmethod
-    def registry_of(context, /):
-        """Get the registry a context belongs to.
-        """
-        if context is None:
-            return None
-
-        if not isinstance(context, Context):
-            raise TypeError
-
-        return context._.registry
-
-    @staticmethod
     def key_of(context, /):
         """Get the key of a context.
         """
@@ -439,6 +427,12 @@ class Context:
             raise RuntimeError
         elif not slot_name and not slot_indices:
             raise AttributeError("Cannot set an empty slot")
+
+        try:
+            if not context._.registry.owns(value):
+                raise ValueError("The assigned value is not owned by the same registry")
+        except TypeError:
+            pass
 
         target_attr = context.__class__.slot_attr(slot_name, slot_indices, setter=True)
         source_attr = type_attributes_of(value)
@@ -1201,6 +1195,12 @@ class Registry:
         elif key in self._contexts:
             raise KeyError(f"Context '{key}' is already in the registry")
 
+        try:
+            if not self.owns(entity):
+                raise ValueError("The entity is not owned by the registry")
+        except TypeError:
+            pass
+
         context = self.operations.create(key, entity)
 
         if not isinstance(context, Context):
@@ -1253,8 +1253,7 @@ class Registry:
         elif isinstance(item, str):
             return item in self._contexts
         elif isinstance(item, Context):
-            return Context.registry_of(item) is self \
-                    and Context.key_of(item) in self._contexts \
+            return self.owns(item) and Context.key_of(item) in self._contexts \
                     and isinstance(self._contexts[Context.key_of(item)], item.__class__)
         else:
             raise TypeError
@@ -1293,6 +1292,18 @@ class Registry:
             raise ValueError
 
         return f'{self.namespace}.{key}' if self.namespace else key
+
+    def owns(self, entity, /):
+        """Check if an entity belongs to the registry.
+        """
+        if isinstance(entity, Context):
+            return entity._.registry is self
+        elif isinstance(entity, _ContextSlot):
+            return entity._.context._.registry is self
+        elif isinstance(entity, (_ContextSpec, _ContextInterface)):
+            return self.owns(entity._context_or_slot)
+        else:
+            raise TypeError
 
     def interface_of(self, item, /):
         """Create a representation of a context interface.
