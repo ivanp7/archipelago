@@ -13,7 +13,6 @@ from archi.object import PrimitiveData, String, KeyValueList
 from archi.script import errprint, write_input_file
 from archi.context import (
         Parameters,
-        Registry,
         FileContext,
         LibraryContext,
         )
@@ -23,6 +22,7 @@ from archi.opencl import (
         OpenCLProgramSrcContext,
         OpenCLProgramBinContext,
         )
+from archi.registry import Registry
 from archi.helper.env import env_variables
 
 ###############################################################################
@@ -171,18 +171,18 @@ PLUGIN_OPENCL_PATHNAME = f'lib{PLUGIN_OPENCL}.so'
 
 
 app = Registry()
-executable = app.require_context(Registry.KEY_EXECUTABLE)
+executable = app[Registry.KEY_EXECUTABLE]
 
 # Prepare built-in interfaces
-I_LIBRARY = LibraryContext.interface(library=executable)
-I_FILE = FileContext.interface(library=executable)
+I_LIBRARY = LibraryContext.interface_in(executable)
+I_FILE = FileContext.interface_in(executable)
 
 # Load OpenCL plugin
 with app.temp_context(I_LIBRARY(pathname=PLUGIN_OPENCL_PATHNAME), key=key('plugin.opencl')) as plugin_opencl:
     # Prepare OpenCL plugin interfaces
-    I_OPENCL_CONTEXT = OpenCLContext.interface(library=plugin_opencl)
-    I_OPENCL_PROGRAM_SRC = OpenCLProgramSrcContext.interface(library=plugin_opencl)
-    I_OPENCL_PROGRAM_BIN = OpenCLProgramBinContext.interface(library=plugin_opencl)
+    I_OPENCL_CONTEXT = OpenCLContext.interface_in(plugin_opencl)
+    I_OPENCL_PROGRAM_SRC = OpenCLProgramSrcContext.interface_in(plugin_opencl)
+    I_OPENCL_PROGRAM_BIN = OpenCLProgramBinContext.interface_in(plugin_opencl)
 
     # Create the OpenCL context
     with app.temp_context(I_OPENCL_CONTEXT(platform=args.platform, device=args.devices),

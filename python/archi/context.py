@@ -19,10 +19,9 @@
  #############################################################################
 
 # @file
-# @brief Archipelago application contexts & registry.
+# @brief Archipelago application contexts.
 
 import ctypes as c
-from contextlib import contextmanager
 from types import MappingProxyType, SimpleNamespace
 
 import archi.ctypes as ac
@@ -36,16 +35,21 @@ def type_attributes_of(entity, /):
     """Get type attributes of an entity.
     """
     if entity is None:
-        return ... # nothingness can be of any type
+        return ... # nothingness has unspecified type
 
     elif isinstance(entity, Context):
         return entity.__class__.slot_attr()
 
-    elif isinstance(entity, _ContextSlot):
-        attr = entity._.context.__class__.slot_attr(
-                entity._.name, entity._.indices, call=entity._.call_params is not None)
+    elif isinstance(entity, Context.Slot):
+        context = Context.Slot.context_of(entity)
+        slot_name = Context.Slot.name_of(entity)
+        slot_indices = Context.Slot.indices_of(entity)
+
+        attr = context.__class__.slot_attr(
+                slot_name, slot_indices, call=Context.Slot.is_call(entity))
+
         if attr is None:
-            raise RuntimeError(f"Call slot {_slot_str(entity._.name, entity._.indices)} of context '{entity._.context._.key}' doesn't return a value")
+            raise RuntimeError(f"Call slot {_slot_str(slot_name, slot_indices)} of context '{Context.key_of(context)}' doesn't return a value")
 
         return attr
 
@@ -79,7 +83,7 @@ class Context:
     # Main part of symbol name of the context interface
     C_NAME = None
 
-    def __init_subclass__(cls):
+    def __init_subclass__(cls, /):
         """Initialize a context interface subclass.
         """
         if cls.C_NAME is not None:
@@ -88,7 +92,7 @@ class Context:
             elif not cls.C_NAME:
                 raise ValueError
 
-    def __init__(self):
+    def __init__(self, /):
         """Initialize a context instance.
         """
         fields = SimpleNamespace()
@@ -98,65 +102,65 @@ class Context:
 
         object.__setattr__(self, '_', fields)
 
-    def __str__(self):
-        return f"Context({self._})"
+    def __str__(self, /):
+        return f"Context({vars(self._)})"
 
-    def __getattr__(self, name):
+    def __getattr__(self, name, /):
         """Get a context slot.
         """
-        return _ContextSlot(self, name, ())
+        return Context.Slot(self, name=name)
 
-    def __getitem__(self, index):
+    def __getitem__(self, index, /):
         """Get a context slot.
         """
         if isinstance(index, int):
-            return _ContextSlot(self, '', (index,))
+            return Context.Slot(self, indices=(index,))
 
         elif isinstance(index, tuple):
             if not all(isinstance(elt, int) for elt in index):
                 raise TypeError
 
-            return _ContextSlot(self, '', index)
+            return Context.Slot(self, indices=index)
 
         else:
             raise TypeError
 
-    def __setattr__(self, name, value):
+    def __setattr__(self, name, value, /):
         """Set a context slot.
         """
-        Context._set(self, name, (), value)
+        Context._set_slot(self, name=name, value=value)
 
-    def __setitem__(self, index, value):
+    def __setitem__(self, index, value, /):
         """Set a context slot.
         """
         if isinstance(index, int):
-            Context._set(self, '', (index,), value)
+            Context._set_slot(self, indices=(index,), value=value)
 
         elif isinstance(index, tuple):
             if not all(isinstance(elt, int) for elt in index):
                 raise TypeError
 
-            Context._set(self, '', index, value)
+            Context._set_slot(self, indices=index, value=value)
 
         else:
             raise TypeError
 
-    def __delattr__(self, name):
+    def __delattr__(self, name, /):
         """Unset a context slot.
         """
-        Context._unset(self, name, ())
+        Context._unset_slot(self, name=name)
 
-    def __delitem__(self, index, value):
+    def __delitem__(self, index, value, /):
         """Unset a context slot.
         """
         if isinstance(index, int):
-            Context._unset(self, '', (index,))
+            Context._unset_slot(self, indices=(index,))
 
         elif isinstance(index, tuple):
             if not all(isinstance(elt, int) for elt in index):
                 raise TypeError
 
-            Context._unset(self, '', index)
+            Context._unset_slot(self, indices=index)
 
         else:
             raise TypeError
@@ -167,9 +171,20 @@ class Context:
         if not isinstance(_, (type(None), Parameters.Context)):
             raise TypeError
 
-        call_params_cls = self.__class__.call_params_class('', ())
+        call_params_cls = self.__class__.call_params_class()
 
-        return _ContextSlot(self, '', (), call_params=call_params_cls(_, **params))
+        return Context.Slot(self, call_params=call_params_cls(_, **params))
+
+    @staticmethod
+    def registry_of(context, /):
+        """Get the registry of a context.
+        """
+        if context is None:
+            return None
+        elif not isinstance(context, Context):
+            raise TypeError
+
+        return context._.registry
 
     @staticmethod
     def key_of(context, /):
@@ -177,8 +192,7 @@ class Context:
         """
         if context is None:
             return None
-
-        if not isinstance(context, Context):
+        elif not isinstance(context, Context):
             raise TypeError
 
         return context._.key
@@ -188,10 +202,11 @@ class Context:
         """Create a weak reference slot.
         """
         if isinstance(entity, Context):
-            return _ContextSlot(entity, '', (), weak_ref=True)
-        elif isinstance(entity, _ContextSlot):
-            return _ContextSlot(entity._.context, entity._.name, entity._.indices,
-                                entity._.call_params, weak_ref=True)
+            return Context.Slot(entity, weak_ref=True)
+        elif isinstance(entity, Context.Slot):
+            return Context.Slot(Context.Slot.context_of(entity),
+                                Context.Slot.name_of(entity), Context.Slot.indices_of(entity),
+                                Context.Slot.call_params_of(entity), weak_ref=True)
         else:
             return entity
 
@@ -199,57 +214,57 @@ class Context:
     def set(slot, value, /):
         """Assign a value to the specified slot.
         """
-        if not isinstance(slot, _ContextSlot):
+        if not isinstance(slot, Context.Slot):
             raise TypeError
-        elif slot._.call_params is not None:
+        elif Context.Slot.is_call(slot):
             raise AttributeError
 
-        Context._set(slot._.context, slot._.name, slot._.indices, value)
+        Context._set_slot(Context.Slot.context_of(slot),
+                          Context.Slot.name_of(slot), Context.Slot.indices_of(slot),
+                          value)
 
     @staticmethod
     def unset(slot, /):
         """Unset a context slot.
         """
-        if not isinstance(slot, _ContextSlot):
+        if not isinstance(slot, Context.Slot):
             raise TypeError
-        elif slot._.call_params is not None:
+        elif Context.Slot.is_call(slot):
             raise AttributeError
 
-        Context._unset(slot._.context, slot._.name, slot._.indices)
+        Context._unset_slot(Context.Slot.context_of(slot),
+                            Context.Slot.name_of(slot), Context.Slot.indices_of(slot))
 
     @classmethod
-    def interface(cls, context_or_slot=None, /, *, library=None):
-        """Create a representation of a context interface.
+    def interface(cls, context_or_slot, /):
+        """Create a representation of a context interface (from the specified context/slot).
         """
-        if context_or_slot is not None and library is not None:
-            raise ValueError
+        if not isinstance(context_or_slot, (Context, Context.Slot)):
+            raise TypeError
 
-        if context_or_slot is not None:
-            if not isinstance(context_or_slot, (Context, _ContextSlot)):
-                raise TypeError
+        attr = type_attributes_of(context_or_slot)
 
-            attr = type_attributes_of(context_or_slot)
+        if not type_attributes_compatible(
+                attr, TypeAttributes.complex_data(ac.ARCHI_POINTER_DATA_TAG__CONTEXT_INTERFACE)):
+            raise TypeError(f"{context_or_slot} is not a context interface")
 
-            if not type_attributes_compatible(
-                    attr, TypeAttributes.complex_data(ac.ARCHI_POINTER_DATA_TAG__CONTEXT_INTERFACE)):
-                raise TypeError(f"{context_or_slot} is not a context interface")
+        if isinstance(context_or_slot, Context):
+            return _ContextInterface(Context.Slot(context_or_slot), cls)
 
-            if isinstance(context_or_slot, Context):
-                return _ContextInterface(_ContextSlot(context_or_slot, '', ()), cls)
-
-            elif isinstance(context_or_slot, _ContextSlot):
-                return _ContextInterface(context_or_slot, cls)
-
-        elif library is not None:
-            slot = ContextInterfaceSymbol.slot(cls.C_NAME, library=library)
-            slot = _ContextSlot(slot._.context, slot._.name, ()) # optimization to avoid creation of a temporary context
-            return _ContextInterface(slot, cls)
-
-        else:
-            raise ValueError
+        elif isinstance(context_or_slot, Context.Slot):
+            return _ContextInterface(context_or_slot, cls)
 
     @classmethod
-    def init_params_class(cls):
+    def interface_in(cls, library, /):
+        """Create a representation of a context interface (from a plugin using the predefined symbol name).
+        """
+        slot = ContextInterfaceSymbol.slot(cls.C_NAME, library=library)
+        slot = Context.Slot(Context.Slot.context_of(slot), name=Context.Slot.name_of(slot)) # optimization to avoid creation of a temporary context
+
+        return _ContextInterface(slot, cls)
+
+    @classmethod
+    def init_params_class(cls, /):
         """Obtain initialization parameter list class.
 
         Returns a (sub)class of Parameters.
@@ -262,7 +277,7 @@ class Context:
         return params_class
 
     @classmethod
-    def call_params_class(cls, name='', indices=()):
+    def call_params_class(cls, /, name='', indices=()):
         """Obtain parameter list class of a call.
 
         Returns a (sub)class of Parameters.
@@ -270,7 +285,9 @@ class Context:
         """
         if not isinstance(name, str):
             raise TypeError
-        elif not isinstance(indices, tuple) or not all(isinstance(index, int) for index in indices):
+        elif not isinstance(indices, tuple):
+            raise TypeError
+        elif not all(isinstance(index, int) for index in indices):
             raise TypeError
 
         try:
@@ -284,7 +301,7 @@ class Context:
         return params_class
 
     @classmethod
-    def slot_attr(cls, name='', indices=(), setter=False, call=False):
+    def slot_attr(cls, /, name='', indices=(), setter=False, call=False):
         """Get type attributes of a slot.
 
         Returns a TypeAttributes object, Ellipsis, or None.
@@ -292,7 +309,9 @@ class Context:
         """
         if not isinstance(name, str):
             raise TypeError
-        elif not isinstance(indices, tuple) or not all(isinstance(index, int) for index in indices):
+        elif not isinstance(indices, tuple):
+            raise TypeError
+        elif not all(isinstance(index, int) for index in indices):
             raise TypeError
         elif not isinstance(setter, bool):
             raise TypeError
@@ -336,7 +355,9 @@ class Context:
         """
         if not isinstance(name, str):
             raise TypeError
-        elif not isinstance(indices, tuple) or not all(isinstance(index, int) for index in indices):
+        elif not isinstance(indices, tuple):
+            raise TypeError
+        elif not all(isinstance(index, int) for index in indices):
             raise TypeError
         elif not name and not indices:
             raise ValueError("Setter slot cannot be empty")
@@ -352,22 +373,24 @@ class Context:
         return obj
 
     @classmethod
-    def slot_unsettable(cls, name='', indices=()):
+    def is_slot_unsettable(cls, /, name='', indices=()):
         """Check if a slot can be unset.
 
         Returns a boolean.
         """
         if not isinstance(name, str):
             raise TypeError
-        elif not isinstance(indices, tuple) or not all(isinstance(index, int) for index in indices):
+        elif not isinstance(indices, tuple):
+            raise TypeError
+        elif not all(isinstance(index, int) for index in indices):
             raise TypeError
         elif not name and not indices:
             raise ValueError("Cannot unset empty slot")
 
-        return cls._slot_unsettable(name, indices)
+        return cls._is_slot_unsettable(name, indices)
 
     @classmethod
-    def _init_params_class(cls):
+    def _init_params_class(cls, /):
         """Obtain initialization parameter list class.
 
         This method is to be overridden in derived classes.
@@ -377,7 +400,7 @@ class Context:
         return Parameters # arbitrary parameters is recognized by default
 
     @classmethod
-    def _call_params_class(cls, name, indices):
+    def _call_params_class(cls, /, name, indices):
         """Obtain parameter list class of a call.
 
         This method is to be overridden in derived classes.
@@ -388,7 +411,7 @@ class Context:
         return Parameters # any call with arbitrary parameters is recognized by default
 
     @classmethod
-    def _slot_attr(cls, name, indices, setter, call):
+    def _slot_attr(cls, /, name, indices, setter, call):
         """Get type attributes of a slot.
 
         This method is to be overridden in derived classes.
@@ -399,7 +422,7 @@ class Context:
         return ... # any slot is recognized by default
 
     @classmethod
-    def _slot_object(cls, value, name, indices):
+    def _slot_object(cls, value, /, name, indices):
         """Construct an Object of appropriate type for a value to be assigned to the specified slot.
 
         This method is to be overridden in derived classes.
@@ -410,7 +433,7 @@ class Context:
         raise TypeError # don't know what to construct by default
 
     @classmethod
-    def _slot_unsettable(cls, name, indices):
+    def _is_slot_unsettable(cls, /, name, indices):
         """Check if a slot can be unset.
 
         This method is to be overridden in derived classes.
@@ -420,45 +443,42 @@ class Context:
         return True # all slots are unsettable by default
 
     @staticmethod
-    def _set(context, slot_name, slot_indices, value):
+    def _set_slot(context, /, name='', indices=(), value=None):
         """Check compatibility of source and target types, append the assignment operation to the list.
         """
         if context._.registry is None:
             raise RuntimeError
-        elif not slot_name and not slot_indices:
+        elif not name and not indices:
             raise AttributeError("Cannot set an empty slot")
 
-        try:
-            if not context._.registry.owns(value):
-                raise ValueError("The assigned value is not owned by the same registry")
-        except TypeError:
-            pass
+        if not context._.registry.owns(value):
+            raise ValueError("The assigned value is not owned by the same registry")
 
-        target_attr = context.__class__.slot_attr(slot_name, slot_indices, setter=True)
+        target_attr = context.__class__.slot_attr(name, indices, setter=True)
         source_attr = type_attributes_of(value)
 
         if source_attr is None:
-            value = context.__class__.slot_object(value, slot_name, slot_indices)
+            value = context.__class__.slot_object(value, name, indices)
             source_attr = value.attributes
 
         if not type_attributes_compatible(source_attr, target_attr):
-            raise TypeError(f"Cannot assign value={value} to slot {_slot_str(slot_name, slot_indices)} of context '{context._.key}': types are incompatible")
+            raise TypeError(f"Cannot assign value={value} to slot {_slot_str(name, indices)} of context '{context._.key}': types are incompatible")
 
-        context._.registry.operations.set_slot(context._.key, slot_name, slot_indices, value)
+        context._.registry.operations.set_slot(context._.key, name, indices, value)
 
     @staticmethod
-    def _unset(context, slot_name, slot_indices):
+    def _unset_slot(context, /, name='', indices=()):
         """Append the unassignment operation to the list.
         """
         if context._.registry is None:
             raise RuntimeError
-        elif not slot_name and not slot_indices:
+        elif not name and not indices:
             raise AttributeError("Cannot unset an empty slot")
 
-        if not context.__class__.slot_unsettable(slot_name, slot_indices):
-            raise AttributeError(f"Slot {_slot_str(slot_name, slot_indices)} of context '{context._.key}' is not unsettable")
+        if not context.__class__.is_slot_unsettable(name, indices):
+            raise AttributeError(f"Slot {_slot_str(name, indices)} of context '{context._.key}' is not unsettable")
 
-        context._.registry.operations.unset_slot(context._.key, slot_name, slot_indices)
+        context._.registry.operations.unset_slot(context._.key, name, indices)
 
 
 class _ContextSlot:
@@ -466,9 +486,22 @@ class _ContextSlot:
 
     Instances of this class are not to be created directly.
     """
-    def __init__(self, context, name, indices, call_params=None, weak_ref=False):
+    def __init__(self, context, /, name='', indices=(), call_params=None, weak_ref=False):
         """Initialize a context slot instance.
         """
+        if not isinstance(context, Context):
+            raise TypeError
+        elif not isinstance(name, str):
+            raise TypeError
+        elif not isinstance(indices, tuple):
+            raise TypeError
+        elif not all(isinstance(index, int) for index in indices):
+            raise TypeError
+        elif not isinstance(call_params, (type(None), Parameters)):
+            raise TypeError
+        elif not isinstance(weak_ref, bool):
+            raise TypeError
+
         fields = SimpleNamespace()
 
         fields.context = context
@@ -479,83 +512,92 @@ class _ContextSlot:
 
         object.__setattr__(self, '_', fields)
 
-    def __str__(self):
-        return f"_ContextSlot({self._})"
+    def __str__(self, /):
+        return f"Context.Slot({vars(self._)})"
 
-    def __getattr__(self, name):
+    def __getattr__(self, name, /):
         """Get a context slot.
         """
         if self._.call_params is not None or self._.weak_ref:
             raise AttributeError
 
-        return _ContextSlot(self._.context, f'{self._.name}.{name}', self._.indices)
+        return _ContextSlot(self._.context, name=f'{self._.name}.{name}',
+                            indices=self._.indices)
 
-    def __getitem__(self, index):
+    def __getitem__(self, index, /):
         """Get a context slot.
         """
         if self._.call_params is not None or self._.weak_ref:
             raise AttributeError
 
         if isinstance(index, int):
-            return _ContextSlot(self._.context, self._.name, self._.indices + (index,))
+            return _ContextSlot(self._.context, name=self._.name,
+                                indices=self._.indices + (index,))
 
         elif isinstance(index, tuple):
             if not all(isinstance(elt, int) for elt in index):
                 raise TypeError
 
-            return _ContextSlot(self._.context, self._.name, self._.indices + index)
+            return _ContextSlot(self._.context, name=self._.name,
+                                indices=self._.indices + index)
 
         else:
             raise TypeError
 
-    def __setattr__(self, name, value):
+    def __setattr__(self, name, value, /):
         """Set a context slot.
         """
         if self._.call_params is not None or self._.weak_ref:
             raise AttributeError
 
-        Context._set(self._.context, f'{self._.name}.{name}', self._.indices, value)
+        Context._set_slot(self._.context, name=f'{self._.name}.{name}',
+                          indices=self._.indices, value=value)
 
-    def __setitem__(self, index, value):
+    def __setitem__(self, index, value, /):
         """Set a context slot.
         """
         if self._.call_params is not None or self._.weak_ref:
             raise AttributeError
 
         if isinstance(index, int):
-            Context._set(self._.context, self._.name, self._.indices + (index,), value)
+            Context._set_slot(self._.context, name=self._.name,
+                              indices=self._.indices + (index,), value=value)
 
         elif isinstance(index, tuple):
             if not all(isinstance(elt, int) for elt in index):
                 raise TypeError
 
-            Context._set(self._.context, self._.name, self._.indices + index, value)
+            Context._set_slot(self._.context, name=self._.name,
+                              indices=self._.indices + index, value=value)
 
         else:
             raise TypeError
 
-    def __delattr__(self, name):
+    def __delattr__(self, name, /):
         """Unset a context slot.
         """
         if self._.call_params is not None or self._.weak_ref:
             raise AttributeError
 
-        Context._unset(self._.context, f'{self._.name}.{name}', self._.indices)
+        Context._unset_slot(self._.context, name=f'{self._.name}.{name}',
+                            indices=self._.indices)
 
-    def __delitem__(self, index, value):
+    def __delitem__(self, index, value, /):
         """Unset a context slot.
         """
         if self._.call_params is not None or self._.weak_ref:
             raise AttributeError
 
         if isinstance(index, int):
-            Context._unset(self._.context, self._.name, self._.indices + (index,))
+            Context._unset_slot(self._.context, name=self._.name,
+                                indices=self._.indices + (index,))
 
         elif isinstance(index, tuple):
             if not all(isinstance(elt, int) for elt in index):
                 raise TypeError
 
-            Context._unset(self._.context, self._.name, self._.indices + index)
+            Context._unset_slot(self._.context, name=self._.name,
+                                indices=self._.indices + index)
 
         else:
             raise TypeError
@@ -568,13 +610,82 @@ class _ContextSlot:
         elif not isinstance(_, (type(None), Parameters.Context)):
             raise TypeError
 
-        call_params_cls = self._.context.__class__.call_params_class(self._.name, self._.indices)
+        call_params_cls = self._.context.__class__.call_params_class(
+                self._.name, self._.indices)
 
-        return _ContextSlot(self._.context, self._.name, self._.indices,
+        return _ContextSlot(self._.context, name=self._.name, indices=self._.indices,
                             call_params=call_params_cls(_, **params))
 
+    @staticmethod
+    def context_of(slot, /):
+        """Get the context of a slot.
+        """
+        if slot is None:
+            return None
+        elif not isinstance(slot, Context.Slot):
+            raise TypeError
 
-def _slot_str(slot_name='', slot_indices=()):
+        return slot._.context
+
+    @staticmethod
+    def name_of(slot, /):
+        """Get the name of a slot.
+        """
+        if slot is None:
+            return None
+        elif not isinstance(slot, Context.Slot):
+            raise TypeError
+
+        return slot._.name
+
+    @staticmethod
+    def indices_of(slot, /):
+        """Get the indices of a slot.
+        """
+        if slot is None:
+            return None
+        elif not isinstance(slot, Context.Slot):
+            raise TypeError
+
+        return slot._.indices
+
+    @staticmethod
+    def call_params_of(slot, /):
+        """Get the call parameters of a slot.
+        """
+        if slot is None:
+            return None
+        elif not isinstance(slot, Context.Slot):
+            raise TypeError
+
+        return slot._.call_params
+
+    @staticmethod
+    def is_call(slot, /):
+        """Check if a slot is a call.
+        """
+        if slot is None:
+            return False
+        elif not isinstance(slot, Context.Slot):
+            raise TypeError
+
+        return slot._.call_params is not None
+
+    @staticmethod
+    def is_weak_ref(slot, /):
+        """Check if a slot reference is weak.
+        """
+        if slot is None:
+            return False
+        elif not isinstance(slot, Context.Slot):
+            raise TypeError
+
+        return slot._.weak_ref
+
+Context.Slot = _ContextSlot
+
+
+def _slot_str(slot_name, slot_indices, /):
     """Get the string representation of a slot.
     """
     if slot_name:
@@ -595,33 +706,44 @@ class _ContextSpec:
 
     Instances of this class are not to be created directly.
     """
-    def __init__(self, interface, params):
+    def __init__(self, interface, params, /):
         """Initialize a context specification instance.
         """
-        self._context_or_slot = interface._context_or_slot
-        self._context_cls = interface._context_cls
+        if not isinstance(interface, _ContextInterface):
+            raise TypeError
+        elif not isinstance(params, Parameters):
+            raise TypeError
+
+        self._interface_origin = interface.origin
+        self._context_cls = interface.context_cls
         self._params = params
 
-    def __str__(self):
-        return f"_ContextSpec(interface={self._context_or_slot}, context_class={self._context_cls}, params={self._params})"
+    def __str__(self, /):
+        return f"_ContextSpec(interface={self.interface_origin}, context_class={self.context_cls}, params={self.params})"
 
     def is_a(self, cls, /):
         """Refine a created context class.
         """
-        if not issubclass(cls, self._context_cls):
-            raise TypeError(f"Can't refine {self._context_cls} to {cls}: isn't a subclass")
+        if not issubclass(cls, self.context_cls):
+            raise TypeError(f"Can't refine {self.context_cls} to {cls}: isn't a subclass")
 
         self._context_cls = cls
         return self
 
     @property
-    def context_cls(self):
+    def interface_origin(self, /):
+        """Obtain the inteface origin context/slot.
+        """
+        return self._interface_origin
+
+    @property
+    def context_cls(self, /):
         """Obtain the context class.
         """
         return self._context_cls
 
     @property
-    def params(self):
+    def params(self, /):
         """Obtain the context initialization parameters.
         """
         return self._params
@@ -635,11 +757,16 @@ class _ContextInterface:
     def __init__(self, context_or_slot, /, context_cls=Context):
         """Initialize a context interface instance.
         """
-        self._context_or_slot = context_or_slot
+        if not isinstance(context_or_slot, (Context, Context.Slot)):
+            raise TypeError
+        elif not issubclass(context_cls, Context):
+            raise TypeError
+
+        self._origin = context_or_slot
         self._context_cls = context_cls
 
-    def __str__(self):
-        return f"_ContextInterface(origin={self._context_or_slot}, context_class={self._context_cls})"
+    def __str__(self, /):
+        return f"_ContextInterface(origin={self.origin}, context_class={self.context_cls})"
 
     def __call__(self, _=None, /, **params):
         """Create a context specification instance.
@@ -647,7 +774,13 @@ class _ContextInterface:
         return _ContextSpec(self, self.context_cls.init_params_class()(_, **params))
 
     @property
-    def context_cls(self):
+    def origin(self, /):
+        """Obtain the inteface origin context/slot.
+        """
+        return self._origin
+
+    @property
+    def context_cls(self, /):
         """Obtain the context class.
         """
         return self._context_cls
@@ -667,14 +800,14 @@ class Parameters:
         C_NAME = 'plist'
 
         @classmethod
-        def _call_params_class(cls, name, indices):
+        def _call_params_class(cls, /, name, indices):
             if name or indices:
                 raise KeyError
 
             return cls.init_params_class()
 
         @classmethod
-        def _slot_attr(cls, name, indices, setter, call):
+        def _slot_attr(cls, /, name, indices, setter, call):
             if indices:
                 raise KeyError
 
@@ -687,22 +820,22 @@ class Parameters:
             return cls.init_params_class().param_attr(name)
 
         @classmethod
-        def _slot_object(cls, value, name, indices):
+        def _slot_object(cls, value, /, name, indices):
             if indices:
                 raise KeyError
 
             return cls.init_params_class().param_object(value, name)
 
         @classmethod
-        def _slot_unsettable(cls, name, indices):
+        def _is_slot_unsettable(cls, /, name, indices):
             return False
 
-    def __init_subclass__(cls):
+    def __init_subclass__(cls, /):
         """Initialize a subclass.
         """
         class ParametersSubclassContext(cls.Context):
             @classmethod
-            def _init_params_class(_):
+            def _init_params_class(_, /):
                 return cls
 
         cls.Context = ParametersSubclassContext
@@ -728,46 +861,46 @@ class Parameters:
             if not type_attributes_compatible(value_attr, param_attr):
                 raise TypeError(f"{self.__class__}: cannot assign value={value} to parameter '{key}': types are incompatible")
 
-            if isinstance(value, (Context, _ContextSlot)):
+            if isinstance(value, (Context, Context.Slot)):
                 self._params_dynamic[key] = value
             else: # Object or None
                 self._params_static[key] = value
 
-    def __str__(self):
+    def __str__(self, /):
         return f"Parameters(base={self.base_context}, dynamic={self.dynamic_params}, static={self.static_params})"
 
     @property
-    def base_context(self):
+    def base_context(self, /):
         """Obtain the base parameter list context.
         """
         return self._params_base
 
     @property
-    def base_context_key(self):
+    def base_context_key(self, /):
         """Obtain key of the base parameter list context.
         """
         return Context.key_of(self._params_base)
 
     @property
-    def params(self):
+    def params(self, /):
         """Obtain dictionary of all parameters in the parameter list.
         """
         return MappingProxyType(self._params_dynamic | self._params_static)
 
     @property
-    def dynamic_params(self):
+    def dynamic_params(self, /):
         """Obtain dictionary of dynamic parameters in the parameter list.
         """
         return MappingProxyType(self._params_dynamic)
 
     @property
-    def static_params(self):
+    def static_params(self, /):
         """Obtain dictionary of static parameters in the parameter list.
         """
         return MappingProxyType(self._params_static)
 
     @classmethod
-    def param_attr(cls, key):
+    def param_attr(cls, /, key):
         """Get type attributes of a parameter.
 
         Returns a TypeAttributes object or Ellipsis.
@@ -811,7 +944,7 @@ class Parameters:
         return obj
 
     @classmethod
-    def _param_attr(cls, key):
+    def _param_attr(cls, /, key):
         """Get type attributes of a parameter.
 
         This method is to be overridden in derived classes.
@@ -822,7 +955,7 @@ class Parameters:
         return ... # any parameter is recognized by default
 
     @classmethod
-    def _param_object(cls, value, key):
+    def _param_object(cls, value, /, key):
         """Construct an Object of appropriate type for a value to be assigned to the specified parameter.
 
         This method is to be overridden in derived classes.
@@ -833,643 +966,6 @@ class Parameters:
         raise TypeError # don't know what to construct by default
 
 ##############################################################################
-
-class RegistryOperationList:
-    """Implementation of the list of of registry operations.
-    """
-    def __init__(self):
-        """Initialize the list of registry operations.
-        """
-        self.reset()
-
-    def reset(self):
-        """Reset the list of registry operations.
-        """
-        self._ops = []
-
-    @property
-    def list(self):
-        """Obtain the list of registry operations.
-        """
-        return self._ops
-
-    def pop_list(self):
-        """Obtain the copy of the list of registry operations, clearing the original.
-        """
-        ops = self.list.copy()
-        self.list.clear()
-        return ops
-
-    def temp_key(self, prefix, rnd_len=4):
-        """Generate a temporary context key with the specified prefix.
-        """
-        import random
-        import string
-
-        postfix = ''.join(random.choice(string.ascii_letters + string.digits) \
-                for _ in range(rnd_len))
-
-        return f'.{prefix}_{postfix}:{len(self.list)}'
-
-    def create(self, key, entity):
-        """Create a context from an entity.
-        """
-        if not isinstance(key, str):
-            raise TypeError
-
-        if isinstance(entity, Context):
-            return self.alias_context(key, entity)
-        elif isinstance(entity, _ContextSpec):
-            return self.create_context(key, entity)
-        elif isinstance(entity, Parameters):
-            return self.create_plist_context(key, entity)
-        elif isinstance(entity, (type(None), Object, _ContextSlot)):
-            return self.create_ptr_context(key, entity)
-        elif isinstance(entity, (tuple, list)):
-            return self.create_dptr_array_context(key, entity)
-        else:
-            raise TypeError(f"Cannot create context from {entity}")
-
-    def invoke(self, entity):
-        """Invoke an entity (causing side effects only, no context created).
-        """
-        if isinstance(entity, _ContextSlot):
-            self.call_slot(entity)
-        else:
-            raise TypeError(f"Cannot invoke {entity}")
-
-    def append_op(self, op, data, /):
-        """Append an operation to the list.
-        """
-        if not isinstance(op, str):
-            raise TypeError
-        elif not isinstance(data, Object):
-            raise TypeError
-
-        self.list.append((op, data))
-
-    def delete_context(self, key):
-        """Append context deletion operation to the list.
-        """
-        from .object import RegistryOpData_delete
-
-        self.append_op('delete', RegistryOpData_delete.construct(
-            key=key))
-
-    def alias_context(self, key, context):
-        """Append context aliasing operation to the list.
-        """
-        from .object import RegistryOpData_alias
-
-        self.append_op('alias', RegistryOpData_alias.construct(
-            key=key,
-            original_key=Context.key_of(context)))
-
-        return context.__class__()
-
-    def create_context(self, key, spec):
-        """Append context creation operation(s) to the list.
-        """
-        from .object import RegistryOpData_create_as, RegistryOpData_create_from
-
-        if not isinstance(spec, _ContextSpec):
-            raise TypeError
-
-        if isinstance(spec._context_or_slot, Context):
-            with self.parameters(spec.params) as (params_context_key, params_list):
-                self.append_op('create_as', RegistryOpData_create_as.construct(
-                    key=key,
-                    sample_key=Context.key_of(spec._context_or_slot),
-                    init_params_context_key=params_context_key,
-                    init_params_list=params_list))
-
-        elif isinstance(spec._context_or_slot, _ContextSlot):
-            slot = spec._context_or_slot
-
-            with self.parameters(spec.params) as (params_context_key, params_list):
-                if slot._.call_params is None:
-                    temp_context_key = None
-
-                    source_key = Context.key_of(slot._.context)
-                    source_slot_name = slot._.name
-                    source_slot_indices = slot._.indices
-                else:
-                    temp_context_key = self.temp_key('iface')
-
-                    self.create_ptr_context(temp_context_key, slot)
-
-                    source_key = temp_context_key
-                    source_slot_name = ''
-                    source_slot_indices = ()
-
-                self.append_op('create_from', RegistryOpData_create_from.construct(
-                    key=key,
-                    source_key=source_key,
-                    source_slot_name=source_slot_name,
-                    source_slot_indices=source_slot_indices,
-                    init_params_context_key=params_context_key,
-                    init_params_list=params_list))
-
-                if temp_context_key is not None:
-                    self.delete_context(temp_context_key)
-
-        else:
-            raise TypeError
-
-        return spec.context_cls()
-
-    def create_plist_context(self, key, params):
-        """Append parameter list creation operation(s) to the list.
-        """
-        with self.parameters(params) as (params_context_key, params_list):
-            self.create_params(key, params_context_key, params_list)
-
-        return params.__class__.Context()
-
-    def create_ptr_context(self, key, entity):
-        """Append pointer creation operation(s) to the list.
-        """
-        from .object import RegistryOpData_create_ptr
-
-        if isinstance(entity, (type(None), Object)):
-            self.append_op('create_ptr', RegistryOpData_create_ptr.construct(
-                key=key,
-                pointee=entity))
-
-        elif isinstance(entity, _ContextSlot):
-            self.append_op('create_ptr', RegistryOpData_create_ptr.construct(
-                key=key,
-                pointee=None))
-
-            self.set_slot(key, 'pointee', (), entity)
-
-        else:
-            raise TypeError
-
-        return PointerContext()
-
-    def create_dptr_array_context(self, key, seq):
-        """Append data pointer array create operation(s) to the list.
-        """
-        from .object import RegistryOpData_create_dptr_array
-
-        self.append_op('create_dptr_array', RegistryOpData_create_dptr_array.construct(
-            key=key,
-            length=len(seq)))
-
-        for index, entity in enumerate(seq):
-            if entity is not None:
-                self.set_slot(key, '', (index,), entity)
-
-        return DataPointerArrayContext()
-
-    def unset_slot(self, context_key, slot_name, slot_indices):
-        """Append slot unassignment operation to the list.
-        """
-        from .object import RegistryOpData_unassign
-
-        self.append_op('unassign', RegistryOpData_unassign.construct(
-            key=context_key,
-            slot_name=slot_name,
-            slot_indices=slot_indices))
-
-    def set_slot(self, context_key, slot_name, slot_indices, value):
-        """Append slot assignment operation to the list.
-        """
-        from .object import RegistryOpData_assign, RegistryOpData_assign_slot, RegistryOpData_assign_call
-
-        if isinstance(value, (type(None), Object)):
-            self.append_op('assign', RegistryOpData_assign.construct(
-                key=context_key,
-                slot_name=slot_name,
-                slot_indices=slot_indices,
-                value=value))
-
-        elif isinstance(value, Context):
-            self.append_op('assign_slot', RegistryOpData_assign_slot.construct(
-                key=context_key,
-                slot_name=slot_name,
-                slot_indices=slot_indices,
-                source_key=Context.key_of(value),
-                source_slot_name='',
-                source_slot_indices=()))
-
-        elif isinstance(value, _ContextSlot):
-            if value._.call_params is None:
-                self.append_op('assign_slot' if not value._.weak_ref else 'assign_slot_weak',
-                               RegistryOpData_assign_slot.construct(
-                                   key=context_key,
-                                   slot_name=slot_name,
-                                   slot_indices=slot_indices,
-                                   source_key=Context.key_of(value._.context),
-                                   source_slot_name=value._.name,
-                                   source_slot_indices=value._.indices))
-
-            else:
-                with self.parameters(value._.call_params) as (params_context_key, params_list):
-                    self.append_op('assign_call' if not value._.weak_ref else 'assign_call_weak',
-                                   RegistryOpData_assign_call.construct(
-                                       key=context_key,
-                                       slot_name=slot_name,
-                                       slot_indices=slot_indices,
-                                       source_key=Context.key_of(value._.context),
-                                       source_slot_name=value._.name,
-                                       source_slot_indices=value._.indices,
-                                       source_call_params_context_key=params_context_key,
-                                       source_call_params_list=params_list))
-
-        else:
-            raise TypeError
-
-    def call_slot(self, slot):
-        """Append context call invokation operation to the list.
-        """
-        from .object import RegistryOpData_invoke
-
-        if slot._.call_params is None:
-            raise AttributeError(f"Slot {_slot_str(slot._.name, slot._.indices)} of context '{Context.key_of(slot._.context)}' is not called")
-
-        with self.parameters(slot._.call_params) as (params_context_key, params_list):
-            self.append_op('invoke', RegistryOpData_invoke.construct(
-                key=Context.key_of(slot._.context),
-                slot_name=slot._.name,
-                slot_indices=slot._.indices,
-                call_params_context_key=params_context_key,
-                call_params_list=params_list))
-
-    def create_params(self, key, params_context_key, params_list):
-        """Append parameter list context creation operation to the list.
-        """
-        from .object import RegistryOpData_create_params
-
-        self.append_op('create_params', RegistryOpData_create_params.construct(
-            key=key,
-            params_context_key=params_context_key,
-            params_list=params_list))
-
-    @contextmanager
-    def parameters(self, params):
-        """Prepare the temporary parameter list if needed and append necessary
-        list forming operations.
-        """
-        if not params.dynamic_params:
-            yield (params.base_context_key, params.static_params)
-        else:
-            temp_context_key = self.temp_key('params')
-
-            self.create_params(temp_context_key, params.base_context_key, params.static_params)
-
-            try:
-                for name, value in params.dynamic_params.items():
-                    self.set_slot(temp_context_key, name, (), value)
-
-                yield (temp_context_key, {})
-            finally:
-                self.delete_context(temp_context_key)
-
-
-class Registry:
-    """Representation of a context registry.
-    """
-    # Registry operations support
-    OPERATIONS = RegistryOperationList
-
-    # Input file contents key for lists of registry operations
-    INPUT_FILE_KEY = 'reg_ops'
-
-    # Keys of built-in contexts
-    KEY_REGISTRY       = 'archi.registry'
-    KEY_EXECUTABLE     = 'archi.executable'
-    KEY_INPUT_FILE     = 'archi.input_file'
-    KEY_SIGNAL_HANDLER = 'archi.signal_handler'
-
-    @classmethod
-    def builtin_contexts(cls):
-        """Get the dictionary of built-in contexts.
-        """
-        return {cls.KEY_REGISTRY: HashmapContext,
-                cls.KEY_EXECUTABLE: LibraryContext,
-                cls.KEY_INPUT_FILE: FileMappingContext,
-                cls.KEY_SIGNAL_HANDLER: SignalHandlerDataHashmapContext}
-
-    def __init_subclass__(cls):
-        """Initialize a subclass.
-        """
-        if not issubclass(cls.OPERATIONS, RegistryOperationList):
-            raise TypeError
-
-    def __init__(self, namespace=''):
-        """Initialize a context registry instance.
-        """
-        if not isinstance(namespace, str):
-            raise TypeError
-
-        self._namespace = namespace
-
-        self._operations = self.__class__.OPERATIONS()
-        self.reset()
-
-    def __getitem__(self, key):
-        """Obtain a context from the context registry.
-        """
-        if key is None:
-            return None
-        elif not isinstance(key, str):
-            raise TypeError
-
-        return self._contexts[key]
-
-    def __setitem__(self, key, entity):
-        """Create a context and insert it to the registry.
-        """
-        if key is None:
-            raise KeyError("Cannot create a context without a key")
-        elif not isinstance(key, str):
-            raise TypeError
-        elif not key:
-            raise KeyError(f"Cannot create a context with an empty key")
-        elif key.startswith('.'):
-            raise KeyError(f"Cannot create a context with a temporary key explicitly")
-        elif self.namespace and not key.startswith(f'{self.namespace}.'):
-            raise KeyError(f"Key '{key}' is not is the registry namespace '{self.namespace}'")
-        elif key in self._contexts:
-            raise KeyError(f"Context '{key}' is already in the registry")
-
-        try:
-            if not self.owns(entity):
-                raise ValueError("The entity is not owned by the registry")
-        except TypeError:
-            pass
-
-        context = self.operations.create(key, entity)
-
-        if not isinstance(context, Context):
-            raise TypeError
-
-        context._.registry = self
-        context._.key = key
-
-        self._contexts[key] = context
-
-    def __delitem__(self, key):
-        """Remove a context from the registry.
-        """
-        if key is None:
-            return
-        elif not isinstance(key, str):
-            raise TypeError
-        elif not key:
-            raise KeyError(f"Cannot delete a context with an empty key")
-        elif key.startswith('.'):
-            raise KeyError(f"Cannot delete a context with a temporary key explicitly")
-        elif self.namespace and not key.startswith(f'{self.namespace}.'):
-            raise KeyError(f"Key '{key}' is not is the registry namespace '{self.namespace}'")
-        elif key not in self._contexts:
-            raise KeyError(f"Context '{key}' is not in the registry")
-        elif self._prerequisites.get(key, False):
-            raise KeyError(f"Prerequisite context '{key}' is protected from deletion")
-
-        context = self._contexts[key]
-
-        context._.registry = None
-        context._.key = None
-
-        del self._contexts[key]
-        if key in self._prerequisites:
-            del self._prerequisites[key]
-
-        self.operations.delete_context(key)
-
-    def __call__(self, entity, /):
-        """Invoke an entity (causing side effects only, context not created).
-        """
-        self.operations.invoke(entity)
-
-    def __contains__(self, item):
-        """Check if a context (key) is in the registry.
-        """
-        if item is None:
-            return False
-        elif isinstance(item, str):
-            return item in self._contexts
-        elif isinstance(item, Context):
-            return self.owns(item) and Context.key_of(item) in self._contexts \
-                    and isinstance(self._contexts[Context.key_of(item)], item.__class__)
-        else:
-            raise TypeError
-
-    def __iter__(self):
-        """Return an iterator.
-        """
-        return iter(self._contexts)
-
-    @property
-    def operations(self):
-        """Get the current list of operations.
-        """
-        return self._operations
-
-    def reset(self):
-        """Clear the context registry instance state.
-        """
-        self.operations.reset()
-
-        self._contexts = {}
-        self._prerequisites = {}
-
-    @property
-    def namespace(self):
-        """Get namespace of the registry.
-        """
-        return self._namespace
-
-    def key(self, key, /):
-        """Get a context key prefixed by the registry namespace.
-        """
-        if not isinstance(key, str):
-            raise TypeError
-        elif not key:
-            raise ValueError
-
-        return f'{self.namespace}.{key}' if self.namespace else key
-
-    def owns(self, entity, /):
-        """Check if an entity belongs to the registry.
-        """
-        if isinstance(entity, Context):
-            return entity._.registry is self
-        elif isinstance(entity, _ContextSlot):
-            return entity._.context._.registry is self
-        elif isinstance(entity, (_ContextSpec, _ContextInterface)):
-            return self.owns(entity._context_or_slot)
-        else:
-            raise TypeError
-
-    def interface_of(self, item, /):
-        """Create a representation of a context interface.
-        """
-        if isinstance(item, str):
-            context = self[item]
-            return _ContextInterface(context, context.__class__)
-        elif isinstance(item, Context):
-            if item not in self:
-                raise KeyError(f"Context '{Context.key_of(item)}' is not in the registry")
-
-            return _ContextInterface(item, item.__class__)
-        else:
-            raise TypeError
-
-    def contexts(self, cls=Context, /, is_prereq=True, is_new=True):
-        """Obtain the dictionary of known contexts of the specified type.
-        """
-        if not issubclass(cls, Context):
-            raise TypeError
-        elif not is_prereq and not is_new:
-            raise ValueError
-
-        return {key: context for key, context in self._contexts.items() if isinstance(context, cls) \
-                and ((is_prereq and key in self._prerequisites) \
-                or (is_new and key not in self._prerequisites))}
-
-    def on_top_of(self, other, /):
-        """Check if another registry contains all the prerequisite contexts of correct types.
-        """
-        if not isinstance(other, Registry):
-            raise TypeError
-
-        if self.namespace != other.namespace \
-                and not self.namespace.startswith(f'{other.namespace}.'):
-            return False
-
-        for context in self.contexts(is_new=False).values():
-            try:
-                other_context = other[Context.key_of(context)]
-
-                if not isinstance(other_context, context.__class__):
-                    return False
-            except KeyError:
-                return False
-
-        return True
-
-    def is_prerequisite(self, item, /):
-        """Check if a context (key) was added to the registry by require_context().
-        """
-        if item not in self:
-            return False
-
-        if isinstance(item, str):
-            return item in self._prerequisites
-        elif isinstance(item, Context):
-            return Context.key_of(item) in self._prerequisites
-        else:
-            raise TypeError
-
-    def require_context(self, key, cls=Context, protect=True):
-        """Require a context with the specified key to exist in the registry.
-        """
-        if not isinstance(key, str):
-            raise TypeError
-        elif not issubclass(cls, Context):
-            raise TypeError
-        elif not isinstance(protect, bool):
-            raise TypeError
-
-        try:
-            builtin_cls = self.__class__.builtin_contexts()[key]
-
-            if not issubclass(builtin_cls, cls):
-                raise TypeError(f"Required context '{key}' has type {builtin_cls} (want {cls})")
-
-            cls = builtin_cls
-
-        except KeyError:
-            pass
-
-        if key not in self._contexts:
-            context = cls()
-            context._.registry = self
-            context._.key = key
-
-            self._contexts[key] = context
-            self._prerequisites[key] = protect
-
-        else:
-            context = self._contexts[key]
-
-            if not isinstance(context, cls):
-                raise TypeError(f"Required context '{key}' has type {context.__class__} (want {cls})")
-
-        return context
-
-    def rekey_context(self, item, /, key):
-        """Replace key of a context.
-        """
-        if not isinstance(key, str):
-            raise TypeError
-
-        if isinstance(item, str):
-            old_key = item
-        elif isinstance(item, Context):
-            old_key = Context.key_of(item)
-        else:
-            raise TypeError
-
-        if self._prerequisites.get(old_key, False):
-            raise KeyError(f"Prerequisite context '{old_key}' is protected from key changing")
-
-        self[key] = self[old_key]
-        del self[old_key]
-
-    def new_context(self, entity, /, key):
-        """Create a new context and add it to the registry.
-        """
-        self[key] = entity
-        return self[key]
-
-    def del_context(self, context, /):
-        """Delete a context from the registry.
-        """
-        if context is None:
-            return
-
-        if not isinstance(context, Context):
-            raise TypeError
-        elif context not in self:
-            raise ValueError("Deleted context does not belong to the registry")
-
-        del self[Context.key_of(context)]
-
-    def cleanup(self):
-        """Delete all created contexts from the registry.
-        """
-        for key in list(reversed(self.contexts(is_prereq=False).keys())):
-            del self[key]
-
-    @contextmanager
-    def deleted_context(self, item):
-        """Obtain a context and delete it afterwards.
-        """
-        if isinstance(item, str):
-            context = self[item]
-        elif isinstance(item, Context):
-            context = item
-        else:
-            raise TypeError
-
-        try:
-            yield context
-        finally:
-            self.del_context(context)
-
-    @contextmanager
-    def temp_context(self, entity, /, key):
-        """Create a temporary context.
-        """
-        with self.deleted_context(self.new_context(entity, key)) as context:
-            yield context
-
-##############################################################################
 # Built-in context types
 ##############################################################################
 
@@ -1477,7 +973,7 @@ class ParametersBase(Parameters):
     """Base class for custom parameter lists.
     """
     @classmethod
-    def _param_attr(cls, key):
+    def _param_attr(cls, /, key):
         raise KeyError # no parameters recognized by default
 
 
@@ -1487,19 +983,19 @@ class ContextBase(Context):
     InitParameters = ParametersBase
 
     @classmethod
-    def _init_params_class(cls):
+    def _init_params_class(cls, /):
         return cls.InitParameters
 
     @classmethod
-    def _call_params_class(cls, name, indices):
+    def _call_params_class(cls, /, name, indices):
         raise KeyError # no calls supported by default
 
     @classmethod
-    def _slot_attr(cls, name, indices, setter, call):
+    def _slot_attr(cls, /, name, indices, setter, call):
         raise KeyError # no slots recognized by default
 
     @classmethod
-    def _slot_unsettable(cls, name, indices):
+    def _is_slot_unsettable(cls, /, name, indices):
         return False # all slots are unsettable by default
 
 ##############################################################################
@@ -1513,7 +1009,7 @@ class ContextWhitelist(ContextBase):
     SETTER_SLOTS = {}
 
     @classmethod
-    def _call_params_class(cls, name, indices):
+    def _call_params_class(cls, /, name, indices):
         call = cls.CALL_SLOTS[name]
 
         if isinstance(call, dict):
@@ -1524,7 +1020,7 @@ class ContextWhitelist(ContextBase):
             raise KeyError
 
     @classmethod
-    def _slot_attr(cls, name, indices, setter, call):
+    def _slot_attr(cls, /, name, indices, setter, call):
         if setter:
             slot = cls.SETTER_SLOTS[name]
         elif call:
@@ -1547,7 +1043,7 @@ class ContextWhitelist(ContextBase):
             return attr
 
     @classmethod
-    def _slot_object(cls, value, name, indices):
+    def _slot_object(cls, value, /, name, indices):
         slot = cls.SETTER_SLOTS[name]
 
         if isinstance(slot, dict):
@@ -1569,7 +1065,7 @@ class ParametersWhitelist(ParametersBase):
     PARAMS = {}
 
     @classmethod
-    def _param_attr(cls, key):
+    def _param_attr(cls, /, key):
         attr = cls.PARAMS[key]
 
         if isinstance(attr, tuple):
@@ -1578,7 +1074,7 @@ class ParametersWhitelist(ParametersBase):
             return attr
 
     @classmethod
-    def _param_object(cls, value, key):
+    def _param_object(cls, value, /, key):
         attr = cls.PARAMS[key]
 
         if isinstance(attr, tuple):
@@ -1588,15 +1084,25 @@ class ParametersWhitelist(ParametersBase):
 
 ##############################################################################
 
+def _make_size_t(value):
+    if value < 0:
+        raise ValueError
+    return PrimitiveData(c.c_size_t(value))
+
 _TYPE_DATA = TypeAttributes.complex_data()
 _TYPE_FUNCTION = TypeAttributes.function()
-_TYPE_BOOL = (TypeAttributes.from_type(c.c_char), lambda value: PrimitiveData(c.c_char(bool(value))))
-_TYPE_INT = (TypeAttributes.from_type(c.c_int), lambda value: PrimitiveData(c.c_int(value)))
-_TYPE_LONGLONG = (TypeAttributes.from_type(c.c_longlong), lambda value: PrimitiveData(c.c_longlong(value)))
-_TYPE_SIZE = (TypeAttributes.from_type(c.c_size_t), lambda value: PrimitiveData(c.c_size_t(value)))
-_TYPE_ATTR = (TypeAttributes.from_type(TypeAttributes), lambda value: PrimitiveData(TypeAttributes(value)))
+_TYPE_BOOL = (TypeAttributes.from_type(c.c_char),
+              lambda value: PrimitiveData(c.c_char(bool(value))))
+_TYPE_INT = (TypeAttributes.from_type(c.c_int),
+             lambda value: PrimitiveData(c.c_int(value)))
+_TYPE_LONGLONG = (TypeAttributes.from_type(c.c_longlong),
+                  lambda value: PrimitiveData(c.c_longlong(value)))
+_TYPE_SIZE = (TypeAttributes.from_type(c.c_size_t), _make_size_t)
+_TYPE_ATTR = (TypeAttributes.from_type(TypeAttributes),
+              lambda value: PrimitiveData(TypeAttributes(value)))
 _TYPE_DATA_PTR = TypeAttributes.from_type(c.c_void_p)
-_TYPE_STRING = (TypeAttributes.from_type(c.c_char * 1), lambda value: String(value))
+_TYPE_STRING = (TypeAttributes.from_type(c.c_char * 1),
+                lambda value: String(value))
 
 ### archi/context ###
 
@@ -1769,7 +1275,7 @@ class AggregateContext(ContextWhitelist):
                     'object': _TYPE_DATA}
 
     @classmethod
-    def _slot_attr(cls, name, indices, setter, call):
+    def _slot_attr(cls, /, name, indices, setter, call):
         if not call:
             if name.startswith('member.'):
                 return _TYPE_DATA
@@ -1877,7 +1383,7 @@ class SignalHandlerDataHashmapContext(ContextBase):
                              lambda value: PrimitiveData(value)),
                   'capacity': _TYPE_SIZE}
 
-    def _slot_attr(cls, name, indices, setter, call):
+    def _slot_attr(cls, /, name, indices, setter, call):
         if call:
             raise KeyError
         elif indices:
@@ -1889,7 +1395,7 @@ class SignalHandlerDataHashmapContext(ContextBase):
         return TypeAttributes.from_type(ac.archi_signal_handler_t)
 
     @classmethod
-    def _slot_unsettable(cls, name, indices):
+    def _is_slot_unsettable(cls, /, name, indices):
         return True
 
 ### archi/memory ###
@@ -2040,7 +1546,7 @@ class LibraryContext(ContextBase):
         PARAMS = {'tag': _TYPE_ATTR}
 
     @classmethod
-    def _call_params_class(cls, name, indices):
+    def _call_params_class(cls, /, name, indices):
         if indices:
             raise KeyError
 
@@ -2052,7 +1558,7 @@ class LibraryContext(ContextBase):
             raise KeyError
 
     @classmethod
-    def _slot_attr(cls, name, indices, setter, call):
+    def _slot_attr(cls, /, name, indices, setter, call):
         if indices or setter:
             raise KeyError
 
@@ -2083,7 +1589,7 @@ class HashmapContext(ContextBase):
                   'capacity': _TYPE_SIZE}
 
     @classmethod
-    def _slot_attr(cls, name, indices, setter, call):
+    def _slot_attr(cls, /, name, indices, setter, call):
         if indices or call:
             raise KeyError
 
@@ -2093,7 +1599,7 @@ class HashmapContext(ContextBase):
         return ...
 
     @classmethod
-    def _slot_unsettable(cls, name, indices):
+    def _is_slot_unsettable(cls, /, name, indices):
         return True
 
 ### archi/env ###
@@ -2111,7 +1617,7 @@ class EnvVariableContext(ContextWhitelist):
     SETTER_SLOTS = {'default_value': _TYPE_STRING}
 
     @classmethod
-    def _slot_attr(cls, name, indices, setter, call):
+    def _slot_attr(cls, /, name, indices, setter, call):
         if not setter and not call:
             if indices:
                 raise KeyError
@@ -2183,7 +1689,7 @@ class _Symbol:
     POSTFIX = ''
     TAG = 0
 
-    def __init_subclass__(cls):
+    def __init_subclass__(cls, /):
         """Initialize a subclass.
         """
         if not isinstance(cls.NAMESPACE_PREFIX, str):
@@ -2199,27 +1705,39 @@ class _Symbol:
             raise ValueError
 
     @classmethod
-    def attributes(cls):
+    def full_name(cls, name, /):
+        """Get the full symbol name including prefix and postfix,
+        but not including the namespace prefix.
+        """
+        if not isinstance(name, str):
+            raise TypeError
+
+        return f'{cls.PREFIX}{name}{cls.POSTFIX}'
+
+    @classmethod
+    def attributes(cls, /):
         """Get type attributes.
         """
         raise NotImplementedError
 
     @classmethod
-    def slot(cls, name, /, library):
+    def slot(cls, name, /, library, namespace=NAMESPACE_PREFIX):
         """Obtain the correctly typed symbol slot from the specified library.
         """
-        if not isinstance(library, LibraryContext):
-            raise TypeError
-        elif not isinstance(name, str):
+        if not isinstance(name, str):
             raise TypeError
         elif not name:
             raise ValueError
+        elif not isinstance(library, LibraryContext):
+            raise TypeError
+        elif not isinstance(namespace, str):
+            raise TypeError
 
         return getattr(cls._symbol_type(library),
-                       f'{cls.NAMESPACE_PREFIX}{cls.PREFIX}{name}{cls.POSTFIX}')(tag=cls.TAG)
+                       namespace + cls.full_name(name))(tag=cls.TAG)
 
     @classmethod
-    def _symbol_type(cls, library):
+    def _symbol_type(cls, /, library):
         raise NotImplementedError
 
     def __init__(self, name, /):
@@ -2233,21 +1751,21 @@ class _Symbol:
         self._name = name
 
     @property
-    def name(self):
+    def name(self, /):
         """Get symbol name.
         """
         return self._name
 
-    def slot_of(self, library):
+    def slot_of(self, library, /):
         """Obtain the correctly typed symbol slot from the specified library.
         """
-        return self.__class__.slot(self._name, library=library)
+        return self.__class__.slot(self.name, library=library)
 
 
 class DataSymbol(_Symbol):
     """Representation of an arbitrary data symbol.
     """
-    def __init_subclass__(cls):
+    def __init_subclass__(cls, /):
         """Initialize a subclass.
         """
         super().__init_subclass__()
@@ -2256,20 +1774,20 @@ class DataSymbol(_Symbol):
             raise ValueError
 
     @classmethod
-    def attributes(cls):
+    def attributes(cls, /):
         """Get type attributes.
         """
         return TypeAttributes.complex_data(cls.TAG)
 
     @classmethod
-    def _symbol_type(cls, library):
+    def _symbol_type(cls, /, library):
         return library.data
 
 
 class FunctionSymbol(_Symbol):
     """Representation of an arbitrary function symbol.
     """
-    def __init_subclass__(cls):
+    def __init_subclass__(cls, /):
         """Initialize a subclass.
         """
         super().__init_subclass__()
@@ -2278,13 +1796,13 @@ class FunctionSymbol(_Symbol):
             raise ValueError
 
     @classmethod
-    def attributes(cls):
+    def attributes(cls, /):
         """Get type attributes.
         """
         return TypeAttributes.function(cls.TAG)
 
     @classmethod
-    def _symbol_type(cls, library):
+    def _symbol_type(cls, /, library):
         return library.function
 
 ### archi/context ###

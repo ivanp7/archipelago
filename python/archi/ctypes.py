@@ -54,7 +54,7 @@ class archi_pointer_attr_t(c.c_uint64):
     DATA_READONLY = 0x2 << ATTR_BITS
     FUNCTION      = 0x3 << ATTR_BITS
 
-    def __str__(self):
+    def __str__(self, /):
         if self.is_data_on_stack:
             mem_type = "on stack"
         elif self.is_data_writable:
@@ -72,37 +72,37 @@ class archi_pointer_attr_t(c.c_uint64):
             return f"pointer_attr(data, {mem_type}, tag={self.tag})"
 
     @property
-    def is_data(self):
+    def is_data(self, /):
         """Check if the attributes describes a data type.
         """
         return not self.is_function
 
     @property
-    def is_data_on_stack(self):
+    def is_data_on_stack(self, /):
         """Check if the attributes describes data stored on stack.
         """
         return self.value & archi_pointer_attr_t.TYPE_MASK == archi_pointer_attr_t.DATA_ON_STACK
 
     @property
-    def is_data_writable(self):
+    def is_data_writable(self, /):
         """Check if the attributes describes data stored in writable memory.
         """
         return self.value & archi_pointer_attr_t.TYPE_MASK == archi_pointer_attr_t.DATA_WRITABLE
 
     @property
-    def is_data_readonly(self):
+    def is_data_readonly(self, /):
         """Check if the attributes describes data stored in read-only memory.
         """
         return self.value & archi_pointer_attr_t.TYPE_MASK == archi_pointer_attr_t.DATA_READONLY
 
     @property
-    def is_function(self):
+    def is_function(self, /):
         """Check if the attributes describes a function.
         """
         return self.value & archi_pointer_attr_t.TYPE_MASK == archi_pointer_attr_t.FUNCTION
 
     @property
-    def layout(self):
+    def layout(self, /):
         """Extract memory layout parameters: length, stride, alignment.
         """
         if self.is_function:
@@ -126,25 +126,25 @@ class archi_pointer_attr_t(c.c_uint64):
         return (length, stride, alignment)
 
     @property
-    def length(self):
+    def length(self, /):
         """Extract data length.
         """
         return self.layout[0]
 
     @property
-    def stride(self):
+    def stride(self, /):
         """Extract data stride.
         """
         return self.layout[1]
 
     @property
-    def alignment(self):
+    def alignment(self, /):
         """Extract data alignment requirement.
         """
         return self.layout[2]
 
     @property
-    def tag(self):
+    def tag(self, /):
         """Extract type tag from the attributes.
         """
         attr_bits = archi_pointer_attr_t.ATTR_BITS
@@ -159,7 +159,7 @@ class archi_pointer_attr_t(c.c_uint64):
 
         return tag
 
-    def is_compatible_to(self, other):
+    def is_compatible_to(self, other, /):
         """Check attributes for compatibility.
         """
         if not isinstance(other, archi_pointer_attr_t):
@@ -350,7 +350,7 @@ class archi_layout_type_t(c.Structure):
     _fields_ = [('size', c.c_size_t),
                 ('alignment', c.c_size_t)]
 
-    def __init__(self, c_type):
+    def __init__(self, c_type, /):
         self.size = c.sizeof(c_type)
         self.alignment = c.alignment(c_type)
 
@@ -361,7 +361,7 @@ class archi_layout_struct_t(c.Structure):
     _fields_ = [('base', archi_layout_type_t),
                 ('fam_stride', c.c_size_t)]
 
-    def __init__(self, c_type, fam_elt_type):
+    def __init__(self, c_type, fam_elt_type, /):
         self.base = archi_layout_type_t(c_type)
         self.fam_stride = c.sizeof(fam_elt_type)
 
@@ -372,7 +372,7 @@ class archi_layout_array_t(c.Structure):
     _fields_ = [('base', archi_layout_type_t),
                 ('length', c.c_size_t)]
 
-    def __init__(self, c_type):
+    def __init__(self, c_type, /):
         if issubclass(c_type, c.Array):
             self.base = archi_layout_type_t(c_type._type_)
             self.length = c_type._length_
@@ -431,7 +431,7 @@ class archi_aggr_member_type__pointer_t(c.Structure):
 class archi_aggr_member_type__aggregate_t(c.Structure):
     """Description of an aggregate member type.
     """
-    def __init__(self, c_type):
+    def __init__(self, c_type, /):
         self.layout = archi_layout_type_t(c_type)
 
 
@@ -455,7 +455,7 @@ class archi_aggr_member_t(c.Structure):
                 ('kind', c.c_int),
                 ('u', union)]
 
-    def __init__(self, offset, length=1):
+    def __init__(self, /, offset, length=1):
         if not isinstance(offset, int):
             raise TypeError
         elif offset < 0:
@@ -484,7 +484,7 @@ class archi_aggr_type_t(c.Structure):
                 ('init_value', c.c_void_p),
                 ('init_value_fam', c.c_void_p)]
 
-    def __init__(self, c_type):
+    def __init__(self, c_type, /):
         self.top_level = archi_aggr_member_type__aggregate_t(c_type)
 
 ##############################################################################
@@ -514,7 +514,7 @@ class archi_thread_group_start_params_t(c.Structure):
     """
     _fields_ = [('num_threads', c.c_size_t)]
 
-    def __init__(self, num_threads):
+    def __init__(self, /, num_threads):
         self.num_threads = num_threads
 
 
@@ -524,7 +524,7 @@ class archi_thread_lfqueue_alloc_params_t(c.Structure):
     _fields_ = [('capacity', c.c_size_t),
                 ('elt_size', c.c_size_t)]
 
-    def __init__(self, capacity, elt_size=0):
+    def __init__(self, /, capacity, elt_size=0):
         if capacity <= 0 or capacity & (capacity - 1) != 0:
             raise ValueError
         elif elt_size < 0:
@@ -565,11 +565,11 @@ class archi_signal_set_t(archi_signal_set_mask_t * NUM_SET_MASKS):
     """Set of POSIX signals.
     """
     class _realtime_signal:
-        def __init__(self, signal_set, from_max):
+        def __init__(self, signal_set, /, from_max):
             self._signal_set = signal_set
             self._from_max = from_max
 
-        def __getitem__(self, index):
+        def __getitem__(self, index, /):
             if not self._from_max:
                 if index < 0 or index >= NUM_RT_SIGNALS:
                     raise IndexError(f"Real-time signal {SIGNAL_RT_MIN}{index:+} is out of supported range")
@@ -582,7 +582,7 @@ class archi_signal_set_t(archi_signal_set_mask_t * NUM_SET_MASKS):
             index += len(SIGNALS)
             return self._signal_set[index // 32] & (1 << (index % 32)) != 0
 
-        def __setitem__(self, index, value):
+        def __setitem__(self, index, value, /):
             if not isinstance(value, bool):
                 raise TypeError
 
@@ -602,13 +602,13 @@ class archi_signal_set_t(archi_signal_set_mask_t * NUM_SET_MASKS):
             else:
                 self._signal_set[index // 32] |= 1 << (index % 32)
 
-    def __init__(self, **kwargs):
+    def __init__(self, /, **kwargs):
         self._rtmin = _realtime_signal(self, False)
         self._rtmax = _realtime_signal(self, True)
 
         super().__init__(**kwargs)
 
-    def __getattr__(self, key):
+    def __getattr__(self, key, /):
         """Check if the specified signal is in the set.
         """
         try:
@@ -622,7 +622,7 @@ class archi_signal_set_t(archi_signal_set_mask_t * NUM_SET_MASKS):
             else:
                 raise AttributeError("Unknown signal '{key}'")
 
-    def __setattr__(self, key, value):
+    def __setattr__(self, key, value, /):
         if not isinstance(value, bool):
             raise TypeError
 
@@ -677,7 +677,7 @@ class archi_file_open_params_t(c.Structure):
                 ('flags', c.c_int),
                 ('mode', c.c_int)]
 
-    def __init__(self, size=0, readable=False, writable=False, create=False,
+    def __init__(self, /, size=0, readable=False, writable=False, create=False,
                  exclusive=False, truncate=False, append=False, flags=0, mode=0):
         if size < 0:
             raise ValueError
@@ -708,7 +708,7 @@ class archi_file_map_params_t(c.Structure):
                 ('shared', c.c_bool),
                 ('flags', c.c_int)]
 
-    def __init__(self, size=0, offset=0, ptr_support=False,
+    def __init__(self, /, size=0, offset=0, ptr_support=False,
                  readable=False, writable=False, shared=False, flags=0):
         if size < 0:
             raise ValueError
@@ -739,7 +739,7 @@ class archi_library_load_params_t(c.Structure):
                 ('global', c.c_bool),
                 ('flags', c.c_int)]
 
-    def __init__(self, lazy=False, globl=False, flags=0):
+    def __init__(self, /, lazy=False, globl=False, flags=0):
         if flags < 0:
             raise ValueError
 
@@ -760,7 +760,7 @@ class archi_hashmap_alloc_params_t(c.Structure):
     """
     _fields_ = [('capacity', c.c_size_t)]
 
-    def __init__(self, capacity):
+    def __init__(self, /, capacity):
         if capacity < 0:
             raise ValueError
 
@@ -792,7 +792,7 @@ class archi_app_input_file_header_t(c.Structure):
                 ('magic', c.c_char * len(MAGIC)),
                 ('contents', c.POINTER(archi_kvlist_t))]
 
-    def __init__(self):
+    def __init__(self, /):
         self.magic = self.__class__.MAGIC
 
 ##############################################################################
@@ -859,7 +859,7 @@ class archi_app_registry_op_data__create_dptr_array_t(c.Structure):
     _fields_ = [('key', c.c_char_p),
                 ('length', c.c_size_t)]
 
-    def __init__(self, length):
+    def __init__(self, /, length):
         self.length = length
 
 

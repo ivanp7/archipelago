@@ -46,23 +46,23 @@ class _ObjectReferencesMixin:
         self._owner = owner
         self._refs = refs.copy() if refs is not None else {}
 
-    def __contains__(self, key):
+    def __contains__(self, key, /):
         """Check if there is a reference with the specified key.
         """
         return key in self._refs
 
-    def __getitem__(self, key):
+    def __getitem__(self, key, /):
         """Get a referenced object by key.
         """
         return self._refs[key]
 
     @property
-    def ref_map(self):
+    def ref_map(self, /):
         """Get the map of references.
         """
         return self._refs
 
-    def ref_set(self, nested=False):
+    def ref_set(self, /, nested=False):
         """Get the set of references.
         """
         if not nested:
@@ -138,7 +138,7 @@ class _ObjectEquivalentsMixin:
 class Object:
     """Immutable representation of an (array) object backed by a single continuous memory block.
     """
-    def __init__(self, length, stride, alignment, tag=None, refs=None):
+    def __init__(self, /, length, stride, alignment, tag=None, refs=None):
         """Initialize an object.
         """
         self._attr = ac.archi_pointer_attr_t.primitive_data(length, stride, alignment)
@@ -156,37 +156,37 @@ class Object:
         self._reset_address()
 
     @property
-    def attributes(self):
+    def attributes(self, /):
         """Get type attributes.
         """
         return self._attr
 
     @property
-    def tag(self):
+    def tag(self, /):
         """Get opaque data type tag.
         """
         return self._tag
 
     @property
-    def length(self):
+    def length(self, /):
         """Get number of data elements.
         """
         return self._length
 
     @property
-    def stride(self):
+    def stride(self, /):
         """Get size of a data element in bytes.
         """
         return self._stride
 
     @property
-    def alignment(self):
+    def alignment(self, /):
         """Get alignment requirement of a data element in bytes.
         """
         return self._alignment
 
     @property
-    def total_size(self):
+    def total_size(self, /):
         """Get total size of data in bytes.
 
         This method may be redefined to implement support for additional trailing padding.
@@ -194,7 +194,7 @@ class Object:
         return self.length * self.stride
 
     @property
-    def total_alignment(self):
+    def total_alignment(self, /):
         """Get total alignment requirement of data in bytes.
 
         This method may be redefined to implement support for over-aligned data.
@@ -222,7 +222,7 @@ class Object:
 
         self._address = address
 
-    def _reset_address(self):
+    def _reset_address(self, /):
         """Reset nominal address of the object in memory.
         """
         self._address = None
@@ -247,7 +247,7 @@ class Object:
 
         return random.randrange(start, stop) & ~(alignment - 1)
 
-    def to_bytearray(self, address):
+    def to_bytearray(self, address, /):
         """Encode the object as a byte array to be mapped at the specified address.
 
         Parameter 'address' contains the nominal address of the object.
@@ -288,23 +288,23 @@ class Object:
 
     ### references ###
 
-    def __contains__(self, key):
+    def __contains__(self, key, /):
         """Check if there is a reference with the specified key.
         """
         return key in self._refs
 
-    def __getitem__(self, key):
+    def __getitem__(self, key, /):
         """Get a referenced object by key.
         """
         return self._refs[key]
 
     @property
-    def ref_map(self):
+    def ref_map(self, /):
         """Get the map of referenced objects.
         """
         return self._refs.ref_map
 
-    def ref_set(self, nested=False):
+    def ref_set(self, /, nested=False):
         """Get the set of referenced objects.
         """
         return self._refs.ref_set(nested)
@@ -361,7 +361,7 @@ class ObjectEquivalentSet(Object):
                              refs=self._obj.ref_map)
 
     @property
-    def equivalents(self):
+    def equivalents(self, /):
         """Get the set of equivalent objects.
         """
         return self._equivalents
@@ -374,7 +374,7 @@ class ObjectEquivalentSet(Object):
         for obj in self._equivalents:
             obj._set_address(address)
 
-    def _reset_address(self):
+    def _reset_address(self, /):
         """Reset nominal address of the object in memory.
         """
         super()._reset_address()
@@ -444,13 +444,13 @@ class ObjectSequence(Object):
             super().__init__(length=0, stride=1, alignment=1, tag=tag, refs=ref_map)
 
     @property
-    def objects(self):
+    def objects(self, /):
         """Get the tuple of objects.
         """
         return self._sequence
 
     @property
-    def total_padding(self):
+    def total_padding(self, /):
         """Get the total number of padding bytes in the object sequence.
         """
         return self._padding
@@ -546,7 +546,7 @@ class ObjectRefTree(ObjectSequence):
         #####################################################
 
         # Sort objects by descending alignment (for equal alignments, by descending size)
-        def compare(obj1, obj2):
+        def compare(obj1, obj2, /):
             return obj2.total_alignment - obj1.total_alignment \
                     if obj2.total_alignment != obj1.total_alignment \
                     else obj2.total_size - obj1.total_size
@@ -607,7 +607,7 @@ class ObjectRefTree(ObjectSequence):
         super().__init__(tuple(objects), tag=root.tag)
 
     @property
-    def root_object(self):
+    def root_object(self, /):
         """Get the root object.
         """
         return self.objects[0]
@@ -638,29 +638,29 @@ class PrimitiveData(Object):
             super().__init__(length=1, stride=c.sizeof(cobject),
                              alignment=c.alignment(cobject), tag=tag)
 
-    def __str__(self):
+    def __str__(self, /):
         return f"PrimitiveData({self.c_object})"
 
     @property
-    def buffer(self):
+    def buffer(self, /):
         """Get managed bytes buffer.
         """
         return self._buffer
 
     @property
-    def c_type(self):
+    def c_type(self, /):
         """Get type of the original ctypes object.
         """
         return self._type
 
     @property
-    def c_element_type(self):
+    def c_element_type(self, /):
         """Get type of an element of the original ctypes object.
         """
         return self._type1
 
     @property
-    def c_object(self):
+    def c_object(self, /):
         """Get copy of the original ctypes object.
         """
         return self.c_type.from_buffer_copy(self.buffer)
@@ -703,11 +703,11 @@ class String(PrimitiveData):
         super().__init__(c.create_string_buffer(string.encode() if encoding is None else
                                                 string.encode(encoding=encoding)))
 
-    def __str__(self):
+    def __str__(self, /):
         return f"String('{self.string}')"
 
     @property
-    def string(self):
+    def string(self, /):
         """Get the original string.
         """
         return self._string
@@ -735,7 +735,7 @@ class ComplexData(Object):
     TAG = None
     REFS = None
 
-    def __init_subclass__(cls):
+    def __init_subclass__(cls, /):
         """Initialize a complex data representation subclass.
         """
         if not issubclass(cls.TYPE, c.Structure):
@@ -776,13 +776,13 @@ class ComplexData(Object):
                          tag=self.__class__.TAG, refs=refs)
 
     @property
-    def buffer(self):
+    def buffer(self, /):
         """Get managed bytes buffer.
         """
         return self._buffer
 
     @property
-    def c_object(self):
+    def c_object(self, /):
         """Get copy of the original ctypes object.
         """
         return self.__class__.TYPE.from_buffer_copy(self.buffer)
@@ -885,13 +885,13 @@ class AggregateMembers(ObjectSequence):
         super().__init__(member_seq)
 
     @property
-    def num_members(self):
+    def num_members(self, /):
         """Get number of members in the array.
         """
         return len(self.objects)
 
     @property
-    def members(self):
+    def members(self, /):
         """Get tuple of members in the array.
         """
         return self.objects
@@ -1022,7 +1022,7 @@ class RegistryOpData_delete(ComplexData):
         cobject.key = self.address_of('key')
 
     @classmethod
-    def construct(cls, *, key):
+    def construct(cls, /, *, key):
         return cls(cls.TYPE(),
                    key=String(key))
 
@@ -1039,7 +1039,7 @@ class RegistryOpData_alias(ComplexData):
         cobject.original_key = self.address_of('original_key')
 
     @classmethod
-    def construct(cls, *, key, original_key):
+    def construct(cls, /, *, key, original_key):
         return cls(cls.TYPE(),
                    key=String(key),
                    original_key=String(original_key))
@@ -1061,7 +1061,7 @@ class RegistryOpData_create_as(ComplexData):
         cobject.init_params.list = c.cast(self.address_of('init_params_list'), c.POINTER(ac.archi_kvlist_t))
 
     @classmethod
-    def construct(cls, *, key, sample_key, init_params_context_key, init_params_list):
+    def construct(cls, /, *, key, sample_key, init_params_context_key, init_params_list):
         return cls(cls.TYPE(),
                    key=String(key),
                    sample_key=String(sample_key),
@@ -1090,7 +1090,7 @@ class RegistryOpData_create_from(ComplexData):
         cobject.init_params.list = c.cast(self.address_of('init_params_list'), c.POINTER(ac.archi_kvlist_t))
 
     @classmethod
-    def construct(cls, *, key, source_key, source_slot_name, source_slot_indices,
+    def construct(cls, /, *, key, source_key, source_slot_name, source_slot_indices,
                   init_params_context_key, init_params_list):
         return cls(cls.TYPE(),
                    key=String(key),
@@ -1115,7 +1115,7 @@ class RegistryOpData_create_params(ComplexData):
         cobject.params.list = c.cast(self.address_of('params_list'), c.POINTER(ac.archi_kvlist_t))
 
     @classmethod
-    def construct(cls, *, key, params_context_key, params_list):
+    def construct(cls, /, *, key, params_context_key, params_list):
         return cls(cls.TYPE(),
                    key=String(key),
                    params_context_key=String.nullable(params_context_key),
@@ -1134,7 +1134,7 @@ class RegistryOpData_create_ptr(ComplexData):
         cobject.pointee.assign(self['pointee'])
 
     @classmethod
-    def construct(cls, *, key, pointee):
+    def construct(cls, /, *, key, pointee):
         return cls(cls.TYPE(),
                    key=String(key),
                    pointee=pointee)
@@ -1150,7 +1150,7 @@ class RegistryOpData_create_dptr_array(ComplexData):
         cobject.key = self.address_of('key')
 
     @classmethod
-    def construct(cls, *, key, length):
+    def construct(cls, /, *, key, length):
         return cls(cls.TYPE(length),
                    key=String(key))
 
@@ -1174,7 +1174,7 @@ class RegistryOpData_invoke(ComplexData):
         cobject.call_params.list = c.cast(self.address_of('call_params_list'), c.POINTER(ac.archi_kvlist_t))
 
     @classmethod
-    def construct(cls, *, key, slot_name, slot_indices,
+    def construct(cls, /, *, key, slot_name, slot_indices,
                   call_params_context_key, call_params_list):
         return cls(cls.TYPE(),
                    key=String(key),
@@ -1199,7 +1199,7 @@ class RegistryOpData_unassign(ComplexData):
         cobject.slot.num_indices = self['slot_indices'].length if self['slot_indices'] is not None else 0
 
     @classmethod
-    def construct(cls, *, key, slot_name, slot_indices):
+    def construct(cls, /, *, key, slot_name, slot_indices):
         return cls(cls.TYPE(),
                    key=String(key),
                    slot_name=String.nullable(slot_name),
@@ -1223,7 +1223,7 @@ class RegistryOpData_assign(ComplexData):
         cobject.value.assign(self['value'])
 
     @classmethod
-    def construct(cls, *, key, slot_name, slot_indices, value):
+    def construct(cls, /, *, key, slot_name, slot_indices, value):
         return cls(cls.TYPE(),
                    key=String(key),
                    slot_name=String.nullable(slot_name),
@@ -1253,7 +1253,7 @@ class RegistryOpData_assign_slot(ComplexData):
         cobject.source_slot.num_indices = self['source_slot_indices'].length if self['source_slot_indices'] is not None else 0
 
     @classmethod
-    def construct(cls, *, key, slot_name, slot_indices, source_key, source_slot_name, source_slot_indices):
+    def construct(cls, /, *, key, slot_name, slot_indices, source_key, source_slot_name, source_slot_indices):
         return cls(cls.TYPE(),
                    key=String(key),
                    slot_name=String.nullable(slot_name),
@@ -1289,7 +1289,7 @@ class RegistryOpData_assign_call(ComplexData):
         cobject.source_call_params.list = c.cast(self.address_of('source_call_params_list'), c.POINTER(ac.archi_kvlist_t))
 
     @classmethod
-    def construct(cls, *, key, slot_name, slot_indices, source_key, source_slot_name, source_slot_indices,
+    def construct(cls, /, *, key, slot_name, slot_indices, source_key, source_slot_name, source_slot_indices,
                   source_call_params_context_key, source_call_params_list):
         return cls(cls.TYPE(),
                    key=String(key),
@@ -1320,7 +1320,7 @@ class SignalSet(PrimitiveData):
         super().__init__(cobject)
 
     @classmethod
-    def construct(cls, **signals):
+    def construct(cls, /, **signals):
         """Construct a set of POSIX signals.
         """
         signal_set = ac.archi_signal_set_t()

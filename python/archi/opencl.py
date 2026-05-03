@@ -32,16 +32,38 @@ PLUGIN_OPENCL = 'archi_opencl'
 
 ##############################################################################
 
+def _make_uint32_t(value):
+    if value < 0:
+        raise ValueError
+    return PrimitiveData(c.c_uint32(value))
+
+def _make_uint32_array(values):
+    if not all(value >= 0 for value in values):
+        raise ValueError
+    return PrimitiveData((c.c_uint32 * len(values))(*values))
+
+def _make_size_t(value):
+    if value < 0:
+        raise ValueError
+    return PrimitiveData(c.c_size_t(value))
+
+def _make_size_array(*values):
+    if not all(value >= 0 for value in values):
+        raise ValueError
+    return PrimitiveData((c.c_size_t * len(values))(*values))
+
 _TYPE_DATA = TypeAttributes.complex_data()
-_TYPE_BOOL = (TypeAttributes.from_type(c.c_char), lambda value: PrimitiveData(c.c_char(bool(value))))
-_TYPE_CL_UINT = (TypeAttributes.from_type(c.c_uint32), lambda value: PrimitiveData(c.c_uint32(value)))
-_TYPE_CL_UINT_ARRAY = (TypeAttributes.from_type(c.c_uint32 * 1), lambda value: PrimitiveData((c.c_uint32 * len(value))(*value)))
-_TYPE_UINT32 = (TypeAttributes.from_type(c.c_uint32), lambda value: PrimitiveData(c.c_uint32(value)))
-_TYPE_SIZE = (TypeAttributes.from_type(c.c_size_t), lambda value: PrimitiveData(c.c_size_t(value)))
-_TYPE_SIZE_ARRAY = (TypeAttributes.from_type(c.c_size_t * 1), lambda value: PrimitiveData((c.c_size_t * len(value))(*value)))
+_TYPE_BOOL = (TypeAttributes.from_type(c.c_char),
+              lambda value: PrimitiveData(c.c_char(bool(value))))
+_TYPE_CL_UINT = (TypeAttributes.from_type(c.c_uint32), _make_uint32_t)
+_TYPE_CL_UINT_ARRAY = (TypeAttributes.from_type(c.c_uint32 * 1), _make_uint32_array)
+_TYPE_SIZE = (TypeAttributes.from_type(c.c_size_t), _make_size_t)
+_TYPE_SIZE_ARRAY = (TypeAttributes.from_type(c.c_size_t * 1), _make_size_array)
 _TYPE_DATA_PTR_ARRAY = TypeAttributes.from_type(c.c_void_p * 1)
-_TYPE_BYTES = (TypeAttributes.from_type(c.c_ubyte * 1), lambda value: PrimitiveData.from_bytes(value))
-_TYPE_STRING = (TypeAttributes.from_type(c.c_char * 1), lambda value: String(value))
+_TYPE_BYTES = (TypeAttributes.from_type(c.c_ubyte * 1),
+               lambda value: PrimitiveData.from_bytes(value))
+_TYPE_STRING = (TypeAttributes.from_type(c.c_char * 1),
+                lambda value: String(value))
 
 ##############################################################################
 
