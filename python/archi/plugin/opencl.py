@@ -25,8 +25,8 @@ import ctypes as c
 from types import SimpleNamespace
 
 import archi.ctypes as actype
-from .object import PrimitiveData, String
-from .context import (
+from ..object import PrimitiveData, String
+from ..context import (
         TypeAttributes,
         Context,
         ContextWhitelist,
@@ -36,8 +36,8 @@ from .context import (
         MemoryInterfaceSymbol,
         MemoryAllocDataSymbol,
 )
-from .helper import new_aggregate_object
-from .procedure import Procedure, MemoryAllocations
+from ..helper import new_aggregate_object
+from ..procedure import Procedure, MemoryAllocations
 
 
 PLUGIN_OPENCL = 'archi_opencl'

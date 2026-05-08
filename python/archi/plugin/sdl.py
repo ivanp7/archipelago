@@ -24,8 +24,8 @@
 import ctypes as c
 
 import archi.ctypes as actype
-from .object import PrimitiveData, String
-from .context import TypeAttributes, ContextWhitelist, ParametersWhitelist
+from ..object import PrimitiveData, String
+from ..context import TypeAttributes, ContextWhitelist, ParametersWhitelist
 
 
 PLUGIN_SDL = 'archi_sdl'
