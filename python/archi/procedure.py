@@ -65,6 +65,14 @@ class Procedure:
         """
         return self._contexts[key]
 
+    def __contains__(self, key, /):
+        """Check if a context with the specified key is provided by the procedure.
+        """
+        if not isinstance(key, str):
+            raise TypeError
+
+        return key in self._contexts
+
     def __len__(self, /):
         """Get number of contexts.
         """
