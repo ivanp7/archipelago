@@ -138,12 +138,27 @@ class _ObjectEquivalentsMixin:
 class Object:
     """Immutable representation of an (array) object backed by a single continuous memory block.
     """
-    def __init__(self, /, length, stride, alignment, tag=None, refs=None):
+    def __init__(self, /, length=0, stride=1, alignment=1, tag=None, function=False, refs=None):
         """Initialize an object.
         """
-        self._attr = ac.archi_pointer_attr_t.primitive_data(length, stride, alignment)
-        if tag is not None:
-            self._attr = ac.archi_pointer_attr_t.complex_data(tag)
+        if not isinstance(function, bool):
+            raise TypeError
+
+        if not function:
+            self._attr = ac.archi_pointer_attr_t.primitive_data(length, stride, alignment) # check if length/stride/alignment are valid
+
+            if tag is not None:
+                self._attr = ac.archi_pointer_attr_t.complex_data(tag)
+        else:
+            if length != 0:
+                raise ValueError
+            elif refs is not None:
+                raise ValueError
+
+            stride = 0 # invalid value
+            alignment = 0 # invalid value
+
+            self._attr = ac.archi_pointer_attr_t.function(tag if tag is not None else 0)
 
         self._refs = _ObjectReferencesMixin(self, refs if refs is not None else {})
         self._eqv = _ObjectEquivalentsMixin(self)
@@ -357,8 +372,7 @@ class ObjectEquivalentSet(Object):
                              alignment=self._obj.total_alignment,
                              refs=self._obj.ref_map)
         else:
-            super().__init__(length=0, stride=1, alignment=1,
-                             refs=self._obj.ref_map)
+            super().__init__(refs=self._obj.ref_map)
 
     @property
     def equivalents(self, /):
@@ -411,7 +425,7 @@ class ObjectSequence(Object):
         self._padding = 0
 
         if len(seq) == 0:
-            super().__init__(length=0, stride=1, alignment=1, tag=tag)
+            super().__init__(tag=tag)
             return
 
         # Compute total size, alignment, padding
@@ -441,7 +455,7 @@ class ObjectSequence(Object):
         if total_size != 0:
             super().__init__(length=1, stride=total_size, alignment=total_alignment, tag=tag, refs=ref_map)
         else:
-            super().__init__(length=0, stride=1, alignment=1, tag=tag, refs=ref_map)
+            super().__init__(tag=tag, refs=ref_map)
 
     @property
     def objects(self, /):
