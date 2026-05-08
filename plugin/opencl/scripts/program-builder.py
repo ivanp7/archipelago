@@ -16,14 +16,14 @@ from archi.context import (
         FileContext,
         LibraryContext,
         )
-from archi.opencl import (
+from archi.registry import Registry
+from archi.procedure import EnvironmentVariables
+from archi.plugin.opencl import (
         PLUGIN_OPENCL,
         OpenCLContext,
         OpenCLProgramSrcContext,
         OpenCLProgramBinContext,
         )
-from archi.registry import Registry
-from archi.procedure import EnvironmentVariables
 
 ###############################################################################
 # Command line argument parser

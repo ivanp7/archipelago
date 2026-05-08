@@ -19,7 +19,7 @@
  #############################################################################
 
 # @file
-# @brief Utilities for scripts.
+# @brief Utility scripts.
 
 import sys
 

@@ -23,12 +23,23 @@
 
 import ctypes as c
 
-import archi.ctypes as actype
 from ..object import PrimitiveData, String
 from ..context import TypeAttributes, ContextWhitelist, ParametersWhitelist
 
 
 PLUGIN_SDL = 'archi_sdl'
+
+##############################################################################
+
+### archi/font_psf2 ###
+
+ARCHI_POINTER_DATA_TAG__FONT_PSF2 = 0x864ab572
+
+### archi/sdl2 ###
+
+ARCHI_POINTER_DATA_TAG__SDL2_WINDOW = 0x800
+ARCHI_POINTER_DATA_TAG__SDL2_RENDERER = 0x801
+ARCHI_POINTER_DATA_TAG__SDL2_TEXTURE = 0x802
 
 ##############################################################################
 
@@ -51,7 +62,7 @@ class FontPSFv2Context(ContextWhitelist):
     """
     C_NAME = 'font_psf2'
 
-    CONTEXT_TYPE = TypeAttributes.complex_data(actype.ARCHI_POINTER_DATA_TAG__FONT_PSF2)
+    CONTEXT_TYPE = TypeAttributes.complex_data(ARCHI_POINTER_DATA_TAG__FONT_PSF2)
 
     class InitParameters(ParametersWhitelist):
         PARAMS = {'data': _TYPE_DATA}
@@ -82,7 +93,7 @@ class SDL2WindowContext(ContextWhitelist):
     """
     C_NAME = 'sdl2_window'
 
-    CONTEXT_TYPE = TypeAttributes.complex_data(actype.ARCHI_POINTER_DATA_TAG__SDL2_WINDOW)
+    CONTEXT_TYPE = TypeAttributes.complex_data(ARCHI_POINTER_DATA_TAG__SDL2_WINDOW)
 
     class InitParameters(ParametersWhitelist):
         PARAMS = {'title': _TYPE_STRING,
@@ -117,10 +128,10 @@ class SDL2RendererContext(ContextWhitelist):
     """
     C_NAME = 'sdl2_renderer'
 
-    CONTEXT_TYPE = TypeAttributes.complex_data(actype.ARCHI_POINTER_DATA_TAG__SDL2_RENDERER)
+    CONTEXT_TYPE = TypeAttributes.complex_data(ARCHI_POINTER_DATA_TAG__SDL2_RENDERER)
 
     class InitParameters(ParametersWhitelist):
-        PARAMS = {'window': TypeAttributes.complex_data(actype.ARCHI_POINTER_DATA_TAG__SDL2_WINDOW),
+        PARAMS = {'window': TypeAttributes.complex_data(ARCHI_POINTER_DATA_TAG__SDL2_WINDOW),
                   'driver_index': _TYPE_INT,
                   'software': _TYPE_BOOL,
                   'accelerated': _TYPE_BOOL,
@@ -128,7 +139,7 @@ class SDL2RendererContext(ContextWhitelist):
                   'target_texture': _TYPE_BOOL,
                   'flags': _TYPE_UINT32}
 
-    GETTER_SLOTS = {'window': TypeAttributes.complex_data(actype.ARCHI_POINTER_DATA_TAG__SDL2_WINDOW)}
+    GETTER_SLOTS = {'window': TypeAttributes.complex_data(ARCHI_POINTER_DATA_TAG__SDL2_WINDOW)}
 
 
 class SDL2TextureContext(ContextWhitelist):
@@ -136,10 +147,10 @@ class SDL2TextureContext(ContextWhitelist):
     """
     C_NAME = 'sdl2_texture'
 
-    CONTEXT_TYPE = TypeAttributes.complex_data(actype.ARCHI_POINTER_DATA_TAG__SDL2_TEXTURE)
+    CONTEXT_TYPE = TypeAttributes.complex_data(ARCHI_POINTER_DATA_TAG__SDL2_TEXTURE)
 
     class InitParameters(ParametersWhitelist):
-        PARAMS = {'renderer': TypeAttributes.complex_data(actype.ARCHI_POINTER_DATA_TAG__SDL2_RENDERER),
+        PARAMS = {'renderer': TypeAttributes.complex_data(ARCHI_POINTER_DATA_TAG__SDL2_RENDERER),
                   'width': _TYPE_INT,
                   'height': _TYPE_INT,
                   'pixel_format': _TYPE_STRING,
@@ -147,5 +158,5 @@ class SDL2TextureContext(ContextWhitelist):
                   'streaming': _TYPE_BOOL,
                   'target': _TYPE_BOOL}
 
-    GETTER_SLOTS = {'renderer': TypeAttributes.complex_data(actype.ARCHI_POINTER_DATA_TAG__SDL2_RENDERER)}
+    GETTER_SLOTS = {'renderer': TypeAttributes.complex_data(ARCHI_POINTER_DATA_TAG__SDL2_RENDERER)}
 

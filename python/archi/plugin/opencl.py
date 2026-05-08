@@ -44,6 +44,22 @@ PLUGIN_OPENCL = 'archi_opencl'
 
 ##############################################################################
 
+### archi/opencl ###
+
+ARCHI_POINTER_DATA_TAG__OPENCL_PLATFORM_ID = 0x1000
+ARCHI_POINTER_DATA_TAG__OPENCL_DEVICE_ID = 0x1001
+ARCHI_POINTER_DATA_TAG__OPENCL_CONTEXT = 0x1002
+ARCHI_POINTER_DATA_TAG__OPENCL_COMMAND_QUEUE = 0x1003
+ARCHI_POINTER_DATA_TAG__OPENCL_PROGRAM = 0x1004
+ARCHI_POINTER_DATA_TAG__OPENCL_KERNEL = 0x1005
+ARCHI_POINTER_DATA_TAG__OPENCL_EVENT = 0x1006
+ARCHI_POINTER_DATA_TAG__OPENCL_MEM_OBJECT = 0x1007
+ARCHI_POINTER_DATA_TAG__OPENCL_SVM = 0x1008
+ARCHI_POINTER_DATA_TAG__OPENCL_SVM_ALLOC_DATA = 0x1009
+ARCHI_POINTER_DATA_TAG__OPENCL_SVM_MAP_DATA = 0x100A
+
+##############################################################################
+
 def _make_uint32_t(value):
     if value < 0:
         raise ValueError
@@ -86,15 +102,15 @@ class OpenCLContext(ContextWhitelist):
     """
     C_NAME = 'opencl_context'
 
-    CONTEXT_TYPE = TypeAttributes.complex_data(actype.ARCHI_POINTER_DATA_TAG__OPENCL_CONTEXT)
+    CONTEXT_TYPE = TypeAttributes.complex_data(ARCHI_POINTER_DATA_TAG__OPENCL_CONTEXT)
 
     class InitParameters(ParametersWhitelist):
         PARAMS = {'platform': _TYPE_CL_UINT,
                   'device': _TYPE_CL_UINT_ARRAY}
 
-    GETTER_SLOTS = {'platform_id': TypeAttributes.complex_data(actype.ARCHI_POINTER_DATA_TAG__OPENCL_PLATFORM_ID),
+    GETTER_SLOTS = {'platform_id': TypeAttributes.complex_data(ARCHI_POINTER_DATA_TAG__OPENCL_PLATFORM_ID),
                     'device_id': {0: _TYPE_DATA_PTR_ARRAY,
-                                  1: TypeAttributes.complex_data(actype.ARCHI_POINTER_DATA_TAG__OPENCL_DEVICE_ID)}}
+                                  1: TypeAttributes.complex_data(ARCHI_POINTER_DATA_TAG__OPENCL_DEVICE_ID)}}
 
 
 class OpenCLCommandQueueContext(ContextWhitelist):
@@ -102,19 +118,19 @@ class OpenCLCommandQueueContext(ContextWhitelist):
     """
     C_NAME = 'opencl_command_queue'
 
-    CONTEXT_TYPE = TypeAttributes.complex_data(actype.ARCHI_POINTER_DATA_TAG__OPENCL_COMMAND_QUEUE)
+    CONTEXT_TYPE = TypeAttributes.complex_data(ARCHI_POINTER_DATA_TAG__OPENCL_COMMAND_QUEUE)
 
     class InitParameters(ParametersWhitelist):
-        PARAMS = {'context': TypeAttributes.complex_data(actype.ARCHI_POINTER_DATA_TAG__OPENCL_CONTEXT),
-                  'device_id': TypeAttributes.complex_data(actype.ARCHI_POINTER_DATA_TAG__OPENCL_DEVICE_ID),
+        PARAMS = {'context': TypeAttributes.complex_data(ARCHI_POINTER_DATA_TAG__OPENCL_CONTEXT),
+                  'device_id': TypeAttributes.complex_data(ARCHI_POINTER_DATA_TAG__OPENCL_DEVICE_ID),
                   'out_of_order_exec': _TYPE_BOOL,
                   'profiling': _TYPE_BOOL,
                   'priority_hint': _TYPE_CL_UINT,
                   'throttle_hint': _TYPE_CL_UINT}
 
-    GETTER_SLOTS = {'context': TypeAttributes.complex_data(actype.ARCHI_POINTER_DATA_TAG__OPENCL_CONTEXT),
-                    'platform_id': TypeAttributes.complex_data(actype.ARCHI_POINTER_DATA_TAG__OPENCL_PLATFORM_ID),
-                    'device_id': TypeAttributes.complex_data(actype.ARCHI_POINTER_DATA_TAG__OPENCL_DEVICE_ID)}
+    GETTER_SLOTS = {'context': TypeAttributes.complex_data(ARCHI_POINTER_DATA_TAG__OPENCL_CONTEXT),
+                    'platform_id': TypeAttributes.complex_data(ARCHI_POINTER_DATA_TAG__OPENCL_PLATFORM_ID),
+                    'device_id': TypeAttributes.complex_data(ARCHI_POINTER_DATA_TAG__OPENCL_DEVICE_ID)}
 
 
 class OpenCLProgramSrcContext(ContextWhitelist):
@@ -122,10 +138,10 @@ class OpenCLProgramSrcContext(ContextWhitelist):
     """
     C_NAME = 'opencl_program_src'
 
-    CONTEXT_TYPE = TypeAttributes.complex_data(actype.ARCHI_POINTER_DATA_TAG__OPENCL_PROGRAM)
+    CONTEXT_TYPE = TypeAttributes.complex_data(ARCHI_POINTER_DATA_TAG__OPENCL_PROGRAM)
 
     class InitParameters(ParametersWhitelist):
-        PARAMS = {'context': TypeAttributes.complex_data(actype.ARCHI_POINTER_DATA_TAG__OPENCL_CONTEXT),
+        PARAMS = {'context': TypeAttributes.complex_data(ARCHI_POINTER_DATA_TAG__OPENCL_CONTEXT),
                   'device_id': _TYPE_DATA_PTR_ARRAY,
                   'headers': TypeAttributes.complex_data(actype.ARCHI_POINTER_DATA_TAG__KVLIST),
                   'sources': TypeAttributes.complex_data(actype.ARCHI_POINTER_DATA_TAG__KVLIST),
@@ -133,10 +149,10 @@ class OpenCLProgramSrcContext(ContextWhitelist):
                   'cflags': _TYPE_STRING,
                   'lflags': _TYPE_STRING}
 
-    GETTER_SLOTS = {'context': TypeAttributes.complex_data(actype.ARCHI_POINTER_DATA_TAG__OPENCL_CONTEXT),
-                    'platform_id': TypeAttributes.complex_data(actype.ARCHI_POINTER_DATA_TAG__OPENCL_PLATFORM_ID),
+    GETTER_SLOTS = {'context': TypeAttributes.complex_data(ARCHI_POINTER_DATA_TAG__OPENCL_CONTEXT),
+                    'platform_id': TypeAttributes.complex_data(ARCHI_POINTER_DATA_TAG__OPENCL_PLATFORM_ID),
                     'device_id': {0: _TYPE_DATA_PTR_ARRAY,
-                                  1: TypeAttributes.complex_data(actype.ARCHI_POINTER_DATA_TAG__OPENCL_DEVICE_ID)},
+                                  1: TypeAttributes.complex_data(ARCHI_POINTER_DATA_TAG__OPENCL_DEVICE_ID)},
                     'binary.size': {0: _TYPE_SIZE_ARRAY,
                                     1: _TYPE_SIZE},
                     'binary': {0: _TYPE_DATA_PTR_ARRAY,
@@ -148,10 +164,10 @@ class OpenCLProgramBinContext(ContextWhitelist):
     """
     C_NAME = 'opencl_program_bin'
 
-    CONTEXT_TYPE = TypeAttributes.complex_data(actype.ARCHI_POINTER_DATA_TAG__OPENCL_PROGRAM)
+    CONTEXT_TYPE = TypeAttributes.complex_data(ARCHI_POINTER_DATA_TAG__OPENCL_PROGRAM)
 
     class InitParameters(ParametersWhitelist):
-        PARAMS = {'context': TypeAttributes.complex_data(actype.ARCHI_POINTER_DATA_TAG__OPENCL_CONTEXT),
+        PARAMS = {'context': TypeAttributes.complex_data(ARCHI_POINTER_DATA_TAG__OPENCL_CONTEXT),
                   'device_id': _TYPE_DATA_PTR_ARRAY,
                   'binaries': _TYPE_DATA_PTR_ARRAY,
                   'binary_sizes': _TYPE_SIZE_ARRAY,
@@ -165,20 +181,20 @@ class OpenCLKernelContext(ContextWhitelist):
     """
     C_NAME = 'opencl_kernel_new'
 
-    CONTEXT_TYPE = TypeAttributes.complex_data(actype.ARCHI_POINTER_DATA_TAG__OPENCL_KERNEL)
+    CONTEXT_TYPE = TypeAttributes.complex_data(ARCHI_POINTER_DATA_TAG__OPENCL_KERNEL)
 
     class InitParameters(ParametersWhitelist):
-        PARAMS = {'program': TypeAttributes.complex_data(actype.ARCHI_POINTER_DATA_TAG__OPENCL_PROGRAM),
+        PARAMS = {'program': TypeAttributes.complex_data(ARCHI_POINTER_DATA_TAG__OPENCL_PROGRAM),
                   'name': _TYPE_STRING}
 
-    GETTER_SLOTS = {'program': TypeAttributes.complex_data(actype.ARCHI_POINTER_DATA_TAG__OPENCL_PROGRAM),
+    GETTER_SLOTS = {'program': TypeAttributes.complex_data(ARCHI_POINTER_DATA_TAG__OPENCL_PROGRAM),
                     'name': _TYPE_STRING,
                     'num_args': _TYPE_CL_UINT}
 
     SETTER_SLOTS = {'arg.local_mem_size': {1: _TYPE_SIZE},
                     'arg.value': {1: _TYPE_DATA},
-                    'arg.mem_object': {1: TypeAttributes.complex_data(actype.ARCHI_POINTER_DATA_TAG__OPENCL_MEM_OBJECT)},
-                    'arg.svm_ptr': {1: TypeAttributes.complex_data(actype.ARCHI_POINTER_DATA_TAG__OPENCL_SVM)},
+                    'arg.mem_object': {1: TypeAttributes.complex_data(ARCHI_POINTER_DATA_TAG__OPENCL_MEM_OBJECT)},
+                    'arg.svm_ptr': {1: TypeAttributes.complex_data(ARCHI_POINTER_DATA_TAG__OPENCL_SVM)},
                     'exec_info.svm_ptrs': _TYPE_DATA_PTR_ARRAY}
 
 
@@ -187,10 +203,10 @@ class OpenCLKernelCloneContext(ContextWhitelist):
     """
     C_NAME = 'opencl_kernel_clone'
 
-    CONTEXT_TYPE = TypeAttributes.complex_data(actype.ARCHI_POINTER_DATA_TAG__OPENCL_KERNEL)
+    CONTEXT_TYPE = TypeAttributes.complex_data(ARCHI_POINTER_DATA_TAG__OPENCL_KERNEL)
 
     class InitParameters(ParametersWhitelist):
-        PARAMS = {'kernel': TypeAttributes.complex_data(actype.ARCHI_POINTER_DATA_TAG__OPENCL_KERNEL)}
+        PARAMS = {'kernel': TypeAttributes.complex_data(ARCHI_POINTER_DATA_TAG__OPENCL_KERNEL)}
 
     GETTER_SLOTS = OpenCLKernelContext.GETTER_SLOTS
 

@@ -81,25 +81,25 @@ class archi_pointer_attr_t(c.c_uint64):
     def is_data_on_stack(self, /):
         """Check if the attributes describes data stored on stack.
         """
-        return self.value & archi_pointer_attr_t.TYPE_MASK == archi_pointer_attr_t.DATA_ON_STACK
+        return self.value & self.__class__.TYPE_MASK == self.__class__.DATA_ON_STACK
 
     @property
     def is_data_writable(self, /):
         """Check if the attributes describes data stored in writable memory.
         """
-        return self.value & archi_pointer_attr_t.TYPE_MASK == archi_pointer_attr_t.DATA_WRITABLE
+        return self.value & self.__class__.TYPE_MASK == self.__class__.DATA_WRITABLE
 
     @property
     def is_data_readonly(self, /):
         """Check if the attributes describes data stored in read-only memory.
         """
-        return self.value & archi_pointer_attr_t.TYPE_MASK == archi_pointer_attr_t.DATA_READONLY
+        return self.value & self.__class__.TYPE_MASK == self.__class__.DATA_READONLY
 
     @property
     def is_function(self, /):
         """Check if the attributes describes a function.
         """
-        return self.value & archi_pointer_attr_t.TYPE_MASK == archi_pointer_attr_t.FUNCTION
+        return self.value & self.__class__.TYPE_MASK == self.__class__.FUNCTION
 
     @property
     def layout(self, /):
@@ -108,8 +108,8 @@ class archi_pointer_attr_t(c.c_uint64):
         if self.is_function:
             return (None, None, None)
 
-        attr_bits = archi_pointer_attr_t.ATTR_BITS
-        size_bits = archi_pointer_attr_t.SIZE_BITS
+        attr_bits = self.__class__.ATTR_BITS
+        size_bits = self.__class__.SIZE_BITS
 
         stride_width = (self.value >> size_bits) & ((1 << (attr_bits - size_bits)) - 1)
 
@@ -147,12 +147,12 @@ class archi_pointer_attr_t(c.c_uint64):
     def tag(self, /):
         """Extract type tag from the attributes.
         """
-        attr_bits = archi_pointer_attr_t.ATTR_BITS
+        attr_bits = self.__class__.ATTR_BITS
 
         if self.is_data:
             tag = ~self.value & ((1 << attr_bits) - 1) # data type tag
 
-            if tag > archi_pointer_attr_t.DATA_TAG_MAX:
+            if tag > self.__class__.DATA_TAG_MAX:
                 return None
         else:
             tag = self.value & ((1 << attr_bits) - 1) # function type tag
@@ -186,8 +186,8 @@ class archi_pointer_attr_t(c.c_uint64):
         else:
             return False
 
-    @staticmethod
-    def primitive_data(length, stride=1, alignment=1, writable=False):
+    @classmethod
+    def primitive_data(cls, length, stride=1, alignment=1, writable=False):
         """Compute attributes for a primitive data type.
         """
         if not isinstance(length, int) or not isinstance(stride, int) \
@@ -202,23 +202,25 @@ class archi_pointer_attr_t(c.c_uint64):
             raise ValueError("Alignment requirement is not a power of two")
         elif stride % alignment != 0:
             raise ValueError("Stride is not divisible by alignment requirement")
-        elif length * stride > archi_pointer_attr_t.DATA_SIZE_MAX:
-            raise ValueError("Size (length*stride) exceeds maximum supported value of {archi_pointer_attr_t.DATA_SIZE_MAX} bytes")
-        elif stride > archi_pointer_attr_t.DATA_STRIDE_MAX:
-            raise ValueError("Stride exceeds maximum supported value of {archi_pointer_attr_t.DATA_STRIDE_MAX} bytes")
+        elif length * stride > cls.DATA_SIZE_MAX:
+            raise ValueError("Size (length*stride) exceeds maximum supported value of {cls.DATA_SIZE_MAX} bytes")
+        elif stride > cls.DATA_STRIDE_MAX:
+            raise ValueError("Stride exceeds maximum supported value of {cls.DATA_STRIDE_MAX} bytes")
 
         stride_width = (stride - 1).bit_length()
 
-        attr_memtype = archi_pointer_attr_t.DATA_WRITABLE if writable else archi_pointer_attr_t.DATA_READONLY
-        attr_stride_width = stride_width << archi_pointer_attr_t.SIZE_BITS
-        attr_stride_over_alignment = (stride // alignment - 1) << (archi_pointer_attr_t.SIZE_BITS - stride_width)
+        attr_memtype = cls.DATA_WRITABLE if writable \
+                else cls.DATA_READONLY
+        attr_stride_width = stride_width << cls.SIZE_BITS
+        attr_stride_over_alignment = (stride // alignment - 1) \
+                << (cls.SIZE_BITS - stride_width)
         attr_length = length
 
         return archi_pointer_attr_t(attr_memtype | attr_stride_width |
                                     attr_stride_over_alignment | attr_length)
 
-    @staticmethod
-    def complex_data(tag=0, writable=False):
+    @classmethod
+    def complex_data(cls, tag=0, writable=False):
         """Compute attributes for a complex data type.
         """
         if not isinstance(tag, int) or not isinstance(writable, bool):
@@ -226,16 +228,17 @@ class archi_pointer_attr_t(c.c_uint64):
 
         if tag < 0:
             raise ValueError("Data type tag is negative")
-        elif tag > archi_pointer_attr_t.DATA_TAG_MAX:
-            raise ValueError("Data type tag exceeds maximum supported value of {archi_pointer_attr_t.DATA_TAG_MAX:016x}")
+        elif tag > cls.DATA_TAG_MAX:
+            raise ValueError("Data type tag exceeds maximum supported value of {cls.DATA_TAG_MAX:016x}")
 
-        attr_memtype = archi_pointer_attr_t.DATA_WRITABLE if writable else archi_pointer_attr_t.DATA_READONLY
-        attr_tag = (~tag) & ((1 << archi_pointer_attr_t.ATTR_BITS) - 1)
+        attr_memtype = cls.DATA_WRITABLE if writable \
+                else cls.DATA_READONLY
+        attr_tag = (~tag) & ((1 << cls.ATTR_BITS) - 1)
 
         return archi_pointer_attr_t(attr_memtype | attr_tag)
 
-    @staticmethod
-    def function(tag=0):
+    @classmethod
+    def function(cls, tag=0):
         """Compute attributes for a function type.
         """
         if not isinstance(tag, int):
@@ -243,10 +246,10 @@ class archi_pointer_attr_t(c.c_uint64):
 
         if tag < 0:
             raise ValueError("Function type tag is negative")
-        elif tag > archi_pointer_attr_t.FUNC_TAG_MAX:
-            raise ValueError("Function type tag exceeds maximum supported value of {archi_pointer_attr_t.FUNC_TAG_MAX:016x}")
+        elif tag > cls.FUNC_TAG_MAX:
+            raise ValueError("Function type tag exceeds maximum supported value of {cls.FUNC_TAG_MAX:016x}")
 
-        attr_ptrtype = archi_pointer_attr_t.FUNCTION
+        attr_ptrtype = cls.FUNCTION
         attr_tag = tag
 
         return archi_pointer_attr_t(attr_ptrtype | attr_tag)
@@ -260,7 +263,8 @@ class archi_pointer_attr_t(c.c_uint64):
         if tag is None:
             if isinstance(c_type, c.Array):
                 return archi_pointer_attr_t.primitive_data(
-                        len(c_type), c.sizeof(c_type._type_), c.alignment(c_type._type_), writable)
+                        len(c_type), c.sizeof(c_type._type_),
+                        c.alignment(c_type._type_), writable)
             else:
                 return archi_pointer_attr_t.primitive_data(
                         1, c.sizeof(c_type), c.alignment(c_type), writable)
@@ -553,7 +557,8 @@ SIGNALS = ['SIGINT', 'SIGQUIT', 'SIGTERM',              # interruption events
 SIGNAL_RT_MIN = 'SIGRTMIN' # minimum real-time signal
 SIGNAL_RT_MAX = 'SIGRTMAX' # maximum real-time signal
 
-NUM_RT_SIGNALS = (signal.SIGRTMAX - signal.SIGRTMIN + 1) if signal.SIGRTMIN <= signal.SIGRTMAX else 0
+NUM_RT_SIGNALS = (signal.SIGRTMAX - signal.SIGRTMIN + 1) \
+        if signal.SIGRTMIN <= signal.SIGRTMAX else 0
 
 
 archi_signal_set_mask_t = c.c_uint32
@@ -903,34 +908,4 @@ class archi_app_registry_op_data__assign_call_t(c.Structure):
                 ('source_key', c.c_char_p),
                 ('source_slot', archi_context_slot_t),
                 ('source_call_params', archi_app_registry_op_data_params_t)]
-
-##############################################################################
-# PSFv2 font
-##############################################################################
-
-ARCHI_POINTER_DATA_TAG__FONT_PSF2 = 0x864ab572
-
-##############################################################################
-# SDL2
-##############################################################################
-
-ARCHI_POINTER_DATA_TAG__SDL2_WINDOW = 0x800
-ARCHI_POINTER_DATA_TAG__SDL2_RENDERER = 0x801
-ARCHI_POINTER_DATA_TAG__SDL2_TEXTURE = 0x802
-
-##############################################################################
-# OpenCL
-##############################################################################
-
-ARCHI_POINTER_DATA_TAG__OPENCL_PLATFORM_ID = 0x1000
-ARCHI_POINTER_DATA_TAG__OPENCL_DEVICE_ID = 0x1001
-ARCHI_POINTER_DATA_TAG__OPENCL_CONTEXT = 0x1002
-ARCHI_POINTER_DATA_TAG__OPENCL_COMMAND_QUEUE = 0x1003
-ARCHI_POINTER_DATA_TAG__OPENCL_PROGRAM = 0x1004
-ARCHI_POINTER_DATA_TAG__OPENCL_KERNEL = 0x1005
-ARCHI_POINTER_DATA_TAG__OPENCL_EVENT = 0x1006
-ARCHI_POINTER_DATA_TAG__OPENCL_MEM_OBJECT = 0x1007
-ARCHI_POINTER_DATA_TAG__OPENCL_SVM = 0x1008
-ARCHI_POINTER_DATA_TAG__OPENCL_SVM_ALLOC_DATA = 0x1009
-ARCHI_POINTER_DATA_TAG__OPENCL_SVM_MAP_DATA = 0x100A
 

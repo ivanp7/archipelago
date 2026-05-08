@@ -453,7 +453,8 @@ class ObjectSequence(Object):
 
         # Call the parent constructor
         if total_size != 0:
-            super().__init__(length=1, stride=total_size, alignment=total_alignment, tag=tag, refs=ref_map)
+            super().__init__(length=1, stride=total_size, alignment=total_alignment,
+                             tag=tag, refs=ref_map)
         else:
             super().__init__(tag=tag, refs=ref_map)
 
