@@ -456,8 +456,13 @@ class Registry:
 
         return key in self._contexts
 
+    def __len__(self, /):
+        """Get number of contexts.
+        """
+        return len(self._contexts)
+
     def __iter__(self, /):
-        """Return an iterator.
+        """Return a context iterator.
         """
         return iter(self._contexts)
 
