@@ -466,6 +466,11 @@ class Registry:
         """
         return iter(self._contexts)
 
+    def __reversed__(self, /):
+        """Return a reversed context iterator.
+        """
+        return reversed(self._contexts)
+
     def contexts(self, /, cls=Context, is_prereq=True, is_new=True):
         """Obtain the dictionary of known contexts of the specified type.
         """

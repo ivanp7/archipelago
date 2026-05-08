@@ -75,6 +75,11 @@ class Procedure:
         """
         return iter(self._contexts)
 
+    def __reversed__(self, /):
+        """Return a reversed context iterator.
+        """
+        return reversed(self._contexts)
+
     def key(self, key, /):
         """Get a context key prefixed by the procedure namespace.
         """
