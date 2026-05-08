@@ -23,7 +23,7 @@ from archi.opencl import (
         OpenCLProgramBinContext,
         )
 from archi.registry import Registry
-from archi.helper.env import env_variables
+from archi.procedure import EnvironmentVariables
 
 ###############################################################################
 # Command line argument parser
@@ -213,7 +213,7 @@ with app.temp_context(I_LIBRARY(pathname=PLUGIN_OPENCL_PATHNAME), key=key('plugi
         with app.temp_context(list_libraries, key=key('array_libraries')) as libraries, \
                 app.temp_context(Parameters(**dict_headers), key=key('kvlist_headers')) as headers, \
                 app.temp_context(Parameters(**dict_sources), key=key('kvlist_sources')) as sources, \
-                env_variables(app, CFLAGS=args.cflags, LFLAGS=args.lflags) as (cflags, lflags):
+                EnvironmentVariables(app, key('env')).var('CFLAGS', args.cflags).var('LFLAGS', args.lflags) as env:
             # Delete contexts of program libraries
             for library_context in list_libraries:
                 app.del_context(library_context)
@@ -225,7 +225,7 @@ with app.temp_context(I_LIBRARY(pathname=PLUGIN_OPENCL_PATHNAME), key=key('plugi
             # Build the program
             app[key('program')] = I_OPENCL_PROGRAM_SRC(context=opencl_context, device_id=opencl_context.device_id,
                                                        headers=headers, sources=sources, libraries=libraries.ptrs,
-                                                       cflags=cflags, lflags=lflags)
+                                                       cflags=env['CFLAGS'], lflags=env['LFLAGS'])
 
     with app.deleted_context(key('program')) as opencl_program:
         # Write program binaries to output files
