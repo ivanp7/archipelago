@@ -46,7 +46,7 @@
 #define ARCHI_APP_REGISTRY_OP__ALIAS             "alias"             ///< Registry operation: create a context alias.
 #define ARCHI_APP_REGISTRY_OP__CREATE_AS         "create_as"         ///< Registry operation: create a new context using interface of another context.
 #define ARCHI_APP_REGISTRY_OP__CREATE_FROM       "create_from"       ///< Registry operation: create a new context using interface obtained from a slot of another context.
-#define ARCHI_APP_REGISTRY_OP__CREATE_PARAMS     "create_params"     ///< Registry operation: create a parameter list context.
+#define ARCHI_APP_REGISTRY_OP__CREATE_PLIST      "create_plist"      ///< Registry operation: create a parameter list context.
 #define ARCHI_APP_REGISTRY_OP__CREATE_PTR        "create_ptr"        ///< Registry operation: create a pointer context.
 #define ARCHI_APP_REGISTRY_OP__CREATE_DPTR_ARRAY "create_dptr_array" ///< Registry operation: create a data pointer array context.
 #define ARCHI_APP_REGISTRY_OP__INVOKE            "invoke"            ///< Registry operation: invoke context call.

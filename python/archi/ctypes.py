@@ -844,7 +844,7 @@ class archi_app_registry_op_data__create_from_t(c.Structure):
                 ('init_params', archi_app_registry_op_data_params_t)]
 
 
-class archi_app_registry_op_data__create_params_t(c.Structure):
+class archi_app_registry_op_data__create_plist_t(c.Structure):
     """Registry operation data: create a parameter list context.
     """
     _fields_ = [('key', c.c_char_p),

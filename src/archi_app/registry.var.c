@@ -34,7 +34,7 @@ archi_app_registry_operations[] = {
     {.name = ARCHI_APP_REGISTRY_OP__ALIAS, .function = archi_app_registry_op__alias},
     {.name = ARCHI_APP_REGISTRY_OP__CREATE_AS, .function = archi_app_registry_op__create_as},
     {.name = ARCHI_APP_REGISTRY_OP__CREATE_FROM, .function = archi_app_registry_op__create_from},
-    {.name = ARCHI_APP_REGISTRY_OP__CREATE_PARAMS, .function = archi_app_registry_op__create_params},
+    {.name = ARCHI_APP_REGISTRY_OP__CREATE_PLIST, .function = archi_app_registry_op__create_plist},
     {.name = ARCHI_APP_REGISTRY_OP__CREATE_PTR, .function = archi_app_registry_op__create_ptr},
     {.name = ARCHI_APP_REGISTRY_OP__CREATE_DPTR_ARRAY, .function = archi_app_registry_op__create_dptr_array},
     {.name = ARCHI_APP_REGISTRY_OP__INVOKE, .function = archi_app_registry_op__invoke},

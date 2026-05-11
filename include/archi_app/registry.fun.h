@@ -34,7 +34,7 @@ ARCHI_APP_REGISTRY_OPERATION_FUNC(archi_app_registry_op__delete);               
 ARCHI_APP_REGISTRY_OPERATION_FUNC(archi_app_registry_op__alias);                ///< Registry operation: create a context alias.
 ARCHI_APP_REGISTRY_OPERATION_FUNC(archi_app_registry_op__create_as);            ///< Registry operation: create a new context using interface of another context.
 ARCHI_APP_REGISTRY_OPERATION_FUNC(archi_app_registry_op__create_from);          ///< Registry operation: create a new context using interface obtained from a slot of another context.
-ARCHI_APP_REGISTRY_OPERATION_FUNC(archi_app_registry_op__create_params);        ///< Registry operation: create a parameters list context.
+ARCHI_APP_REGISTRY_OPERATION_FUNC(archi_app_registry_op__create_plist);         ///< Registry operation: create a parameters list context.
 ARCHI_APP_REGISTRY_OPERATION_FUNC(archi_app_registry_op__create_ptr);           ///< Registry operation: create a pointer context.
 ARCHI_APP_REGISTRY_OPERATION_FUNC(archi_app_registry_op__create_dptr_array);    ///< Registry operation: create a data pointer array context.
 ARCHI_APP_REGISTRY_OPERATION_FUNC(archi_app_registry_op__invoke);               ///< Registry operation: invoke context call.

@@ -105,10 +105,10 @@ typedef struct archi_app_registry_op_data__create_from {
 /**
  * @brief Registry operation data: create a parameter list context.
  */
-typedef struct archi_app_registry_op_data__create_params {
+typedef struct archi_app_registry_op_data__create_plist {
     const char *key; ///< Key of the created context.
     archi_app_registry_op_data_params_t params; ///< List of parameters.
-} archi_app_registry_op_data__create_params_t;
+} archi_app_registry_op_data__create_plist_t;
 
 /**
  * @brief Registry operation data: create a pointer context.

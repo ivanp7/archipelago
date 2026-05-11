@@ -418,9 +418,9 @@ ARCHI_APP_REGISTRY_OPERATION_FUNC(archi_app_registry_op__create_from)
     archi_krcvlist_free(init_params.list, false);
 }
 
-ARCHI_APP_REGISTRY_OPERATION_FUNC(archi_app_registry_op__create_params)
+ARCHI_APP_REGISTRY_OPERATION_FUNC(archi_app_registry_op__create_plist)
 {
-    OPERATION_PREAMBLE(archi_app_registry_op_data__create_params_t);
+    OPERATION_PREAMBLE(archi_app_registry_op_data__create_plist_t);
 
     if (registry == NULL)
     {
