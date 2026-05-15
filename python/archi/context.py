@@ -22,247 +22,93 @@
 # @brief Archipelago application contexts.
 
 import ctypes as c
-from types import MappingProxyType, SimpleNamespace
+from types import MappingProxyType, NoneType, SimpleNamespace
 
-import archi.ctypes as ac
+import archi.ctypes as typ
 from .object import Object, PrimitiveData, String
 
 
-TypeAttributes = ac.archi_pointer_attr_t
-
-
-def type_attributes_of(entity, /):
-    """Get type attributes of an entity.
+def _slot_str(name, indices, /):
+    """Get the string specification of a (non-call) slot.
     """
-    if entity is None:
-        return ... # nothingness has unspecified type
+    str_name = f"'{name}'" if name else ""
+    str_indices = ("[" + ", ".join(str(index) for index in indices) + "]") if indices else ""
 
-    elif isinstance(entity, Context):
-        return entity.__class__.slot_attr()
-
-    elif isinstance(entity, Context.Slot):
-        context = Context.Slot.context_of(entity)
-        slot_name = Context.Slot.name_of(entity)
-        slot_indices = Context.Slot.indices_of(entity)
-
-        attr = context.__class__.slot_attr(
-                slot_name, slot_indices, call=Context.Slot.is_call(entity))
-
-        if attr is None:
-            raise RuntimeError(f"Call slot {_slot_str(slot_name, slot_indices)} of context '{Context.key_of(context)}' doesn't return a value")
-
-        return attr
-
-    elif isinstance(entity, Object):
-        return entity.attributes
-
-    else:
-        return None # unknown entity type
+    return str_name + str_indices
 
 
-def type_attributes_compatible(attr1, attr2, /):
-    """Check compatibility of type attributes.
+def _slot_check(name, indices, /):
+    """Check if slot name and indices are valid.
     """
-    if not isinstance(attr1, (type(...), TypeAttributes)):
+    if not isinstance(name, str):
         raise TypeError
-    elif not isinstance(attr2, (type(...), TypeAttributes)):
+    elif not isinstance(indices, tuple):
+        raise TypeError
+    elif not all(isinstance(index, int) for index in indices):
         raise TypeError
 
-    if attr1 is ... or attr2 is ...:
-        return True
-    else:
+##############################################################################
+
+class TypeAttr(typ.archi_pointer_attr_t):
+    """Type attributes with support of objects, contexts, and context slots.
+    """
+    UNSPECIFIED = object()
+
+    @staticmethod
+    def of(entity, /):
+        """Get type attributes of an entity.
+        """
+        if entity is None:
+            return TypeAttr.UNSPECIFIED
+
+        elif isinstance(entity, Object):
+            if not entity.is_function:
+                if entity.tag is None:
+                    return TypeAttr.primitive_data(entity.length, entity.stride, entity.alignment)
+                else:
+                    return TypeAttr.complex_data(entity.tag)
+            else:
+                return TypeAttr.function(entity.tag)
+
+        elif isinstance(entity, Context):
+            return entity.__class__.slot_attr()
+
+        elif isinstance(entity, Context.Slot):
+            context = Context.Slot.context_of(entity)
+
+            if context is None:
+                raise ValueError("Cannot get type attributes for {entity}: no context")
+
+            slot_name = Context.Slot.name_of(entity)
+            slot_indices = Context.Slot.indices_of(entity)
+            slot_is_call = Context.Slot.is_call(entity)
+
+            return context.__class__.slot_attr(slot_name, slot_indices, call=slot_is_call)
+
+        else:
+            return NotImplemented # unknown entity type
+
+    @staticmethod
+    def compatible(attr1, attr2, /):
+        """Check compatibility of type attributes.
+        """
+        if attr1 is not TypeAttr.UNSPECIFIED and not isinstance(attr1, (NoneType, TypeAttr)):
+            raise TypeError
+        elif attr2 is not TypeAttr.UNSPECIFIED and not isinstance(attr2, (NoneType, TypeAttr)):
+            raise TypeError
+
+        if attr1 is None or attr2 is None: # either is absent
+            return False
+        elif attr1 is TypeAttr.UNSPECIFIED or attr2 is TypeAttr.UNSPECIFIED:
+            return True
+
         return attr1.is_compatible_to(attr2)
 
 ##############################################################################
 
-class Context:
-    """Representation of a context.
-
-    This base class does not impose any restrictions on slots.
+class _ContextTyping:
+    """Interface of context slot typing.
     """
-    # Main part of symbol name of the context interface
-    C_NAME = None
-
-    def __init_subclass__(cls, /):
-        """Initialize a context interface subclass.
-        """
-        if cls.C_NAME is not None:
-            if not isinstance(cls.C_NAME, str):
-                raise TypeError
-            elif not cls.C_NAME:
-                raise ValueError
-
-    def __init__(self, /):
-        """Initialize a context instance.
-        """
-        fields = SimpleNamespace()
-
-        fields.registry = None
-        fields.key = None
-
-        object.__setattr__(self, '_', fields)
-
-    def __str__(self, /):
-        return f"Context({vars(self._)})"
-
-    def __getattr__(self, name, /):
-        """Get a context slot.
-        """
-        return Context.Slot(self, name=name)
-
-    def __getitem__(self, index, /):
-        """Get a context slot.
-        """
-        if isinstance(index, int):
-            return Context.Slot(self, indices=(index,))
-
-        elif isinstance(index, tuple):
-            if not all(isinstance(elt, int) for elt in index):
-                raise TypeError
-
-            return Context.Slot(self, indices=index)
-
-        else:
-            raise TypeError
-
-    def __setattr__(self, name, value, /):
-        """Set a context slot.
-        """
-        Context._set_slot(self, name=name, value=value)
-
-    def __setitem__(self, index, value, /):
-        """Set a context slot.
-        """
-        if isinstance(index, int):
-            Context._set_slot(self, indices=(index,), value=value)
-
-        elif isinstance(index, tuple):
-            if not all(isinstance(elt, int) for elt in index):
-                raise TypeError
-
-            Context._set_slot(self, indices=index, value=value)
-
-        else:
-            raise TypeError
-
-    def __delattr__(self, name, /):
-        """Unset a context slot.
-        """
-        Context._unset_slot(self, name=name)
-
-    def __delitem__(self, index, value, /):
-        """Unset a context slot.
-        """
-        if isinstance(index, int):
-            Context._unset_slot(self, indices=(index,))
-
-        elif isinstance(index, tuple):
-            if not all(isinstance(elt, int) for elt in index):
-                raise TypeError
-
-            Context._unset_slot(self, indices=index)
-
-        else:
-            raise TypeError
-
-    def __call__(self, _=None, /, **params):
-        """Invoke a call.
-        """
-        if not isinstance(_, (type(None), Parameters.Context)):
-            raise TypeError
-
-        call_params_cls = self.__class__.call_params_class()
-
-        return Context.Slot(self, call_params=call_params_cls(_, **params))
-
-    @staticmethod
-    def registry_of(context, /):
-        """Get the registry of a context.
-        """
-        if context is None:
-            return None
-        elif not isinstance(context, Context):
-            raise TypeError
-
-        return context._.registry
-
-    @staticmethod
-    def key_of(context, /):
-        """Get the key of a context.
-        """
-        if context is None:
-            return None
-        elif not isinstance(context, Context):
-            raise TypeError
-
-        return context._.key
-
-    @staticmethod
-    def weak_ref(entity, /):
-        """Create a weak reference slot.
-        """
-        if isinstance(entity, Context):
-            return Context.Slot(entity, weak_ref=True)
-        elif isinstance(entity, Context.Slot):
-            return Context.Slot(Context.Slot.context_of(entity),
-                                Context.Slot.name_of(entity), Context.Slot.indices_of(entity),
-                                Context.Slot.call_params_of(entity), weak_ref=True)
-        else:
-            return entity
-
-    @staticmethod
-    def set(slot, value, /):
-        """Assign a value to the specified slot.
-        """
-        if not isinstance(slot, Context.Slot):
-            raise TypeError
-        elif Context.Slot.is_call(slot):
-            raise AttributeError
-
-        Context._set_slot(Context.Slot.context_of(slot),
-                          Context.Slot.name_of(slot), Context.Slot.indices_of(slot),
-                          value)
-
-    @staticmethod
-    def unset(slot, /):
-        """Unset a context slot.
-        """
-        if not isinstance(slot, Context.Slot):
-            raise TypeError
-        elif Context.Slot.is_call(slot):
-            raise AttributeError
-
-        Context._unset_slot(Context.Slot.context_of(slot),
-                            Context.Slot.name_of(slot), Context.Slot.indices_of(slot))
-
-    @classmethod
-    def interface(cls, context_or_slot, /):
-        """Create a representation of a context interface (from the specified context/slot).
-        """
-        if not isinstance(context_or_slot, (Context, Context.Slot)):
-            raise TypeError
-
-        attr = type_attributes_of(context_or_slot)
-
-        if not type_attributes_compatible(
-                attr, TypeAttributes.complex_data(ac.ARCHI_POINTER_DATA_TAG__CONTEXT_INTERFACE)):
-            raise TypeError(f"{context_or_slot} is not a context interface")
-
-        if isinstance(context_or_slot, Context):
-            return _ContextInterface(Context.Slot(context_or_slot), cls)
-
-        elif isinstance(context_or_slot, Context.Slot):
-            return _ContextInterface(context_or_slot, cls)
-
-    @classmethod
-    def interface_in(cls, library, /):
-        """Create a representation of a context interface (from a plugin using the predefined symbol name).
-        """
-        slot = ContextInterfaceSymbol.slot(cls.C_NAME, library=library)
-        slot = Context.Slot(Context.Slot.context_of(slot), name=Context.Slot.name_of(slot)) # optimization to avoid creation of a temporary context
-
-        return _ContextInterface(slot, cls)
-
     @classmethod
     def init_params_class(cls, /):
         """Obtain initialization parameter list class.
@@ -278,17 +124,12 @@ class Context:
 
     @classmethod
     def call_params_class(cls, /, name='', indices=()):
-        """Obtain parameter list class of a call.
+        """Obtain parameter list class of a call slot.
 
         Returns a (sub)class of Parameters.
         Raises KeyError if the call is not recognized.
         """
-        if not isinstance(name, str):
-            raise TypeError
-        elif not isinstance(indices, tuple):
-            raise TypeError
-        elif not all(isinstance(index, int) for index in indices):
-            raise TypeError
+        _slot_check(name, indices)
 
         try:
             params_class = cls._call_params_class(name, indices)
@@ -304,23 +145,21 @@ class Context:
     def slot_attr(cls, /, name='', indices=(), setter=False, call=False):
         """Get type attributes of a slot.
 
-        Returns a TypeAttributes object, Ellipsis, or None.
+        Returns a TypeAttr object, Ellipsis, or None.
         Raises KeyError if the slot is not recognized.
         """
-        if not isinstance(name, str):
-            raise TypeError
-        elif not isinstance(indices, tuple):
-            raise TypeError
-        elif not all(isinstance(index, int) for index in indices):
-            raise TypeError
-        elif not isinstance(setter, bool):
+        _slot_check(name, indices)
+
+        if not isinstance(setter, bool):
             raise TypeError
         elif not isinstance(call, bool):
             raise TypeError
-        elif setter and call:
-            raise ValueError("Setter slot cannot be a call slot simultaneously")
-        elif setter and not name and not indices:
-            raise ValueError("Setter slot cannot be empty")
+
+        if setter:
+            if not name and not indices:
+                raise ValueError("Empty slot cannot be set")
+            elif call:
+                raise ValueError("Call slot cannot be set")
 
         try:
             attr = cls._slot_attr(name, indices, setter, call)
@@ -334,7 +173,7 @@ class Context:
 
             raise KeyError(f"{cls}: {slot_type} slot {_slot_str(name, indices)} is not recognized")
 
-        if not isinstance(attr, (type(None), type(...), TypeAttributes)):
+        if attr is not TypeAttr.UNSPECIFIED and not isinstance(attr, (NoneType, TypeAttr)):
             raise TypeError
         elif attr is None and not call:
             if setter:
@@ -353,41 +192,33 @@ class Context:
         Returns an Object instance or None.
         Raises TypeError if an Object of appropriate type cannot be constructed.
         """
-        if not isinstance(name, str):
-            raise TypeError
-        elif not isinstance(indices, tuple):
-            raise TypeError
-        elif not all(isinstance(index, int) for index in indices):
-            raise TypeError
-        elif not name and not indices:
-            raise ValueError("Setter slot cannot be empty")
+        _slot_check(name, indices)
+
+        if not name and not indices:
+            raise ValueError("Empty slot cannot be set")
 
         try:
             obj = cls._slot_object(value, name, indices)
         except TypeError:
             raise TypeError(f"{cls}: cannot assign {value} to slot {_slot_str(name, indices)}")
 
-        if not isinstance(obj, (type(None), Object)):
+        if not isinstance(obj, (NoneType, Object)):
             raise TypeError
 
         return obj
 
     @classmethod
-    def is_slot_unsettable(cls, /, name='', indices=()):
+    def slot_unsettable(cls, /, name='', indices=()):
         """Check if a slot can be unset.
 
         Returns a boolean.
         """
-        if not isinstance(name, str):
-            raise TypeError
-        elif not isinstance(indices, tuple):
-            raise TypeError
-        elif not all(isinstance(index, int) for index in indices):
-            raise TypeError
-        elif not name and not indices:
-            raise ValueError("Cannot unset empty slot")
+        _slot_check(name, indices)
 
-        return cls._is_slot_unsettable(name, indices)
+        if not name and not indices:
+            return False
+
+        return cls._slot_unsettable(name, indices)
 
     @classmethod
     def _init_params_class(cls, /):
@@ -416,10 +247,10 @@ class Context:
 
         This method is to be overridden in derived classes.
 
-        Returns a TypeAttributes object, Ellipsis, or None.
+        Returns a TypeAttr object, Ellipsis, or None.
         Raises KeyError if the slot is not recognized.
         """
-        return ... # any slot is recognized by default
+        return TypeAttr.UNSPECIFIED # any slot is recognized by default
 
     @classmethod
     def _slot_object(cls, value, /, name, indices):
@@ -433,7 +264,7 @@ class Context:
         raise TypeError # don't know what to construct by default
 
     @classmethod
-    def _is_slot_unsettable(cls, /, name, indices):
+    def _slot_unsettable(cls, /, name, indices):
         """Check if a slot can be unset.
 
         This method is to be overridden in derived classes.
@@ -442,179 +273,155 @@ class Context:
         """
         return True # all slots are unsettable by default
 
-    @staticmethod
-    def _set_slot(context, /, name='', indices=(), value=None):
-        """Check compatibility of source and target types, append the assignment operation to the list.
-        """
-        if context._.registry is None:
-            raise RuntimeError
-        elif not name and not indices:
-            raise AttributeError("Cannot set an empty slot")
 
-        if not context._.registry.owns(value):
-            raise ValueError("The assigned value is not owned by the same registry")
+class Context(_ContextTyping):
+    """Representation of a context.
 
-        target_attr = context.__class__.slot_attr(name, indices, setter=True)
-        source_attr = type_attributes_of(value)
-
-        if source_attr is None:
-            value = context.__class__.slot_object(value, name, indices)
-            source_attr = value.attributes
-
-        if not type_attributes_compatible(source_attr, target_attr):
-            raise TypeError(f"Cannot assign value={value} to slot {_slot_str(name, indices)} of context '{context._.key}': types are incompatible")
-
-        context._.registry.operations.set_slot(context._.key, name, indices, value)
-
-    @staticmethod
-    def _unset_slot(context, /, name='', indices=()):
-        """Append the unassignment operation to the list.
-        """
-        if context._.registry is None:
-            raise RuntimeError
-        elif not name and not indices:
-            raise AttributeError("Cannot unset an empty slot")
-
-        if not context.__class__.is_slot_unsettable(name, indices):
-            raise AttributeError(f"Slot {_slot_str(name, indices)} of context '{context._.key}' is not unsettable")
-
-        context._.registry.operations.unset_slot(context._.key, name, indices)
-
-
-class _ContextSlot:
-    """Representation of a context slot.
-
-    Instances of this class are not to be created directly.
+    This base class does not impose any restrictions on slots.
     """
-    def __init__(self, context, /, name='', indices=(), call_params=None, weak_ref=False):
-        """Initialize a context slot instance.
+    __slots__ = ['_'] # (^_^)
+
+    # Main part of symbol name of the context interface
+    C_NAME = None
+
+    def __init_subclass__(cls, /):
+        """Initialize a context interface subclass.
         """
-        if not isinstance(context, Context):
-            raise TypeError
-        elif not isinstance(name, str):
-            raise TypeError
-        elif not isinstance(indices, tuple):
-            raise TypeError
-        elif not all(isinstance(index, int) for index in indices):
-            raise TypeError
-        elif not isinstance(call_params, (type(None), Parameters)):
-            raise TypeError
-        elif not isinstance(weak_ref, bool):
+        if cls.C_NAME is not None:
+            if not isinstance(cls.C_NAME, str):
+                raise TypeError
+            elif not cls.C_NAME:
+                raise ValueError
+
+    def __init__(self, key, /):
+        """Initialize a context instance.
+        """
+        if not isinstance(key, str):
+            raise TypeError("Context key must be a string")
+
+        object.__setattr__(self, '_', SimpleNamespace(key=key))
+
+    @staticmethod
+    def key_of(context, /):
+        """Retrieve the key of a context.
+        """
+        if context is None:
+            return None
+        elif not isinstance(context, Context):
             raise TypeError
 
-        fields = SimpleNamespace()
+        return object.__getattribute__(context, '_').key
 
-        fields.context = context
-        fields.name = name
-        fields.indices = indices
-        fields.call_params = call_params
-        fields.weak_ref = weak_ref
+    def __repr__(self, /):
+        return f'{self.__class__.__name__}({repr(Context.key_of(self))})'
 
-        object.__setattr__(self, '_', fields)
+    def __eq__(self, other, /):
+        if not other.__class__ is self.__class__:
+            return False
 
-    def __str__(self, /):
-        return f"Context.Slot({vars(self._)})"
+        return object.__getattribute__(self, '_') == object.__getattribute__(other, '_')
+
+    def __hash__(self, /):
+        return hash((self.__class__,) + tuple(vars(object.__getattribute__(self, '_')).values()))
 
     def __getattr__(self, name, /):
         """Get a context slot.
         """
-        if self._.call_params is not None or self._.weak_ref:
-            raise AttributeError
+        return Context.Slot(context=self, name=name)
 
-        return _ContextSlot(self._.context, name=f'{self._.name}.{name}',
-                            indices=self._.indices)
-
-    def __getitem__(self, index, /):
+    def __getattribute__(self, name, /):
         """Get a context slot.
         """
-        if self._.call_params is not None or self._.weak_ref:
-            raise AttributeError
-
-        if isinstance(index, int):
-            return _ContextSlot(self._.context, name=self._.name,
-                                indices=self._.indices + (index,))
-
-        elif isinstance(index, tuple):
-            if not all(isinstance(elt, int) for elt in index):
-                raise TypeError
-
-            return _ContextSlot(self._.context, name=self._.name,
-                                indices=self._.indices + index)
-
+        if name == '_':
+            raise AttributeError # hide _
         else:
-            raise TypeError
+            return object.__getattribute__(self, name)
 
     def __setattr__(self, name, value, /):
-        """Set a context slot.
+        """Attribute setter method.
         """
-        if self._.call_params is not None or self._.weak_ref:
-            raise AttributeError
-
-        Context._set_slot(self._.context, name=f'{self._.name}.{name}',
-                          indices=self._.indices, value=value)
-
-    def __setitem__(self, index, value, /):
-        """Set a context slot.
-        """
-        if self._.call_params is not None or self._.weak_ref:
-            raise AttributeError
-
-        if isinstance(index, int):
-            Context._set_slot(self._.context, name=self._.name,
-                              indices=self._.indices + (index,), value=value)
-
-        elif isinstance(index, tuple):
-            if not all(isinstance(elt, int) for elt in index):
-                raise TypeError
-
-            Context._set_slot(self._.context, name=self._.name,
-                              indices=self._.indices + index, value=value)
-
-        else:
-            raise TypeError
+        raise AttributeError # hide _
 
     def __delattr__(self, name, /):
-        """Unset a context slot.
+        """Attribute deleter method.
         """
-        if self._.call_params is not None or self._.weak_ref:
-            raise AttributeError
+        raise AttributeError # hide _
 
-        Context._unset_slot(self._.context, name=f'{self._.name}.{name}',
-                            indices=self._.indices)
-
-    def __delitem__(self, index, value, /):
-        """Unset a context slot.
+    def __getitem__(self, subscript, /):
+        """Get a context slot.
         """
-        if self._.call_params is not None or self._.weak_ref:
-            raise AttributeError
-
-        if isinstance(index, int):
-            Context._unset_slot(self._.context, name=self._.name,
-                                indices=self._.indices + (index,))
-
-        elif isinstance(index, tuple):
-            if not all(isinstance(elt, int) for elt in index):
+        if isinstance(subscript, int):
+            subscript = (subscript,)
+        elif isinstance(subscript, tuple):
+            if not all(isinstance(index, int) for index in subscript):
                 raise TypeError
-
-            Context._unset_slot(self._.context, name=self._.name,
-                                indices=self._.indices + index)
-
         else:
             raise TypeError
 
+        return Context.Slot(context=self, indices=subscript)
+
     def __call__(self, _=None, /, **params):
-        """Invoke a call.
+        """Get a context slot call.
         """
-        if self._.call_params is not None or self._.weak_ref:
-            raise AttributeError
-        elif not isinstance(_, (type(None), Parameters.Context)):
+        if not isinstance(_, (NoneType, Parameters.Context)):
             raise TypeError
 
-        call_params_cls = self._.context.__class__.call_params_class(
-                self._.name, self._.indices)
+        call_params_cls = self.__class__.call_params_class()
+        return Context.Slot(context=self, call_params=call_params_cls(_, **params))
 
-        return _ContextSlot(self._.context, name=self._.name, indices=self._.indices,
-                            call_params=call_params_cls(_, **params))
+    @classmethod
+    def interface(cls, context_or_slot, /):
+        """Create a representation of a context interface (from the specified context/slot).
+        """
+        if isinstance(context_or_slot, Context):
+            slot = Context.Slot(context=context_or_slot)
+        elif isinstance(context_or_slot, Context.Slot):
+            slot = context_or_slot
+        else:
+            raise TypeError
+
+        return ContextInterface(slot, cls)
+
+    @classmethod
+    def interface_in(cls, library, /):
+        """Create a representation of a context interface (from a plugin using the predefined symbol name).
+        """
+        slot = ContextInterfaceSymbol.slot(cls.C_NAME, library)
+
+        # optimization by preventing creation of an unnecessary temporary context
+        slot = Context.Slot(context=Context.Slot.context_of(slot), name=Context.Slot.name_of(slot))
+
+        return ContextInterface(slot, cls)
+
+
+class _ContextSlot:
+    """Representation of a context slot.
+    """
+    UNSET = object() # special designator constant for slot unsetting operation
+
+    __slots__ = ['_'] # (^_^)
+
+    def __init_subclass__(cls):
+        raise TypeError("Subclasses of Context.Slot are not allowed")
+
+    def __init__(self, /, context=None, name='', indices=(), call_params=None, weak_ref=False):
+        """Initialize a context slot instance.
+        """
+        if not isinstance(context, (NoneType, Context)):
+            raise TypeError
+
+        _slot_check(name, indices)
+
+        if not isinstance(call_params, (NoneType, Parameters)):
+            raise TypeError
+        elif not isinstance(weak_ref, bool):
+            raise TypeError
+
+        object.__setattr__(self, '_', SimpleNamespace(context=context,
+                                                      name=name,
+                                                      indices=indices,
+                                                      call_params=call_params,
+                                                      weak_ref=weak_ref))
 
     @staticmethod
     def context_of(slot, /):
@@ -622,10 +429,16 @@ class _ContextSlot:
         """
         if slot is None:
             return None
-        elif not isinstance(slot, Context.Slot):
+        elif not isinstance(slot, _ContextSlot):
             raise TypeError
 
-        return slot._.context
+        return object.__getattribute__(slot, '_').context
+
+    @staticmethod
+    def context_key_of(slot, /):
+        """Get the context key of a slot.
+        """
+        return Context.key_of(_ContextSlot.context_of(slot))
 
     @staticmethod
     def name_of(slot, /):
@@ -633,10 +446,10 @@ class _ContextSlot:
         """
         if slot is None:
             return None
-        elif not isinstance(slot, Context.Slot):
+        elif not isinstance(slot, _ContextSlot):
             raise TypeError
 
-        return slot._.name
+        return object.__getattribute__(slot, '_').name
 
     @staticmethod
     def indices_of(slot, /):
@@ -644,10 +457,10 @@ class _ContextSlot:
         """
         if slot is None:
             return None
-        elif not isinstance(slot, Context.Slot):
+        elif not isinstance(slot, _ContextSlot):
             raise TypeError
 
-        return slot._.indices
+        return object.__getattribute__(slot, '_').indices
 
     @staticmethod
     def call_params_of(slot, /):
@@ -655,10 +468,10 @@ class _ContextSlot:
         """
         if slot is None:
             return None
-        elif not isinstance(slot, Context.Slot):
+        elif not isinstance(slot, _ContextSlot):
             raise TypeError
 
-        return slot._.call_params
+        return object.__getattribute__(slot, '_').call_params
 
     @staticmethod
     def is_call(slot, /):
@@ -666,10 +479,10 @@ class _ContextSlot:
         """
         if slot is None:
             return False
-        elif not isinstance(slot, Context.Slot):
+        elif not isinstance(slot, _ContextSlot):
             raise TypeError
 
-        return slot._.call_params is not None
+        return object.__getattribute__(slot, '_').call_params is not None
 
     @staticmethod
     def is_weak_ref(slot, /):
@@ -677,233 +490,235 @@ class _ContextSlot:
         """
         if slot is None:
             return False
-        elif not isinstance(slot, Context.Slot):
+        elif not isinstance(slot, _ContextSlot):
             raise TypeError
 
-        return slot._.weak_ref
+        return object.__getattribute__(slot, '_').weak_ref
 
+    def __repr__(self, /):
+        context = repr(_ContextSlot.context_of(self))
+        name = repr(_ContextSlot.name_of(self))
+        indices = repr(_ContextSlot.indices_of(self))
+        call_params = repr(_ContextSlot.call_params_of(self))
+        weak_ref = repr(_ContextSlot.is_weak_ref(self))
+
+        return f'Context.Slot(context={context}, name={name}, indices={indices}, call_params={call_params}, weak_ref={weak_ref})'
+
+    def __eq__(self, other, /):
+        if not other.__class__ is self.__class__:
+            return False
+
+        return object.__getattribute__(self, '_') == object.__getattribute__(other, '_')
+
+    def __hash__(self, /):
+        return hash(tuple(vars(object.__getattribute__(self, '_')).values()))
+
+    def __getattr__(self, name, /):
+        """Get a context slot.
+        """
+        if _ContextSlot.is_call(self):
+            raise AttributeError
+
+        slot_context = _ContextSlot.context_of(self)
+        slot_name = _ContextSlot.name_of(self)
+        slot_indices = _ContextSlot.indices_of(self)
+        slot_weak_ref = _ContextSlot.is_weak_ref(self)
+
+        return _ContextSlot(slot_context,
+                            name=f'{slot_name}.{name}',
+                            indices=slot_indices,
+                            weak_ref=slot_weak_ref)
+
+    def __getattribute__(self, name, /):
+        """Get a context slot.
+        """
+        if name == '_':
+            raise AttributeError # hide _
+        else:
+            return object.__getattribute__(self, name)
+
+    def __setattr__(self, name, value, /):
+        """Attribute setter method.
+        """
+        raise AttributeError # hide _
+
+    def __delattr__(self, name, /):
+        """Attribute deleter method.
+        """
+        raise AttributeError # hide _
+
+    def __getitem__(self, subscript, /):
+        """Get a context slot.
+        """
+        if _ContextSlot.is_call(self):
+            raise LookupError
+
+        if isinstance(subscript, int):
+            subscript = (subscript,)
+        elif isinstance(subscript, tuple):
+            if not all(isinstance(elt, int) for elt in subscript):
+                raise TypeError
+        else:
+            raise TypeError
+
+        slot_context = _ContextSlot.context_of(self)
+        slot_name = _ContextSlot.name_of(self)
+        slot_indices = _ContextSlot.indices_of(self)
+        slot_weak_ref = _ContextSlot.is_weak_ref(self)
+
+        return _ContextSlot(slot_context,
+                            name=slot_name,
+                            indices=slot_indices + subscript,
+                            weak_ref=slot_weak_ref)
+
+    def __call__(self, _=None, /, **params):
+        """Get a context slot call.
+        """
+        if _ContextSlot.is_call(self):
+            raise AttributeError
+        elif not isinstance(_, (NoneType, Parameters.Context)):
+            raise TypeError
+
+        slot_context = _ContextSlot.context_of(self)
+        slot_name = _ContextSlot.name_of(self)
+        slot_indices = _ContextSlot.indices_of(self)
+
+        if slot_context is not None:
+            call_params_cls = slot_context.__class__.call_params_class(slot_name, slot_indices)
+        else:
+            call_params_cls = Parameters
+
+        return _ContextSlot(slot_context, name=slot_name, indices=slot_indices,
+                            call_params=call_params_cls(_, **params))
+
+    @staticmethod
+    def weak_ref(entity, /):
+        """Make weak reference to a context slot.
+        """
+        if isinstance(entity, Context):
+            return _ContextSlot(context=entity, weak_ref=True)
+
+        elif isinstance(entity, _ContextSlot):
+            return _ContextSlot(context=Context.Slot.context_of(entity),
+                                name=Context.Slot.name_of(entity),
+                                indices=Context.Slot.indices_of(entity),
+                                call_params=Context.Slot.call_params_of(entity),
+                                weak_ref=True)
+
+        else:
+            return entity
+
+    def __add__(self, other, /):
+        """Merge context slots.
+        """
+        if other is None:
+            return self
+
+        if not isinstance(other, _ContextSlot):
+            raise TypeError
+        elif _ContextSlot.context_of(other) is not None:
+            raise AttributeError
+        elif _ContextSlot.is_call(self):
+            raise AttributeError
+
+        slot_context = _ContextSlot.context_of(self)
+        slot_name = _ContextSlot.name_of(self)
+        slot_indices = _ContextSlot.indices_of(self)
+        slot_weak_ref = _ContextSlot.is_weak_ref(self)
+
+        other_name = _ContextSlot.name_of(other)
+        other_indices = _ContextSlot.indices_of(other)
+        other_call_params = _ContextSlot.call_params_of(other)
+        other_weak_ref = _ContextSlot.is_weak_ref(other)
+
+        name_sep = '.' if slot_name or other_name else ''
+
+        return _ContextSlot(context=slot_context,
+                            name=f'{slot_name}{name_sep}{other_name}',
+                            indices=slot_indices + other_indices,
+                            call_params=other_call_params,
+                            weak_ref=slot_weak_ref or other_weak_ref)
+
+    def __invert__(self, /):
+        """Unset context of a context slot.
+        """
+        return _ContextSlot(name=_ContextSlot.name_of(self),
+                            indices=_ContextSlot.indices_of(self),
+                            call_params=_ContextSlot.call_params_of(self),
+                            weak_ref=_ContextSlot.is_weak_ref(self))
+
+    def __rmatmul__(self, other, /):
+        """Merge a context and a context slot.
+        """
+        if not isinstance(other, Context):
+            raise TypeError
+        elif _ContextSlot.context_of(self) is not None:
+            raise AttributeError
+
+        return _ContextSlot(context=other,
+                            name=_ContextSlot.name_of(self),
+                            indices=_ContextSlot.indices_of(self),
+                            call_params=_ContextSlot.call_params_of(self),
+                            weak_ref=_ContextSlot.is_weak_ref(self))
+
+    def __lshift__(self, other, /):
+        """Create an assignment chain representation.
+        """
+        return _ContextSlotAssignment(self, other)
+
+
+# Context slot is a nested class of Context
 Context.Slot = _ContextSlot
 
 
-def _slot_str(slot_name, slot_indices, /):
-    """Get the string representation of a slot.
+class _ContextSlotAssignment:
+    """Proxy representation of a context slot assignment chain.
     """
-    if slot_name:
-        str_name = "'" + slot_name + "'"
-    else:
-        str_name = ""
-
-    if slot_indices:
-        str_indices = "[" + ", ".join(str(index) for index in slot_indices) + "]"
-    else:
-        str_indices = ""
-
-    return str_name + str_indices
-
-
-class _ContextSpec:
-    """Representation of a created context specification.
-
-    Instances of this class are not to be created directly.
-    """
-    def __init__(self, interface, params, /):
-        """Initialize a context specification instance.
+    def __init__(self, lhs, rhs, /):
+        """Initialize an assignment chain.
         """
-        if not isinstance(interface, _ContextInterface):
-            raise TypeError
-        elif not isinstance(params, Parameters):
-            raise TypeError
+        if isinstance(lhs, Context.Slot):
+            if isinstance(rhs, _ContextSlotAssignment):
+                self._chain = (lhs,) + rhs.chain
+            else:
+                self._chain = (lhs, rhs)
 
-        self._interface_origin = interface.origin
-        self._context_cls = interface.context_cls
-        self._params = params
+        elif isinstance(lhs, _ContextSlotAssignment):
+            if not isinstance(lhs.chain[-1], Context.Slot):
+                raise TypeError("Non Context.Slot object cannot be on the left hand side of a slot assignment")
 
-    def __str__(self, /):
-        return f"_ContextSpec(interface={self.interface_origin}, context_class={self.context_cls}, params={self.params})"
+            if isinstance(rhs, _ContextSlotAssignment):
+                self._chain = lhs.chain + rhs.chain
+            else:
+                self._chain = lhs.chain + (rhs,)
 
-    def is_a(self, cls, /):
-        """Refine a created context class.
+        else:
+            raise TypeError("Unknown type on the left hand side of a slot assignment")
+
+    def __repr__(self, /):
+        return ' << '.join(repr(entity) for entity in self.chain)
+
+    def __lshift__(self, other, /):
+        """Create an assignment chain representation.
         """
-        if not issubclass(cls, self.context_cls):
-            raise TypeError(f"Can't refine {self.context_cls} to {cls}: isn't a subclass")
-
-        self._context_cls = cls
-        return self
+        return _ContextSlotAssignment(self, other)
 
     @property
-    def interface_origin(self, /):
-        """Obtain the inteface origin context/slot.
+    def chain(self, /):
+        """Get the assignment chain.
         """
-        return self._interface_origin
-
-    @property
-    def context_cls(self, /):
-        """Obtain the context class.
-        """
-        return self._context_cls
-
-    @property
-    def params(self, /):
-        """Obtain the context initialization parameters.
-        """
-        return self._params
-
-
-class _ContextInterface:
-    """Representation of a context slot.
-
-    Instances of this class are not to be created directly.
-    """
-    def __init__(self, context_or_slot, /, context_cls=Context):
-        """Initialize a context interface instance.
-        """
-        if not isinstance(context_or_slot, (Context, Context.Slot)):
-            raise TypeError
-        elif not issubclass(context_cls, Context):
-            raise TypeError
-
-        self._origin = context_or_slot
-        self._context_cls = context_cls
-
-    def __str__(self, /):
-        return f"_ContextInterface(origin={self.origin}, context_class={self.context_cls})"
-
-    def __call__(self, _=None, /, **params):
-        """Create a context specification instance.
-        """
-        return _ContextSpec(self, self.context_cls.init_params_class()(_, **params))
-
-    @property
-    def origin(self, /):
-        """Obtain the inteface origin context/slot.
-        """
-        return self._origin
-
-    @property
-    def context_cls(self, /):
-        """Obtain the context class.
-        """
-        return self._context_cls
+        return self._chain
 
 ##############################################################################
 
-class Parameters:
-    """Representation of a parameter list.
-
-    This base class does not impose any restrictions on parameters.
+class _ParameterTyping:
+    """Interface of context parameters typing.
     """
-    class Context(Context):
-        """Base context type for parameter lists.
-
-        This class is derived automatically in subclasses of Parameters class.
-        """
-        C_NAME = 'plist'
-
-        @classmethod
-        def _call_params_class(cls, /, name, indices):
-            if name or indices:
-                raise KeyError
-
-            return cls.init_params_class()
-
-        @classmethod
-        def _slot_attr(cls, /, name, indices, setter, call):
-            if indices:
-                raise KeyError
-
-            if not name:
-                if not call:
-                    return TypeAttributes.complex_data(ac.ARCHI_POINTER_DATA_TAG__KVLIST)
-                else:
-                    return None
-
-            return cls.init_params_class().param_attr(name)
-
-        @classmethod
-        def _slot_object(cls, value, /, name, indices):
-            if indices:
-                raise KeyError
-
-            return cls.init_params_class().param_object(value, name)
-
-        @classmethod
-        def _is_slot_unsettable(cls, /, name, indices):
-            return False
-
-    def __init_subclass__(cls, /):
-        """Initialize a subclass.
-        """
-        class ParametersSubclassContext(cls.Context):
-            @classmethod
-            def _init_params_class(_, /):
-                return cls
-
-        cls.Context = ParametersSubclassContext
-
-    def __init__(self, _=None, /, **params):
-        """Initialize a context parameter list instance.
-        """
-        if not isinstance(_, (type(None), self.__class__.Context)):
-            raise TypeError
-
-        self._params_base = _
-        self._params_dynamic = {}
-        self._params_static = {}
-
-        for key, value in params.items():
-            param_attr = self.__class__.param_attr(key)
-            value_attr = type_attributes_of(value)
-
-            if value_attr is None:
-                value = self.__class__.param_object(value, key)
-                value_attr = value.attributes
-
-            if not type_attributes_compatible(value_attr, param_attr):
-                raise TypeError(f"{self.__class__}: cannot assign value={value} to parameter '{key}': types are incompatible")
-
-            if isinstance(value, (Context, Context.Slot)):
-                self._params_dynamic[key] = value
-            else: # Object or None
-                self._params_static[key] = value
-
-    def __str__(self, /):
-        return f"Parameters(base={self.base_context}, dynamic={self.dynamic_params}, static={self.static_params})"
-
-    @property
-    def base_context(self, /):
-        """Obtain the base parameter list context.
-        """
-        return self._params_base
-
-    @property
-    def base_context_key(self, /):
-        """Obtain key of the base parameter list context.
-        """
-        return Context.key_of(self._params_base)
-
-    @property
-    def params(self, /):
-        """Obtain dictionary of all parameters in the parameter list.
-        """
-        return MappingProxyType(self._params_dynamic | self._params_static)
-
-    @property
-    def dynamic_params(self, /):
-        """Obtain dictionary of dynamic parameters in the parameter list.
-        """
-        return MappingProxyType(self._params_dynamic)
-
-    @property
-    def static_params(self, /):
-        """Obtain dictionary of static parameters in the parameter list.
-        """
-        return MappingProxyType(self._params_static)
-
     @classmethod
     def param_attr(cls, /, key):
         """Get type attributes of a parameter.
 
-        Returns a TypeAttributes object or Ellipsis.
+        Returns a TypeAttr object or Ellipsis.
         Raises KeyError if the parameter is not recognized.
         """
         if not isinstance(key, str):
@@ -916,7 +731,7 @@ class Parameters:
         except KeyError:
             raise KeyError(f"{cls}: parameter '{key}' is not recognized")
 
-        if not isinstance(attr, (type(...), TypeAttributes)):
+        if attr is not TypeAttr.UNSPECIFIED and not isinstance(attr, TypeAttr):
             raise TypeError
 
         return attr
@@ -938,7 +753,7 @@ class Parameters:
         except KeyError:
             raise KeyError(f"{cls}: parameter '{key}' is not recognized")
 
-        if not isinstance(obj, (type(None), Object)):
+        if not isinstance(obj, (NoneType, Object)):
             raise TypeError
 
         return obj
@@ -949,10 +764,10 @@ class Parameters:
 
         This method is to be overridden in derived classes.
 
-        Returns a TypeAttributes object or Ellipsis.
+        Returns a TypeAttr object or Ellipsis.
         Raises KeyError if the parameter is not recognized.
         """
-        return ... # any parameter is recognized by default
+        return TypeAttr.UNSPECIFIED # any parameter is recognized by default
 
     @classmethod
     def _param_object(cls, value, /, key):
@@ -965,8 +780,191 @@ class Parameters:
         """
         raise TypeError # don't know what to construct by default
 
+
+class ParametersContext(Context):
+    """Base context type for parameter lists.
+
+    This class is derived automatically in subclasses of Parameters class.
+    """
+    C_NAME = 'plist'
+
+    @classmethod
+    def _call_params_class(cls, /, name, indices):
+        if name or indices:
+            raise KeyError
+
+        return cls.init_params_class()
+
+    @classmethod
+    def _slot_attr(cls, /, name, indices, setter, call):
+        if indices:
+            raise KeyError
+
+        if not name:
+            if not call:
+                return TypeAttr.complex_data(typ.ARCHI_POINTER_DATA_TAG__KVLIST)
+            else:
+                return None
+
+        return cls.init_params_class().param_attr(name)
+
+    @classmethod
+    def _slot_object(cls, value, /, name, indices):
+        if indices:
+            raise KeyError
+
+        return cls.init_params_class().param_object(value, name)
+
+    @classmethod
+    def _slot_unsettable(cls, /, name, indices):
+        return False
+
+
+class Parameters(_ParameterTyping):
+    """Representation of a parameter list.
+
+    This base class does not impose any restrictions on parameters.
+    """
+    Context = ParametersContext
+
+    def __init_subclass__(cls, /):
+        """Initialize a subclass.
+        """
+        class _ParametersContext(cls.Context):
+            @classmethod
+            def _init_params_class(_, /):
+                return cls
+
+        cls.Context = _ParametersContext
+
+    def __init__(self, _=None, /, **params):
+        """Initialize a context parameter list instance.
+        """
+        if not isinstance(_, (NoneType, self.__class__.Context)):
+            raise TypeError
+
+        self._context = _
+        self._params = params
+
+    def __repr__(self, /):
+        params = [f'{name}={repr(value)}' for name, value in self.params.items()]
+        if self.base_context is not None:
+            params = [repr(self.base_context)] + params
+
+        return f'{self.__class__.__name__}({', '.join(params)})'
+
+    def __eq__(self, other, /):
+        if not other.__class__ is self.__class__:
+            return False
+
+        return self.base_context == other.base_context \
+                and self.dict == other.dict
+
+    def __hash__(self, /):
+        return hash((self.__class__, self.base_context) + tuple(self.dict.items()))
+
+    @property
+    def base_context(self, /):
+        """Obtain the base parameter list context.
+        """
+        return self._context
+
+    @property
+    def dict(self, /):
+        """Obtain dictionary of parameters in the parameter list.
+        """
+        return MappingProxyType(self._params)
+
 ##############################################################################
-# Built-in context types
+
+class ContextInterface:
+    """Representation of a context interface.
+    """
+    def __init_subclass__(cls):
+        raise TypeError("Subclasses of ContextInterface are not allowed")
+
+    def __init__(self, origin, /, context_cls=Context):
+        """Initialize a context interface instance.
+        """
+        if not isinstance(origin, (Context, Context.Slot)):
+            raise TypeError
+        elif not issubclass(context_cls, Context):
+            raise TypeError
+
+        self._origin = origin
+        self._context_cls = context_cls
+
+    def __repr__(self, /):
+        return f"ContextInterface({self.origin}, context_cls={self.context_cls.__name__})"
+
+    def __call__(self, _=None, /, **params):
+        """Create a context specification instance.
+        """
+        return _ContextSpec(self.context_cls, self.origin,
+                            self.context_cls.init_params_class()(_, **params))
+
+    @property
+    def origin(self, /):
+        """Obtain the inteface origin context/slot.
+        """
+        return self._origin
+
+    @property
+    def context_cls(self, /):
+        """Obtain the context class.
+        """
+        return self._context_cls
+
+
+class _ContextSpec:
+    """Proxy representation of a created context specification.
+
+    Instances of this class are not to be created directly.
+    """
+    def __init__(self, context_cls, interface_origin, params, /):
+        """Initialize a context specification instance.
+        """
+        if not issubclass(context_cls, Context):
+            raise TypeError
+        elif not isinstance(interface_origin, (Context, Context.Slot)):
+            raise TypeError
+        elif not isinstance(params, Parameters):
+            raise TypeError
+
+        self._context_cls = context_cls
+        self._interface_origin = interface_origin
+        self._params = params
+
+    def __repr__(self, /):
+        return f"_ContextSpec({self.context_cls.__name__}, {self.interface_origin}, {self.params})"
+
+    def is_a(self, cls, /):
+        """Refine a created context class.
+        """
+        if not issubclass(cls, self.context_cls):
+            raise TypeError(f"Can't refine {self.context_cls} to {cls}: isn't a subclass")
+
+        self._context_cls = cls
+        return self
+
+    @property
+    def context_cls(self, /):
+        """Obtain the context class.
+        """
+        return self._context_cls
+
+    @property
+    def interface_origin(self, /):
+        """Obtain the inteface origin context/slot.
+        """
+        return self._interface_origin
+
+    @property
+    def params(self, /):
+        """Obtain the context initialization parameters.
+        """
+        return self._params
+
 ##############################################################################
 
 class ParametersBase(Parameters):
@@ -995,7 +993,7 @@ class ContextBase(Context):
         raise KeyError # no slots recognized by default
 
     @classmethod
-    def _is_slot_unsettable(cls, /, name, indices):
+    def _slot_unsettable(cls, /, name, indices):
         return False # all slots are unsettable by default
 
 ##############################################################################
@@ -1083,25 +1081,27 @@ class ParametersWhitelist(ParametersBase):
             raise TypeError
 
 ##############################################################################
+# Built-in context types
+##############################################################################
 
 def _make_size_t(value):
     if value < 0:
         raise ValueError
     return PrimitiveData(c.c_size_t(value))
 
-_TYPE_DATA = TypeAttributes.complex_data()
-_TYPE_FUNCTION = TypeAttributes.function()
-_TYPE_BOOL = (TypeAttributes.from_type(c.c_char),
+_TYPE_DATA = TypeAttr.complex_data()
+_TYPE_FUNCTION = TypeAttr.function()
+_TYPE_BOOL = (TypeAttr.from_type(c.c_char),
               lambda value: PrimitiveData(c.c_char(bool(value))))
-_TYPE_INT = (TypeAttributes.from_type(c.c_int),
+_TYPE_INT = (TypeAttr.from_type(c.c_int),
              lambda value: PrimitiveData(c.c_int(value)))
-_TYPE_LONGLONG = (TypeAttributes.from_type(c.c_longlong),
+_TYPE_LONGLONG = (TypeAttr.from_type(c.c_longlong),
                   lambda value: PrimitiveData(c.c_longlong(value)))
-_TYPE_SIZE = (TypeAttributes.from_type(c.c_size_t), _make_size_t)
-_TYPE_ATTR = (TypeAttributes.from_type(TypeAttributes),
-              lambda value: PrimitiveData(TypeAttributes(value)))
-_TYPE_DATA_PTR = TypeAttributes.from_type(c.c_void_p)
-_TYPE_STRING = (TypeAttributes.from_type(c.c_char * 1),
+_TYPE_SIZE = (TypeAttr.from_type(c.c_size_t), _make_size_t)
+_TYPE_ATTR = (TypeAttr.from_type(TypeAttr),
+              lambda value: PrimitiveData(TypeAttr(value)))
+_TYPE_DATA_PTR = TypeAttr.from_type(c.c_void_p)
+_TYPE_STRING = (TypeAttr.from_type(c.c_char * 1),
                 lambda value: String(value))
 
 ### archi/context ###
@@ -1111,12 +1111,12 @@ class PointerContext(ContextWhitelist):
     """
     C_NAME = 'pointer'
 
-    CONTEXT_TYPE = ...
+    CONTEXT_TYPE = TypeAttr.UNSPECIFIED
 
     class InitParameters(ParametersWhitelist):
-        PARAMS = {'pointee': ...}
+        PARAMS = {'pointee': TypeAttr.UNSPECIFIED}
 
-    GETTER_SLOTS = {'pointee': ...}
+    GETTER_SLOTS = {'pointee': TypeAttr.UNSPECIFIED}
     SETTER_SLOTS = GETTER_SLOTS
 
 
@@ -1236,7 +1236,7 @@ class DataPointerArrayContext(ContextWhitelist):
     """
     C_NAME = 'dptr_array'
 
-    CONTEXT_TYPE = TypeAttributes.complex_data(ac.ARCHI_POINTER_DATA_TAG__DPTR_ARRAY)
+    CONTEXT_TYPE = TypeAttr.complex_data(typ.ARCHI_POINTER_DATA_TAG__DPTR_ARRAY)
 
     class InitParameters(ParametersWhitelist):
         PARAMS = {'length': _TYPE_SIZE}
@@ -1257,16 +1257,16 @@ class AggregateContext(ContextWhitelist):
     """
     C_NAME = 'aggregate'
 
-    CONTEXT_TYPE = TypeAttributes.complex_data(ac.ARCHI_POINTER_DATA_TAG__AGGR)
+    CONTEXT_TYPE = TypeAttr.complex_data(typ.ARCHI_POINTER_DATA_TAG__AGGR)
 
     class InitParameters(ParametersWhitelist):
-        PARAMS = {'interface': TypeAttributes.complex_data(ac.ARCHI_POINTER_DATA_TAG__AGGR_INTERFACE),
+        PARAMS = {'interface': TypeAttr.complex_data(typ.ARCHI_POINTER_DATA_TAG__AGGR_INTERFACE),
                   'metadata': _TYPE_DATA,
                   'fam_length': _TYPE_SIZE}
 
-    GETTER_SLOTS = {'interface': TypeAttributes.complex_data(ac.ARCHI_POINTER_DATA_TAG__AGGR_INTERFACE),
+    GETTER_SLOTS = {'interface': TypeAttr.complex_data(typ.ARCHI_POINTER_DATA_TAG__AGGR_INTERFACE),
                     'metadata': _TYPE_DATA,
-                    'layout': TypeAttributes.from_type(ac.archi_layout_struct_t),
+                    'layout': TypeAttr.from_type(typ.archi_layout_struct_t),
                     'size': _TYPE_SIZE,
                     'alignment': _TYPE_SIZE,
                     'fam_stride': _TYPE_SIZE,
@@ -1280,7 +1280,7 @@ class AggregateContext(ContextWhitelist):
             if name.startswith('member.'):
                 return _TYPE_DATA
             elif name.startswith('ref.') and not setter:
-                return ...
+                return TypeAttr.UNSPECIFIED
 
         return super()._slot_attr(name, indices, setter, call)
 
@@ -1291,34 +1291,34 @@ class DexgraphNodeContext(ContextWhitelist):
     """
     C_NAME = 'dexgraph_node'
 
-    CONTEXT_TYPE = TypeAttributes.complex_data(ac.ARCHI_POINTER_DATA_TAG__DEXGRAPH_NODE)
+    CONTEXT_TYPE = TypeAttr.complex_data(typ.ARCHI_POINTER_DATA_TAG__DEXGRAPH_NODE)
 
     class InitParameters(ParametersWhitelist):
         PARAMS = {'name': _TYPE_STRING,
                   'sequence_length': _TYPE_SIZE,
-                  'transition_func': TypeAttributes.function(ac.ARCHI_POINTER_FUNC_TAG__DEXGRAPH_TRANSITION),
+                  'transition_func': TypeAttr.function(typ.ARCHI_POINTER_FUNC_TAG__DEXGRAPH_TRANSITION),
                   'transition_data': _TYPE_DATA,
-                  'branches': TypeAttributes.complex_data(ac.ARCHI_POINTER_DATA_TAG__DEXGRAPH_NODE_ARRAY)}
+                  'branches': TypeAttr.complex_data(typ.ARCHI_POINTER_DATA_TAG__DEXGRAPH_NODE_ARRAY)}
 
     class ExecuteCallParameters(ParametersWhitelist):
-        PARAMS = {'index': (TypeAttributes.from_type(ac.archi_dexgraph_branch_index_t),
-                            lambda value: PrimitiveData(ac.archi_dexgraph_branch_index_t(value)))}
+        PARAMS = {'index': (TypeAttr.from_type(typ.archi_dexgraph_branch_index_t),
+                            lambda value: PrimitiveData(typ.archi_dexgraph_branch_index_t(value)))}
 
     GETTER_SLOTS = {'name': _TYPE_STRING,
                     'sequence.length': _TYPE_SIZE,
-                    'sequence.function': {1: TypeAttributes.function(ac.ARCHI_POINTER_FUNC_TAG__DEXGRAPH_OPERATION)},
+                    'sequence.function': {1: TypeAttr.function(typ.ARCHI_POINTER_FUNC_TAG__DEXGRAPH_OPERATION)},
                     'sequence.data': {1: _TYPE_DATA},
-                    'transition.function': TypeAttributes.function(ac.ARCHI_POINTER_FUNC_TAG__DEXGRAPH_TRANSITION),
+                    'transition.function': TypeAttr.function(typ.ARCHI_POINTER_FUNC_TAG__DEXGRAPH_TRANSITION),
                     'transition.data': _TYPE_DATA,
-                    'branches': TypeAttributes.complex_data(ac.ARCHI_POINTER_DATA_TAG__DEXGRAPH_NODE_ARRAY)}
+                    'branches': TypeAttr.complex_data(typ.ARCHI_POINTER_DATA_TAG__DEXGRAPH_NODE_ARRAY)}
 
     CALL_SLOTS = {'execute': (None, ExecuteCallParameters)}
 
-    SETTER_SLOTS = {'sequence.function': {1: TypeAttributes.function(ac.ARCHI_POINTER_FUNC_TAG__DEXGRAPH_OPERATION)},
+    SETTER_SLOTS = {'sequence.function': {1: TypeAttr.function(typ.ARCHI_POINTER_FUNC_TAG__DEXGRAPH_OPERATION)},
                     'sequence.data': {1: _TYPE_DATA},
-                    'transition.function': TypeAttributes.function(ac.ARCHI_POINTER_FUNC_TAG__DEXGRAPH_TRANSITION),
+                    'transition.function': TypeAttr.function(typ.ARCHI_POINTER_FUNC_TAG__DEXGRAPH_TRANSITION),
                     'transition.data': _TYPE_DATA,
-                    'branches': TypeAttributes.complex_data(ac.ARCHI_POINTER_DATA_TAG__DEXGRAPH_NODE_ARRAY)}
+                    'branches': TypeAttr.complex_data(typ.ARCHI_POINTER_DATA_TAG__DEXGRAPH_NODE_ARRAY)}
 
 
 class DexgraphNodeArrayContext(ContextWhitelist):
@@ -1326,15 +1326,15 @@ class DexgraphNodeArrayContext(ContextWhitelist):
     """
     C_NAME = 'dexgraph_node_array'
 
-    CONTEXT_TYPE = TypeAttributes.complex_data(ac.ARCHI_POINTER_DATA_TAG__DEXGRAPH_NODE_ARRAY)
+    CONTEXT_TYPE = TypeAttr.complex_data(typ.ARCHI_POINTER_DATA_TAG__DEXGRAPH_NODE_ARRAY)
 
     class InitParameters(ParametersWhitelist):
         PARAMS = {'num_nodes': _TYPE_SIZE}
 
     GETTER_SLOTS = {'num_nodes': _TYPE_SIZE,
-                    'node': {1: TypeAttributes.complex_data(ac.ARCHI_POINTER_DATA_TAG__DEXGRAPH_NODE)}}
+                    'node': {1: TypeAttr.complex_data(typ.ARCHI_POINTER_DATA_TAG__DEXGRAPH_NODE)}}
 
-    SETTER_SLOTS = {'node': {1: TypeAttributes.complex_data(ac.ARCHI_POINTER_DATA_TAG__DEXGRAPH_NODE)}}
+    SETTER_SLOTS = {'node': {1: TypeAttr.complex_data(typ.ARCHI_POINTER_DATA_TAG__DEXGRAPH_NODE)}}
 
 ### archi/thread ###
 
@@ -1343,10 +1343,10 @@ class ThreadGroupContext(ContextWhitelist):
     """
     C_NAME = 'thread_group'
 
-    CONTEXT_TYPE = TypeAttributes.complex_data(ac.ARCHI_POINTER_DATA_TAG__THREAD_GROUP)
+    CONTEXT_TYPE = TypeAttr.complex_data(typ.ARCHI_POINTER_DATA_TAG__THREAD_GROUP)
 
     class InitParameters(ParametersWhitelist):
-        PARAMS = {'params': (TypeAttributes.from_type(ac.archi_thread_group_start_params_t),
+        PARAMS = {'params': (TypeAttr.from_type(typ.archi_thread_group_start_params_t),
                              lambda value: PrimitiveData(value)),
                   'num_threads': _TYPE_SIZE}
 
@@ -1358,10 +1358,10 @@ class LockFreeQueueContext(ContextWhitelist):
     """
     C_NAME = 'thread_lfqueue'
 
-    CONTEXT_TYPE = TypeAttributes.complex_data(ac.ARCHI_POINTER_DATA_TAG__THREAD_LFQUEUE)
+    CONTEXT_TYPE = TypeAttr.complex_data(typ.ARCHI_POINTER_DATA_TAG__THREAD_LFQUEUE)
 
     class InitParameters(ParametersWhitelist):
-        PARAMS = {'params': (TypeAttributes.from_type(ac.archi_thread_lfqueue_alloc_params_t),
+        PARAMS = {'params': (TypeAttr.from_type(typ.archi_thread_lfqueue_alloc_params_t),
                              lambda value: PrimitiveData(value)),
                   'capacity': _TYPE_SIZE,
                   'elt_size': _TYPE_SIZE}
@@ -1376,10 +1376,10 @@ class SignalHandlerDataHashmapContext(ContextBase):
     """
     C_NAME = 'signal_handler_data__hashmap'
 
-    CONTEXT_TYPE = TypeAttributes.complex_data(ac.ARCHI_POINTER_DATA_TAG__SIGNAL_HANDLER_DATA__HASHMAP)
+    CONTEXT_TYPE = TypeAttr.complex_data(typ.ARCHI_POINTER_DATA_TAG__SIGNAL_HANDLER_DATA__HASHMAP)
 
     class InitParameters(ParametersWhitelist):
-        PARAMS = {'params': (TypeAttributes.from_type(ac.archi_hashmap_alloc_params_t),
+        PARAMS = {'params': (TypeAttr.from_type(typ.archi_hashmap_alloc_params_t),
                              lambda value: PrimitiveData(value)),
                   'capacity': _TYPE_SIZE}
 
@@ -1392,10 +1392,10 @@ class SignalHandlerDataHashmapContext(ContextBase):
         if not name:
             return cls.CONTEXT_TYPE
 
-        return TypeAttributes.from_type(ac.archi_signal_handler_t)
+        return TypeAttr.from_type(typ.archi_signal_handler_t)
 
     @classmethod
-    def _is_slot_unsettable(cls, /, name, indices):
+    def _slot_unsettable(cls, /, name, indices):
         return True
 
 ### archi/memory ###
@@ -1405,17 +1405,17 @@ class MemoryContext(ContextWhitelist):
     """
     C_NAME = 'memory'
 
-    CONTEXT_TYPE = TypeAttributes.complex_data(ac.ARCHI_POINTER_DATA_TAG__MEMORY)
+    CONTEXT_TYPE = TypeAttr.complex_data(typ.ARCHI_POINTER_DATA_TAG__MEMORY)
 
     class InitParameters(ParametersWhitelist):
-        PARAMS = {'interface': TypeAttributes.complex_data(ac.ARCHI_POINTER_DATA_TAG__MEMORY_INTERFACE),
+        PARAMS = {'interface': TypeAttr.complex_data(typ.ARCHI_POINTER_DATA_TAG__MEMORY_INTERFACE),
                   'alloc_data': _TYPE_DATA,
                   'length': _TYPE_SIZE,
                   'stride': _TYPE_SIZE,
                   'alignment': _TYPE_SIZE,
                   'ext_alignment': _TYPE_SIZE}
 
-    GETTER_SLOTS = {'interface': TypeAttributes.complex_data(ac.ARCHI_POINTER_DATA_TAG__MEMORY_INTERFACE),
+    GETTER_SLOTS = {'interface': TypeAttr.complex_data(typ.ARCHI_POINTER_DATA_TAG__MEMORY_INTERFACE),
                     'allocation': _TYPE_DATA,
                     'length': _TYPE_SIZE,
                     'stride': _TYPE_SIZE,
@@ -1429,15 +1429,15 @@ class MemoryMappingContext(ContextWhitelist):
     """
     C_NAME = 'memory_mapping'
 
-    CONTEXT_TYPE = TypeAttributes.complex_data(ac.ARCHI_POINTER_DATA_TAG__MEMORY_MAPPING)
+    CONTEXT_TYPE = TypeAttr.complex_data(typ.ARCHI_POINTER_DATA_TAG__MEMORY_MAPPING)
 
     class InitParameters(ParametersWhitelist):
-        PARAMS = {'memory': TypeAttributes.complex_data(ac.ARCHI_POINTER_DATA_TAG__MEMORY),
+        PARAMS = {'memory': TypeAttr.complex_data(typ.ARCHI_POINTER_DATA_TAG__MEMORY),
                   'map_data': _TYPE_DATA,
                   'offset': _TYPE_SIZE,
                   'length': _TYPE_SIZE}
 
-    GETTER_SLOTS = {'memory': TypeAttributes.complex_data(ac.ARCHI_POINTER_DATA_TAG__MEMORY),
+    GETTER_SLOTS = {'memory': TypeAttr.complex_data(typ.ARCHI_POINTER_DATA_TAG__MEMORY),
                     'ptr': _TYPE_DATA,
                     'offset': _TYPE_SIZE,
                     'length': _TYPE_SIZE,
@@ -1450,13 +1450,13 @@ class FileContext(ContextWhitelist):
     """
     C_NAME = 'file'
 
-    CONTEXT_TYPE = TypeAttributes.complex_data(ac.ARCHI_POINTER_DATA_TAG__FILE_STREAM)
+    CONTEXT_TYPE = TypeAttr.complex_data(typ.ARCHI_POINTER_DATA_TAG__FILE_STREAM)
 
     class InitParameters(ParametersWhitelist):
         PARAMS = {'pathname': _TYPE_STRING,
-                  'fd': (TypeAttributes.from_type(ac.archi_file_descriptor_t),
-                         lambda value: PrimitiveData(ac.archi_file_descriptor_t(value))),
-                  'params': TypeAttributes.from_type(ac.archi_file_open_params_t),
+                  'fd': (TypeAttr.from_type(typ.archi_file_descriptor_t),
+                         lambda value: PrimitiveData(typ.archi_file_descriptor_t(value))),
+                  'params': TypeAttr.from_type(typ.archi_file_open_params_t),
                   'size': _TYPE_SIZE,
                   'readable': _TYPE_BOOL,
                   'writable': _TYPE_BOOL,
@@ -1481,8 +1481,8 @@ class FileContext(ContextWhitelist):
     class SyncCallParameters(ParametersWhitelist):
         PARAMS = {}
 
-    GETTER_SLOTS = {'fd': (TypeAttributes.from_type(ac.archi_file_descriptor_t),
-                           lambda value: PrimitiveData(ac.archi_file_descriptor_t(value))),
+    GETTER_SLOTS = {'fd': (TypeAttr.from_type(typ.archi_file_descriptor_t),
+                           lambda value: PrimitiveData(typ.archi_file_descriptor_t(value))),
                     'offset': _TYPE_LONGLONG}
 
     CALL_SLOTS = {'read': (None, ReadCallParameters),
@@ -1499,14 +1499,14 @@ class FileMappingContext(ContextWhitelist):
     """
     C_NAME = 'file_mapping'
 
-    CONTEXT_TYPE = TypeAttributes.complex_data()
+    CONTEXT_TYPE = TypeAttr.complex_data()
 
     class InitParameters(ParametersWhitelist):
-        PARAMS = {'fd': (TypeAttributes.from_type(ac.archi_file_descriptor_t),
-                         lambda value: PrimitiveData(ac.archi_file_descriptor_t(value))),
+        PARAMS = {'fd': (TypeAttr.from_type(typ.archi_file_descriptor_t),
+                         lambda value: PrimitiveData(typ.archi_file_descriptor_t(value))),
                   'stride': _TYPE_SIZE,
                   'alignment': _TYPE_SIZE,
-                  'params': TypeAttributes.from_type(ac.archi_file_map_params_t),
+                  'params': TypeAttr.from_type(typ.archi_file_map_params_t),
                   'size': _TYPE_SIZE,
                   'offset': _TYPE_SIZE,
                   'ptr_support': _TYPE_BOOL,
@@ -1527,11 +1527,11 @@ class LibraryContext(ContextBase):
     """
     C_NAME = 'library'
 
-    CONTEXT_TYPE = TypeAttributes.complex_data(ac.ARCHI_POINTER_DATA_TAG__LIBRARY_HANDLE)
+    CONTEXT_TYPE = TypeAttr.complex_data(typ.ARCHI_POINTER_DATA_TAG__LIBRARY_HANDLE)
 
     class InitParameters(ParametersWhitelist):
         PARAMS = {'pathname': _TYPE_STRING,
-                  'params': TypeAttributes.from_type(ac.archi_library_load_params_t),
+                  'params': TypeAttr.from_type(typ.archi_library_load_params_t),
                   'lazy': _TYPE_BOOL,
                   'global': _TYPE_BOOL,
                   'flags': _TYPE_INT}
@@ -1582,10 +1582,10 @@ class HashmapContext(ContextBase):
     """
     C_NAME = 'hashmap'
 
-    CONTEXT_TYPE = TypeAttributes.complex_data(ac.ARCHI_POINTER_DATA_TAG__HASHMAP)
+    CONTEXT_TYPE = TypeAttr.complex_data(typ.ARCHI_POINTER_DATA_TAG__HASHMAP)
 
     class InitParameters(ParametersWhitelist):
-        PARAMS = {'params': TypeAttributes.from_type(ac.archi_hashmap_alloc_params_t),
+        PARAMS = {'params': TypeAttr.from_type(typ.archi_hashmap_alloc_params_t),
                   'capacity': _TYPE_SIZE}
 
     @classmethod
@@ -1596,10 +1596,10 @@ class HashmapContext(ContextBase):
         if not name:
             return cls.CONTEXT_TYPE
 
-        return ...
+        return TypeAttr.UNSPECIFIED
 
     @classmethod
-    def _is_slot_unsettable(cls, /, name, indices):
+    def _slot_unsettable(cls, /, name, indices):
         return True
 
 ### archi/env ###
@@ -1667,7 +1667,7 @@ class TimerContext(ContextWhitelist):
     """
     C_NAME = 'timer'
 
-    CONTEXT_TYPE = TypeAttributes.complex_data(ac.ARCHI_POINTER_DATA_TAG__TIMER)
+    CONTEXT_TYPE = TypeAttr.complex_data(typ.ARCHI_POINTER_DATA_TAG__TIMER)
 
     class InitParameters(ParametersWhitelist):
         PARAMS = {'name': _TYPE_STRING}
@@ -1733,11 +1733,11 @@ class _Symbol:
         elif not isinstance(namespace, str):
             raise TypeError
 
-        return getattr(cls._symbol_type(library),
+        return getattr(cls._symbol_type_slot(library),
                        namespace + cls.full_name(name))(tag=cls.TAG)
 
     @classmethod
-    def _symbol_type(cls, /, library):
+    def _symbol_type_slot(cls, /, library):
         raise NotImplementedError
 
     def __init__(self, name, /):
@@ -1770,17 +1770,17 @@ class DataSymbol(_Symbol):
         """
         super().__init_subclass__()
 
-        if cls.TAG > TypeAttributes.DATA_TAG_MAX:
+        if cls.TAG > TypeAttr.DATA_TAG_MAX:
             raise ValueError
 
     @classmethod
     def attributes(cls, /):
         """Get type attributes.
         """
-        return TypeAttributes.complex_data(cls.TAG)
+        return TypeAttr.complex_data(cls.TAG)
 
     @classmethod
-    def _symbol_type(cls, /, library):
+    def _symbol_type_slot(cls, /, library):
         return library.data
 
 
@@ -1792,17 +1792,17 @@ class FunctionSymbol(_Symbol):
         """
         super().__init_subclass__()
 
-        if cls.TAG > TypeAttributes.FUNC_TAG_MAX:
+        if cls.TAG > TypeAttr.FUNC_TAG_MAX:
             raise ValueError
 
     @classmethod
     def attributes(cls, /):
         """Get type attributes.
         """
-        return TypeAttributes.function(cls.TAG)
+        return TypeAttr.function(cls.TAG)
 
     @classmethod
-    def _symbol_type(cls, /, library):
+    def _symbol_type_slot(cls, /, library):
         return library.function
 
 ### archi/context ###
@@ -1811,7 +1811,7 @@ class ContextInterfaceSymbol(DataSymbol):
     """Context interface symbol.
     """
     PREFIX = 'context_interface__'
-    TAG = ac.ARCHI_POINTER_DATA_TAG__CONTEXT_INTERFACE
+    TAG = typ.ARCHI_POINTER_DATA_TAG__CONTEXT_INTERFACE
 
 ### archi/aggr ###
 
@@ -1819,14 +1819,14 @@ class AggregateInterfaceSymbol(DataSymbol):
     """Aggregate type interface symbol.
     """
     PREFIX = 'aggr_interface__'
-    TAG = ac.ARCHI_POINTER_DATA_TAG__AGGR_INTERFACE
+    TAG = typ.ARCHI_POINTER_DATA_TAG__AGGR_INTERFACE
 
 
 class AggregateTypeSymbol(DataSymbol):
     """Aggregate type description symbol.
     """
     PREFIX = 'aggr_type__'
-    TAG = ac.ARCHI_POINTER_DATA_TAG__AGGR_TYPE
+    TAG = typ.ARCHI_POINTER_DATA_TAG__AGGR_TYPE
 
 ### archi/exec ###
 
@@ -1834,7 +1834,7 @@ class DexgraphOperationFuncSymbol(FunctionSymbol):
     """DEG operation function symbol.
     """
     PREFIX = 'dexgraph_op__'
-    TAG = ac.ARCHI_POINTER_FUNC_TAG__DEXGRAPH_OPERATION
+    TAG = typ.ARCHI_POINTER_FUNC_TAG__DEXGRAPH_OPERATION
 
 
 class DexgraphOperationDataSymbol(DataSymbol):
@@ -1847,7 +1847,7 @@ class DexgraphTransitionFuncSymbol(FunctionSymbol):
     """DEG transition function symbol.
     """
     PREFIX = 'dexgraph_transition__'
-    TAG = ac.ARCHI_POINTER_FUNC_TAG__DEXGRAPH_TRANSITION
+    TAG = typ.ARCHI_POINTER_FUNC_TAG__DEXGRAPH_TRANSITION
 
 
 class DexgraphTransitionDataSymbol(DataSymbol):
@@ -1861,7 +1861,7 @@ class ThreadGroupWorkFuncSymbol(FunctionSymbol):
     """Thread group work function symbol.
     """
     PREFIX = 'thread_group_work__'
-    TAG = ac.ARCHI_POINTER_FUNC_TAG__THREAD_WORK
+    TAG = typ.ARCHI_POINTER_FUNC_TAG__THREAD_WORK
 
 
 class ThreadGroupWorkDataSymbol(DataSymbol):
@@ -1874,7 +1874,7 @@ class ThreadGroupCallbackFuncSymbol(FunctionSymbol):
     """Thread group callback function symbol.
     """
     PREFIX = 'thread_group_callback__'
-    TAG = ac.ARCHI_POINTER_FUNC_TAG__THREAD_WORK
+    TAG = typ.ARCHI_POINTER_FUNC_TAG__THREAD_WORK
 
 
 class ThreadGroupCallbackDataSymbol(DataSymbol):
@@ -1888,7 +1888,7 @@ class SignalHandlerFuncSymbol(FunctionSymbol):
     """Signal handler function symbol.
     """
     PREFIX = 'signal_handler__'
-    TAG = ac.ARCHI_POINTER_FUNC_TAG__SIGNAL_HANDLER
+    TAG = typ.ARCHI_POINTER_FUNC_TAG__SIGNAL_HANDLER
 
 
 class SignalHandlerDataSymbol(DataSymbol):
@@ -1902,7 +1902,7 @@ class MemoryInterfaceSymbol(DataSymbol):
     """Memory interface symbol.
     """
     PREFIX = 'memory_interface__'
-    TAG = ac.ARCHI_POINTER_DATA_TAG__MEMORY_INTERFACE
+    TAG = typ.ARCHI_POINTER_DATA_TAG__MEMORY_INTERFACE
 
 
 class MemoryAllocDataSymbol(DataSymbol):

@@ -212,12 +212,10 @@ class archi_pointer_attr_t(c.c_uint64):
         attr_memtype = cls.DATA_WRITABLE if writable \
                 else cls.DATA_READONLY
         attr_stride_width = stride_width << cls.SIZE_BITS
-        attr_stride_over_alignment = (stride // alignment - 1) \
-                << (cls.SIZE_BITS - stride_width)
+        attr_stride_over_alignment = (stride // alignment - 1) << (cls.SIZE_BITS - stride_width)
         attr_length = length
 
-        return archi_pointer_attr_t(attr_memtype | attr_stride_width |
-                                    attr_stride_over_alignment | attr_length)
+        return cls(attr_memtype | attr_stride_width | attr_stride_over_alignment | attr_length)
 
     @classmethod
     def complex_data(cls, tag=0, writable=False):
@@ -235,7 +233,7 @@ class archi_pointer_attr_t(c.c_uint64):
                 else cls.DATA_READONLY
         attr_tag = (~tag) & ((1 << cls.ATTR_BITS) - 1)
 
-        return archi_pointer_attr_t(attr_memtype | attr_tag)
+        return cls(attr_memtype | attr_tag)
 
     @classmethod
     def function(cls, tag=0):
@@ -252,35 +250,35 @@ class archi_pointer_attr_t(c.c_uint64):
         attr_ptrtype = cls.FUNCTION
         attr_tag = tag
 
-        return archi_pointer_attr_t(attr_ptrtype | attr_tag)
+        return cls(attr_ptrtype | attr_tag)
 
-    @staticmethod
-    def from_type(c_type, /, writable=False):
+    @classmethod
+    def from_type(cls, c_type, /, writable=False):
         """Compute attributes for a primitive data type.
         """
         tag = getattr(c_type, 'TAG', None)
 
         if tag is None:
             if isinstance(c_type, c.Array):
-                return archi_pointer_attr_t.primitive_data(
+                return cls.primitive_data(
                         len(c_type), c.sizeof(c_type._type_),
                         c.alignment(c_type._type_), writable)
             else:
-                return archi_pointer_attr_t.primitive_data(
+                return cls.primitive_data(
                         1, c.sizeof(c_type), c.alignment(c_type), writable)
         else:
-            return archi_pointer_attr_t.complex_data(tag, writable)
+            return cls.complex_data(tag, writable)
 
-    @staticmethod
-    def from_object(obj, /, writable=False):
+    @classmethod
+    def from_object(cls, obj, /, writable=False):
         if obj is None:
             return None
 
         if obj.tag is None:
-            return archi_pointer_attr_t.primitive_data(
+            return cls.primitive_data(
                     obj.length, obj.stride, obj.alignment, writable)
         else:
-            return archi_pointer_attr_t.complex_data(obj.tag, writable)
+            return cls.complex_data(obj.tag, writable)
 
 
 class archi_pointer_t(c.Structure):

@@ -19,559 +19,490 @@
  #############################################################################
 
 # @file
-# @brief Construction of context registry operation sequences.
+# @brief Context registry procedures.
 
-from types import SimpleNamespace
+from contextlib import contextmanager
+from types import MappingProxyType, NoneType
 
-from .object import Object
-from .context import Context
+import archi.ctypes as typ
+from .object import Object, PrimitiveData
+from .context import TypeAttr, Context
 import archi.context as ctx
 from .registry import Registry
+from .helper import heap_memory_interface
 
 
 class Procedure:
-    """Higher level representation of a sequence of registry operations.
+    """Base class for registry procedure -- high-level representation of a sequence of registry operations.
     """
-    def __init__(self, registry, /, namespace=''):
-        """Initialize a procedure.
+    def __call__(self, registry, /, prefix=''):
+        """Operate on the specified registry.
         """
         if not isinstance(registry, Registry):
-            raise TypeError
-        elif not isinstance(namespace, str):
-            raise TypeError
+            raise TypeError(f"{registry} is not a context registry")
+        elif not isinstance(prefix, str):
+            raise TypeError(f"Key prefix must be a string")
 
-        self._registry = registry
-        self._executable = registry.require_builtin(registry.__class__.KEY_EXECUTABLE)
+        return self._impl(registry, prefix)
 
-        self._namespace = namespace
-
-        self._contexts = {}
-
-        self._active = False
-
-    def __enter__(self, /):
-        """Context manager enter function.
+    @contextmanager
+    def finalized(self, other, registry, /, prefix=''):
+        """Context manager for the procedure finalized by another procedure.
         """
-        self.begin()
-        return self
-
-    def __exit__(self, /, exc_type, exc_value, traceback):
-        """Context manager exit function.
-        """
-        self.end()
-
-    def __getitem__(self, key, /):
-        """Get a procedure context by key.
-        """
-        return self._contexts[key]
-
-    def __contains__(self, key, /):
-        """Check if a context with the specified key is provided by the procedure.
-        """
-        if not isinstance(key, str):
+        if not isinstance(other, (NoneType, Procedure)):
             raise TypeError
 
-        return key in self._contexts
+        yield self(registry, prefix)
 
-    def __len__(self, /):
-        """Get number of contexts.
+        if other is not None:
+            other(registry, prefix)
+
+    def _impl(self, registry, /, prefix):
+        """Implementation of the procedure.
         """
-        return len(self._contexts)
-
-    def __iter__(self, /):
-        """Return a context iterator.
-        """
-        return iter(self._contexts)
-
-    def __reversed__(self, /):
-        """Return a reversed context iterator.
-        """
-        return reversed(self._contexts)
-
-    def key(self, key, /):
-        """Get a context key prefixed by the procedure namespace.
-        """
-        if not isinstance(key, str):
-            raise TypeError
-        elif not key:
-            return self._namespace
-
-        return f'{self._namespace}.{key}' if self._namespace else key
-
-    def temp_key(self, prefix, /):
-        """Get a temporary context key prefixed by the procedure namespace.
-        """
-        if not isinstance(prefix, str):
-            raise TypeError
-        elif not prefix:
-            raise ValueError
-
-        key = self.registry.operations.temp_key(prefix)
-        return '~' + key[1:]
-
-    @property
-    def active(self, /):
-        """Check if the procedure is active (began, but not ended).
-        """
-        return self._active
-
-    @property
-    def registry(self, /):
-        """Obtain the context registry.
-        """
-        return self._registry
-
-    @property
-    def executable(self, /):
-        """Get the library handle of the Archipelago executable.
-        """
-        return self._executable
-
-    def begin(self, /):
-        """Begin the procedure.
-        """
-        if self.active:
-            raise RuntimeError("The procedure is already active -- nesting is not supported")
-        elif not self._ready():
-            raise RuntimeError("The procedure is not ready")
-
-        self._active = True
-        self._begin()
-
-    def end(self, /):
-        """End the procedure.
-        """
-        if not self.active:
-            raise RuntimeError("The procedure is not active")
-
-        self._end()
-        self._active = False
-
-    def reset(self, /):
-        """Reset the procedure.
-        """
-        if self.active:
-            raise RuntimeError("The procedure is active")
-
-        self._reset()
-
-    def _ready(self, /):
-        """Check the readiness of the procedure object.
-
-        This method is to be reimplemented in derived classes.
-        """
-        return True # always ready by default
-
-    def _begin(self, /):
-        """Implementation of the procedure beginning.
-
-        This method is to be reimplemented in derived classes.
-        """
-        pass # do nothing by default
-
-    def _end(self, /):
-        """Implementation of the procedure end.
-
-        This method is to be reimplemented in derived classes.
-        """
-        for context in self._contexts.values():
-            self.registry.del_context(context)
-
-        self._contexts.clear()
-
-    def _reset(self, /):
-        """Implementation of the procedure reset.
-
-        This method is to be reimplemented in derived classes.
-        """
-        pass # do nothing by default
+        raise NotImplementedError
 
 ##############################################################################
 # Built-in procedures
 ##############################################################################
 
-### archi/exec ###
-
-class DirectedExecutionGraph(Procedure):
-    """Directed execution graph construction procedure.
+class ContextDeletionProcedure(Procedure):
+    """Deletion of a group of contexts in the specified order.
     """
-    def __init__(self, registry, /, namespace=''):
+    def __init__(self, /, keys):
         """Initialize a procedure.
         """
-        super().__init__(registry, namespace=namespace)
-
-        self._nodes = {}
-
-    def node(self, key, /, name=None, transition=None, *sequence):
-        """Add a node to the graph.
-        """
-        if self.active:
-            raise RuntimeError
-        elif not isinstance(key, str):
+        if not all(isinstance(key, str) for key in keys):
             raise TypeError
-        elif not key:
-            raise ValueError
-        elif key in self._nodes:
-            raise KeyError(f"DEG node with key '{key}' exists already")
-        elif not isinstance(name, (type(None), str)):
+
+        self._keys = tuple(keys)
+
+    @property
+    def keys(self, /):
+        """Get the tuple of deleted keys.
+        """
+        return self._keys
+
+    def _impl(self, registry, /, prefix):
+        """Implementation of the procedure.
+        """
+        for key in self.keys:
+            del registry[Registry.key(key, prefix=prefix)]
+
+##############################################################################
+# Built-in procedure factories
+##############################################################################
+
+### archi/exec ###
+
+class _DirectedExecutionGraphNode:
+    """Description of a DEG node.
+    """
+    def __init__(self, /, name=None, sequence=None, transition=None, branches=None):
+        """Initialize a DEG node.
+        """
+        if not isinstance(name, (NoneType, str)):
+            raise TypeError
+        elif not isinstance(branches, (NoneType, dict)):
             raise TypeError
 
         if transition is not None:
             transition_func, transition_data = transition
 
-            if not isinstance(transition_func, (type(None), Context, Context.Slot)):
+            if transition_func is not None and not TypeAttr.compatible(
+                    TypeAttr.of(transition_func),
+                    TypeAttr.function(typ.ARCHI_POINTER_FUNC_TAG__DEXGRAPH_TRANSITION)):
                 raise TypeError
-            elif not isinstance(transition_data, (type(None), Object, Context, Context.Slot)):
+            elif transition_data is not None and not TypeAttr.compatible(
+                    TypeAttr.of(transition_data), TypeAttr.complex_data()):
                 raise TypeError
 
-            if not self.registry.owns(transition_func):
-                raise ValueError
-            elif not self.registry.owns(transition_data):
-                raise ValueError
+        if sequence is not None:
+            for operation in sequence:
+                if operation is None:
+                    continue
 
+                operation_func, operation_data = operation
+
+                if operation_func is not None and not TypeAttr.compatible(
+                        TypeAttr.of(operation_func),
+                        TypeAttr.function(typ.ARCHI_POINTER_FUNC_TAG__DEXGRAPH_OPERATION)):
+                    raise TypeError
+                elif operation_data is not None and not TypeAttr.compatible(
+                        TypeAttr.of(operation_data), TypeAttr.complex_data()):
+                    raise TypeError
+
+        if branches is not None:
+            for branch_idx, branch_key in branches.items():
+                if not isinstance(branch_idx, int):
+                    raise TypeError
+                elif branch_idx < 0:
+                    raise ValueError
+                elif not isinstance(branch_key, str):
+                    raise TypeError
+
+        self._name = name
+        self._sequence = (tuple(operation) if operation is not None else None \
+                for operation in sequence) if sequence is not None else ()
+        self._transition = tuple(transition) if transition is not None else None
+        self._branches = branches.copy() if branches is not None else {}
+
+        if branches is not None:
+            branches_list = [None] * (max(branches.keys()) + 1) if branches else []
+            for index, target_key in branches.items():
+                branches_list[index] = target_key
+
+            self._branches_tuple = tuple(branches_list)
         else:
-            transition_func = None
-            transition_data = None
+            self._branches_tuple = ()
 
-        sequence_func = []
-        sequence_data = []
-        for elt in sequence:
-            seq_func, seq_data = elt
-
-            if not isinstance(seq_func, (type(None), Context, Context.Slot)):
-                raise TypeError
-            elif not isinstance(seq_data, (type(None), Object, Context, Context.Slot)):
-                raise TypeError
-
-            if not self.registry.owns(seq_func):
-                raise ValueError
-            elif not self.registry.owns(seq_data):
-                raise ValueError
-
-            sequence_func.append(seq_func)
-            sequence_data.append(seq_data)
-
-        self._nodes[key] = SimpleNamespace(name=name,
-                                           transition_func=transition_func,
-                                           transition_data=transition_data,
-                                           sequence_func=sequence_func,
-                                           sequence_data=sequence_data,
-                                           branches={})
-
-        return self
-
-    def node_branch(self, key, branch_idx, target_key, /):
-        """Add a node branch link to the graph.
+    @property
+    def name(self, /):
+        """Get node name.
         """
-        if self.active:
-            raise RuntimeError
-        elif not isinstance(key, str):
-            raise TypeError
-        elif not isinstance(target_key, str):
-            raise TypeError
-        elif not isinstance(branch_idx, int):
-            raise TypeError
-        elif branch_idx < 0:
-            raise ValueError
+        return self._name
 
-        if key not in self._nodes:
-            raise KeyError(f"No such node with key '{key}' in the graph")
-        elif target_key not in self._nodes:
-            raise KeyError(f"No such node with key '{target_key}' in the graph")
-
-        if branch_idx in self._nodes[key].branches:
-            raise IndexError(f"Branch #{branch_idx} already exists in node '{key}'")
-
-        self._nodes[key].branches[branch_idx] = target_key
-
-        return self
-
-    def _begin(self, /):
-        """Implementation of the procedure beginning.
+    @property
+    def sequence(self, /):
+        """Get node operation sequence.
         """
-        # Create node branch tuples
-        node_branches = {}
+        return self._sequence
 
-        for key, node in self._nodes.items():
-            branches = [None] * (max(node.branches.keys()) + 1) if node.branches else []
+    @property
+    def transtion(self, /):
+        """Get node transition.
+        """
+        return self._transition
 
-            for index, target_key in node.branches.items():
-                branches[index] = target_key
+    def branches(self, /, as_tuple=False):
+        """Get dictionary of node branches.
+        """
+        return self._branches_tuple if as_tuple else MappingProxyType(self._branches)
 
-            node_branches[key] = tuple(branches)
+
+class DirectedExecutionGraphProcedure(Procedure):
+    """Directed execution graph construction procedure.
+    """
+    Node = _DirectedExecutionGraphNode
+
+    def __init__(self, nodes, /):
+        """Initialize a procedure.
+        """
+        if not isinstance(nodes, dict):
+            raise TypeError
+
+        keys = set(nodes.keys())
+
+        for key, node in nodes.items():
+            if not isinstance(key, str):
+                raise TypeError
+            elif not isinstance(node, self.__class__.Node):
+                raise TypeError
+            elif not keys.issuperset(node.branches.values()):
+                raise KeyError("Node {repr(key)} refers to node(s) that are not in the dictionary of nodes")
+
+        self._nodes = nodes.copy()
+
+        self._cleanup = ContextDeletionProcedure(keys=tuple(nodes.keys()))
+
+    @property
+    def nodes(self, /):
+        """Get the dictionary of graph nodes.
+        """
+        return MappingProxyType(self._nodes)
+
+    @property
+    def cleanup(self, /):
+        """Get the cleanup procedure.
+        """
+        return self._cleanup
+
+    def _impl(self, registry, /, prefix):
+        """Implementation of the procedure.
+
+        Returns dictionary of node contexts.
+        """
+        I_DEXGRAPH_NODE_ARRAY = ctx.DexgraphNodeArrayContext.interface_in(registry.BUILTIN.executable)
+        I_DEXGRAPH_NODE = ctx.DexgraphNodeContext.interface_in(registry.BUILTIN.executable)
 
         # Create node array contexts
-        I_DEXGRAPH_NODE_ARRAY = ctx.DexgraphNodeArrayContext.interface_in(self.executable)
-
         node_array_contexts = {(): None}
 
-        for branches in node_branches.values():
-            if not branches:
+        for node in self.nodes.values():
+            branches = node.branches(as_tuple=True)
+            if branches in node_array_contexts:
                 continue
 
-            node_array_contexts[branches] = self.registry.new_context(
-                    I_DEXGRAPH_NODE_ARRAY(num_nodes=len(branches)),
-                    key=self.temp_key('node_array'))
+            node_array_contexts[branches] = registry.new_context(
+                    registry.temp_key('node_array', prefix=prefix),
+                    I_DEXGRAPH_NODE_ARRAY(num_nodes=len(branches)))
 
         # Create node contexts
-        I_DEXGRAPH_NODE = ctx.DexgraphNodeContext.interface_in(self.executable)
-
         node_contexts = {}
 
-        for key, node in self._nodes.items():
+        for key, node in self.nodes.items():
             # Create a node context
             params = {}
 
             if node.name is not None:
                 params['name'] = node.name
 
-            if node.transition_func is not None:
-                params['transition_func'] = node.transition_func
+            if node.transition is not None:
+                transition_func, transition_data = node.transition
 
-            if node.transition_data is not None:
-                params['transition_data'] = node.transition_data
+                if transition_func is not None:
+                    params['transition_func'] = transition_func
+                if transition_data is not None:
+                    params['transition_data'] = transition_data
 
-            context = node_contexts[key] = self.registry.new_context(
-                    I_DEXGRAPH_NODE(sequence_length=len(node.sequence_func),
-                                    branches=node_array_contexts[node_branches[key]],
-                                    **params),
-                    key=self.key(key))
+            context = node_contexts[key] = registry.new_context(
+                    Registry.key(key, prefix=prefix),
+                    I_DEXGRAPH_NODE(sequence_length=len(node.sequence),
+                                    branches=node_array_contexts[node.branches(as_tuple=True)],
+                                    **params))
 
             # Set node sequence operations
-            for index, (seq_func, seq_data) in enumerate(zip(node.sequence_func, node.sequence_data)):
-                if seq_func is not None:
-                    context.sequence.function[index] = seq_func
+            for index, operation in enumerate(zip(node.sequence_func, node.sequence_data)):
+                if operation is None:
+                    continue
 
-                if seq_data is not None:
-                    context.sequence.data[index] = seq_data
+                operation_func, operation_data = operation
 
-            del context
+                if operation_func is not None:
+                    registry(context.sequence.function[index] << operation_func)
+                if operation_data is not None:
+                    registry(context.sequence.data[index] << operation_data)
 
         # Fill node branch arrays
         for branches, context in node_array_contexts.items():
             for index, target_key in enumerate(branches):
                 if target_key is not None:
-                    context.node[index] = Context.weak_ref(node_contexts[target_key])
+                    registry(context.node[index] << Context.Slot.weak_ref(node_contexts[target_key]))
 
         # Delete node array contexts
         for context in node_array_contexts.values():
-            self.registry.del_context(context)
+            registry.delete(context)
 
-        # Set the procedure contexts
-        self._contexts = node_contexts
-
-    def _reset(self, /):
-        """Implementation of the procedure reset.
-        """
-        self._nodes.clear()
+        return node_contexts
 
 ### archi/memory ###
 
-class MemoryAllocations(Procedure):
+class _MemoryAllocation:
+    """Description of a memory allocation.
+    """
+    @staticmethod
+    def init_from_memory(contents, /):
+        """Get the memory initialization function (contents copied from memory).
+        """
+        if not isinstance(contents, (Context, Context.Slot)):
+            raise TypeError
+
+        def func(registry, mapping, prefix, /):
+            I_PDPTR = ctx.PrimitiveDataPointerContext.interface_in(registry.BUILTIN.executable)
+
+            with registry.temp_context(registry.temp_key('memory_map_ptr', prefix=prefix),
+                                       I_PDPTR(pointee=mapping, writable=True)) as mapping_ptr:
+                registry(mapping_ptr.copy(src=contents))
+
+        return func
+
+    @staticmethod
+    def init_from_file(file, /):
+        """Get the memory initialization function (contents read from file).
+        """
+        if not isinstance(file, ctx.FileContext):
+            raise TypeError
+
+        def func(registry, mapping, prefix, /):
+            registry(file.read(dest=mapping.ptr))
+
+        return func
+
+    def __init__(self, /, length, stride, alignment, ext_alignment=None, init_fn=None):
+        """Initialize a memory allocation description.
+        """
+        if not isinstance(length, (int, Object, Context, Context.Slot)):
+            raise TypeError
+        elif not isinstance(stride, (int, Object, Context, Context.Slot)):
+            raise TypeError
+        elif not isinstance(alignment, (int, Object, Context, Context.Slot)):
+            raise TypeError
+        elif not isinstance(ext_alignment, (NoneType, int, Object, Context, Context.Slot)):
+            raise TypeError
+        elif init_fn is not None and not callable(init_fn):
+            raise ValueError
+
+        self._length = length
+        self._stride = stride
+        self._alignment = alignment
+        self._ext_alignment = ext_alignment
+        self._init_fn = init_fn
+
+    @property
+    def length(self, /):
+        """Get memory length.
+        """
+        return self._length
+
+    @property
+    def stride(self, /):
+        """Get memory stride.
+        """
+        return self._stride
+
+    @property
+    def alignment(self, /):
+        """Get memory alignment.
+        """
+        return self._alignment
+
+    @property
+    def ext_alignment(self, /):
+        """Get memory extended alignment.
+        """
+        return self._ext_alignment
+
+    @property
+    def init_fn(self, /):
+        """Get memory initialization function.
+        """
+        return self._init_fn
+
+
+class MemoryAllocationProcedure(Procedure):
     """Memory allocation and initialization procedure.
     """
-    def __init__(self, registry, /, namespace='',
-                 interface=None, alloc_data=None, map_data=None):
+    Allocation = _MemoryAllocation
+
+    def __init__(self, allocations, /, interface=None, alloc_data=None, map_data=None):
         """Initialize a procedure.
         """
-        super().__init__(registry, namespace=namespace)
+        if not isinstance(allocations, dict):
+            raise TypeError
+
+        for key, alloc in allocations.items():
+            if not isinstance(key, str):
+                raise TypeError
+            elif not isinstance(alloc, self.__class__.Allocation):
+                raise TypeError
 
         if interface is None:
             if alloc_data is not None:
-                raise ValueError
+                raise ValueError("Heap memory interface does not accept allocation data")
             elif map_data is not None:
-                raise ValueError
-
-            interface = ctx.MemoryInterfaceSymbol.slot('heap', self.executable)
+                raise ValueError("Heap memory interface does not accept mapping data")
         else:
-            if not self.registry.owns(interface):
-                raise ValueError
-            elif not self.registry.owns(alloc_data):
-                raise ValueError
-            elif not self.registry.owns(map_data):
-                raise ValueError
+            if not isinstance(interface, (Context, Context.Slot)):
+                raise TypeError
+            elif not isinstance(alloc_data, (NoneType, Object, Context, Context.Slot)):
+                raise TypeError
+            elif not isinstance(map_data, (NoneType, Object, Context, Context.Slot)):
+                raise TypeError
 
+        self._allocations = allocations.copy()
         self._interface = interface
         self._alloc_data = alloc_data
         self._map_data = map_data
 
-        self._allocations = {}
+        self._cleanup = ContextDeletionProcedure(keys=tuple(allocations.keys()))
+
+    @property
+    def allocations(self, /):
+        """Get the dictionary of allocation descriptions.
+        """
+        return MappingProxyType(self._allocations)
 
     @property
     def interface(self, /):
-        """Obtain the memory interface.
+        """Get the memory interface.
         """
         return self._interface
 
     @property
     def alloc_data(self, /):
-        """Obtain the memory allocation data.
+        """Get the memory allocation data.
         """
         return self._alloc_data
 
     @property
     def map_data(self, /):
-        """Obtain the memory mapping data.
+        """Get the memory mapping data.
         """
         return self._map_data
 
-    def memory(self, key, /, length, stride, alignment, ext_alignment=None):
-        """Add a memory allocation.
+    @property
+    def cleanup(self, /):
+        """Get the cleanup procedure.
         """
-        if self.active:
-            raise RuntimeError
-        elif not isinstance(key, str):
-            raise TypeError
-        elif not key:
-            raise ValueError
-        elif key in self._allocations:
-            raise KeyError(f"Memory allocation '{key}' is added already")
+        return self._cleanup
 
-        if not self.registry.owns(length):
-            raise ValueError
-        elif not self.registry.owns(stride):
-            raise ValueError
-        elif not self.registry.owns(alignment):
-            raise ValueError
-        elif not self.registry.owns(ext_alignment):
-            raise ValueError
+    def _impl(self, registry, /, prefix):
+        """Implementation of the procedure.
 
-        self._allocations[key] = SimpleNamespace(length=length,
-                                                 stride=stride,
-                                                 alignment=alignment,
-                                                 ext_alignment=ext_alignment,
-                                                 init_fn=None)
-
-        return self
-
-    def init(self, key, contents, /):
-        """Initialize a memory allocation by copying contents from source memory.
+        Returns dictionary of memory contexts.
         """
-        if self.active:
-            raise RuntimeError
-        elif not isinstance(key, str):
-            raise TypeError
-        elif not isinstance(contents, (Object, Context, Context.Slot)):
-            raise TypeError
-        elif not self.registry.owns(contents):
-            raise ValueError
+        if self.interface is not None:
+            interface = self.interface
+        else:
+            interface = heap_memory_interface(registry.BUILTIN.executable)
 
-        if key not in self._allocations:
-            raise KeyError(f"No such memory allocation with key '{key}'")
-        elif self._allocations[key].init_fn is not None:
-            raise RuntimeError(f"Memory allocation '{key}' is already initialized")
+        I_MEMORY = ctx.MemoryContext.interface_in(registry.BUILTIN.executable)
+        I_MEMORY_MAPPING = ctx.MemoryMappingContext.interface_in(registry.BUILTIN.executable)
 
-        def init_fn(mapping, /):
-            I_PDPTR = ctx.PrimitiveDataPointerContext.interface_in(self.executable)
-
-            with self.registry.temp_context(I_PDPTR(pointee=mapping, writable=True),
-                                            key=self.temp_key('memory_map_ptr')) as mapping_ptr:
-                self.registry(mapping_ptr.copy(src=contents))
-
-        self._allocations[key].init_fn = init_fn
-
-        return self
-
-    def init_from_file(self, key, file, /):
-        """Initialize a memory allocation by reading contents from source file.
-        """
-        if self.active:
-            raise RuntimeError
-        elif not isinstance(key, str):
-            raise TypeError
-        elif not isinstance(file, ctx.FileContext):
-            raise TypeError
-        elif not self.registry.owns(file):
-            raise ValueError
-
-        if key not in self._allocations:
-            raise KeyError(f"No such memory allocation with key '{key}'")
-        elif self._allocations[key].init_fn is not None:
-            raise RuntimeError(f"Memory allocation '{key}' is already initialized")
-
-        def init_fn(mapping, /):
-            self.registry(file.read(dest=mapping.ptr))
-
-        self._allocations[key].init_fn = init_fn
-
-        return self
-
-    def _begin(self, /):
-        """Implementation of the procedure beginning.
-        """
         # Create memory contexts
-        I_MEMORY = ctx.MemoryContext.interface_in(self.executable)
-        I_MEMORY_MAPPING = ctx.MemoryMappingContext.interface_in(self.executable)
-
         memory_contexts = {}
 
-        for key, memory in self._allocations.items():
+        for key, alloc in self.allocations.items():
             params = {}
             if self.alloc_data is not None:
                 params['alloc_data'] = self.alloc_data
-            if memory.ext_alignment is not None:
-                params['ext_alignment'] = memory.ext_alignment
+            if alloc.ext_alignment is not None:
+                params['ext_alignment'] = alloc.ext_alignment
 
-            context = memory_contexts[key] = self.registry.new_context(
-                    I_MEMORY(interface=self.interface,
-                             length=memory.length, stride=memory.stride,
-                             alignment=memory.alignment, **params),
-                    key=self.key(key))
+            context = memory_contexts[key] = registry.new_context(
+                    Registry.key(key, prefix=prefix),
+                    I_MEMORY(interface=interface, length=alloc.length,
+                             stride=alloc.stride, alignment=alloc.alignment, **params))
 
             # Initialize the memory
-            if memory.init_fn is not None:
+            if alloc.init_fn is not None:
                 params = {}
                 if self.map_data is not None:
                     params['map_data'] = self.map_data
 
-                with self.registry.temp_context(I_MEMORY_MAPPING(memory=context, **params),
-                                                key=self.temp_key('memory_map')) as mapping:
-                    memory.init_fn(mapping)
+                with registry.temp_context(registry.temp_key('memory_map', prefix=prefix),
+                                           I_MEMORY_MAPPING(memory=context, **params)) as mapping:
+                    alloc.init_fn(registry, mapping, prefix)
 
-        # Set the procedure contexts
-        self._contexts = memory_contexts
-
-    def _reset(self, /):
-        """Implementation of the procedure reset.
-        """
-        self._allocations.clear()
+        return memory_contexts
 
 ### archi/env ###
 
-class EnvironmentVariables(Procedure):
-    """Environment variable extraction and conversion procedure.
+class _EnvironmentVariable:
+    """Description of an environment variable.
     """
-    def __init__(self, registry, /, namespace=''):
-        """Initialize a procedure.
+    def __init__(self, name, /, default=None, parse_as=None):
+        """Initialize a variable description.
         """
-        super().__init__(registry, namespace=namespace)
-
-        self._variables = {}
-
-    def var(self, name, /, default=None, parse=None, base=None):
-        """Add an environment variable.
-        """
-        if self.active:
-            raise RuntimeError
-        elif not isinstance(name, str):
+        if not isinstance(name, str):
             raise TypeError
-        elif not name:
+        elif not name or '=' in name:
             raise ValueError
-        elif name in self._variables:
-            raise KeyError(f"Variable '{name}' is added already")
 
-        if parse is None:
-            if not isinstance(default, (type(None), str)):
+        if parse_as is None:
+            if not isinstance(default, (NoneType, str)):
                 raise TypeError
-            elif base is not None:
-                raise ValueError
 
+            base = None
         else:
-            if not isinstance(default, (type(None), int, float)):
+            if isinstance(parse_as, tuple):
+                parse_as, base = parse_as
+            else:
+                base = None
+
+            if not isinstance(parse_as, str):
                 raise TypeError
-            elif not isinstance(parse, str):
-                raise TypeError
-            elif not parse or parse == 'base':
+            elif not parse_as or parse_as == 'base':
                 raise ValueError
 
             if base is not None:
@@ -580,57 +511,114 @@ class EnvironmentVariables(Procedure):
                 elif base < 2 or base > 36:
                     raise ValueError
 
-        self._variables[name] = SimpleNamespace(default=default, parse=parse, base=base)
+        self._name = name
+        self._default = default
+        self._parse_as = parse_as
+        self._base = base
 
-        return self
-
-    def _begin(self, /):
-        """Implementation of the procedure beginning.
+    @property
+    def name(self, /):
+        """Get the environment variable name.
         """
-        # Collect default values into a set
-        default_values = {(str(var.default) if var.default is not None else None)
-                          for var in self._variables.values()}
+        return self._name
+
+    @property
+    def default(self, /):
+        """Get the default value of the environment variable.
+        """
+        return self._default
+
+    @property
+    def parse_as(self, /):
+        """Get the parsed type name of the environment variable.
+        """
+        return self._parse_as
+
+    @property
+    def base(self, /):
+        """Get the base of parsed integer type of the environment variable.
+        """
+        return self._base
+
+
+class EnvironmentVariablesProcedure(Procedure):
+    """Environment variables value parsing procedure.
+    """
+    Variable = _EnvironmentVariable
+
+    def __init__(self, variables, /):
+        """Initialize a procedure.
+        """
+        if not isinstance(variables, dict):
+            raise TypeError
+
+        for key, var in variables.items():
+            if not isinstance(key, str):
+                raise TypeError
+            elif not isinstance(var, self.__class__.Variable):
+                raise TypeError
+
+        self._variables = variables.copy()
+
+        self._cleanup = ContextDeletionProcedure(keys=tuple(variables.keys()))
+
+    @property
+    def variables(self, /):
+        """Get the dictionary of environment variable descriptions.
+        """
+        return self._variables
+
+    @property
+    def cleanup(self, /):
+        """Get the cleanup procedure.
+        """
+        return self._cleanup
+
+    def _impl(self, registry, /, prefix):
+        """Implementation of the procedure.
+
+        Returns dictionary of value contexts.
+        """
+        I_ENV_VARIABLE = ctx.EnvVariableContext.interface_in(registry.BUILTIN.executable)
+        I_NUMBER_PARSER = ctx.NumberParserContext.interface_in(registry.BUILTIN.executable)
 
         # Create environment variable contexts
-        I_ENV_VARIABLE = ctx.EnvVariableContext.interface_in(self.executable)
-
         envvar_contexts = {}
-        for default in default_values:
+
+        for var in self.variables.values():
+            default = str(var.default) if var.default is not None else None
+            if default in envvar_contexts:
+                continue
+
             params = {'default_value': default} if default is not None else {}
 
-            envvar_contexts[default] = self.registry.new_context(
-                    I_ENV_VARIABLE(**params),
-                    key=self.temp_key('env_var'))
+            envvar_contexts[default] = registry.new_context(
+                    registry.temp_key('env_variable', prefix=prefix),
+                    I_ENV_VARIABLE(**params))
 
-        # Create the dictionary of contexts
-        I_NUMBER_PARSER = ctx.NumberParserContext.interface_in(self.executable)
+        # Create value contexts
+        value_contexts = {}
 
-        contexts = {}
+        for key, var in self.variables.items():
+            default = str(var.default) if var.default is not None else None
+            slot = getattr(envvar_contexts[default], var.name)
 
-        for name, var in self._variables.items():
-            if var.parse is None:
-                contexts[name] = self.registry.new_context(
-                        getattr(envvar_contexts[var.default], name),
-                        key=self.key(name))
+            if var.parse_as is None:
+                value_contexts[key] = registry.new_context(
+                        Registry.key(key, prefix=prefix), slot)
 
             else:
-                params = {var.parse: getattr(envvar_contexts[
-                    str(var.default) if var.default is not None else None], name)}
+                params = {var.parse_as: slot}
                 if var.base is not None:
                     params['base'] = base
 
-                contexts[name] = self.registry.new_context(
-                        I_NUMBER_PARSER(**params), key=self.key(name))
+                value_contexts[name] = registry.new_context(
+                        Registry.key(key, prefix=prefix),
+                        I_NUMBER_PARSER(**params))
 
         # Delete environment variable contexts
         for context in envvar_contexts.values():
-            self.registry.del_context(context)
+            registry.delete(context)
 
-        # Set the procedure contexts
-        self._contexts = contexts
-
-    def _reset(self, /):
-        """Implementation of the procedure reset.
-        """
-        self._variables.clear()
+        return value_contexts
 

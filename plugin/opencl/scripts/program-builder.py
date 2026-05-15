@@ -17,7 +17,7 @@ from archi.context import (
         LibraryContext,
         )
 from archi.registry import Registry
-from archi.procedure import EnvironmentVariables
+from archi.procedure import EnvironmentVariablesProcedure
 from archi.plugin.opencl import (
         PLUGIN_OPENCL,
         OpenCLContext,
@@ -164,45 +164,49 @@ def read_binaries(path_map):
 ###############################################################################
 # Form the list of registry operations
 
-def key(k):
-    return f'cl_program_builder.{k}'
+PREFIX = 'cl_program_builder'
 
 PLUGIN_OPENCL_PATHNAME = f'lib{PLUGIN_OPENCL}.so'
 
 
-app = Registry()
-executable = app[Registry.KEY_EXECUTABLE]
+app = Registry(require=[Registry.BUILTIN.executable])
 
 # Prepare built-in interfaces
-I_LIBRARY = LibraryContext.interface_in(executable)
-I_FILE = FileContext.interface_in(executable)
+I_LIBRARY = LibraryContext.interface_in(Registry.BUILTIN.executable)
+I_FILE = FileContext.interface_in(Registry.BUILTIN.executable)
 
 # Load OpenCL plugin
-with app.temp_context(I_LIBRARY(pathname=PLUGIN_OPENCL_PATHNAME), key=key('plugin.opencl')) as plugin_opencl:
+with app.temp_context(Registry.key('plugin.opencl', PREFIX),
+                      I_LIBRARY(pathname=PLUGIN_OPENCL_PATHNAME)) as plugin_opencl:
     # Prepare OpenCL plugin interfaces
     I_OPENCL_CONTEXT = OpenCLContext.interface_in(plugin_opencl)
     I_OPENCL_PROGRAM_SRC = OpenCLProgramSrcContext.interface_in(plugin_opencl)
     I_OPENCL_PROGRAM_BIN = OpenCLProgramBinContext.interface_in(plugin_opencl)
 
     # Create the OpenCL context
-    with app.temp_context(I_OPENCL_CONTEXT(platform=args.platform, device=args.devices),
-                          key=key('cl_context')) as opencl_context:
+    with app.temp_context(Registry.key('cl_context', PREFIX),
+                          I_OPENCL_CONTEXT(platform=args.platform,
+                                           device=args.devices)) as opencl_context:
         # Prepare the list of dependency libraries of the program
         list_libraries = []
 
-        with app.temp_context(OpenCLProgramBinContext.InitParameters(context=opencl_context,
-                                                                     device_id=opencl_context.device_id),
-                              key=key('library.params')) as params_library:
+        with app.temp_context(Registry.key('library.params', PREFIX),
+                              OpenCLProgramBinContext.InitParameters(
+                                  context=opencl_context,
+                                  device_id=opencl_context.device_id)) as params_library:
             # Read binaries of the program libraries
-            list_binaries = [PrimitiveData.from_bytes(binary) for binary in read_binaries(args.lib_map)]
+            list_binaries = [PrimitiveData.from_bytes(binary)
+                             for binary in read_binaries(args.lib_map)]
 
             # Create program libraries from binaries and append them to the list
             for i, binary in enumerate(list_binaries):
-                with app.temp_context([binary], key=key(f'array_binary[{i}]')) as array_binary:
-                    list_libraries.append(app.new_context(I_OPENCL_PROGRAM_BIN(params_library,
-                                                                               binaries=array_binary.ptrs,
-                                                                               binary_sizes=[binary.total_size]),
-                                                          key=key(f'library[{i}]')))
+                with app.temp_context(Registry.key(f'array_binary[{i}]', PREFIX),
+                                      [binary]) as array_binary:
+                    list_libraries.append(app.new_context(
+                        Registry.key(f'library[{i}]', PREFIX),
+                        I_OPENCL_PROGRAM_BIN(params_library,
+                                             binaries=array_binary.ptrs,
+                                             binary_sizes=[binary.total_size])))
 
             del list_binaries
 
@@ -210,32 +214,35 @@ with app.temp_context(I_LIBRARY(pathname=PLUGIN_OPENCL_PATHNAME), key=key('plugi
         dict_headers = {path: String(content) for path, content in read_sources(args.hdr_map).items()}
         dict_sources = {path: String(content) for path, content in read_sources(args.src_map).items()}
 
-        with app.temp_context(list_libraries, key=key('array_libraries')) as libraries, \
-                app.temp_context(Parameters(**dict_headers), key=key('kvlist_headers')) as headers, \
-                app.temp_context(Parameters(**dict_sources), key=key('kvlist_sources')) as sources, \
-                EnvironmentVariables(app, key('env')).var('CFLAGS', args.cflags).var('LFLAGS', args.lflags) as env:
+        envvar_procedure = EnvironmentVariablesProcedure(
+                {'CFLAGS': EnvironmentVariablesProcedure.Variable('CFLAGS', default=args.cflags),
+                 'LFLAGS': EnvironmentVariablesProcedure.Variable('LFLAGS', default=args.lflags)})
+
+        with app.temp_context(Registry.key('array_libraries', PREFIX), list_libraries) as libraries, \
+                app.temp_context(Registry.key('kvlist_headers'), Parameters(**dict_headers)) as headers, \
+                app.temp_context(Registry.key('kvlist_sources'), Parameters(**dict_sources)) as sources, \
+                envvar_procedure.finalized(envvar_procedure.cleanup, app, PREFIX) as env:
             # Delete contexts of program libraries
             for library_context in list_libraries:
-                app.del_context(library_context)
+                app.delete(library_context)
 
             del list_libraries
             del dict_headers
             del dict_sources
 
             # Build the program
-            app[key('program')] = I_OPENCL_PROGRAM_SRC(context=opencl_context, device_id=opencl_context.device_id,
-                                                       headers=headers, sources=sources, libraries=libraries.ptrs,
-                                                       cflags=env['CFLAGS'], lflags=env['LFLAGS'])
+            app[Registry.key('program', PREFIX)] = I_OPENCL_PROGRAM_SRC(
+                    context=opencl_context, device_id=opencl_context.device_id,
+                    headers=headers, sources=sources, libraries=libraries.ptrs,
+                    cflags=env['CFLAGS'], lflags=env['LFLAGS'])
 
-    with app.deleted_context(key('program')) as opencl_program:
+    with app.deleted_context(Registry.key('program', PREFIX)) as opencl_program:
         # Write program binaries to output files
         for i, out_file in enumerate(args.out):
-            with app.temp_context(I_FILE(pathname=out_file,
-                                         size=opencl_program.binary.size[i],
+            with app.temp_context(Registry.key(f'out_file[{i}]', PREFIX),
+                                  I_FILE(pathname=out_file, size=opencl_program.binary.size[i],
                                          readable=True, writable=True,
-                                         create=True, truncate=True,
-                                         mode=0o644),
-                                  key=key(f'out_file[{i}]')) as file:
+                                         create=True, truncate=True, mode=0o644)) as file:
                 # Write the program binary for the current device into the output file
                 app(file.write(src=opencl_program.binary[i]))
 

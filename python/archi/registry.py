@@ -22,392 +22,473 @@
 # @brief Archipelago application context registry.
 
 from contextlib import contextmanager
-import random
-import string
+from types import NoneType, SimpleNamespace
 
-from .object import Object
+import archi.ctypes as typ
+from .object import Object, RegistryOpList
+import archi.object as obj
 from .context import (
-        Parameters,
-        _ContextInterface,
-        _ContextSpec,
+        TypeAttr,
         Context,
-        PointerContext,
-        DataPointerArrayContext,
+        _ContextSlotAssignment,
+        ContextInterface,
+        _ContextSpec,
+        Parameters,
         )
 import archi.context as ctx
 
 
-class RegistryOperationList:
-    """Implementation of the list of of registry operations.
+class _RegistryImpl:
+    """Implementation of registry operations.
     """
-    def __init__(self, /):
-        """Initialize the list of registry operations.
+    def __init__(self, op_list, get_fn, /):
+        """Initialize a registry operations implementation instance.
         """
-        self._ops = []
+        self._ops = op_list
+        self._get_fn = get_fn
 
     @property
-    def list(self, /):
-        """Get direct access to the list of registry operations.
+    def op_list(self, /):
+        """Get the list of operations.
         """
         return self._ops
 
-    def clear(self, /):
-        """Clear the list of registry operations.
+    @property
+    def num_ops(self, /):
+        """Get the number of operations in the list.
         """
-        self.list.clear()
+        return len(self.op_list.list)
 
-    def pop(self, /):
-        """Obtain the copy of the list of registry operations, clearing the original.
+    def temp_key(self, label, /, prefix='', rnd_len=6, rnd_chars=None):
+        """Generate a temporary context key with the specified label plus randomized part.
         """
-        ops = self.list.copy()
-        self.list.clear()
-        return ops
+        from random import choice
+        from string import ascii_letters, digits
 
-    def append_op(self, op, data, /):
-        """Append an operation to the list.
-        """
-        if not isinstance(op, str):
+        if not isinstance(label, str):
             raise TypeError
-        elif not isinstance(data, Object):
-            raise TypeError
-
-        self.list.append((op, data))
-
-    def temp_key(self, /, prefix, rnd_len=4):
-        """Generate a temporary context key with the specified prefix and randomized postfix.
-        """
-        if not isinstance(prefix, str):
-            raise TypeError
-        elif not prefix:
+        elif not label:
             raise ValueError
+        elif not isinstance(prefix, str):
+            raise TypeError
         elif rnd_len < 0:
             raise ValueError
-
-        postfix = ''.join(random.choice(string.ascii_letters + string.digits) \
-                for _ in range(rnd_len))
-
-        return f'.{prefix}_{len(self.list)}:{postfix}'
-
-    def create(self, /, key, entity):
-        """Create a context from an entity.
-        """
-        if not isinstance(key, str):
+        elif not isinstance(rnd_chars, (NoneType, str)):
             raise TypeError
 
-        if isinstance(entity, Context):
-            return self.alias_context(key, entity)
-        elif isinstance(entity, _ContextSpec):
-            return self.create_context(key, entity)
-        elif isinstance(entity, Parameters):
-            return self.create_plist_context(key, entity)
-        elif isinstance(entity, (type(None), Object, Context.Slot)):
-            return self.create_ptr_context(key, entity)
-        elif isinstance(entity, (tuple, list)):
-            return self.create_dptr_array_context(key, entity)
+        if rnd_chars is None:
+            rnd_chars = ascii_letters + digits
+
+        # generate a key until it's unique: guard against unwanted collisions
+        rnd = ''.join(choice(rnd_chars) for _ in range(rnd_len))
+        key = Registry.key(f'~{label}:{rnd} @ {self.num_ops}', prefix)
+
+        try:
+            self.context(key)
+        except KeyError:
+            return key
         else:
-            raise TypeError(f"Cannot create context from {entity}")
+            raise KeyError("Failed to generate a unique temporary context key")
 
-    def invoke(self, /, entity):
-        """Invoke an entity (causing side effects only, no context created).
+    def context(self, key, /):
+        """Obtain the context with the specified key.
         """
-        if isinstance(entity, Context.Slot):
-            self.call_slot(entity)
-        else:
-            raise TypeError(f"Cannot invoke {entity}")
+        return self._get_fn(key)
 
-    def delete_context(self, /, key):
-        """Append context deletion operation to the list.
+    def check_context(self, context, /):
+        """Check if a context exists and have the correct type.
         """
-        from .object import RegistryOpData_delete
+        if context is None:
+            raise ValueError(f"No context is specified")
 
-        self.append_op('delete', RegistryOpData_delete.construct(
-            key=key))
+        reg_context = self.context(Context.key_of(context))
 
-    def alias_context(self, /, key, context):
-        """Append context aliasing operation to the list.
+        if context != reg_context:
+            raise TypeError(f"Context mismatch: {context} is not {reg_context}")
+
+    def delete_context(self, key, /):
+        """Delete a context.
         """
-        from .object import RegistryOpData_alias
+        self.op_list.op_delete(key)
 
-        self.append_op('alias', RegistryOpData_alias.construct(
-            key=key,
-            original_key=Context.key_of(context)))
-
-        return context.__class__()
-
-    def create_context(self, /, key, spec):
-        """Append context creation operation(s) to the list.
+    def alias_context(self, key, context, /):
+        """Create a context alias.
         """
-        from .object import RegistryOpData_create_as, RegistryOpData_create_from
+        self.check_context(context)
 
-        if not isinstance(spec, _ContextSpec):
-            raise TypeError
+        original_key = Context.key_of(context)
 
-        if isinstance(spec.interface_origin, Context):
-            with self.parameters(spec.params) as (params_context_key, params_list):
-                self.append_op('create_as', RegistryOpData_create_as.construct(
+        if key != original_key:
+            self.op_list.op_alias(
                     key=key,
-                    sample_key=Context.key_of(spec.interface_origin),
-                    init_params_context_key=params_context_key,
-                    init_params_list=params_list))
+                    original_key=original_key)
 
-        elif isinstance(spec.interface_origin, Context.Slot):
-            slot = spec.interface_origin
+            return context.__class__(key)
+        else:
+            return context
 
-            with self.parameters(spec.params) as (params_context_key, params_list):
+    def create_context(self, key, spec, /):
+        """Create an arbitrary context.
+        """
+        with self.parameters(spec.params) as (params_key, params_list):
+            if isinstance(spec.interface_origin, Context):
+                self.check_context(spec.interface_origin)
+
+                sample_key = Context.key_of(spec.interface_origin)
+
+                self.op_list.op_create_as(
+                        key=key,
+                        sample_key=sample_key,
+                        params_key=params_key,
+                        params_list=params_list)
+
+            elif isinstance(spec.interface_origin, Context.Slot):
+                slot = spec.interface_origin
+
+                self.check_context(Context.Slot.context_of(slot))
+
+                source_key = Context.Slot.context_key_of(slot)
+
+                if not TypeAttr.compatible(
+                        TypeAttr.of(slot),
+                        TypeAttr.complex_data(typ.ARCHI_POINTER_DATA_TAG__CONTEXT_INTERFACE)):
+                    raise TypeError(f"{slot} is not a context interface")
+
                 if not Context.Slot.is_call(slot):
-                    temp_context_key = None
-
-                    source_key = Context.key_of(Context.Slot.context_of(slot))
                     source_slot_name = Context.Slot.name_of(slot)
                     source_slot_indices = Context.Slot.indices_of(slot)
                 else:
-                    temp_context_key = self.temp_key('iface')
+                    source_key = self.temp_key('interface')
+                    self.create_ptr_context(source_key, slot)
 
-                    self.create_ptr_context(temp_context_key, slot)
-
-                    source_key = temp_context_key
                     source_slot_name = ''
                     source_slot_indices = ()
 
-                self.append_op('create_from', RegistryOpData_create_from.construct(
+                self.op_list.op_create_from(
+                        key=key,
+                        source_key=source_key,
+                        source_slot_name=source_slot_name,
+                        source_slot_indices=source_slot_indices,
+                        params_key=params_key,
+                        params_list=params_list)
+
+                if Context.Slot.is_call(slot):
+                    self.delete_context(source_key)
+
+            else:
+                raise TypeError # should not happen
+
+        return spec.context_cls(key)
+
+    def create_plist_context(self, key, params, /):
+        """Create a parameter list context.
+        """
+        with self.parameters(params) as (params_key, params_list):
+            self.op_list.op_create_plist(
                     key=key,
-                    source_key=source_key,
-                    source_slot_name=source_slot_name,
-                    source_slot_indices=source_slot_indices,
-                    init_params_context_key=params_context_key,
-                    init_params_list=params_list))
+                    params_key=params_key,
+                    params_list=params_list)
 
-                if temp_context_key is not None:
-                    self.delete_context(temp_context_key)
+        return params.__class__.Context(key)
+
+    def create_ptr_context(self, key, pointee, /):
+        """Create a pointer context.
+        """
+        ptr_context = ctx.PointerContext(key)
+
+        if isinstance(pointee, (NoneType, Object)):
+            self.op_list.op_create_ptr(
+                    key=key,
+                    pointee=pointee)
+
+        elif isinstance(pointee, Context.Slot):
+            self.op_list.op_create_ptr(
+                    key=key,
+                    pointee=None)
+
+            self._set_slot(ptr_context.pointee, pointee)
 
         else:
-            raise TypeError
+            raise TypeError # should not happen
 
-        return spec.context_cls()
+        return ptr_context
 
-    def create_plist_context(self, /, key, params):
-        """Append parameter list creation operation(s) to the list.
+    def create_dptr_array_context(self, key, seq, /):
+        """Create a data pointer array context.
         """
-        with self.parameters(params) as (params_context_key, params_list):
-            self.create_params(key, params_context_key, params_list)
+        dptr_array_context = ctx.DataPointerArrayContext(key)
 
-        return params.__class__.Context()
-
-    def create_ptr_context(self, /, key, entity):
-        """Append pointer creation operation(s) to the list.
-        """
-        from .object import RegistryOpData_create_ptr
-
-        if isinstance(entity, (type(None), Object)):
-            self.append_op('create_ptr', RegistryOpData_create_ptr.construct(
+        self.op_list.op_create_dptr_array(
                 key=key,
-                pointee=entity))
-
-        elif isinstance(entity, Context.Slot):
-            self.append_op('create_ptr', RegistryOpData_create_ptr.construct(
-                key=key,
-                pointee=None))
-
-            self.set_slot(key, 'pointee', (), entity)
-
-        else:
-            raise TypeError
-
-        return PointerContext()
-
-    def create_dptr_array_context(self, /, key, seq):
-        """Append data pointer array create operation(s) to the list.
-        """
-        from .object import RegistryOpData_create_dptr_array
-
-        self.append_op('create_dptr_array', RegistryOpData_create_dptr_array.construct(
-            key=key,
-            length=len(seq)))
+                length=len(seq))
 
         for index, entity in enumerate(seq):
             if entity is not None:
-                self.set_slot(key, '', (index,), entity)
+                self._set_slot(dptr_array_context[index], entity)
 
-        return DataPointerArrayContext()
+        return dptr_array_context
 
-    def unset_slot(self, /, context_key, slot_name, slot_indices):
-        """Append slot unassignment operation to the list.
+    def unset_slot(self, slot, /):
+        """Unset a context slot.
         """
-        from .object import RegistryOpData_unassign
+        context = Context.Slot.context_of(slot)
 
-        self.append_op('unassign', RegistryOpData_unassign.construct(
-            key=context_key,
-            slot_name=slot_name,
-            slot_indices=slot_indices))
+        self.check_context(context)
+        if Context.Slot.is_call(slot):
+            raise AttributeError("{slot} is a call slot and cannot be unset")
 
-    def set_slot(self, /, context_key, slot_name, slot_indices, value):
-        """Append slot assignment operation to the list.
+        key = Context.Slot.context_key_of(slot)
+        slot_name = Context.Slot.name_of(slot)
+        slot_indices = Context.Slot.indices_of(slot)
+
+        if not context.__class__.slot_unsettable(slot_name, slot_indices):
+            raise AttributeError("{slot} is not unsettable")
+
+        self.op_list.op_unassign(
+                key=key,
+                slot_name=slot_name,
+                slot_indices=slot_indices)
+
+    def set_slot(self, slot, entity, /):
+        """Assign an entity to a context slot.
         """
-        from .object import RegistryOpData_assign, RegistryOpData_assign_slot, RegistryOpData_assign_call
+        self.check_context(Context.Slot.context_of(slot))
 
-        if isinstance(value, (type(None), Object)):
-            self.append_op('assign', RegistryOpData_assign.construct(
-                key=context_key,
-                slot_name=slot_name,
-                slot_indices=slot_indices,
-                value=value))
+        self._set_slot(slot, entity)
 
-        elif isinstance(value, Context):
-            self.append_op('assign_slot', RegistryOpData_assign_slot.construct(
-                key=context_key,
-                slot_name=slot_name,
-                slot_indices=slot_indices,
-                source_key=Context.key_of(value),
-                source_slot_name='',
-                source_slot_indices=()))
+    def _set_slot(self, slot, entity, /):
+        """Assign an entity to a context slot (without context check).
+        """
+        context = Context.Slot.context_of(slot)
 
-        elif isinstance(value, Context.Slot):
-            if not Context.Slot.is_call(value):
-                self.append_op('assign_slot' if not Context.Slot.is_weak_ref(value) else 'assign_slot_weak',
-                               RegistryOpData_assign_slot.construct(
-                                   key=context_key,
-                                   slot_name=slot_name,
-                                   slot_indices=slot_indices,
-                                   source_key=Context.key_of(Context.Slot.context_of(value)),
-                                   source_slot_name=Context.Slot.name_of(value),
-                                   source_slot_indices=Context.Slot.indices_of(value)))
+        key = Context.Slot.context_key_of(slot)
+        slot_name = Context.Slot.name_of(slot)
+        slot_indices = Context.Slot.indices_of(slot)
 
+        slot_attr = context.__class__.slot_attr(slot_name, slot_indices, setter=True)
+        entity_attr = TypeAttr.of(entity)
+
+        if entity_attr is NotImplemented:
+            entity = context.__class__.slot_object(entity, slot_name, slot_indices)
+            entity_attr = TypeAttr.of(entity)
+
+        if not TypeAttr.compatible(entity_attr, slot_attr):
+            raise TypeError(f"{slot}: incompatible assigned entity type")
+
+        if isinstance(entity, (NoneType, Object)):
+            self.op_list.op_assign(
+                    key=key,
+                    slot_name=slot_name,
+                    slot_indices=slot_indices,
+                    value=entity)
+
+        elif isinstance(entity, Context):
+            self.check_context(entity)
+
+            source_key = Context.key_of(entity)
+
+            self.op_list.op_assign_slot(
+                    key=key,
+                    slot_name=slot_name,
+                    slot_indices=slot_indices,
+                    source_key=source_key,
+                    source_slot_name='',
+                    source_slot_indices=(),
+                    weak_ref=False)
+
+        elif isinstance(entity, Context.Slot):
+            self.check_context(Context.Slot.context_of(entity))
+
+            source_key = Context.Slot.context_key_of(entity)
+            source_slot_name = Context.Slot.name_of(entity)
+            source_slot_indices = Context.Slot.indices_of(entity)
+            source_slot_weak_ref = Context.Slot.is_weak_ref(entity)
+
+            if not Context.Slot.is_call(entity):
+                self.op_list.op_assign_slot(
+                        key=key,
+                        slot_name=slot_name,
+                        slot_indices=slot_indices,
+                        source_key=source_key,
+                        source_slot_name=source_slot_name,
+                        source_slot_indices=source_slot_indices,
+                        weak_ref=source_slot_weak_ref)
             else:
-                with self.parameters(Context.Slot.call_params_of(value)) as (params_context_key, params_list):
-                    self.append_op('assign_call' if not Context.Slot.is_weak_ref(value) else 'assign_call_weak',
-                                   RegistryOpData_assign_call.construct(
-                                       key=context_key,
-                                       slot_name=slot_name,
-                                       slot_indices=slot_indices,
-                                       source_key=Context.key_of(Context.Slot.context_of(value)),
-                                       source_slot_name=Context.Slot.name_of(value),
-                                       source_slot_indices=Context.Slot.indices_of(value),
-                                       source_call_params_context_key=params_context_key,
-                                       source_call_params_list=params_list))
+                with self.parameters(Context.Slot.call_params_of(entity)) \
+                        as (params_key, params_list):
+                    self.op_list.op_assign_call(
+                            key=key,
+                            slot_name=slot_name,
+                            slot_indices=slot_indices,
+                            source_key=source_key,
+                            source_slot_name=source_slot_name,
+                            source_slot_indices=source_slot_indices,
+                            params_key=params_key,
+                            params_list=params_list,
+                            weak_ref=source_slot_weak_ref)
 
         else:
-            raise TypeError
+            raise TypeError(f"Cannot assign {entity} to {slot}")
 
-    def call_slot(self, /, slot):
-        """Append context call invokation operation to the list.
+    def call_slot(self, slot, /):
+        """Invoke a context slot call, discarding the return value.
         """
-        from .object import RegistryOpData_invoke
+        context = Context.Slot.context_of(slot)
 
+        self.check_context(context)
         if not Context.Slot.is_call(slot):
-            raise AttributeError(f"Slot {_slot_str(Context.Slot.name_of(slot), Context.Slot.indices_of(slot))} of context '{Context.key_of(Context.Slot.context_of(slot))}' is not a call slot")
+            raise AttributeError("{slot} is not a call slot")
 
-        with self.parameters(Context.Slot.call_params_of(slot)) as (params_context_key, params_list):
-            self.append_op('invoke', RegistryOpData_invoke.construct(
-                key=Context.key_of(Context.Slot.context_of(slot)),
-                slot_name=Context.Slot.name_of(slot),
-                slot_indices=Context.Slot.indices_of(slot),
-                call_params_context_key=params_context_key,
-                call_params_list=params_list))
+        key = Context.Slot.context_key_of(slot)
+        slot_name = Context.Slot.name_of(slot)
+        slot_indices = Context.Slot.indices_of(slot)
 
-    def create_params(self, /, key, params_context_key, params_list):
-        """Append parameter list context creation operation to the list.
-        """
-        from .object import RegistryOpData_create_params
+        context.__class__.slot_attr(slot_name, slot_indices, call=True) # check if the slot exists
 
-        self.append_op('create_params', RegistryOpData_create_params.construct(
-            key=key,
-            params_context_key=params_context_key,
-            params_list=params_list))
+        with self.parameters(Context.Slot.call_params_of(slot)) as (params_key, params_list):
+            self.op_list.op_invoke(
+                    key=key,
+                    slot_name=slot_name,
+                    slot_indices=slot_indices,
+                    params_key=params_key,
+                    params_list=params_list)
 
     @contextmanager
     def parameters(self, params, /):
-        """Prepare the temporary parameter list if needed and append necessary
-        list forming operations.
+        """Parameter list context manager.
+        Creates a temporary parameter list when necessary.
         """
-        if not params.dynamic_params:
-            yield (params.base_context_key, params.static_params)
+        if params.base_context is not None:
+            self.check_context(params.base_context)
+
+        base_context_key = Context.key_of(params.base_context)
+        dynamic_params = {}
+        static_params = {}
+
+        for key, value in params.dict.items():
+            param_attr = params.__class__.param_attr(key)
+            value_attr = TypeAttr.of(value)
+
+            if value_attr is NotImplemented:
+                value = params.__class__.param_object(value, key)
+                value_attr = TypeAttr.of(value)
+
+            if not TypeAttr.compatible(value_attr, param_attr):
+                raise TypeError(f"{params}: incompatible value type for parameter {repr(key)}")
+
+            if isinstance(value, (Context, Context.Slot)):
+                dynamic_params[key] = value
+            else:
+                static_params[key] = value
+
+        if not dynamic_params:
+            yield (base_context_key, static_params)
         else:
             temp_context_key = self.temp_key('params')
+            temp_context = params.__class__.Context(temp_context_key)
 
-            self.create_params(temp_context_key, params.base_context_key, params.static_params)
+            self.op_list.op_create_plist(temp_context_key, base_context_key, static_params)
 
-            try:
-                for name, value in params.dynamic_params.items():
-                    self.set_slot(temp_context_key, name, (), value)
+            for key, value in dynamic_params.items():
+                self._set_slot(getattr(temp_context, key), value)
 
-                yield (temp_context_key, {})
-            finally:
-                self.delete_context(temp_context_key)
+            yield (temp_context_key, {})
+
+            self.delete_context(temp_context_key)
 
 
 class Registry:
     """Representation of a context registry.
     """
+    # Built-in contexts
+    BUILTIN = SimpleNamespace(registry=ctx.HashmapContext('archi.registry'),
+                              executable=ctx.LibraryContext('archi.executable'),
+                              input_file=ctx.FileMappingContext('archi.input_file'),
+                              signal_handler=ctx.SignalHandlerDataHashmapContext('archi.signal_handler'))
+
     # Input file contents key for lists of registry operations
     INPUT_FILE_KEY = 'reg_ops'
 
-    # Keys of built-in contexts
-    KEY_REGISTRY       = 'archi.registry'
-    KEY_EXECUTABLE     = 'archi.executable'
-    KEY_INPUT_FILE     = 'archi.input_file'
-    KEY_SIGNAL_HANDLER = 'archi.signal_handler'
+    # Implementation class
+    IMPL = _RegistryImpl
 
-    # Dictionary of built-in contexts
-    BUILTIN = {KEY_REGISTRY: ctx.HashmapContext,
-               KEY_EXECUTABLE: ctx.LibraryContext,
-               KEY_INPUT_FILE: ctx.FileMappingContext,
-               KEY_SIGNAL_HANDLER: ctx.SignalHandlerDataHashmapContext}
-
-    def __init__(self, /, operations=None, require_builtins=True, protect_builtins=True):
+    def __init__(self, /, operations=None, require=None):
         """Initialize a context registry instance.
         """
-        if not isinstance(operations, (type(None), RegistryOperationList)):
-            raise TypeError
-        elif not isinstance(require_builtins, bool):
-            raise TypeError
-        elif not isinstance(protect_builtins, bool):
+        if not isinstance(operations, (NoneType, RegistryOpList)):
             raise TypeError
 
-        self._operations = operations if operations is not None else RegistryOperationList()
+        if operations is None:
+            operations = RegistryOpList()
 
         self._contexts = {}
-        self._prerequisites = {}
+        self._prereq = {}
 
-        if require_builtins:
-            for key, context_cls in self.__class__.BUILTIN.items():
-                self.require_context(key, cls=context_cls, protect=protect_builtins)
+        self._impl = self.__class__.IMPL(operations, lambda key: self[key])
+
+        if require is not None:
+            for context in require:
+                self.require(context)
+
+    def copy(self, /):
+        """Create a copy of the registry.
+        """
+        registry = self.__class__()
+
+        registry._contexts = self._contexts.copy()
+        registry._prereq = self._prereq.copy()
+
+        registry.operations.list[:] = self.operations.list
+
+        return registry
+
+    @property
+    def operations(self, /):
+        """Get the current list of operations.
+        """
+        return self._impl.op_list
+
+    @staticmethod
+    def key(key, /, prefix=''):
+        """Get a key with the specified prefix.
+        """
+        if not isinstance(key, str):
+            raise TypeError
+        elif not isinstance(prefix, str):
+            raise TypeError
+
+        sep = '.' if prefix else ''
+        return f'{prefix}{sep}{key}'
+
+    def temp_key(self, label, /, prefix='', **kwargs):
+        """Generate a temporary context key.
+        """
+        return self._impl.temp_key(label, prefix=prefix, **kwargs)
 
     def __getitem__(self, key, /):
         """Obtain a context from the context registry.
         """
         if key is None:
             return None
-        elif not isinstance(key, str):
-            raise TypeError
+
+        self._check_key_used(key)
 
         return self._contexts[key]
 
     def __setitem__(self, key, entity, /):
         """Create a context and insert it to the registry.
         """
-        if key is None:
-            raise KeyError("Cannot create a context without a key")
-        elif not isinstance(key, str):
-            raise TypeError
-        elif not key:
-            raise KeyError(f"Cannot create a context with an empty key")
-        elif key.startswith('.'):
-            raise KeyError(f"Cannot create a context with a temporary key explicitly")
-        elif key in self._contexts:
-            raise KeyError(f"Context '{key}' is already in the registry")
+        self._check_key_available(key)
 
-        if not self.owns(entity):
-            raise ValueError("The entity {entity} does not belong to the registry")
+        context = self._create_context(key, entity)
 
-        context = self.operations.create(key, entity)
+        if context is NotImplemented:
+            raise TypeError(f"Cannot create context from {entity}")
 
         if not isinstance(context, Context):
-            raise TypeError
-        elif context._.registry is not None:
-            raise ValueError
-
-        context._.registry = self
-        context._.key = key
+            raise TypeError(f"{context} is not a context")
+        elif Context.key_of(context) != key:
+            raise KeyError(f"{context} key is not {repr(key)}")
 
         self._contexts[key] = context
 
@@ -416,45 +497,52 @@ class Registry:
         """
         if key is None:
             return
-        elif not isinstance(key, str):
-            raise TypeError
-        elif not key:
-            raise KeyError(f"Cannot delete a context with an empty key")
-        elif key.startswith('.'):
-            raise KeyError(f"Cannot delete a context with a temporary key explicitly")
-        elif key not in self._contexts:
-            raise KeyError(f"Context '{key}' is not in the registry")
-        elif self._prerequisites.get(key, False):
-            raise KeyError(f"Prerequisite context '{key}' is protected from deletion")
 
-        context = self._contexts[key]
+        self._check_key_used(key)
+        self._check_key_not_protected(key)
 
-        context._.registry = None
-        context._.key = None
+        self._impl.delete_context(key)
 
+        if key in self._prereq:
+            del self._prereq[key]
         del self._contexts[key]
-        if key in self._prerequisites:
-            del self._prerequisites[key]
 
-        self.operations.delete_context(key)
+    def __call__(self, operation, /):
+        """Perform a registry operation with context slots.
 
-    def __call__(self, entity, /):
-        """Invoke an entity (causing side effects only, context not created).
+        Accepts call slots and slot assignment chains (slot1 << slot2 << ... << slotN << entity).
+        A call slot is invoked, its return value is discarded.
+        In assignment chains, the order of operations is right-to-left:
+            slotN   << entity
+            slotN-1 << slotN
+            ...
+            slot2 << slot3
+            slot1 << slot2
+
+        The rightmost entity can be a value, a context, a getter slot, or a call slot.
+        The leftmost slot can only be a setter slot.
+        Other (middle) slots must be both getter and setter slots simultaneously.
+
+        If the rightmost entity has the special value of `Context.Slot.UNSET`,
+        all other slots in the chain are getting unset.
         """
-        if not self.owns(entity):
-            raise ValueError("The entity {entity} does not belong to the registry")
-
-        self.operations.invoke(entity)
+        if self._operate(operation) is NotImplemented:
+            raise TypeError(f"Unrecognized registry operation {operation}")
 
     def __contains__(self, key, /):
         """Check if a context with the specified key is in the registry.
         """
-        if key is None:
-            return False
-        elif not isinstance(key, str):
-            raise TypeError
-
         return key in self._contexts
+
+    def is_prereq(self, key, /):
+        """Check if a context key was added to the registry by require().
+        """
+        return key in self._prereq
+
+    def is_protected(self, key, /):
+        """Check if a context is protected from deletion or rekeying.
+        """
+        return self._prereq.get(key, False)
 
     def __len__(self, /):
         """Get number of contexts.
@@ -471,119 +559,93 @@ class Registry:
         """
         return reversed(self._contexts)
 
-    def contexts(self, /, cls=Context, is_prereq=True, is_new=True):
+    def contexts(self, /, cls=Context, new=True, prereq_unprot=True, prereq_prot=True):
         """Obtain the dictionary of known contexts of the specified type.
         """
         if not issubclass(cls, Context):
             raise TypeError
-        elif not is_prereq and not is_new:
-            raise ValueError
-
-        return {key: context for key, context in self._contexts.items() if isinstance(context, cls) \
-                and ((is_prereq and key in self._prerequisites) \
-                or (is_new and key not in self._prerequisites))}
-
-    @property
-    def operations(self, /):
-        """Get the current list of operations.
-        """
-        return self._operations
-
-    def owns(self, entity, /):
-        """Check if an entity belongs to the registry.
-        """
-        if isinstance(entity, Context):
-            return Context.registry_of(entity) is self
-        elif isinstance(entity, Context.Slot):
-            return self.owns(Context.Slot.context_of(entity))
-        elif isinstance(entity, _ContextSpec):
-            return self.owns(entity.interface_origin)
-        elif isinstance(entity, _ContextInterface):
-            return self.owns(entity.origin)
-        else:
-            return True
-
-    def is_prerequisite(self, key, /):
-        """Check if a context key was added to the registry by require_context().
-        """
-        if key is None:
-            return False
-        elif not isinstance(key, str):
+        elif not isinstance(new, bool):
+            raise TypeError
+        elif not isinstance(prereq_unprot, bool):
+            raise TypeError
+        elif not isinstance(prereq_prot, bool):
             raise TypeError
 
-        return key in self._prerequisites
+        if not new and not prereq_unprot and not prereq_prot:
+            return {}
 
-    def require_context(self, key, /, cls=Context, protect=True):
-        """Require a context with the specified key to exist in the registry.
-        """
-        if not isinstance(key, str):
-            raise TypeError
-        elif not issubclass(cls, Context):
-            raise TypeError
-        elif not isinstance(protect, bool):
-            raise TypeError
-
-        if key not in self:
-            context = cls()
-            context._.registry = self
-            context._.key = key
-
-            self._contexts[key] = context
-            self._prerequisites[key] = protect
-
-        else:
-            context = self._contexts[key]
-
+        def passes_filter(key, context, /):
             if not isinstance(context, cls):
-                raise TypeError(f"Required context '{key}' has type {context.__class__} (want {cls})")
+                return False
+            try:
+                protected = self._prereq[key]
+                return (prereq_prot and protected) or (prereq_unprot and not protected)
+            except KeyError:
+                return new
 
-        return context
+        return {key: context for key, context in self._contexts.items()
+                if passes_filter(key, context)}
 
-    def require_builtin(self, key, /, protect=True):
-        """Require a built-in context with the specified key to exist in the registry.
-        """
-        return self.require_context(key, cls=self.__class__.BUILTIN[key], protect=protect)
-
-    def rekey_context(self, old_key, /, key):
-        """Change key of a context.
-        """
-        if not isinstance(key, str):
-            raise TypeError
-        elif not isinstance(old_key, str):
-            raise TypeError
-
-        if self._prerequisites.get(old_key, False):
-            raise KeyError(f"Prerequisite context '{old_key}' is protected from key changing")
-
-        context = self.new_context(self[old_key], key)
-        del self[old_key]
-
-        return context
-
-    def new_context(self, entity, /, key):
-        """Create a new context and add it to the registry.
-        """
-        self[key] = entity
-        return self[key]
-
-    def del_context(self, context, /):
-        """Delete a context from the registry.
+    def require(self, context, /, protect=True):
+        """Require a context with the specified key to exist in the registry.
         """
         if context is None:
             return
 
         if not isinstance(context, Context):
             raise TypeError
-        elif not self.owns(context):
-            raise ValueError(f"Context '{Context.key_of(context)}' does not belong to the registry")
+        elif not isinstance(protect, bool):
+            raise TypeError
 
-        del self[Context.key_of(context)]
+        key = Context.key_of(context)
 
-    def cleanup(self, /):
-        """Delete all created contexts from the registry.
+        if key not in self:
+            self._contexts[key] = context
+            self._prereq[key] = protect
+        else:
+            if context != self._contexts[key]:
+                raise TypeError(f"Required context mismatch: want {context}, have {self._contexts[key]}")
+            elif protect != self.is_protected(key):
+                raise ValueError(f"Required context protection mode mismatch: want {protect}, have {self.is_protected(key)}")
+
+    def delete(self, context, /):
+        """Delete a context from the registry.
         """
-        for key in list(reversed(self.contexts(is_prereq=False).keys())):
+        if context is None:
+            return
+
+        key = Context.key_of(context)
+
+        if context != self._contexts[key]:
+            raise TypeError(f"Context mismatch: {context} is not {self._contexts[key]}")
+
+        del self[key]
+
+    def cleanup(self, /, prereq=False):
+        """Delete all new (and, optionally, unprotected prerequisite) contexts
+        from the registry.
+        """
+        for key in tuple(reversed(self.contexts(prereq_unprot=prereq,
+                                                prereq_prot=False).keys())):
             del self[key]
+
+    def rekey_context(self, key, original_key, /):
+        """Change key of a context.
+        """
+        self._check_key_used(original_key)
+        self._check_key_not_protected(original_key)
+        self._check_key_available(key)
+
+        self[key] = self[original_key]
+        del self[original_key]
+
+        return self[key]
+
+    def new_context(self, key, entity, /):
+        """Create a new context and add it to the registry.
+        """
+        self[key] = entity
+        return self[key]
 
     @contextmanager
     def deleted_context(self, key, /):
@@ -596,7 +658,7 @@ class Registry:
             del self[key]
 
     @contextmanager
-    def temp_context(self, entity, /, key):
+    def temp_context(self, key, entity, /):
         """Create a temporary context.
         """
         self[key] = entity
@@ -606,9 +668,69 @@ class Registry:
     def interface_of(self, key, /):
         """Create a representation of a context interface.
         """
-        if not isinstance(key, str):
-            raise TypeError
-
         context = self[key]
-        return _ContextInterface(context, context.__class__)
+        return ContextInterface(context, context.__class__)
+
+    def _check_key_available(self, key, /):
+        """Check if a key is available to be used by a new context.
+        """
+        if not isinstance(key, str):
+            raise TypeError("Context key must be a string")
+        elif key in self:
+            raise KeyError(f"Context {repr(key)} is in the registry already")
+
+    def _check_key_used(self, key, /):
+        """Check if a context with the specified key exists in the registry.
+        """
+        if key not in self:
+            raise KeyError(f"Context {repr(key)} is not in the registry")
+
+    def _check_key_not_protected(self, key, /):
+        """Check if a context is protected from deletion.
+        """
+        if self.is_protected(key):
+            raise KeyError(f"Prerequisite context {repr(key)} is protected")
+
+    def _create_context(self, key, entity, /):
+        """Create a context from an entity.
+
+        This method may be overridden in derived classes.
+        """
+        if isinstance(entity, Context):
+            return self._impl.alias_context(key, entity)
+
+        elif isinstance(entity, _ContextSpec):
+            return self._impl.create_context(key, entity)
+
+        elif isinstance(entity, Parameters):
+            return self._impl.create_plist_context(key, entity)
+
+        elif isinstance(entity, (NoneType, Object, Context.Slot)):
+            return self._impl.create_ptr_context(key, entity)
+
+        elif isinstance(entity, (tuple, list)):
+            return self._impl.create_dptr_array_context(key, entity)
+
+        else:
+            return NotImplemented
+
+    def _operate(self, operation, /):
+        """Perform a registry operation.
+
+        This method may be overridden in derived classes.
+        """
+        if isinstance(operation, Context.Slot):
+            self._impl.call_slot(operation)
+
+        elif isinstance(operation, _ContextSlotAssignment):
+            if operation.chain[-1] is Context.Slot.UNSET:
+                for i in range(len(operation.chain), 1, -1):
+                    self._impl.unset_slot(operation.chain[i-2])
+
+            else:
+                for i in range(len(operation.chain), 1, -1):
+                    self._impl.set_slot(operation.chain[i-2], operation.chain[i-1])
+
+        else:
+            return NotImplemented
 
