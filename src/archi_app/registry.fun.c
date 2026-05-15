@@ -86,11 +86,15 @@ archi_print_slot(
         archi_print("\n");
     }
 
-    archi_print("%*s%s.index[%zu] =", INDENTATION, "", field, slot.num_indices);
+    archi_print("%*s%s.index = [%zu]", INDENTATION, "", field, slot.num_indices);
     {
         if (slot.index != NULL)
+        {
+            archi_print("{");
             for (size_t i = 0; i < slot.num_indices; i++)
                 archi_print(" %lli", slot.index[i]);
+            archi_print(" }");
+        }
         else
             archi_print(" NULL");
 
