@@ -31,12 +31,14 @@
 // Built-in contexts
 /*****************************************************************************/
 
-#define ARCHI_APP_REGISTRY_CONTEXT__REGISTRY        "archi.registry"        ///< Built-in context: the context registry itself.
+#define ARCHI_APP_REGISTRY_CONTEXT__REGISTRY            "archi.registry"        ///< Built-in context: the context registry itself.
 
-#define ARCHI_APP_REGISTRY_CONTEXT__EXECUTABLE      "archi.executable"      ///< Built-in context: the library handle of the executable itself.
-#define ARCHI_APP_REGISTRY_CONTEXT__INPUT_FILE      "archi.input_file"      ///< Built-in context: the current input file context.
+#define ARCHI_APP_REGISTRY_CONTEXT__EXECUTABLE          "archi.executable"      ///< Built-in context: the library handle of the executable itself.
+#define ARCHI_APP_REGISTRY_CONTEXT__INPUT_FILE_PREV     "archi.input_file.prev" ///< Built-in context: the previous input file mapping.
+#define ARCHI_APP_REGISTRY_CONTEXT__INPUT_FILE_CURR     "archi.input_file.curr" ///< Built-in context: the current input file mapping.
+#define ARCHI_APP_REGISTRY_CONTEXT__INPUT_FILE_NEXT     "archi.input_file.next" ///< Built-in context: the next input file mapping.
 
-#define ARCHI_APP_REGISTRY_CONTEXT__SIGNAL_HANDLER  "archi.signal_handler"  ///< Built-in context: the signal handler data.
+#define ARCHI_APP_REGISTRY_CONTEXT__SIGNAL_HANDLER      "archi.signal_handler"  ///< Built-in context: the signal handler data.
 
 /*****************************************************************************/
 // Registry operation names

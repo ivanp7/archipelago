@@ -132,6 +132,15 @@ struct {
         archi_pointer_attr__cdata(ARCHI_POINTER_DATA_TAG__CONTEXT_INTERFACE),   \
 }
 
+#define INSERT_CONTEXT(key, ctx) do {                               \
+    INIT_ERROR();                                                   \
+    archi_context_registry_insert(archi_process.context.registry,   \
+            (key), (ctx), &archi_process.error);                    \
+    print_error();                                                  \
+    if (archi_process.error.code != 0)                              \
+        exit(EXIT_FAILURE);                                         \
+} while (0)
+
 ///////////////////////////////////////////////////////////////////////////////
 // Auxiliary functions
 ///////////////////////////////////////////////////////////////////////////////
@@ -284,26 +293,39 @@ main(
 
     for (size_t i = 0; i < archi_process.args.num_inputs; i++)
     {
+        archi_log_debug(__func__, " * updating input file mapping contexts (current = #%zu) in the registry...", i);
+
+        // Insert the previous input file context to the registry
+        INSERT_CONTEXT(ARCHI_APP_REGISTRY_CONTEXT__INPUT_FILE_PREV,
+                (i > 0) ? archi_process.context.input_file[i-1] : NULL);
+
         // Insert the current input file context to the registry
-        archi_log_debug(__func__, " * inserting file #%zu mapping context to the registry...", i);
+        INSERT_CONTEXT(ARCHI_APP_REGISTRY_CONTEXT__INPUT_FILE_CURR,
+                archi_process.context.input_file[i]);
 
-        INIT_ERROR();
-        archi_context_registry_insert(archi_process.context.registry,
-                ARCHI_APP_REGISTRY_CONTEXT__INPUT_FILE, archi_process.context.input_file[i],
-                &archi_process.error);
-        print_error();
-
-        if (archi_process.error.code != 0)
-            exit(EXIT_FAILURE);
+        // Insert the next input file context to the registry
+        INSERT_CONTEXT(ARCHI_APP_REGISTRY_CONTEXT__INPUT_FILE_NEXT,
+                (i < archi_process.args.num_inputs - 1) ? archi_process.context.input_file[i+1] : NULL);
 
         // Execute the current input file
         exec_file(archi_process.context.input_file[i], i);
 
-        // Disown the current input file
-        archi_log_debug(__func__, " * disowning file #%zu mapping context...", i);
+        // Disown the previous input file
+        if (i > 0)
+        {
+            archi_log_debug(__func__, " * disowning file mapping context #%zu...", i-1);
 
-        archi_context_finalize(archi_process.context.input_file[i]);
-        archi_process.context.input_file[i] = NULL;
+            archi_context_finalize(archi_process.context.input_file[i-1]);
+            archi_process.context.input_file[i-1] = NULL;
+        }
+    }
+
+    // Disown the last input file
+    {
+        archi_log_debug(__func__, " * disowning file mapping context #%zu...", archi_process.args.num_inputs-1);
+
+        archi_context_finalize(archi_process.context.input_file[archi_process.args.num_inputs-1]);
+        archi_process.context.input_file[archi_process.args.num_inputs-1] = NULL;
     }
 
     return EXIT_SUCCESS;
@@ -506,14 +528,7 @@ create_context_registry(void)
 
     archi_log_debug(__func__, "Inserting the context registry into itself...");
 
-    INIT_ERROR();
-    archi_context_registry_insert(archi_process.context.registry,
-            ARCHI_APP_REGISTRY_CONTEXT__REGISTRY, archi_process.context.registry,
-            &archi_process.error);
-    print_error();
-
-    if (archi_process.error.code != 0)
-        exit(EXIT_FAILURE);
+    INSERT_CONTEXT(ARCHI_APP_REGISTRY_CONTEXT__REGISTRY, archi_process.context.registry);
 }
 
 void
@@ -1165,7 +1180,7 @@ args_parser_func(
             break;
 
         case ARGKEY_VERSION:
-            printf("version: %s\n", ARCHI_APP_VERSION);
+            printf("build: %s\n", ARCHI_APP_VERSION);
             printf("built-in modules:\n");
             for (const char *module = ARCHI_APP_BUILTIN_MODULES; module != NULL;)
             {

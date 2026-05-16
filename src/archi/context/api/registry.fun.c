@@ -108,9 +108,9 @@ archi_context_registry_get(
         const char *key,
         ARCHI_ERROR_PARAM_DECL)
 {
-    if ((key == NULL) || (key[0] == '\0'))
+    if (key == NULL)
     {
-        ARCHI_ERROR_SET(ARCHI__ECONSTRAINT, "context key is empty");
+        ARCHI_ERROR_SET(ARCHI__ECONSTRAINT, "context key is NULL");
         return NULL;
     }
 
@@ -170,9 +170,9 @@ archi_context_registry_alias(
         const char *original_key,
         ARCHI_ERROR_PARAM_DECL)
 {
-    if ((key == NULL) || (key[0] == '\0'))
+    if (key == NULL)
     {
-        ARCHI_ERROR_SET(ARCHI__ECONSTRAINT, "alias key is empty");
+        ARCHI_ERROR_SET(ARCHI__ECONSTRAINT, "alias key is NULL");
         return;
     }
 
@@ -189,14 +189,9 @@ archi_context_registry_insert(
         archi_context_t context,
         ARCHI_ERROR_PARAM_DECL)
 {
-    if ((key == NULL) || (key[0] == '\0'))
+    if (key == NULL)
     {
-        ARCHI_ERROR_SET(ARCHI__ECONSTRAINT, "inserted key is empty");
-        return;
-    }
-    else if (context == NULL)
-    {
-        ARCHI_ERROR_SET(ARCHI__ECONSTRAINT, "inserted context is NULL");
+        ARCHI_ERROR_SET(ARCHI__ECONSTRAINT, "inserted key is NULL");
         return;
     }
 
@@ -220,9 +215,9 @@ archi_context_registry_create(
         archi_context_registry_params_t init_params,
         ARCHI_ERROR_PARAM_DECL)
 {
-    if ((key == NULL) || (key[0] == '\0'))
+    if (key == NULL)
     {
-        ARCHI_ERROR_SET(ARCHI__ECONSTRAINT, "created key is empty");
+        ARCHI_ERROR_SET(ARCHI__ECONSTRAINT, "created key is NULL");
         return NULL;
     }
 
@@ -266,9 +261,9 @@ archi_context_registry_create_as(
         archi_context_registry_params_t init_params,
         ARCHI_ERROR_PARAM_DECL)
 {
-    if ((key == NULL) || (key[0] == '\0'))
+    if (key == NULL)
     {
-        ARCHI_ERROR_SET(ARCHI__ECONSTRAINT, "created key is empty");
+        ARCHI_ERROR_SET(ARCHI__ECONSTRAINT, "created key is NULL");
         return NULL;
     }
 
@@ -295,9 +290,9 @@ archi_context_registry_create_from(
         archi_context_registry_params_t init_params,
         ARCHI_ERROR_PARAM_DECL)
 {
-    if ((key == NULL) || (key[0] == '\0'))
+    if (key == NULL)
     {
-        ARCHI_ERROR_SET(ARCHI__ECONSTRAINT, "created key is empty");
+        ARCHI_ERROR_SET(ARCHI__ECONSTRAINT, "created key is NULL");
         return NULL;
     }
 
@@ -333,9 +328,9 @@ archi_context_registry_invoke(
         archi_context_registry_params_t call_params,
         ARCHI_ERROR_PARAM_DECL)
 {
-    if ((key == NULL) || (key[0] == '\0'))
+    if (key == NULL)
     {
-        ARCHI_ERROR_SET(ARCHI__ECONSTRAINT, "target key is empty");
+        ARCHI_ERROR_SET(ARCHI__ECONSTRAINT, "target key is NULL");
         return;
     }
 
@@ -372,9 +367,9 @@ archi_context_registry_unassign(
         archi_context_slot_t slot,
         ARCHI_ERROR_PARAM_DECL)
 {
-    if ((key == NULL) || (key[0] == '\0'))
+    if (key == NULL)
     {
-        ARCHI_ERROR_SET(ARCHI__ECONSTRAINT, "target key is empty");
+        ARCHI_ERROR_SET(ARCHI__ECONSTRAINT, "target key is NULL");
         return;
     }
 
@@ -397,9 +392,9 @@ archi_context_registry_assign(
         archi_rcpointer_t value,
         ARCHI_ERROR_PARAM_DECL)
 {
-    if ((key == NULL) || (key[0] == '\0'))
+    if (key == NULL)
     {
-        ARCHI_ERROR_SET(ARCHI__ECONSTRAINT, "target key is empty");
+        ARCHI_ERROR_SET(ARCHI__ECONSTRAINT, "target key is NULL");
         return;
     }
 
@@ -426,9 +421,9 @@ archi_context_registry_assign_slot(
         archi_context_slot_t source_slot,
         ARCHI_ERROR_PARAM_DECL)
 {
-    if ((key == NULL) || (key[0] == '\0'))
+    if (key == NULL)
     {
-        ARCHI_ERROR_SET(ARCHI__ECONSTRAINT, "target key is empty");
+        ARCHI_ERROR_SET(ARCHI__ECONSTRAINT, "target key is NULL");
         return;
     }
 
@@ -460,9 +455,9 @@ archi_context_registry_assign_call(
         archi_context_registry_params_t source_call_params,
         ARCHI_ERROR_PARAM_DECL)
 {
-    if ((key == NULL) || (key[0] == '\0'))
+    if (key == NULL)
     {
-        ARCHI_ERROR_SET(ARCHI__ECONSTRAINT, "target key is empty");
+        ARCHI_ERROR_SET(ARCHI__ECONSTRAINT, "target key is NULL");
         return;
     }
 
