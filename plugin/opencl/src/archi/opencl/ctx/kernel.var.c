@@ -501,7 +501,7 @@ ARCHI_CONTEXT_SET_FUNC(archi_context_set__opencl_kernel)
 }
 
 const archi_context_interface_t
-archi_context_new_interface__opencl_kernel = {
+archi_context_interface__opencl_kernel_new = {
     .init_fn = archi_context_init__opencl_kernel_new,
     .final_fn = archi_context_final__opencl_kernel,
     .eval_fn = archi_context_eval__opencl_kernel,
@@ -509,7 +509,7 @@ archi_context_new_interface__opencl_kernel = {
 };
 
 const archi_context_interface_t
-archi_context_clone_interface__opencl_kernel = {
+archi_context_interface__opencl_kernel_clone = {
     .init_fn = archi_context_init__opencl_kernel_clone,
     .final_fn = archi_context_final__opencl_kernel,
     .eval_fn = archi_context_eval__opencl_kernel,

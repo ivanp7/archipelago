@@ -460,6 +460,7 @@ class Registry:
             raise TypeError
 
         sep = '.' if prefix else ''
+
         return f'{prefix}{sep}{key}'
 
     def temp_key(self, label, /, prefix='', **kwargs):

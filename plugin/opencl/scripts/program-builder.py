@@ -240,8 +240,7 @@ with app.temp_context(Registry.key('plugin.opencl', PREFIX),
         # Write program binaries to output files
         for i, out_file in enumerate(args.out):
             with app.temp_context(Registry.key(f'out_file[{i}]', PREFIX),
-                                  I_FILE(pathname=out_file, size=opencl_program.binary.size[i],
-                                         readable=True, writable=True,
+                                  I_FILE(pathname=out_file, writable=True,
                                          create=True, truncate=True, mode=0o644)) as file:
                 # Write the program binary for the current device into the output file
                 app(file.write(src=opencl_program.binary[i]))

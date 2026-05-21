@@ -39,7 +39,7 @@ PTYPE_data = ARCHI_AGGR_MEMBER_TYPE__POINTER_TO_CDATA(void*, 0);
 
 static
 const archi_aggr_member_t
-MEMBERS_dexgraph_node_data__memory_copy[] = {
+MEMBERS_dexgraph_op_data__memory_copy[] = {
     ARCHI_AGGR_MEMBER__POINTER(archi_dexgraph_op_data__memory_copy_t, destination, 1, PTYPE_data),
     ARCHI_AGGR_MEMBER__POINTER(archi_dexgraph_op_data__memory_copy_t, source, 1, PTYPE_data),
 
@@ -51,7 +51,7 @@ MEMBERS_dexgraph_node_data__memory_copy[] = {
 };
 
 const archi_aggr_type_t
-archi_aggr_type__dexgraph_node_data__memory_copy = ARCHI_AGGR_TYPE(
+archi_aggr_type__dexgraph_op_data__memory_copy = ARCHI_AGGR_TYPE(
         archi_dexgraph_op_data__memory_copy_t, 0,
-        MEMBERS_dexgraph_node_data__memory_copy);
+        MEMBERS_dexgraph_op_data__memory_copy);
 

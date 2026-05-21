@@ -98,7 +98,7 @@ archi_aggr_type__thread_group_dispatch_params = ARCHI_AGGR_TYPE(
 
 static
 const archi_aggr_member_t
-MEMBERS_dexgraph_node_data__thread_group_dispatch[] = {
+MEMBERS_dexgraph_op_data__thread_group_dispatch[] = {
     ARCHI_AGGR_MEMBER__POINTER(archi_dexgraph_op_data__thread_group_dispatch_t, thread_group, 1, PTYPE_thread_group),
     ARCHI_AGGR_MEMBER__AGGREGATE(archi_dexgraph_op_data__thread_group_dispatch_t, work, 1,
             archi_aggr_type__thread_group_work.top_level),
@@ -109,7 +109,7 @@ MEMBERS_dexgraph_node_data__thread_group_dispatch[] = {
 };
 
 const archi_aggr_type_t
-archi_aggr_type__dexgraph_node_data__thread_group_dispatch = ARCHI_AGGR_TYPE(
+archi_aggr_type__dexgraph_op_data__thread_group_dispatch = ARCHI_AGGR_TYPE(
         archi_dexgraph_op_data__thread_group_dispatch_t, 0,
-        MEMBERS_dexgraph_node_data__thread_group_dispatch);
+        MEMBERS_dexgraph_op_data__thread_group_dispatch);
 

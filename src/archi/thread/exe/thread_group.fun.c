@@ -39,7 +39,7 @@ ARCHI_DEXGRAPH_OPERATION_FUNC(archi_dexgraph_op__thread_group_dispatch)
     }
 
     // Dispatch the work to the thread group
-    ARCHI_ERROR_VAR(error);
+    archi_error_t error;
 
     for (;;)
     {

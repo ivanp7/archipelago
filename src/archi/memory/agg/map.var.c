@@ -51,7 +51,7 @@ PTYPE_memory = ARCHI_AGGR_MEMBER_TYPE__POINTER_TO_CDATA(archi_memory_t,
 
 static
 const archi_aggr_member_t
-MEMBERS_dexgraph_node_data__memory_map_unmap_wrapper[] = {
+MEMBERS_dexgraph_op_data__memory_map_unmap_wrapper[] = {
     ARCHI_AGGR_MEMBER__POINTER(archi_dexgraph_op_data__memory_map_unmap_wrapper_t, memory, 1, PTYPE_memory),
     ARCHI_AGGR_MEMBER__POINTER(archi_dexgraph_op_data__memory_map_unmap_wrapper_t, map_data, 1, PTYPE_pointer),
     ARCHI_AGGR_MEMBER__VALUE(archi_dexgraph_op_data__memory_map_unmap_wrapper_t, map_offset, 1, VTYPE_size),
@@ -62,7 +62,7 @@ MEMBERS_dexgraph_node_data__memory_map_unmap_wrapper[] = {
 };
 
 const archi_aggr_type_t
-archi_aggr_type__dexgraph_node_data__memory_map_unmap_wrapper = ARCHI_AGGR_TYPE(
+archi_aggr_type__dexgraph_op_data__memory_map_unmap_wrapper = ARCHI_AGGR_TYPE(
         archi_dexgraph_op_data__memory_map_unmap_wrapper_t, 0,
-        MEMBERS_dexgraph_node_data__memory_map_unmap_wrapper);
+        MEMBERS_dexgraph_op_data__memory_map_unmap_wrapper);
 

@@ -35,14 +35,14 @@
  */
 extern
 const archi_aggr_type_t
-archi_aggr_type__dexgraph_node_data__print_string__token;
+archi_aggr_type__dexgraph_op_data__print_string__token;
 
 /**
  * @brief Aggregate type description for archi_dexgraph_op_data__print_string_t.
  */
 extern
 const archi_aggr_type_t
-archi_aggr_type__dexgraph_node_data__print_string;
+archi_aggr_type__dexgraph_op_data__print_string;
 
 #endif // _ARCHI_EXEC_AGG_PRINT_VAR_H_
 

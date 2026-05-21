@@ -332,20 +332,20 @@ class Context(_ContextTyping):
     def __getattribute__(self, name, /):
         """Get a context slot.
         """
-        if name == '_':
-            raise AttributeError # hide _
-        else:
-            return object.__getattribute__(self, name)
+        if not name.startswith('__'): # everything except Python machinery
+            raise AttributeError
+
+        return object.__getattribute__(self, name)
 
     def __setattr__(self, name, value, /):
         """Attribute setter method.
         """
-        raise AttributeError # hide _
+        raise AttributeError
 
     def __delattr__(self, name, /):
         """Attribute deleter method.
         """
-        raise AttributeError # hide _
+        raise AttributeError
 
     def __getitem__(self, subscript, /):
         """Get a context slot.
@@ -524,28 +524,30 @@ class _ContextSlot:
         slot_indices = _ContextSlot.indices_of(self)
         slot_weak_ref = _ContextSlot.is_weak_ref(self)
 
+        sep = '.' if slot_name and name else ''
+
         return _ContextSlot(slot_context,
-                            name=f'{slot_name}.{name}',
+                            name=f'{slot_name}{sep}{name}',
                             indices=slot_indices,
                             weak_ref=slot_weak_ref)
 
     def __getattribute__(self, name, /):
         """Get a context slot.
         """
-        if name == '_':
-            raise AttributeError # hide _
-        else:
-            return object.__getattribute__(self, name)
+        if not name.startswith('__'): # everything except Python machinery
+            raise AttributeError
+
+        return object.__getattribute__(self, name)
 
     def __setattr__(self, name, value, /):
         """Attribute setter method.
         """
-        raise AttributeError # hide _
+        raise AttributeError
 
     def __delattr__(self, name, /):
         """Attribute deleter method.
         """
-        raise AttributeError # hide _
+        raise AttributeError
 
     def __getitem__(self, subscript, /):
         """Get a context slot.
@@ -847,7 +849,7 @@ class Parameters(_ParameterTyping):
         self._params = params
 
     def __repr__(self, /):
-        params = [f'{name}={repr(value)}' for name, value in self.params.items()]
+        params = [f'{name}={repr(value)}' for name, value in self.dict.items()]
         if self.base_context is not None:
             params = [repr(self.base_context)] + params
 
@@ -1278,7 +1280,7 @@ class AggregateContext(ContextWhitelist):
     def _slot_attr(cls, /, name, indices, setter, call):
         if not call:
             if name.startswith('member.'):
-                return _TYPE_DATA
+                return _TYPE_DATA if not setter else TypeAttr.UNSPECIFIED
             elif name.startswith('ref.') and not setter:
                 return TypeAttr.UNSPECIFIED
 

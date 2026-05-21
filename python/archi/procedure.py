@@ -142,7 +142,7 @@ class _DirectedExecutionGraphNode:
                     raise TypeError
 
         self._name = name
-        self._sequence = (tuple(operation) if operation is not None else None \
+        self._sequence = tuple(tuple(operation) if operation is not None else None \
                 for operation in sequence) if sequence is not None else ()
         self._transition = tuple(transition) if transition is not None else None
         self._branches = branches.copy() if branches is not None else {}
@@ -169,7 +169,7 @@ class _DirectedExecutionGraphNode:
         return self._sequence
 
     @property
-    def transtion(self, /):
+    def transition(self, /):
         """Get node transition.
         """
         return self._transition
@@ -198,7 +198,7 @@ class DirectedExecutionGraphProcedure(Procedure):
                 raise TypeError
             elif not isinstance(node, self.__class__.Node):
                 raise TypeError
-            elif not keys.issuperset(node.branches.values()):
+            elif not keys.issuperset(node.branches().values()):
                 raise KeyError("Node {repr(key)} refers to node(s) that are not in the dictionary of nodes")
 
         self._nodes = nodes.copy()
@@ -262,7 +262,7 @@ class DirectedExecutionGraphProcedure(Procedure):
                                     **params))
 
             # Set node sequence operations
-            for index, operation in enumerate(zip(node.sequence_func, node.sequence_data)):
+            for index, operation in enumerate(node.sequence):
                 if operation is None:
                     continue
 
@@ -612,7 +612,7 @@ class EnvironmentVariablesProcedure(Procedure):
                 if var.base is not None:
                     params['base'] = base
 
-                value_contexts[name] = registry.new_context(
+                value_contexts[key] = registry.new_context(
                         Registry.key(key, prefix=prefix),
                         I_NUMBER_PARSER(**params))
 

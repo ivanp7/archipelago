@@ -22,7 +22,7 @@
 # @brief Context types of the OpenCL plugin.
 
 import ctypes as c
-from types import NoneType, SimpleNamespace
+from types import MappingProxyType, NoneType, SimpleNamespace
 
 import archi.ctypes as typ
 from ..object import Object, PrimitiveData, String
@@ -37,6 +37,7 @@ from ..context import (
         MemoryAllocDataSymbol,
         MemoryMapDataSymbol,
 )
+from ..registry import Registry
 from ..helper import new_aggregate_object
 from ..procedure import Procedure, MemoryAllocationProcedure
 
@@ -336,7 +337,7 @@ def new_opencl_svm_map_data(registry, key, opencl_plugin, /, command_queue=None,
 
     if command_queue is not None:
         registry(map_data.member.command_queue << command_queue)
-    if mem_flags is not None:
+    if map_flags is not None:
         registry(map_data.member.map_flags << map_flags)
 
     return map_data
@@ -606,14 +607,14 @@ class OpenCLEventOrderingGraphProcedure(Procedure):
         for key, node in self.nodes.items():
             if node.waits_for:
                 wait_list_contexts[key] = registry.new_context(
-                        Registry.temp_key('{key}.wait_list', prefix=prefix)
+                        registry.temp_key(f'{key}.wait_list', prefix=prefix),
                         (None,) * len(node.waits_for))
             else:
                 wait_list_contexts[key] = None
 
             if self._waited_by[key]:
                 out_list_contexts[key] = registry.new_context(
-                        Registry.temp_key('{key}.out_list', prefix=prefix)
+                        registry.temp_key(f'{key}.out_list', prefix=prefix),
                         (None,) * len(self._waited_by))
             else:
                 out_list_contexts[key] = None
@@ -634,11 +635,11 @@ class OpenCLEventOrderingGraphProcedure(Procedure):
 
         # Assign pointers to events
         for key, node in self.nodes.items():
-            out_list_context = out_list_contexts[key]
+            wait_list_context = wait_list_contexts[key]
 
-            for other_key, out_list_index in self._waited_by.items():
-                wait_list_context = wait_list_contexts[other_key]
-                wait_list_index = self.nodes[other_key]._waits_for[key]
+            for other_key, wait_list_index in node._waits_for.items():
+                out_list_context = out_list_contexts[other_key]
+                out_list_index = self._waited_by[other_key][key]
 
                 registry(out_list_context[out_list_index]
                          << Context.Slot.weak_ref(wait_list_context[wait_list_index].ptr))

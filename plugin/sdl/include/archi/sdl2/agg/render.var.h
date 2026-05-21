@@ -42,14 +42,14 @@ archi_aggr_type__sdl2_rect;
  */
 extern
 const archi_aggr_type_t
-archi_aggr_type__dexgraph_node_data__sdl2_texture_copy;
+archi_aggr_type__dexgraph_op_data__sdl2_texture_copy;
 
 /**
  * @brief Aggregate type description for archi_dexgraph_op_data__sdl2_render_copy_t.
  */
 extern
 const archi_aggr_type_t
-archi_aggr_type__dexgraph_node_data__sdl2_render_copy;
+archi_aggr_type__dexgraph_op_data__sdl2_render_copy;
 
 #endif // _ARCHI_SDL2_AGG_RENDER_VAR_H_
 

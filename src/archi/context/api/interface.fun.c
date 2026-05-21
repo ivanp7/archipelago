@@ -224,15 +224,7 @@ ARCHI_CONTEXT_CALLBACK_FUNC(archi_context_callback_wrapper)
 
     // Substitute reference counter if needed
     if (value.ref_count == ARCHI_CONTEXT_REF_COUNT)
-    {
-        if (ARCHI_POINTER_TO_FUNCTION(value.attr))
-        {
-            ARCHI_ERROR_SET(ARCHI__ECONSTRAINT, "output pointer to function requests context reference counter, which is meaningless");
-            return;
-        }
-
         value.ref_count = wrapper_data->context_ref_count;
-    }
     else if (value.ref_count == ARCHI_CONTEXT_INTERFACE_REF_COUNT)
         value.ref_count = wrapper_data->interface_ref_count;
 

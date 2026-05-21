@@ -70,7 +70,7 @@ archi_aggr_type__sdl2_rect = ARCHI_AGGR_TYPE(
 
 static
 const archi_aggr_member_t
-MEMBERS_dexgraph_node_data__sdl2_texture_copy[] = {
+MEMBERS_dexgraph_op_data__sdl2_texture_copy[] = {
     ARCHI_AGGR_MEMBER__POINTER(archi_dexgraph_op_data__sdl2_texture_copy_t, texture, 1, PTYPE_texture),
     ARCHI_AGGR_MEMBER__VALUE(archi_dexgraph_op_data__sdl2_texture_copy_t, entire, 1, VTYPE_bool),
     ARCHI_AGGR_MEMBER__AGGREGATE(archi_dexgraph_op_data__sdl2_texture_copy_t, area, 1,
@@ -80,15 +80,15 @@ MEMBERS_dexgraph_node_data__sdl2_texture_copy[] = {
 };
 
 const archi_aggr_type_t
-archi_aggr_type__dexgraph_node_data__sdl2_texture_copy = ARCHI_AGGR_TYPE(
+archi_aggr_type__dexgraph_op_data__sdl2_texture_copy = ARCHI_AGGR_TYPE(
         archi_dexgraph_op_data__sdl2_texture_copy_t, 0,
-        MEMBERS_dexgraph_node_data__sdl2_texture_copy);
+        MEMBERS_dexgraph_op_data__sdl2_texture_copy);
 
 /*****************************************************************************/
 
 static
 const archi_aggr_member_t
-MEMBERS_dexgraph_node_data__sdl2_render_copy[] = {
+MEMBERS_dexgraph_op_data__sdl2_render_copy[] = {
     ARCHI_AGGR_MEMBER__POINTER(archi_dexgraph_op_data__sdl2_render_copy_t, renderer, 1, PTYPE_renderer),
     ARCHI_AGGR_MEMBER__POINTER(archi_dexgraph_op_data__sdl2_render_copy_t, texture, 1, PTYPE_texture),
     ARCHI_AGGR_MEMBER__VALUE(archi_dexgraph_op_data__sdl2_render_copy_t, entire_target, 1, VTYPE_bool),
@@ -100,7 +100,7 @@ MEMBERS_dexgraph_node_data__sdl2_render_copy[] = {
 };
 
 const archi_aggr_type_t
-archi_aggr_type__dexgraph_node_data__sdl2_render_copy = ARCHI_AGGR_TYPE(
+archi_aggr_type__dexgraph_op_data__sdl2_render_copy = ARCHI_AGGR_TYPE(
         archi_dexgraph_op_data__sdl2_render_copy_t, 0,
-        MEMBERS_dexgraph_node_data__sdl2_render_copy);
+        MEMBERS_dexgraph_op_data__sdl2_render_copy);
 

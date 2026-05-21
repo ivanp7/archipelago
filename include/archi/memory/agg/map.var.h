@@ -35,7 +35,7 @@
  */
 extern
 const archi_aggr_type_t
-archi_aggr_type__dexgraph_node_data__memory_map_unmap_wrapper;
+archi_aggr_type__dexgraph_op_data__memory_map_unmap_wrapper;
 
 #endif // _ARCHI_MEMORY_AGG_MAP_VAR_H_
 

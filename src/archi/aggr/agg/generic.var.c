@@ -159,6 +159,7 @@ ARCHI_AGGR_TYPE_WALK_FUNC(archi_aggr_type_walk__count_refs)
             break;
     }
 
+    ARCHI_ERROR_RESET();
     return true;
 }
 
@@ -220,6 +221,7 @@ ARCHI_AGGR_TYPE_WALK_FUNC(archi_aggr_type_walk__get_refindex)
                 break;
         }
 
+        ARCHI_ERROR_RESET();
         return true;
     }
     else // delve deeper
@@ -284,6 +286,7 @@ ARCHI_AGGR_TYPE_WALK_FUNC(archi_aggr_type_walk__get_refindex)
                 break;
         }
 
+        ARCHI_ERROR_RESET();
         return false;
     }
 }
@@ -391,7 +394,10 @@ ARCHI_AGGR_TYPE_WALK_FUNC(archi_aggr_type_walk__get_submember)
     struct archi_aggr_type_walk_data__get_submember *walk_data = data;
 
     if (ARCHI_STRING_COMPARE(walk_data->submember->name, !=, member.name)) // skip over
+    {
+        ARCHI_ERROR_RESET();
         return true;
+    }
     else // delve deeper
     {
         if (walk_data->submember->index >= member.length)
@@ -428,6 +434,7 @@ ARCHI_AGGR_TYPE_WALK_FUNC(archi_aggr_type_walk__get_submember)
             walk_data->member = member;
         }
 
+        ARCHI_ERROR_RESET();
         return false;
     }
 }

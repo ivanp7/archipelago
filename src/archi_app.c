@@ -293,39 +293,48 @@ main(
 
     for (size_t i = 0; i < archi_process.args.num_inputs; i++)
     {
-        archi_log_debug(__func__, " * updating input file mapping contexts (current = #%zu) in the registry...", i);
+        if (!archi_process.args.dry_run)
+        {
+            archi_log_debug(__func__, " * updating input file mapping contexts (current = #%zu) in the registry...", i);
 
-        // Insert the previous input file context to the registry
-        INSERT_CONTEXT(ARCHI_APP_REGISTRY_CONTEXT__INPUT_FILE_PREV,
-                (i > 0) ? archi_process.context.input_file[i-1] : NULL);
+            // Insert the previous input file context to the registry
+            INSERT_CONTEXT(ARCHI_APP_REGISTRY_CONTEXT__INPUT_FILE_PREV,
+                    (i > 0) ? archi_process.context.input_file[i-1] : NULL);
 
-        // Insert the current input file context to the registry
-        INSERT_CONTEXT(ARCHI_APP_REGISTRY_CONTEXT__INPUT_FILE_CURR,
-                archi_process.context.input_file[i]);
+            // Insert the current input file context to the registry
+            INSERT_CONTEXT(ARCHI_APP_REGISTRY_CONTEXT__INPUT_FILE_CURR,
+                    archi_process.context.input_file[i]);
 
-        // Insert the next input file context to the registry
-        INSERT_CONTEXT(ARCHI_APP_REGISTRY_CONTEXT__INPUT_FILE_NEXT,
-                (i < archi_process.args.num_inputs - 1) ? archi_process.context.input_file[i+1] : NULL);
+            // Insert the next input file context to the registry
+            INSERT_CONTEXT(ARCHI_APP_REGISTRY_CONTEXT__INPUT_FILE_NEXT,
+                    (i < archi_process.args.num_inputs - 1) ? archi_process.context.input_file[i+1] : NULL);
+        }
 
         // Execute the current input file
         exec_file(archi_process.context.input_file[i], i);
 
-        // Disown the previous input file
-        if (i > 0)
+        if (!archi_process.args.dry_run)
         {
-            archi_log_debug(__func__, " * disowning file mapping context #%zu...", i-1);
+            // Disown the previous input file
+            if (i > 0)
+            {
+                archi_log_debug(__func__, " * disowning file mapping context #%zu...", i-1);
 
-            archi_context_finalize(archi_process.context.input_file[i-1]);
-            archi_process.context.input_file[i-1] = NULL;
+                archi_context_finalize(archi_process.context.input_file[i-1]);
+                archi_process.context.input_file[i-1] = NULL;
+            }
         }
     }
 
-    // Disown the last input file
+    if (!archi_process.args.dry_run)
     {
-        archi_log_debug(__func__, " * disowning file mapping context #%zu...", archi_process.args.num_inputs-1);
+        // Disown the last input file
+        {
+            archi_log_debug(__func__, " * disowning file mapping context #%zu...", archi_process.args.num_inputs-1);
 
-        archi_context_finalize(archi_process.context.input_file[archi_process.args.num_inputs-1]);
-        archi_process.context.input_file[archi_process.args.num_inputs-1] = NULL;
+            archi_context_finalize(archi_process.context.input_file[archi_process.args.num_inputs-1]);
+            archi_process.context.input_file[archi_process.args.num_inputs-1] = NULL;
+        }
     }
 
     return EXIT_SUCCESS;
@@ -410,18 +419,16 @@ exec_list(
             if (operation_fn != NULL) // operation is supported
             {
                 // Log the current operation data
+                if (archi_print_lock(ARCHI_LOG_VERBOSITY__DEBUG))
                 {
                     INIT_ERROR();
-                    if (archi_print_lock(ARCHI_LOG_VERBOSITY__DEBUG))
-                    {
-                        /*********************************************/
-                        operation_fn(NULL, operation_list->value, NULL,
-                                &archi_process.error);
-                        /*********************************************/
-                        print_error();
+                    /*********************************************/
+                    operation_fn(NULL, operation_list->value, NULL,
+                            &archi_process.error);
+                    /*********************************************/
+                    print_error();
 
-                        archi_print_unlock();
-                    }
+                    archi_print_unlock();
 
                     if (archi_process.error.code != 0)
                         exit(EXIT_FAILURE);

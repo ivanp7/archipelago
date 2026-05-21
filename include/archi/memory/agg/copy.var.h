@@ -35,7 +35,7 @@
  */
 extern
 const archi_aggr_type_t
-archi_aggr_type__dexgraph_node_data__memory_copy;
+archi_aggr_type__dexgraph_op_data__memory_copy;
 
 #endif // _ARCHI_MEMORY_AGG_COPY_VAR_H_
 

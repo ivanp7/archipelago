@@ -56,7 +56,7 @@ archi_aggr_type__thread_group_dispatch_params;
  */
 extern
 const archi_aggr_type_t
-archi_aggr_type__dexgraph_node_data__thread_group_dispatch;
+archi_aggr_type__dexgraph_op_data__thread_group_dispatch;
 
 #endif // _ARCHI_THREAD_AGG_THREAD_GROUP_VAR_H_
 

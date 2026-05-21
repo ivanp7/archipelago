@@ -1479,7 +1479,7 @@ class RegistryOpList:
         """Append slot assignment operation (to slot call) to the list.
         """
         self.append_op('assign_call' if not weak_ref else 'assign_call_weak',
-                       RegistryOpData_assign_slot.construct(
+                       RegistryOpData_assign_call.construct(
                            key=key,
                            slot_name=slot_name,
                            slot_indices=slot_indices,

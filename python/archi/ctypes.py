@@ -54,22 +54,24 @@ class archi_pointer_attr_t(c.c_uint64):
     DATA_READONLY = 0x2 << ATTR_BITS
     FUNCTION      = 0x3 << ATTR_BITS
 
-    def __str__(self, /):
-        if self.is_data_on_stack:
-            mem_type = "on stack"
-        elif self.is_data_writable:
-            mem_type = "writable"
-        elif self.is_data_readonly:
-            mem_type = "read only"
-        else:
-            return f"pointer_attr(function, tag={self.tag})"
+    def __repr__(self, /):
+        cls_name = self.__class__.__name__
 
         tag = self.tag
 
+        if self.is_function:
+            return f"{cls_name}.function(tag={tag})"
+
+        mem_type = f"writable={self.is_data_writable}" \
+                if not self.is_data_on_stack else "stack=True"
+
         if tag is None:
-            return f"pointer_attr(data, {mem_type}, length={self.length}, stride={self.stride}, alignment={self.alignment})"
+            layout = self.layout
+
+            return f"{cls_name}.primitive_data(length={layout[0]}, " \
+                    "stride={layout[1]}, alignment={layout[2]}, {mem_type})"
         else:
-            return f"pointer_attr(data, {mem_type}, tag={self.tag})"
+            return f"{cls_name}.complex_data(tag={tag}, {mem_type})"
 
     @property
     def is_data(self, /):
@@ -305,7 +307,7 @@ class archi_pointer_t(c.Structure):
             self.attr = archi_pointer_attr_t.from_object(obj, writable)
         else:
             self.ptr = None
-            self.attr = 0
+            self.attr = archi_pointer_attr_t.complex_data()
 
 
 class archi_kvlist_t(c.Structure):
