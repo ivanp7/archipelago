@@ -265,46 +265,47 @@ archi_context_get(
         return;
     }
 
-    // Process empty slot
     if (ARCHI_CONTEXT_SLOT_EMPTY(slot))
     {
+        // Process empty slot
         /***********************************************************/
         callback.function(archi_context_data(context), callback.data,
                 ARCHI_ERROR_PARAM);
         /***********************************************************/
-        return;
     }
-
-    // Check context interface
-    const archi_context_interface_t *interface_ptr = context->interface.cptr;
-    if (interface_ptr->eval_fn == NULL)
+    else
     {
-        ARCHI_ERROR_SET(ARCHI__ECONSTRAINT, "context interface doesn't have eval_fn()");
-        return;
-    }
+        // Check context interface
+        const archi_context_interface_t *interface_ptr = context->interface.cptr;
+        if (interface_ptr->eval_fn == NULL)
+        {
+            ARCHI_ERROR_SET(ARCHI__ECONSTRAINT, "context interface doesn't have eval_fn()");
+            return;
+        }
 
-    // Prepare callback wrapper data
-    struct archi_context_callback_wrapper_data wrapper_data = {
-        .callback = callback,
+        // Prepare callback wrapper data
+        struct archi_context_callback_wrapper_data wrapper_data = {
+            .callback = callback,
 
-        .context_ref_count = context->ref_count,
-        .interface_ref_count = context->interface.ref_count,
-    };
+            .context_ref_count = context->ref_count,
+            .interface_ref_count = context->interface.ref_count,
+        };
 
-    // Call the evaluation function
-    ARCHI_ERROR_VAR(error);
+        // Call the evaluation function
+        ARCHI_ERROR_VAR(error);
 
-    /****************************************************************************/
-    interface_ptr->eval_fn(context->data, slot, false, NULL,
-            (archi_context_callback_t){.function = archi_context_callback_wrapper,
-            .data = &wrapper_data}, &error);
-    /****************************************************************************/
-    ARCHI_ERROR_ASSIGN(error);
+        /****************************************************************************/
+        interface_ptr->eval_fn(context->data, slot, false, NULL,
+                (archi_context_callback_t){.function = archi_context_callback_wrapper,
+                .data = &wrapper_data}, &error);
+        /****************************************************************************/
+        ARCHI_ERROR_ASSIGN(error);
 
-    if (!wrapper_data.called_once)
-    {
-        if (error.code == 0)
-            ARCHI_ERROR_SET(ARCHI__ECONTRACT, "eval_fn() didn't call callback function and returned zero status code");
+        if (!wrapper_data.called_once)
+        {
+            if (error.code == 0)
+                ARCHI_ERROR_SET(ARCHI__ECONTRACT, "eval_fn() didn't call callback function and returned zero status code");
+        }
     }
 }
 
@@ -542,16 +543,6 @@ archi_context_set_from_get(
         return;
     }
 
-    // Process empty source slot
-    if (ARCHI_CONTEXT_SLOT_EMPTY(src_slot))
-    {
-        /*****************************************************************/
-        interface_ptr->set_fn(context->data, slot,
-                false, archi_context_data(src_context), ARCHI_ERROR_PARAM);
-        /*****************************************************************/
-        return;
-    }
-
     // Prepare callback data
     struct archi_context_set__callback_data callback_data = {
         .set_fn = interface_ptr->set_fn,
@@ -560,31 +551,42 @@ archi_context_set_from_get(
         .weak_ref = weak_ref,
     };
 
-    // Prepare callback wrapper data
-    struct archi_context_callback_wrapper_data wrapper_data = {
-        .callback = {
-            .function = archi_context_set__callback,
-            .data = &callback_data,
-        },
-
-        .context_ref_count = src_context->ref_count,
-        .interface_ref_count = src_context->interface.ref_count,
-    };
-
-    // Call the evaluation function
-    ARCHI_ERROR_VAR(error);
-
-    /****************************************************************************/
-    src_interface_ptr->eval_fn(src_context->data, src_slot, false, NULL,
-            (archi_context_callback_t){.function = archi_context_callback_wrapper,
-            .data = &wrapper_data}, &error);
-    /****************************************************************************/
-    ARCHI_ERROR_ASSIGN(error);
-
-    if (!wrapper_data.called_once)
+    if (ARCHI_CONTEXT_SLOT_EMPTY(src_slot))
     {
-        if (error.code == 0)
-            ARCHI_ERROR_SET(ARCHI__ECONTRACT, "eval_fn() didn't call callback function and returned zero status code");
+        // Process empty source slot
+        /**********************************************************/
+        archi_context_set__callback(archi_context_data(src_context),
+                &callback_data, ARCHI_ERROR_PARAM);
+        /**********************************************************/
+    }
+    else
+    {
+        // Prepare callback wrapper data
+        struct archi_context_callback_wrapper_data wrapper_data = {
+            .callback = {
+                .function = archi_context_set__callback,
+                .data = &callback_data,
+            },
+
+            .context_ref_count = src_context->ref_count,
+            .interface_ref_count = src_context->interface.ref_count,
+        };
+
+        // Call the evaluation function
+        ARCHI_ERROR_VAR(error);
+
+        /****************************************************************************/
+        src_interface_ptr->eval_fn(src_context->data, src_slot, false, NULL,
+                (archi_context_callback_t){.function = archi_context_callback_wrapper,
+                .data = &wrapper_data}, &error);
+        /****************************************************************************/
+        ARCHI_ERROR_ASSIGN(error);
+
+        if (!wrapper_data.called_once)
+        {
+            if (error.code == 0)
+                ARCHI_ERROR_SET(ARCHI__ECONTRACT, "eval_fn() didn't call callback function and returned zero status code");
+        }
     }
 }
 

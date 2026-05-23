@@ -577,10 +577,13 @@ archi_aggr_set(
         return;
     }
 
-    // Own the assigned value
-    value = archi_rcpointer_own(value, ARCHI_ERROR_PARAM);
-    if (!value.attr)
-        return;
+    if (ref_index != (size_t)-1) // reference member
+    {
+        // Own the assigned value
+        value = archi_rcpointer_own(value, ARCHI_ERROR_PARAM);
+        if (!value.attr)
+            return;
+    }
 
     // Call the setter function
     ARCHI_ERROR_VAR_UNSET(&error);
@@ -596,7 +599,7 @@ archi_aggr_set(
         return;
     }
 
-    if (ref_index != (size_t)-1)
+    if (ref_index != (size_t)-1) // reference member
     {
         // Update the reference
         archi_rcpointer_disown(aggregate->reference[ref_index]);
