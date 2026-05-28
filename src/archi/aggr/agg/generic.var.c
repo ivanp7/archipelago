@@ -655,7 +655,7 @@ ARCHI_AGGR_SET_FUNC(archi_aggr_set__generic)
                 }
 
                 // Copy the pointer
-                memcpy((char*)object + walk_data.offset, &value.ptr, sizeof(pointer_type->layout.size));
+                memcpy((char*)object + walk_data.offset, &value.ptr, pointer_type->layout.size);
             }
             break;
 

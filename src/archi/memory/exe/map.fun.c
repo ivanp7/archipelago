@@ -44,11 +44,6 @@ ARCHI_DEXGRAPH_OPERATION_FUNC(archi_dexgraph_op__memory_map_unmap_wrapper)
         ARCHI_ERROR_SET(ARCHI__ECONSTRAINT, "mapped memory object is NULL");
         return;
     }
-    else if (wrapper->map_length == 0)
-    {
-        ARCHI_ERROR_SET(ARCHI__ECONSTRAINT, "mapped area length is 0");
-        return;
-    }
     else if (wrapper->target.function == NULL)
     {
         ARCHI_ERROR_SET(ARCHI__ECONSTRAINT, "target operation function is NULL");

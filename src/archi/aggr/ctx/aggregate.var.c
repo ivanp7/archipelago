@@ -345,7 +345,7 @@ ARCHI_CONTEXT_EVAL_FUNC(archi_context_eval__aggregate)
         free((char*)member_spec[0].name);
         free(member_spec);
 
-        if (error.code != 0)
+        if (error.code == 0)
             ARCHI_CONTEXT_YIELD(value);
     }
 #undef PREFIX_LENGTH
@@ -369,7 +369,7 @@ ARCHI_CONTEXT_EVAL_FUNC(archi_context_eval__aggregate)
         free((char*)member_spec[0].name);
         free(member_spec);
 
-        if (error.code != 0)
+        if (error.code == 0)
             ARCHI_CONTEXT_YIELD(value);
     }
 #undef PREFIX_LENGTH
