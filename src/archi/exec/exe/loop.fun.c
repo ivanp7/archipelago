@@ -40,7 +40,7 @@ ARCHI_DEXGRAPH_TRANSITION_FUNC(archi_dexgraph_transition__loop_times)
 
     ARCHI_ERROR_RESET();
 
-    if (loop->iteration < loop->num_iterations)
+    if (loop->iteration + 1 < loop->num_iterations)
     {
         loop->iteration++;
         return 0; // do another iteration
