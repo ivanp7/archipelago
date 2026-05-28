@@ -30,25 +30,32 @@
 
 ARCHI_DEXGRAPH_TRANSITION_FUNC(archi_dexgraph_transition__loop_times)
 {
-    if (data == NULL)
+    archi_dexgraph_transition_data__loop_times_t *loop = data;
+
+    if (loop == NULL)
     {
         ARCHI_ERROR_SET(ARCHI__ECONSTRAINT, "loop state is NULL");
         return ARCHI_DEXGRAPH_HALT;
     }
-
-    archi_dexgraph_transition_data__loop_times_t *loop = data;
+    else if (loop->num_iterations == 0)
+    {
+        ARCHI_ERROR_SET(ARCHI__ECONSTRAINT, "number of loop iterations cannot be zero");
+        return ARCHI_DEXGRAPH_HALT;
+    }
 
     ARCHI_ERROR_RESET();
 
     if (loop->iteration + 1 < loop->num_iterations)
     {
+        // Do another iteration
         loop->iteration++;
-        return 0; // do another iteration
+        return 0;
     }
     else
     {
+        // Break the loop
         loop->iteration = 0;
-        return 1; // break the loop
+        return 1;
     }
 }
 
