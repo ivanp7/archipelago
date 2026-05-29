@@ -59,6 +59,17 @@ archi_timer_reset(
 );
 
 /**
+ * @brief Record time of a timer run.
+ *
+ * @return True on success, otherwise false.
+ */
+bool
+archi_timer_record(
+        archi_timer_t timer, ///< [in] Timer.
+        float run_time ///< [in] Tun time in seconds.
+);
+
+/**
  * @brief Start a timer.
  *
  * @return True if the timer has been started, false if the timer was already in the started state.

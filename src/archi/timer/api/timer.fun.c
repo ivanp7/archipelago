@@ -27,19 +27,19 @@
 #include "archi_base/util/string.fun.h"
 
 #include <stdlib.h> // for malloc(), free()
-#include <math.h> // for INFINITY, NAN, fmin(), fmax()
+#include <math.h> // for INFINITY, NAN, isfinite(), fmin(), fmax()
 #include <sys/time.h> // for gettimeofday(), struct timeval
 
 
 struct archi_timer {
     char *name; ///< Timer name.
 
+    unsigned long runs_done; ///< Number of runs done.
+
     float total_seconds; ///< Total accumulated time.
     float last_seconds;  ///< Last run time.
     float min_seconds;   ///< Minimum run time.
     float max_seconds;   ///< Maximum run time.
-
-    unsigned long runs_done; ///< Number of runs done.
 
     struct timeval start_time; ///< Timer start time.
     bool started; ///< Whether the timer is started.
@@ -87,14 +87,36 @@ archi_timer_reset(
     if (timer == NULL)
         return;
 
-    char *name = timer->name;
+    timer->runs_done = 0;
 
-    *timer = (struct archi_timer){
-        .name = name,
-        .last_seconds = NAN,
-        .min_seconds = NAN,
-        .max_seconds = NAN,
-    };
+    timer->total_seconds = 0.0f;
+    timer->last_seconds = NAN;
+    timer->min_seconds = NAN;
+    timer->max_seconds = NAN;
+
+    timer->started = false;
+}
+
+bool
+archi_timer_record(
+        archi_timer_t timer,
+        float run_time)
+{
+    if (timer == NULL)
+        return false;
+    else if (!isfinite(run_time))
+        return false;
+    else if (run_time < 0.0f)
+        return false;
+
+    timer->runs_done++;
+
+    timer->total_seconds += run_time;
+    timer->last_seconds = run_time;
+    timer->min_seconds = fmin(timer->min_seconds, run_time);
+    timer->max_seconds = fmax(timer->max_seconds, run_time);
+
+    return true;
 }
 
 bool
@@ -133,15 +155,8 @@ archi_timer_stop(
         seconds += ((long)stop_time.tv_usec  - (long)timer->start_time.tv_usec) * 1e-6f;
     }
 
-    if (seconds < 0.0f)
+    if (!archi_timer_record(timer, seconds))
         return NAN;
-
-    timer->total_seconds += seconds;
-    timer->last_seconds = seconds;
-    timer->min_seconds = fmin(timer->min_seconds, seconds);
-    timer->max_seconds = fmax(timer->max_seconds, seconds);
-
-    timer->runs_done++;
 
     timer->started = false;
     return seconds;
