@@ -20,29 +20,30 @@
 
 /**
  * @file
- * @brief DEG operation functions for OpenCL event operations.
+ * @brief Data for DEG operation functions for OpenCL event operations.
  */
 
 #pragma once
-#ifndef _ARCHI_OPENCL_EXE_EVENT_FUN_H_
-#define _ARCHI_OPENCL_EXE_EVENT_FUN_H_
+#ifndef _ARCHI_OPENCL_EXE_EVENT_TYP_H_
+#define _ARCHI_OPENCL_EXE_EVENT_TYP_H_
 
-#include "archi/exec/api/operation.typ.h"
+#include "archi/timer/api/handle.typ.h"
 
+#include <CL/cl.h>
 
-/**
- * @brief Operation function: wait for a group of events.
- *
- * Function data type: archi_opencl_event_array_t.
- */
-ARCHI_DEXGRAPH_OPERATION_FUNC(archi_dexgraph_op__opencl_event_wait);
 
 /**
- * @brief Operation function: record command execution time using a timer.
+ * @brief Operation function data: record command execution time using a timer.
  *
- * Function data type: archi_dexgraph_op_data__opencl_event_profile_t.
+ * `from_time` must be less than `to_time`.
  */
-ARCHI_DEXGRAPH_OPERATION_FUNC(archi_dexgraph_op__opencl_event_profile);
+typedef struct archi_dexgraph_op_data__opencl_event_profile {
+    cl_event event; ///< Event produced by an OpenCL command.
+    archi_timer_t timer; ///< Timer.
 
-#endif // _ARCHI_OPENCL_EXE_EVENT_FUN_H_
+    cl_profiling_info from_time; ///< Initial time of the recorded time inverval.
+    cl_profiling_info to_time;   ///< Final time of the recorded time interval.
+} archi_dexgraph_op_data__opencl_event_profile_t;
+
+#endif // _ARCHI_OPENCL_EXE_EVENT_TYP_H_
 

@@ -454,6 +454,38 @@ def new_opencl_event_wait_data(registry, key, opencl_plugin, /):
     return new_aggregate_object(registry, key, metadata=AggregateTypeSymbol.slot(
         'opencl_event_array', opencl_plugin))
 
+
+def new_opencl_event_profile_data(registry, key, opencl_plugin, /,
+                                  timer=None, from_time='START', to_time='END'):
+    """Create OpenCL event time recording function data.
+    """
+    if not isinstance(registry, Registry):
+        raise TypeError
+
+    if timer is not None and not TypeAttr.compatible(
+            TypeAttr.of(timer),
+            TypeAttr.complex_data(typ.ARCHI_POINTER_DATA_TAG__TIMER)):
+        raise TypeError
+
+    profiling_info = {'QUEUED': 0x1280, 'SUBMIT': 0x1281,
+                      'START': 0x1282, 'END': 0x1283,
+                      'COMPLETE': 0x1284}
+
+    if from_time not in profiling_info:
+        raise  ValueError
+    elif to_time not in profiling_info:
+        raise  ValueError
+
+    recording_data = new_aggregate_object(registry, key, metadata=AggregateTypeSymbol.slot(
+        DexgraphOperationDataSymbol.full_name('opencl_event_profile'), opencl_plugin))
+
+    if timer is not None:
+        registry(recording_data.member.timer << timer)
+    registry(recording_data.member.from_time << PrimitiveData(c.c_uint(profiling_info[from_time])))
+    registry(recording_data.member.to_time << PrimitiveData(c.c_uint(profiling_info[to_time])))
+
+    return recording_data
+
 ##############################################################################
 
 class OpenCLSVMAllocationProcedure(MemoryAllocationProcedure):
@@ -484,110 +516,151 @@ class OpenCLSVMAllocationProcedure(MemoryAllocationProcedure):
                          map_data=map_data)
 
 
-class _OpenCLEventOrderingGraphNode:
-    """Description of an OpenCL event ordering graph node.
-    """
-    def __init__(self, /, wait_list=None, out_list=None, waits_for=None):
-        """Initialize a graph node.
+class _OpenCLEvent:
+    def __init__(self, /, event_ptr):
+        """Initialize a description of an OpenCL event.
         """
-        if not isinstance(wait_list, (NoneType, Context, Context.Slot)):
-            raise TypeError
-        elif not isinstance(out_list, (NoneType, Context, Context.Slot)):
+        if not isinstance(event_ptr, Context.Slot):
             raise TypeError
 
-        if waits_for is not None:
-            if not all(isinstance(key, str) for key in waits_for):
-                raise TypeError
-        else:
-            waits_for = ()
-
-        self._wait_list = wait_list
-        self._out_list = out_list
-
-        self._waits_for = {key: index for index, key in enumerate(set(waits_for))}
+        self._event_ptr = event_ptr
 
     @property
-    def wait_list(self, /):
-        """Get wait list.
+    def event_ptr(self, /):
+        """Obtain the event slot.
         """
-        return self._wait_list
-
-    @property
-    def out_list(self, /):
-        """Get output event list.
-        """
-        return self._out_list
-
-    @property
-    def waits_for(self, /):
-        """Get set of node key the node is waiting for.
-        """
-        return frozenset(self._waits_for.keys())
+        return self._event_ptr
 
 
-class OpenCLEventOrderingGraphProcedure(Procedure):
-    """OpenCL event ordering graph construction procedure.
+class _OpenCLEventArray:
+    """Description of an array of (pointers to) OpenCL events.
     """
-    Node = _OpenCLEventOrderingGraphNode
+    def __init__(self, /, array, array_size=None):
+        """Initialize a description of event array.
+        """
+        if not isinstance(array, Context.Slot):
+            raise TypeError
+        elif not isinstance(array_size, (NoneType, Context.Slot)):
+            raise TypeError
+
+        self._array = array
+        self._array_size = array_size
+
+    @property
+    def event_array(self, /):
+        """Obtain the event array slot.
+        """
+        return self._array
+
+    @property
+    def event_array_size(self, /):
+        """Obtain the event array size slot.
+        """
+        return self._array_size
+
+
+class OpenCLEventDependencyGraphProcedure(Procedure):
+    """OpenCL event dependency graph construction procedure.
+    """
+    EventPtr = _OpenCLEvent
+    EventArray = _OpenCLEventArray
 
     class _CleanupProcedure(Procedure):
-        """OpenCL event ordering graph cleanup procedure.
+        """OpenCL event dependency graph cleanup procedure.
         """
-        def __init__(self, nodes, /):
-            self._nodes = nodes
+        def __init__(self, arrays, event_ptrs, /):
+            self._arrays = arrays
+            self._event_ptrs = event_ptrs
 
         def _impl(self, registry, /, prefix):
-            zero = PrimitiveData(c.c_size_t(0))
+            for array in self._arrays:
+                registry(array.event_array << None)
 
-            for node in self._nodes:
-                if node.wait_list is not None:
-                    registry(node.wait_list.num_events << zero)
-                    registry(node.wait_list.event << None)
+                if array.event_array_size is not None:
+                    registry(array.event_array_size << PrimitiveData(c.c_size_t(0)))
 
-                if node.out_list is not None:
-                    registry(node.out_list.num_event_ptrs << zero)
-                    registry(node.out_list.event_ptr << None)
+            for event_ptr in self._event_ptrs:
+                registry(event_ptr.event_ptr << None)
 
-    def __init__(self, nodes, /):
+    def __init__(self, /, producers, consumers, dependencies):
         """Initialize a procedure.
         """
-        if not isinstance(nodes, dict):
+        if not isinstance(producers, dict):
+            raise TypeError
+        elif not isinstance(consumers, dict):
+            raise TypeError
+        elif not isinstance(dependencies, dict):
             raise TypeError
 
-        keys = set(nodes.keys())
-        waited_by = {key: {} for key in nodes.keys()}
-
-        for key, node in nodes.items():
+        for key, value in producers.items():
             if not isinstance(key, str):
                 raise TypeError
-            elif not isinstance(node, self.__class__.Node):
+            elif not isinstance(value, self.__class__.EventArray):
                 raise TypeError
-            elif not keys.issuperset(node.waits_for):
-                raise KeyError("Node {repr(key)} refers to node(s) that are not in the dictionary of nodes")
-            elif key in node.waits_for:
-                raise KeyError("Node {repr(key)} refers to itself")
 
-            if node.waits_for and node.wait_list is None:
-                raise ValueError("Wait list is not specified")
+        for key, value in consumers.items():
+            if not isinstance(key, str):
+                raise TypeError
+            elif not isinstance(value, (self.__class__.EventPtr, self.__class__.EventArray)):
+                raise TypeError
 
-            for other_key in node.waits_for:
-                waited_by[other_key][key] = len(waited_by[other_key])
+        self._revdeps = {key: {} for key in producers.keys()}
 
-                other_node = nodes[other_key]
+        for consumer_key, value in dependencies.items():
+            if consumer_key not in consumers:
+                raise KeyError
 
-                if other_node.out_list is None:
-                    raise ValueError("Event output list is not specified")
+            if isinstance(consumers[consumer_key], self.__class__.EventArray):
+                value = frozenset(value)
+            elif isinstance(consumers[consumer_key], self.__class__.EventPtr):
+                if not isinstance(value, str):
+                    raise TypeError
 
-        self._nodes = nodes.copy()
-        self._waited_by = waited_by
+                value = frozenset((value,))
 
-        self._cleanup = self.__class__._CleanupProcedure(self._nodes)
+            for producer_key in value:
+                if producer_key not in producers:
+                    raise KeyError
+
+                self._revdeps[producer_key][consumer_key] = len(self._revdeps[producer_key])
+
+        self._producers = producers.copy()
+        self._consumers = consumers.copy()
+        self._dependencies = {key: {k: i for i, k in enumerate(value)}
+                              for key, value in dependencies.items()}
+
+        self._cleanup = self.__class__._CleanupProcedure(
+                tuple(producers.values())
+                + tuple(value for value in consumers.values()
+                        if isinstance(value, self.__class__.EventArray)),
+                tuple(value for value in consumers.values()
+                 if isinstance(value, self.__class__.EventPtr)))
 
     @property
-    def nodes(self, /):
-        """Get the dictionary of graph nodes.
+    def producers(self, /):
+        """Get the dictionary of event producers.
         """
-        return MappingProxyType(self._nodes)
+        return MappingProxyType(self._producers)
+
+    @property
+    def consumers(self, /):
+        """Get the dictionary of event consumers.
+        """
+        return MappingProxyType(self._consumers)
+
+    @property
+    def dependencies(self, /):
+        """Get the dictionary of producers for each consumer.
+        """
+        return MappingProxyType({key: frozenset(value.keys())
+                                 for key, value in self._dependencies})
+
+    @property
+    def rev_dependencies(self, /):
+        """Get the dictionary of consumers for each producer.
+        """
+        return MappingProxyType({key: frozenset(value.keys())
+                                 for key, value in self._revdeps})
 
     @property
     def cleanup(self, /):
@@ -601,48 +674,64 @@ class OpenCLEventOrderingGraphProcedure(Procedure):
         Returns nothing.
         """
         # Create pointer array contexts (event lists)
-        wait_list_contexts = {}
         out_list_contexts = {}
 
-        for key, node in self.nodes.items():
-            if node.waits_for:
-                wait_list_contexts[key] = registry.new_context(
-                        registry.temp_key(f'{key}.wait_list', prefix=prefix),
-                        (None,) * len(node.waits_for))
+        for producer_key, consumers in self._revdeps.items():
+            if consumers:
+                out_list_contexts[producer_key] = registry.new_context(
+                        registry.temp_key(f'{producer_key}.out_list', prefix=prefix),
+                        (None,) * len(consumers))
             else:
-                wait_list_contexts[key] = None
+                out_list_contexts[producer_key] = None
 
-            if self._waited_by[key]:
-                out_list_contexts[key] = registry.new_context(
-                        registry.temp_key(f'{key}.out_list', prefix=prefix),
-                        (None,) * len(self._waited_by))
+        wait_list_contexts = {}
+
+        for consumer_key, producers in self._dependencies.items():
+            if not isinstance(self._consumers[consumer_key], self.__class__.EventArray):
+                continue
+
+            if producers:
+                wait_list_contexts[consumer_key] = registry.new_context(
+                        registry.temp_key(f'{consumer_key}.wait_list', prefix=prefix),
+                        (None,) * len(producers))
             else:
-                out_list_contexts[key] = None
+                wait_list_contexts[consumer_key] = None
 
         # Assign event lists
-        for key, node in self.nodes.items():
-            if node.wait_list is not None:
-                registry(node.wait_list.num_events
-                         << PrimitiveData(c.c_size_t(len(node.waits_for))))
-                if wait_list_contexts[key] is not None:
-                    registry(node.wait_list.event << wait_list_contexts[key].ptrs)
+        for producer_key, context in out_list_contexts.items():
+            producer = self._producers[producer_key]
 
-            if node.out_list is not None:
-                registry(node.out_list.num_event_ptrs
-                         << PrimitiveData(c.c_size_t(len(self._waited_by[key]))))
-                if out_list_contexts[key] is not None:
-                    registry(node.out_list.event_ptr << out_list_contexts[key].ptrs)
+            if context is not None:
+                registry(producer.event_array << context.ptrs)
+
+            if producer.event_array_size is not None:
+                registry(producer.event_array_size << PrimitiveData(
+                    c.c_size_t(len(self._revdeps[producer_key]))))
+
+        for consumer_key, context in wait_list_contexts.items():
+            consumer = self._consumers[consumer_key]
+
+            if context is not None:
+                registry(consumer.event_array << context.ptrs)
+
+            if consumer.event_array_size is not None:
+                registry(consumer.event_array_size << PrimitiveData(
+                    c.c_size_t(len(self._dependencies[consumer_key]))))
 
         # Assign pointers to events
-        for key, node in self.nodes.items():
-            wait_list_context = wait_list_contexts[key]
+        for producer_key, context in out_list_contexts.items():
+            for consumer_key, consumer_index in self._revdeps[producer_key].items():
+                consumer = self._consumers[consumer_key]
 
-            for other_key, wait_list_index in node._waits_for.items():
-                out_list_context = out_list_contexts[other_key]
-                out_list_index = self._waited_by[other_key][key]
+                if isinstance(consumer, self.__class__.EventPtr):
+                    event_ptr = consumer.event_ptr
+                elif isinstance(consumer, self.__class__.EventArray):
+                    wait_list = wait_list_contexts[consumer_key]
+                    producer_index = self._dependencies[consumer_key][producer_key]
 
-                registry(out_list_context[out_list_index]
-                         << Context.Slot.weak_ref(wait_list_context[wait_list_index].ptr))
+                    event_ptr = wait_list[producer_index].ptr
+
+                registry(context[consumer_index] << Context.Slot.weak_ref(event_ptr))
 
         # Delete temporary contexts
         for context in wait_list_contexts.values():
