@@ -22,7 +22,8 @@
 # @brief Archipelago application contexts.
 
 import ctypes as c
-from types import MappingProxyType, NoneType, SimpleNamespace
+from collections import namedtuple
+from types import MappingProxyType, NoneType
 
 import archi.ctypes as typ
 from .object import Object, PrimitiveData, String
@@ -281,6 +282,8 @@ class Context(_ContextTyping):
     """
     __slots__ = ['_'] # (^_^)
 
+    _Description = namedtuple('Context', ('key',))
+
     # Main part of symbol name of the context interface
     C_NAME = None
 
@@ -299,7 +302,7 @@ class Context(_ContextTyping):
         if not isinstance(key, str):
             raise TypeError("Context key must be a string")
 
-        object.__setattr__(self, '_', SimpleNamespace(key=key))
+        object.__setattr__(self, '_', Context._Description(key=key))
 
     @staticmethod
     def key_of(context, /):
@@ -313,7 +316,7 @@ class Context(_ContextTyping):
         return object.__getattribute__(context, '_').key
 
     def __repr__(self, /):
-        return f'{self.__class__.__name__}({repr(Context.key_of(self))})'
+        return repr(object.__getattribute__(context, '_'))
 
     def __eq__(self, other, /):
         if not other.__class__ is self.__class__:
@@ -397,9 +400,12 @@ class Context(_ContextTyping):
 class _ContextSlot:
     """Representation of a context slot.
     """
-    UNSET = object() # special designator constant for slot unsetting operation
-
     __slots__ = ['_'] # (^_^)
+
+    _Description = namedtuple('ContextSlot',
+                              ('context', 'name', 'indices', 'call_params', 'weak_ref'))
+
+    UNSET = object() # special designator constant for slot unsetting operation
 
     def __init_subclass__(cls):
         raise TypeError("Subclasses of Context.Slot are not allowed")
@@ -417,11 +423,11 @@ class _ContextSlot:
         elif not isinstance(weak_ref, bool):
             raise TypeError
 
-        object.__setattr__(self, '_', SimpleNamespace(context=context,
-                                                      name=name,
-                                                      indices=indices,
-                                                      call_params=call_params,
-                                                      weak_ref=weak_ref))
+        object.__setattr__(self, '_', _ContextSlot._Description(context=context,
+                                                                name=name,
+                                                                indices=indices,
+                                                                call_params=call_params,
+                                                                weak_ref=weak_ref))
 
     @staticmethod
     def context_of(slot, /):

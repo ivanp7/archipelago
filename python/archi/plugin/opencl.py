@@ -22,7 +22,7 @@
 # @brief Context types of the OpenCL plugin.
 
 import ctypes as c
-from types import MappingProxyType, NoneType, SimpleNamespace
+from types import MappingProxyType, NoneType
 
 import archi.ctypes as typ
 from ..object import Object, PrimitiveData, String
