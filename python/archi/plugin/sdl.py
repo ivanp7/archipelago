@@ -26,9 +26,6 @@ import ctypes as c
 from ..object import PrimitiveData, String
 from ..context import TypeAttr, ContextWhitelist, ParametersWhitelist
 
-
-PLUGIN_SDL = 'archi_sdl'
-
 ##############################################################################
 
 ### archi/font_psf2 ###

@@ -19,7 +19,6 @@ from archi.context import (
 from archi.registry import Registry
 from archi.procedure import EnvironmentVariablesProcedure
 from archi.plugin.opencl import (
-        PLUGIN_OPENCL,
         OpenCLContext,
         OpenCLProgramSrcContext,
         OpenCLProgramBinContext,
@@ -63,6 +62,8 @@ parser = argparse.ArgumentParser(
 parser.add_argument('--file', metavar="PATHNAME", help="Pathname of the generated .archi file (stdout if none)")
 parser.add_argument('--mapaddr', type=lambda value: int(value, base=16), metavar="ADDRESS", help="Memory map address")
 
+parser.add_argument('--plugin-opencl', metavar="PATHNAME", help="Pathname of the OpenCL plugin library")
+
 parser.add_argument('--platform', type=int, default=0, metavar="ID", help="OpenCL platform number")
 parser.add_argument('--devices', nargs='+', type=int, default=[0], metavar="ID", help="OpenCL device number(s)")
 
@@ -93,13 +94,14 @@ parser.set_defaults(hdr_map={}, src_map={}, lib_map={})
 
 args = parser.parse_args()
 
-errprint(f"Generated file: {f"'{args.file}'" if args.file is not None else '<stdout>'}")
+errprint(f"Generated file: {repr(args.file) if args.file is not None else '<stdout>'}")
 errprint(f"Map address: {f'0x{args.mapaddr:x}' if args.mapaddr is not None else '<random>'}")
 errprint()
+errprint(f"OpenCL plugin: {repr(args.plugin_opencl)}")
 errprint(f"OpenCL platform #: {args.platform}")
 errprint(f"OpenCL device #: {args.devices}")
-errprint(f"OpenCL compiler flags: {f"'{args.cflags}'" if args.cflags else '<none>'}")
-errprint(f"OpenCL linker flags: {f"'{args.lflags}'" if args.lflags else '<none>'}")
+errprint(f"OpenCL compiler flags: {repr(args.cflags) if args.cflags else '<none>'}")
+errprint(f"OpenCL linker flags: {repr(args.lflags) if args.lflags else '<none>'}")
 errprint()
 errprint("Headers:")
 for dirpath, filepaths in args.hdr_map.items():
@@ -166,8 +168,6 @@ def read_binaries(path_map):
 
 PREFIX = 'cl_program_builder'
 
-PLUGIN_OPENCL_PATHNAME = f'lib{PLUGIN_OPENCL}.so'
-
 
 app = Registry(require=[Registry.BUILTIN.executable])
 
@@ -177,7 +177,7 @@ I_FILE = FileContext.interface_in(Registry.BUILTIN.executable)
 
 # Load OpenCL plugin
 with app.temp_context(Registry.key('plugin.opencl', PREFIX),
-                      I_LIBRARY(pathname=PLUGIN_OPENCL_PATHNAME)) as plugin_opencl:
+                      I_LIBRARY(pathname=args.plugin_opencl)) as plugin_opencl:
     # Prepare OpenCL plugin interfaces
     I_OPENCL_CONTEXT = OpenCLContext.interface_in(plugin_opencl)
     I_OPENCL_PROGRAM_SRC = OpenCLProgramSrcContext.interface_in(plugin_opencl)

@@ -301,7 +301,7 @@ class _MemoryAllocation:
             I_PDPTR = ctx.PrimitiveDataPointerContext.interface_in(registry.BUILTIN.executable)
 
             with registry.temp_context(registry.temp_key('memory_map_ptr', prefix=prefix),
-                                       I_PDPTR(pointee=mapping, writable=True)) as mapping_ptr:
+                                       I_PDPTR(pointee=mapping.ptr, writable=True)) as mapping_ptr:
                 registry(mapping_ptr.copy(src=contents))
 
         return func

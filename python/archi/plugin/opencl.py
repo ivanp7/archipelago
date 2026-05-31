@@ -41,9 +41,6 @@ from ..registry import Registry
 from ..helper import new_aggregate_object
 from ..procedure import Procedure, MemoryAllocationProcedure
 
-
-PLUGIN_OPENCL = 'archi_opencl'
-
 ##############################################################################
 
 ### archi/opencl ###
