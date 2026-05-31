@@ -26,7 +26,77 @@
 #include "archi/opencl/exe/kernel.fun.h"
 #include "archi/opencl/exe/kernel.typ.h"
 #include "archi/opencl/api/event.fun.h"
+#include "archi/opencl/api/tag.def.h"
+#include "archi_base/pointer.fun.h"
 
+
+ARCHI_DEXGRAPH_OPERATION_FUNC(archi_dexgraph_op__opencl_kernel_set_arg_value)
+{
+    const archi_dexgraph_op_data__opencl_kernel_set_argument_t *setarg_data = data;
+
+    if (setarg_data == NULL)
+    {
+        ARCHI_ERROR_SET(ARCHI__ECONSTRAINT, "OpenCL kernel argument setting operation parameters is NULL");
+        return;
+    }
+    else if (setarg_data->kernel == NULL)
+    {
+        ARCHI_ERROR_SET(ARCHI__ECONSTRAINT, "OpenCL kernel is NULL");
+        return;
+    }
+
+    size_t length, stride;
+    if (!archi_pointer_attr_unpk__pdata(setarg_data->value.attr, &length, &stride, NULL, ARCHI_ERROR_PARAM))
+        return;
+
+    const void *arg_value = setarg_data->value.cptr;
+    if (length == 0)
+        arg_value = NULL;
+
+    cl_int ret = clSetKernelArg(setarg_data->kernel, setarg_data->arg_index, length * stride, arg_value);
+
+    if (ret != CL_SUCCESS)
+    {
+        ARCHI_ERROR_SET(ARCHI__ESYSTEM, "couldn't set value of an OpenCL kernel argument #%u: error %i",
+                setarg_data->arg_index, ret);
+        return;
+    }
+
+    ARCHI_ERROR_RESET();
+}
+
+ARCHI_DEXGRAPH_OPERATION_FUNC(archi_dexgraph_op__opencl_kernel_set_arg_svmptr)
+{
+    const archi_dexgraph_op_data__opencl_kernel_set_argument_t *setarg_data = data;
+
+    if (setarg_data == NULL)
+    {
+        ARCHI_ERROR_SET(ARCHI__ECONSTRAINT, "OpenCL kernel argument setting operation parameters is NULL");
+        return;
+    }
+    else if (setarg_data->kernel == NULL)
+    {
+        ARCHI_ERROR_SET(ARCHI__ECONSTRAINT, "OpenCL kernel is NULL");
+        return;
+    }
+    else if (!archi_pointer_attr_compatible(setarg_data->value.attr,
+                archi_pointer_attr__cdata(ARCHI_POINTER_DATA_TAG__OPENCL_SVM)))
+    {
+        ARCHI_ERROR_SET(ARCHI__ECONSTRAINT, "OpenCL kernel argument is not an SVM pointer");
+        return;
+    }
+
+    cl_int ret = clSetKernelArgSVMPointer(setarg_data->kernel, setarg_data->arg_index, setarg_data->value.cptr);
+
+    if (ret != CL_SUCCESS)
+    {
+        ARCHI_ERROR_SET(ARCHI__ESYSTEM, "couldn't set SVM pointer of an OpenCL kernel argument #%u: error %i",
+                setarg_data->arg_index, ret);
+        return;
+    }
+
+    ARCHI_ERROR_RESET();
+}
 
 ARCHI_DEXGRAPH_OPERATION_FUNC(archi_dexgraph_op__opencl_kernel_enqueue)
 {

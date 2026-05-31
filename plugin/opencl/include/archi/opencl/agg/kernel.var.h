@@ -31,6 +31,13 @@
 
 
 /**
+ * @brief Aggregate type description for archi_dexgraph_op_data__opencl_kernel_set_argument_t.
+ */
+extern
+const archi_aggr_type_t
+archi_aggr_type__dexgraph_op_data__opencl_kernel_set_argument;
+
+/**
  * @brief Aggregate type description for archi_dexgraph_op_data__opencl_kernel_enqueue_t.
  */
 extern

@@ -31,11 +31,19 @@
 
 static
 const archi_aggr_member_type__value_t
+VTYPE_uint = ARCHI_AGGR_MEMBER_TYPE__VALUE(cl_uint, 0);
+
+static
+const archi_aggr_member_type__value_t
 VTYPE_size = ARCHI_AGGR_MEMBER_TYPE__VALUE(size_t, 0);
 
 static
 const archi_aggr_member_type__pointer_t
 PTYPE_size = ARCHI_AGGR_MEMBER_TYPE__POINTER_TO_PDATA(size_t*, size_t, 0);
+
+static
+const archi_aggr_member_type__pointer_t
+PTYPE_pointer = ARCHI_AGGR_MEMBER_TYPE__POINTER_TO_CDATA(archi_pointer_t, 0);
 
 static
 const archi_aggr_member_type__pointer_t
@@ -46,6 +54,21 @@ static
 const archi_aggr_member_type__pointer_t
 PTYPE_kernel = ARCHI_AGGR_MEMBER_TYPE__POINTER_TO_CDATA(cl_kernel,
         ARCHI_POINTER_DATA_TAG__OPENCL_KERNEL);
+
+/*****************************************************************************/
+
+static
+const archi_aggr_member_t
+MEMBERS_dexgraph_op_data__opencl_kernel_set_argument[] = {
+    ARCHI_AGGR_MEMBER__POINTER(archi_dexgraph_op_data__opencl_kernel_set_argument_t, kernel, 1, PTYPE_kernel),
+    ARCHI_AGGR_MEMBER__VALUE(archi_dexgraph_op_data__opencl_kernel_set_argument_t, arg_index, 1, VTYPE_uint),
+    ARCHI_AGGR_MEMBER__POINTER(archi_dexgraph_op_data__opencl_kernel_set_argument_t, value, 1, PTYPE_pointer),
+};
+
+const archi_aggr_type_t
+archi_aggr_type__dexgraph_op_data__opencl_kernel_set_argument = ARCHI_AGGR_TYPE(
+        archi_dexgraph_op_data__opencl_kernel_set_argument_t, 0,
+        MEMBERS_dexgraph_op_data__opencl_kernel_set_argument);
 
 /*****************************************************************************/
 

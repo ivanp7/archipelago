@@ -31,6 +31,20 @@
 
 
 /**
+ * @brief Operation function: set a kernel argument value.
+ *
+ * Function data type: archi_dexgraph_op_data__opencl_kernel_set_argument_t.
+ */
+ARCHI_DEXGRAPH_OPERATION_FUNC(archi_dexgraph_op__opencl_kernel_set_arg_value);
+
+/**
+ * @brief Operation function: set a kernel argument SVM pointer.
+ *
+ * Function data type: archi_dexgraph_op_data__opencl_kernel_set_argument_t.
+ */
+ARCHI_DEXGRAPH_OPERATION_FUNC(archi_dexgraph_op__opencl_kernel_set_arg_svmptr);
+
+/**
  * @brief Operation function: enqueue a kernel execution.
  *
  * Function data type: archi_dexgraph_op_data__opencl_kernel_enqueue_t.

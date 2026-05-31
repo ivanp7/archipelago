@@ -28,7 +28,17 @@
 #define _ARCHI_OPENCL_EXE_KERNEL_TYP_H_
 
 #include "archi/opencl/api/event.typ.h"
+#include "archi_base/pointer.typ.h"
 
+
+/**
+ * @brief Operation function data: set a kernel argument.
+ */
+typedef struct archi_dexgraph_op_data__opencl_kernel_set_argument {
+    cl_kernel kernel;  ///< Kernel.
+    cl_uint arg_index; ///< Argument index.
+    archi_pointer_t value; ///< Argument value.
+} archi_dexgraph_op_data__opencl_kernel_set_argument_t;
 
 /**
  * @brief Operation function data: enqueue a kernel execution.

@@ -343,6 +343,44 @@ def new_opencl_svm_map_data(registry, key, opencl_plugin, /, command_queue=None,
     return map_data
 
 
+def new_opencl_kernel_set_argument_data(registry, key, opencl_plugin, /,
+                                        kernel=None, arg_index=None, value=None):
+    """Create OpenCL kernel argument setting function data.
+    """
+    if not isinstance(registry, Registry):
+        raise TypeError
+
+    if kernel is not None and not TypeAttr.compatible(
+            TypeAttr.of(kernel),
+            TypeAttr.complex_data(ARCHI_POINTER_DATA_TAG__OPENCL_KERNEL)):
+        raise TypeError
+
+    if isinstance(arg_index, int):
+        if arg_index < 0:
+            raise ValueError
+
+        arg_index = PrimitiveData(c.c_uint(arg_index))
+    elif arg_index is not None and not TypeAttr.compatible(
+            TypeAttr.of(arg_index), TypeAttr.from_type(c.c_uint)):
+        raise TypeError
+
+    if value is not None and not TypeAttr.compatible(
+            TypeAttr.of(value), TypeAttr.complex_data(0)):
+        raise TypeError
+
+    setarg_data = new_aggregate_object(registry, key, metadata=AggregateTypeSymbol.slot(
+        DexgraphOperationDataSymbol.full_name('opencl_kernel_set_argument'), opencl_plugin))
+
+    if kernel is not None:
+        registry(setarg_data.member.kernel << kernel)
+    if arg_index is not None:
+        registry(setarg_data.member.arg_index << arg_index)
+    if value is not None:
+        registry(setarg_data.member.value << value)
+
+    return setarg_data
+
+
 def new_opencl_kernel_enqueue_data(registry, key, opencl_plugin, /,
                                    command_queue=None, kernel=None,
                                    num_work_dimensions=None, work_offset_global=None,
