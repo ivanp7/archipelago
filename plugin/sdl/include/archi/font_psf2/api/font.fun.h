@@ -65,7 +65,7 @@ archi_font_psf2_header(
 );
 
 /**
- * @brief Get glyph (PC Screen Font version 2) of the first character of a string.
+ * @brief Get glyph (PC Screen Font version 2) for the specified Unicode codepoint.
  *
  * @return Pointer to the character glyph.
  */

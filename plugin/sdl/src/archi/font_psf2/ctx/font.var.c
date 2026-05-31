@@ -26,6 +26,7 @@
 #include "archi/font_psf2/ctx/font.var.h"
 #include "archi/font_psf2/api/font.fun.h"
 #include "archi/font_psf2/api/tag.def.h"
+#include "archi/context/api/interface.def.h"
 #include "archi_base/pointer.fun.h"
 #include "archi_base/pointer.def.h"
 #include "archi_base/util/plist.fun.h"
@@ -84,9 +85,86 @@ ARCHI_CONTEXT_FINAL_FUNC(archi_context_final__font_psf2)
     free(context);
 }
 
+static
+ARCHI_CONTEXT_EVAL_FUNC(archi_context_eval__font_psf2)
+{
+    (void) params;
+
+    if (call)
+    {
+        ARCHI_ERROR_SET(ARCHI__ECONSTRAINT, "no calls are supported");
+        return;
+    }
+
+    if (ARCHI_STRING_COMPARE("", ==, slot.name))
+    {
+        if (slot.num_indices != 1)
+        {
+            ARCHI_ERROR_SET(ARCHI__EINDEX, "number of slot indices isn't 1");
+            return;
+        }
+
+        if ((slot.index[0] < 0) || (slot.index[0] > ARCHI_STRING_UNICODE_CODEPOINT_MAX))
+        {
+            ARCHI_ERROR_SET(ARCHI__EINDEX, "index (%lli) out of range [0; %u]",
+                    slot.index[0], ARCHI_STRING_UNICODE_CODEPOINT_MAX);
+            return;
+        }
+
+        archi_rcpointer_t glyph = archi_font_psf2_glyph(context->ptr, slot.index[0]);
+        if (glyph.cptr == NULL)
+        {
+            ARCHI_ERROR_SET(ARCHI__EINDEX, "no glyph exists for codepoint %lli",
+                    slot.index[0]);
+            return;
+        }
+
+        ARCHI_CONTEXT_YIELD(glyph);
+    }
+    else if (ARCHI_STRING_COMPARE("width", ==, slot.name))
+    {
+        if (slot.num_indices != 0)
+        {
+            ARCHI_ERROR_SET(ARCHI__EINDEX, "number of slot indices isn't 0");
+            return;
+        }
+
+        int width = archi_font_psf2_header(context->ptr).width;
+
+        archi_rcpointer_t value = {
+            .ptr = &width,
+            .attr = ARCHI_POINTER_TYPE__DATA_ON_STACK |
+                ARCHI_POINTER_ATTR__PDATA(1, int),
+        };
+
+        ARCHI_CONTEXT_YIELD(value);
+    }
+    else if (ARCHI_STRING_COMPARE("height", ==, slot.name))
+    {
+        if (slot.num_indices != 0)
+        {
+            ARCHI_ERROR_SET(ARCHI__EINDEX, "number of slot indices isn't 0");
+            return;
+        }
+
+        int height = archi_font_psf2_header(context->ptr).height;
+
+        archi_rcpointer_t value = {
+            .ptr = &height,
+            .attr = ARCHI_POINTER_TYPE__DATA_ON_STACK |
+                ARCHI_POINTER_ATTR__PDATA(1, int),
+        };
+
+        ARCHI_CONTEXT_YIELD(value);
+    }
+    else
+        ARCHI_ERROR_SET(ARCHI__EKEY, "unknown slot '%s' encountered", slot.name);
+}
+
 const archi_context_interface_t
 archi_context_interface__font_psf2 = {
     .init_fn = archi_context_init__font_psf2,
     .final_fn = archi_context_final__font_psf2,
+    .eval_fn = archi_context_eval__font_psf2,
 };
 

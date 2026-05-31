@@ -57,7 +57,7 @@ archi_font_psf2_load(
         ARCHI_ERROR_SET(ARCHI__ECONSTRAINT, "font data pointer has incorrect attributes");
         return NULL;
     }
-    else if (font_data.ptr == NULL)
+    else if (font_data.cptr == NULL)
     {
         ARCHI_ERROR_SET(ARCHI__ECONSTRAINT, "font data pointer is NULL");
         return NULL;
@@ -79,7 +79,7 @@ archi_font_psf2_load(
     }
 
     // Initialize the font object
-    memcpy(&font->header, font_data.ptr, sizeof(archi_font_psf2_header_t));
+    memcpy(&font->header, font_data.cptr, sizeof(archi_font_psf2_header_t));
     font->mapping_table = NULL;
 
     // Check the font header
@@ -133,9 +133,9 @@ archi_font_psf2_load(
     // Generate the mapping table
     if (font->header.flags)
     {
-        unsigned char *table = (unsigned char*)font_data.ptr +
+        unsigned char *table = (unsigned char*)font_data.cptr +
             font->header.header_size + (size_t)font->header.bytes_per_glyph * font->header.num_glyphs;
-        unsigned char *table_end = (unsigned char*)font_data.ptr + font_data_size;
+        unsigned char *table_end = (unsigned char*)font_data.cptr + font_data_size;
 
         size_t remaining_bytes = table_end - table;
 
@@ -223,7 +223,7 @@ archi_font_psf2_glyph(
         return (archi_rcpointer_t){0};
 
     return (archi_rcpointer_t){
-        .ptr = (unsigned char*)font->data.ptr + font->header.header_size +
+        .cptr = (unsigned char*)font->data.cptr + font->header.header_size +
             (size_t)font->header.bytes_per_glyph * glyph_idx,
         .attr = (font->data.attr & ARCHI_POINTER_TYPE_MASK) |
             ARCHI_POINTER_ATTR__PDATA(font->header.bytes_per_glyph, char),

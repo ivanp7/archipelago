@@ -35,6 +35,11 @@
  *
  * Initialization parameters:
  * - "data" : (char[]) font data
+ *
+ * Getter slots:
+ * - [codepoint]    : (char[]) glyph for the specified codepoint
+ * - "width"        : (int) glyph width in pixels
+ * - "height"       : (int) glyph height in pixels
  */
 extern
 const archi_context_interface_t

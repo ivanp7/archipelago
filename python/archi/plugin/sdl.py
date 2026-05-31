@@ -64,6 +64,10 @@ class FontPSFv2Context(ContextWhitelist):
     class InitParameters(ParametersWhitelist):
         PARAMS = {'data': _TYPE_DATA}
 
+    GETTER_SLOTS = {'': {1: _TYPE_DATA},
+                    'width': _TYPE_INT,
+                    'height': _TYPE_INT}
+
 ### archi/sdl2 ###
 
 class SDL2LibraryContext(ContextWhitelist):
