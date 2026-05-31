@@ -343,7 +343,7 @@ def new_opencl_svm_map_data(registry, key, opencl_plugin, /, command_queue=None,
     return map_data
 
 
-def new_opencl_kernel_set_argument_data(registry, key, opencl_plugin, /,
+def new_opencl_kernel_arg_set_func_data(registry, key, opencl_plugin, /,
                                         kernel=None, arg_index=None, value=None):
     """Create OpenCL kernel argument setting function data.
     """
@@ -381,10 +381,10 @@ def new_opencl_kernel_set_argument_data(registry, key, opencl_plugin, /,
     return setarg_data
 
 
-def new_opencl_kernel_enqueue_data(registry, key, opencl_plugin, /,
-                                   command_queue=None, kernel=None,
-                                   num_work_dimensions=None, work_offset_global=None,
-                                   work_size_global=None, work_size_local=None):
+def new_opencl_kernel_enqueue_func_data(registry, key, opencl_plugin, /,
+                                        command_queue=None, kernel=None,
+                                        num_work_dimensions=None, work_offset_global=None,
+                                        work_size_global=None, work_size_local=None):
     """Create OpenCL kernel enqueueing function data.
     """
     if not isinstance(registry, Registry):
@@ -486,15 +486,15 @@ def new_opencl_kernel_enqueue_data(registry, key, opencl_plugin, /,
     return enqueue_data
 
 
-def new_opencl_event_wait_data(registry, key, opencl_plugin, /):
+def new_opencl_event_wait_func_data(registry, key, opencl_plugin, /):
     """Create OpenCL event waiting function data.
     """
     return new_aggregate_object(registry, key, metadata=AggregateTypeSymbol.slot(
         'opencl_event_array', opencl_plugin))
 
 
-def new_opencl_event_profile_data(registry, key, opencl_plugin, /,
-                                  timer=None, from_time='START', to_time='END'):
+def new_opencl_event_profile_func_data(registry, key, opencl_plugin, /,
+                                       timer=None, from_time='START', to_time='END'):
     """Create OpenCL event time recording function data.
     """
     if not isinstance(registry, Registry):

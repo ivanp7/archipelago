@@ -64,10 +64,10 @@ def new_aggregate_object(registry, key, /, interface=None, metadata=None, fam_le
 
 ### archi/thread ###
 
-def new_thread_group_dispatch_data(registry, key, /, thread_group=None,
-                                   work_func=None, work_data=None,
-                                   callback_func=None, callback_data=None,
-                                   work_offset=None, work_size=None, batch_size=None):
+def new_thread_group_dispatch_func_data(registry, key, /, thread_group=None,
+                                        work_func=None, work_data=None,
+                                        callback_func=None, callback_data=None,
+                                        work_offset=None, work_size=None, batch_size=None):
     """Create thread group dispatching function data.
     """
     if not isinstance(registry, Registry):
