@@ -291,10 +291,12 @@ class _MemoryAllocation:
     """Description of a memory allocation.
     """
     @staticmethod
-    def init_from_memory(contents, /):
+    def init_from_memory(contents, /, fill=False):
         """Get the memory initialization function (contents copied from memory).
         """
         if not isinstance(contents, (Context, Context.Slot)):
+            raise TypeError
+        elif not isinstance(fill, bool):
             raise TypeError
 
         def func(registry, mapping, prefix, /):
@@ -302,7 +304,10 @@ class _MemoryAllocation:
 
             with registry.temp_context(registry.temp_key('memory_map_ptr', prefix=prefix),
                                        I_PDPTR(pointee=mapping.ptr, writable=True)) as mapping_ptr:
-                registry(mapping_ptr.copy(src=contents))
+                if fill:
+                    registry(mapping_ptr.fill(pattern=contents))
+                else:
+                    registry(mapping_ptr.copy(src=contents))
 
         return func
 
