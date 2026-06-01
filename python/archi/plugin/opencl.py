@@ -31,6 +31,7 @@ from ..context import (
         Context,
         ContextWhitelist,
         ParametersWhitelist,
+        LibraryContext,
         AggregateTypeSymbol,
         DexgraphOperationDataSymbol,
         MemoryInterfaceSymbol,
@@ -213,10 +214,10 @@ class OpenCLKernelCloneContext(ContextWhitelist):
 
 ##############################################################################
 
-def opencl_svm_interface(opencl_plugin, /):
+def opencl_svm_interface(plugin, /):
     """Obtain OpenCL SVM interface.
     """
-    return MemoryInterfaceSymbol.slot('opencl_svm', opencl_plugin)
+    return MemoryInterfaceSymbol.slot('opencl_svm', plugin)
 
 
 def opencl_svm_flags(read=False, write=False, fine_grain=False, atomics=False):
@@ -278,7 +279,7 @@ def opencl_mem_map_flags(read=False, write=False, invalidate=False):
     return map_flags
 
 
-def new_opencl_svm_alloc_data(registry, key, opencl_plugin, /, cl_context=None, mem_flags=None):
+def new_opencl_svm_alloc_data(registry, key, /, cl_context=None, mem_flags=None):
     """Create OpenCL SVM allocation function data.
     """
     if not isinstance(registry, Registry):
@@ -299,7 +300,7 @@ def new_opencl_svm_alloc_data(registry, key, opencl_plugin, /, cl_context=None, 
         raise TypeError
 
     alloc_data = new_aggregate_object(registry, key, metadata=AggregateTypeSymbol.slot(
-        MemoryAllocDataSymbol.full_name('opencl_svm'), opencl_plugin))
+        MemoryAllocDataSymbol.full_name('opencl_svm'), registry.PLUGIN.opencl))
 
     if cl_context is not None:
         registry(alloc_data.member.context << cl_context)
@@ -309,7 +310,7 @@ def new_opencl_svm_alloc_data(registry, key, opencl_plugin, /, cl_context=None, 
     return alloc_data
 
 
-def new_opencl_svm_map_data(registry, key, opencl_plugin, /, command_queue=None, map_flags=None):
+def new_opencl_svm_map_data(registry, key, /, command_queue=None, map_flags=None):
     """Create OpenCL SVM mapping function data.
     """
     if not isinstance(registry, Registry):
@@ -330,7 +331,7 @@ def new_opencl_svm_map_data(registry, key, opencl_plugin, /, command_queue=None,
         raise TypeError
 
     map_data = new_aggregate_object(registry, key, metadata=AggregateTypeSymbol.slot(
-        MemoryMapDataSymbol.full_name('opencl_svm'), opencl_plugin))
+        MemoryMapDataSymbol.full_name('opencl_svm'), registry.PLUGIN.opencl))
 
     if command_queue is not None:
         registry(map_data.member.command_queue << command_queue)
@@ -340,7 +341,7 @@ def new_opencl_svm_map_data(registry, key, opencl_plugin, /, command_queue=None,
     return map_data
 
 
-def new_opencl_kernel_arg_set_func_data(registry, key, opencl_plugin, /,
+def new_opencl_kernel_arg_set_func_data(registry, key, /,
                                         kernel=None, arg_index=None, value=None):
     """Create OpenCL kernel argument setting function data.
     """
@@ -366,7 +367,7 @@ def new_opencl_kernel_arg_set_func_data(registry, key, opencl_plugin, /,
         raise TypeError
 
     setarg_data = new_aggregate_object(registry, key, metadata=AggregateTypeSymbol.slot(
-        DexgraphOperationDataSymbol.full_name('opencl_kernel_set_argument'), opencl_plugin))
+        DexgraphOperationDataSymbol.full_name('opencl_kernel_set_argument'), registry.PLUGIN.opencl))
 
     if kernel is not None:
         registry(setarg_data.member.kernel << kernel)
@@ -378,7 +379,7 @@ def new_opencl_kernel_arg_set_func_data(registry, key, opencl_plugin, /,
     return setarg_data
 
 
-def new_opencl_kernel_enqueue_func_data(registry, key, opencl_plugin, /,
+def new_opencl_kernel_enqueue_func_data(registry, key, /,
                                         command_queue=None, kernel=None,
                                         num_work_dimensions=None, work_offset_global=None,
                                         work_size_global=None, work_size_local=None):
@@ -409,7 +410,8 @@ def new_opencl_kernel_enqueue_func_data(registry, key, opencl_plugin, /,
             elif offset < 0:
                 raise ValueError
 
-        work_offset_global = PrimitiveData((c.c_size_t * len(work_offset_global))(*work_offset_global))
+        work_offset_global = PrimitiveData(
+                (c.c_size_t * len(work_offset_global))(*work_offset_global))
     elif work_offset_global is not None and not TypeAttr.compatible(
             TypeAttr.of(work_offset_global), TypeAttr.from_type(c.c_size_t)):
         raise TypeError
@@ -426,7 +428,8 @@ def new_opencl_kernel_enqueue_func_data(registry, key, opencl_plugin, /,
             elif offset < 0:
                 raise ValueError
 
-        work_size_global = PrimitiveData((c.c_size_t * len(work_size_global))(*work_size_global))
+        work_size_global = PrimitiveData(
+                (c.c_size_t * len(work_size_global))(*work_size_global))
     elif work_size_global is not None and not TypeAttr.compatible(
             TypeAttr.of(work_size_global), TypeAttr.from_type(c.c_size_t)):
         raise TypeError
@@ -443,7 +446,8 @@ def new_opencl_kernel_enqueue_func_data(registry, key, opencl_plugin, /,
             elif offset < 0:
                 raise ValueError
 
-        work_size_local = PrimitiveData((c.c_size_t * len(work_size_local))(*work_size_local))
+        work_size_local = PrimitiveData(
+                (c.c_size_t * len(work_size_local))(*work_size_local))
     elif work_size_local is not None and not TypeAttr.compatible(
             TypeAttr.of(work_size_local), TypeAttr.from_type(c.c_size_t)):
         raise TypeError
@@ -452,11 +456,14 @@ def new_opencl_kernel_enqueue_func_data(registry, key, opencl_plugin, /,
         if num_work_dimensions <= 0:
             raise ValueError("Number of work dimensions must be positive")
 
-        if isinstance(work_offset_global, Object) and work_offset_global.length != num_work_dimensions:
+        if isinstance(work_offset_global, Object) \
+                and work_offset_global.length != num_work_dimensions:
             raise ValueError("Global work offset has wrong number of dimensions")
-        elif isinstance(work_size_global, Object) and work_size_global.length != num_work_dimensions:
+        elif isinstance(work_size_global, Object) \
+                and work_size_global.length != num_work_dimensions:
             raise ValueError("Global work size has wrong number of dimensions")
-        elif isinstance(work_size_local, Object) and work_size_local.length != num_work_dimensions:
+        elif isinstance(work_size_local, Object) \
+                and work_size_local.length != num_work_dimensions:
             raise ValueError("Local work size has wrong number of dimensions")
 
         num_work_dimensions = PrimitiveData(c.c_size_t(num_work_dimensions))
@@ -465,7 +472,7 @@ def new_opencl_kernel_enqueue_func_data(registry, key, opencl_plugin, /,
         raise TypeError
 
     enqueue_data = new_aggregate_object(registry, key, metadata=AggregateTypeSymbol.slot(
-        DexgraphOperationDataSymbol.full_name('opencl_kernel_enqueue'), opencl_plugin))
+        DexgraphOperationDataSymbol.full_name('opencl_kernel_enqueue'), registry.PLUGIN.opencl))
 
     if command_queue is not None:
         registry(enqueue_data.member.command_queue << command_queue)
@@ -483,14 +490,13 @@ def new_opencl_kernel_enqueue_func_data(registry, key, opencl_plugin, /,
     return enqueue_data
 
 
-def new_opencl_event_wait_func_data(registry, key, opencl_plugin, /):
+def new_opencl_event_wait_func_data(registry, key, /):
     """Create OpenCL event waiting function data.
     """
     return new_aggregate_object(registry, key, metadata=AggregateTypeSymbol.slot(
-        'opencl_event_array', opencl_plugin))
+        'opencl_event_array', registry.PLUGIN.opencl))
 
-
-def new_opencl_event_profile_func_data(registry, key, opencl_plugin, /,
+def new_opencl_event_profile_func_data(registry, key, /,
                                        timer=None, from_time='START', to_time='END'):
     """Create OpenCL event time recording function data.
     """
@@ -512,7 +518,7 @@ def new_opencl_event_profile_func_data(registry, key, opencl_plugin, /,
         raise  ValueError
 
     recording_data = new_aggregate_object(registry, key, metadata=AggregateTypeSymbol.slot(
-        DexgraphOperationDataSymbol.full_name('opencl_event_profile'), opencl_plugin))
+        DexgraphOperationDataSymbol.full_name('opencl_event_profile'), registry.PLUGIN.opencl))
 
     if timer is not None:
         registry(recording_data.member.timer << timer)
@@ -526,7 +532,7 @@ def new_opencl_event_profile_func_data(registry, key, opencl_plugin, /,
 class OpenCLSVMAllocationProcedure(MemoryAllocationProcedure):
     """OpenCL SVM allocation and initialization procedure.
     """
-    def __init__(self, allocations, opencl_plugin, /, alloc_data, map_data=None):
+    def __init__(self, allocations, plugin, /, alloc_data, map_data=None):
         """Initialize a procedure.
         """
         if alloc_data is None:
@@ -546,7 +552,7 @@ class OpenCLSVMAllocationProcedure(MemoryAllocationProcedure):
                     raise ValueError("OpenCL SVM mapping data is not specified -- cannot initialize memory")
 
         super().__init__(allocations,
-                         interface=MemoryInterfaceSymbol.slot('opencl_svm', opencl_plugin),
+                         interface=MemoryInterfaceSymbol.slot('opencl_svm', plugin),
                          alloc_data=alloc_data,
                          map_data=map_data)
 

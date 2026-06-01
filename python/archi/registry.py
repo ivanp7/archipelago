@@ -428,6 +428,9 @@ class Registry:
 
         self._impl = self.__class__.IMPL(operations, lambda key: self[key])
 
+        self.BUILTIN = self.__class__.BUILTIN
+        self.PLUGIN = SimpleNamespace()
+
         if require is not None:
             for context in require:
                 self.require(context)
