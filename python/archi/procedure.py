@@ -180,10 +180,19 @@ class _DirectedExecutionGraphNode:
         return self._branches_tuple if as_tuple else MappingProxyType(self._branches)
 
 
+class _DirectedExecutionGraphNodePlaceholder:
+    """A DEG node placeholder.
+
+    A placeholder is not allocated, but reserves a seat in the corresponding node array.
+    """
+    pass
+
+
 class DirectedExecutionGraphProcedure(Procedure):
     """Directed execution graph construction procedure.
     """
     Node = _DirectedExecutionGraphNode
+    NodePlaceholder = _DirectedExecutionGraphNodePlaceholder
 
     def __init__(self, nodes, /):
         """Initialize a procedure.
@@ -196,39 +205,39 @@ class DirectedExecutionGraphProcedure(Procedure):
         for key, node in nodes.items():
             if not isinstance(key, str):
                 raise TypeError
-            elif not isinstance(node, self.__class__.Node):
+            elif not isinstance(node, (self.__class__.Node, self.__class__.NodePlaceholder)):
                 raise TypeError
-            elif not keys.issuperset(node.branches().values()):
-                raise KeyError("Node {repr(key)} refers to node(s) that are not in the dictionary of nodes")
 
-        self._nodes = nodes.copy()
+            if isinstance(node, self.__class__.Node):
+                if not keys.issuperset(node.branches().values()):
+                    raise KeyError("Node {repr(key)} refers to node(s) that are not in the dictionary of nodes")
 
-        self._cleanup = ContextDeletionProcedure(keys=tuple(nodes.keys()))
+        self._nodes = {key: node for key, node in nodes.items()
+                       if isinstance(node, self.__class__.Node)}
+        self._placeholders = {key: node for key, node in nodes.items()
+                              if isinstance(node, self.__class__.NodePlaceholder)}
 
     @property
     def nodes(self, /):
         """Get the dictionary of graph nodes.
         """
-        return MappingProxyType(self._nodes)
-
-    @property
-    def cleanup(self, /):
-        """Get the cleanup procedure.
-        """
-        return self._cleanup
+        return MappingProxyType(self._nodes | self._placeholders)
 
     def _impl(self, registry, /, prefix):
         """Implementation of the procedure.
 
-        Returns dictionary of node contexts.
+        Returns dictionary of node contexts, dictionary of node array contexts,
+        and the cleanup procedure.
         """
-        I_DEXGRAPH_NODE_ARRAY = ctx.DexgraphNodeArrayContext.interface_in(registry.BUILTIN.executable)
         I_DEXGRAPH_NODE = ctx.DexgraphNodeContext.interface_in(registry.BUILTIN.executable)
+        I_DEXGRAPH_NODE_ARRAY = ctx.DexgraphNodeArrayContext.interface_in(registry.BUILTIN.executable)
+
+        real_nodes = self._nodes
 
         # Create node array contexts
         node_array_contexts = {(): None}
 
-        for node in self.nodes.values():
+        for node in real_nodes.values():
             branches = node.branches(as_tuple=True)
             if branches in node_array_contexts:
                 continue
@@ -240,7 +249,7 @@ class DirectedExecutionGraphProcedure(Procedure):
         # Create node contexts
         node_contexts = {}
 
-        for key, node in self.nodes.items():
+        for key, node in real_nodes.items():
             # Create a node context
             params = {}
 
@@ -256,7 +265,7 @@ class DirectedExecutionGraphProcedure(Procedure):
                     params['transition_data'] = transition_data
 
             context = node_contexts[key] = registry.new_context(
-                    Registry.key(key, prefix=prefix),
+                    Registry.key(f'node.{key}', prefix=prefix),
                     I_DEXGRAPH_NODE(sequence_length=len(node.sequence),
                                     branches=node_array_contexts[node.branches(as_tuple=True)],
                                     **params))
@@ -276,14 +285,22 @@ class DirectedExecutionGraphProcedure(Procedure):
         # Fill node branch arrays
         for branches, context in node_array_contexts.items():
             for index, target_key in enumerate(branches):
-                if target_key is not None:
+                if target_key in node_contexts:
                     registry(context.node[index] << Context.Slot.weak_ref(node_contexts[target_key]))
 
-        # Delete node array contexts
-        for context in node_array_contexts.values():
-            registry.delete(context)
+        # Construct the dictionary indexing node arrays by node keys
+        node_array_by_key = {}
 
-        return node_contexts
+        for key, node in real_nodes.items():
+            node_array_by_key[key] = node_array_contexts[node.branches(as_tuple=True)]
+
+        # Construct the cleanup procedure
+        cleanup = ContextDeletionProcedure(
+                keys=tuple(Context.key_of(context) for context in node_array_contexts.values()
+                           if context is not None)
+                + tuple(Context.key_of(context) for context in node_contexts.values()))
+
+        return node_contexts, node_array_by_key, cleanup
 
 ### archi/memory ###
 
