@@ -558,10 +558,10 @@ class OpenCLSVMAllocationProcedure(MemoryAllocationProcedure):
 
 
 class _OpenCLEvent:
-    def __init__(self, /, event_ptr):
+    def __init__(self, /, event_ptr=None):
         """Initialize a description of an OpenCL event.
         """
-        if not isinstance(event_ptr, Context.Slot):
+        if not isinstance(event_ptr, (NoneType, Context.Slot)):
             raise TypeError
 
         self._event_ptr = event_ptr
@@ -576,10 +576,10 @@ class _OpenCLEvent:
 class _OpenCLEventArray:
     """Description of an array of (pointers to) OpenCL events.
     """
-    def __init__(self, /, array, array_size=None):
+    def __init__(self, /, array=None, array_size=None):
         """Initialize a description of event array.
         """
-        if not isinstance(array, Context.Slot):
+        if not isinstance(array, (NoneType, Context.Slot)):
             raise TypeError
         elif not isinstance(array_size, (NoneType, Context.Slot)):
             raise TypeError
@@ -615,13 +615,15 @@ class OpenCLEventDependencyGraphProcedure(Procedure):
 
         def _impl(self, registry, /, prefix):
             for array in self._arrays:
-                registry(array.event_array << None)
+                if array.event_array is not None:
+                    registry(array.event_array << None)
 
                 if array.event_array_size is not None:
                     registry(array.event_array_size << PrimitiveData(c.c_size_t(0)))
 
             for event_ptr in self._event_ptrs:
-                registry(event_ptr.event_ptr << None)
+                if event_ptr.event_ptr is not None:
+                    registry(event_ptr.event_ptr << None)
 
     def __init__(self, /, producers, consumers, dependencies):
         """Initialize a procedure.
@@ -718,7 +720,7 @@ class OpenCLEventDependencyGraphProcedure(Procedure):
         out_list_contexts = {}
 
         for producer_key, consumers in self._revdeps.items():
-            if consumers:
+            if consumers and self._producers[producer_key].event_array is not None:
                 out_list_contexts[producer_key] = registry.new_context(
                         registry.temp_key(f'{producer_key}.out_list', prefix=prefix),
                         (None,) * len(consumers))
@@ -731,7 +733,7 @@ class OpenCLEventDependencyGraphProcedure(Procedure):
             if not isinstance(self._consumers[consumer_key], self.__class__.EventArray):
                 continue
 
-            if producers:
+            if producers and self._consumers[consumer_key].event_array is not None:
                 wait_list_contexts[consumer_key] = registry.new_context(
                         registry.temp_key(f'{consumer_key}.wait_list', prefix=prefix),
                         (None,) * len(producers))
@@ -770,9 +772,13 @@ class OpenCLEventDependencyGraphProcedure(Procedure):
                     wait_list = wait_list_contexts[consumer_key]
                     producer_index = self._dependencies[consumer_key][producer_key]
 
-                    event_ptr = wait_list[producer_index].ptr
+                    if wait_list is not None:
+                        event_ptr = wait_list[producer_index].ptr
+                    else:
+                        event_ptr = None
 
-                registry(context[consumer_index] << Context.Slot.weak_ref(event_ptr))
+                if context is not None and event_ptr is not None:
+                    registry(context[consumer_index] << Context.Slot.weak_ref(event_ptr))
 
         # Delete temporary contexts
         for context in wait_list_contexts.values():
