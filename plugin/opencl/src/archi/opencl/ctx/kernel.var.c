@@ -351,7 +351,7 @@ ARCHI_CONTEXT_SET_FUNC(archi_context_set__opencl_kernel)
         if ((arg_index < 0) || ((size_t)arg_index >= context_data->num_arguments))
         {
             ARCHI_ERROR_SET(ARCHI__EINDEX, "index (%lli) out of range [0; %u)",
-                        slot.index[0], context_data->num_arguments);
+                        arg_index, context_data->num_arguments);
             return;
         }
 
@@ -385,7 +385,7 @@ ARCHI_CONTEXT_SET_FUNC(archi_context_set__opencl_kernel)
         if ((arg_index < 0) || ((size_t)arg_index >= context_data->num_arguments))
         {
             ARCHI_ERROR_SET(ARCHI__EINDEX, "index (%lli) out of range [0; %u)",
-                        slot.index[0], context_data->num_arguments);
+                        arg_index, context_data->num_arguments);
             return;
         }
 
@@ -418,7 +418,7 @@ ARCHI_CONTEXT_SET_FUNC(archi_context_set__opencl_kernel)
         if ((arg_index < 0) || ((size_t)arg_index >= context_data->num_arguments))
         {
             ARCHI_ERROR_SET(ARCHI__EINDEX, "index (%lli) out of range [0; %u)",
-                        slot.index[0], context_data->num_arguments);
+                        arg_index, context_data->num_arguments);
             return;
         }
 
@@ -450,7 +450,7 @@ ARCHI_CONTEXT_SET_FUNC(archi_context_set__opencl_kernel)
         if ((arg_index < 0) || ((size_t)arg_index >= context_data->num_arguments))
         {
             ARCHI_ERROR_SET(ARCHI__EINDEX, "index (%lli) out of range [0; %u)",
-                        slot.index[0], context_data->num_arguments);
+                        arg_index, context_data->num_arguments);
             return;
         }
 
