@@ -29,15 +29,15 @@
 
 static
 const archi_aggr_member_type__value_t
-VTYPE_size = ARCHI_AGGR_MEMBER_TYPE__VALUE(size_t, 0);
+VTYPE_index = ARCHI_AGGR_MEMBER_TYPE__VALUE(archi_dexgraph_branch_index_t, 0);
 
 /*****************************************************************************/
 
 static
 const archi_aggr_member_t
 MEMBERS_dexgraph_transition_data__loop_times[] = {
-    ARCHI_AGGR_MEMBER__VALUE(archi_dexgraph_transition_data__loop_times_t, iteration, 1, VTYPE_size),
-    ARCHI_AGGR_MEMBER__VALUE(archi_dexgraph_transition_data__loop_times_t, num_iterations, 1, VTYPE_size),
+    ARCHI_AGGR_MEMBER__VALUE(archi_dexgraph_transition_data__loop_times_t, iteration, 1, VTYPE_index),
+    ARCHI_AGGR_MEMBER__VALUE(archi_dexgraph_transition_data__loop_times_t, num_iterations, 1, VTYPE_index),
 };
 
 const archi_aggr_type_t
