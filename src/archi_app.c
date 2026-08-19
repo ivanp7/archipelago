@@ -26,18 +26,18 @@
 // Contexts & registry
 #include "archi_app/registry.def.h"
 #include "archi_app/registry.var.h"
-#include "archi/context/api/interface.fun.h"
-#include "archi/context/api/registry.fun.h"
-#include "archi/context/api/tag.def.h"
+#include "archi/context/i/interface.fun.h"
+#include "archi/context/i/registry.fun.h"
+#include "archi/context/i/tag.def.h"
 
 // Hashmaps
 #include "archi/hashmap/ctx/hashmap.var.h"
-#include "archi/hashmap/api/hashmap.fun.h"
+#include "archi/hashmap/i/hashmap.fun.h"
 
 // Files
 #include "archi_app/input_file.typ.h"
 #include "archi_app/input_file.def.h"
-#include "archi/file/api/file.fun.h"
+#include "archi/file/i/file.fun.h"
 #include "archi/file/ctx/mapping.var.h"
 
 // Shared libraries
@@ -45,15 +45,15 @@
 
 // Signal management
 #include "archi_app/signal_management.fun.h"
-#include "archi/signal/api/management.fun.h"
-#include "archi/signal/api/signal.fun.h"
-#include "archi/signal/api/tag.def.h"
+#include "archi/signal/i/management.fun.h"
+#include "archi/signal/i/signal.fun.h"
+#include "archi/signal/i/tag.def.h"
 #include "archi/signal/sig/hashmap.fun.h"
 #include "archi/signal/sig-ctx/hashmap_data.var.h"
 
 // Environment
 #include "archi_app/environment.fun.h"
-#include "archi/env/api/context.fun.h"
+#include "archi/env/i/context.fun.h"
 
 // Error handling
 #include "archi_base/error.fun.h"

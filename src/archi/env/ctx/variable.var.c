@@ -24,8 +24,8 @@
  */
 
 #include "archi/env/ctx/variable.var.h"
-#include "archi/env/api/variable.fun.h"
-#include "archi/context/api/interface.def.h"
+#include "archi/env/i/variable.fun.h"
+#include "archi/context/i/interface.def.h"
 #include "archi_base/pointer.fun.h"
 #include "archi_base/pointer.def.h"
 #include "archi_base/ref_count.fun.h"

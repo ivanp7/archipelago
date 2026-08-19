@@ -47,62 +47,62 @@ MODULES = [
         ### Built-in modules ###
 
         # contexts
-        "archi/context/api",
+        "archi/context/i",
         "archi/context/ctx",
 
         # aggregate objects
-        "archi/aggr/api",
+        "archi/aggr/i",
         "archi/aggr/agg",
         "archi/aggr/ctx",
 
         # directed execution graphs
-        "archi/exec/api",
+        "archi/exec/i",
         "archi/exec/exe",
         "archi/exec/agg",
         "archi/exec/ctx",
 
         # threads
-        "archi/thread/api",
+        "archi/thread/i",
         "archi/thread/exe",
         "archi/thread/agg",
         "archi/thread/ctx",
 
         # signal management
-        "archi/signal/api",
+        "archi/signal/i",
         "archi/signal/sig",
         "archi/signal/exe",
         "archi/signal/agg",
         "archi/signal/sig-ctx",
 
         # memory
-        "archi/memory/api",
+        "archi/memory/i",
         "archi/memory/mem",
         "archi/memory/exe",
         "archi/memory/agg",
         "archi/memory/ctx",
 
         # files
-        "archi/file/api",
+        "archi/file/i",
         "archi/file/ctx",
 
         # shared libraries
-        "archi/library/api",
+        "archi/library/i",
         "archi/library/ctx",
 
         # hashmaps
-        "archi/hashmap/api",
+        "archi/hashmap/i",
         "archi/hashmap/exe",
         "archi/hashmap/ctx",
 
         # environment variables
-        "archi/env/api",
+        "archi/env/i",
         "archi/env/ctx",
 
         # parsers
         "archi/parser/ctx",
 
         # timers
-        "archi/timer/api",
+        "archi/timer/i",
         "archi/timer/exe",
         "archi/timer/ctx",
         ]

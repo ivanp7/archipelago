@@ -27,7 +27,7 @@
 #ifndef _ARCHI_SIGNAL_SIG_HASHMAP_FUN_H_
 #define _ARCHI_SIGNAL_SIG_HASHMAP_FUN_H_
 
-#include "archi/signal/api/handler.typ.h"
+#include "archi/signal/i/handler.typ.h"
 
 
 /**

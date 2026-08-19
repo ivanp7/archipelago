@@ -24,9 +24,9 @@
  */
 
 #include "archi/exec/agg/graph.var.h"
-#include "archi/exec/api/node.typ.h"
-#include "archi/exec/api/transition.typ.h"
-#include "archi/exec/api/tag.def.h"
+#include "archi/exec/i/node.typ.h"
+#include "archi/exec/i/transition.typ.h"
+#include "archi/exec/i/tag.def.h"
 
 
 static

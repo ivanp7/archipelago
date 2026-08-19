@@ -25,9 +25,9 @@
 
 #include "archi/opencl/agg/event.var.h"
 #include "archi/opencl/exe/event.typ.h"
-#include "archi/opencl/api/event.typ.h"
-#include "archi/opencl/api/tag.def.h"
-#include "archi/timer/api/tag.def.h"
+#include "archi/opencl/i/event.typ.h"
+#include "archi/opencl/i/tag.def.h"
+#include "archi/timer/i/tag.def.h"
 
 
 static

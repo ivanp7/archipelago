@@ -26,8 +26,8 @@
 #include "archi/signal/sig/hashmap.fun.h"
 #include "archi/signal/sig/hashmap.typ.h"
 #include "archi/signal/sig/tag.def.h"
-#include "archi/signal/api/signal.typ.h"
-#include "archi/hashmap/api/hashmap.fun.h"
+#include "archi/signal/i/signal.typ.h"
+#include "archi/hashmap/i/hashmap.fun.h"
 #include "archi_base/pointer.fun.h"
 
 

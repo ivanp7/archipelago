@@ -27,7 +27,7 @@
 #ifndef _ARCHI_OPENCL_EXE_KERNEL_FUN_H_
 #define _ARCHI_OPENCL_EXE_KERNEL_FUN_H_
 
-#include "archi/exec/api/operation.typ.h"
+#include "archi/exec/i/operation.typ.h"
 
 
 /**

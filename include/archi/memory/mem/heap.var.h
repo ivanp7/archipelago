@@ -27,7 +27,7 @@
 #ifndef _ARCHI_MEMORY_API_INTERFACE_HEAP_VAR_H_
 #define _ARCHI_MEMORY_API_INTERFACE_HEAP_VAR_H_
 
-#include "archi/memory/api/interface.typ.h"
+#include "archi/memory/i/interface.typ.h"
 
 
 /**

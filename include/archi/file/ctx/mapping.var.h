@@ -27,7 +27,7 @@
 #ifndef _ARCHI_FILE_CTX_MAPPING_VAR_H_
 #define _ARCHI_FILE_CTX_MAPPING_VAR_H_
 
-#include "archi/context/api/interface.typ.h"
+#include "archi/context/i/interface.typ.h"
 
 
 /**

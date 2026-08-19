@@ -24,10 +24,10 @@
  */
 
 #include "archi/library/ctx/library.var.h"
-#include "archi/library/api/library.fun.h"
-#include "archi/library/api/global.fun.h"
-#include "archi/library/api/tag.def.h"
-#include "archi/context/api/interface.def.h"
+#include "archi/library/i/library.fun.h"
+#include "archi/library/i/global.fun.h"
+#include "archi/library/i/tag.def.h"
+#include "archi/context/i/interface.def.h"
 #include "archi_base/global.var.h"
 #include "archi_base/pointer.fun.h"
 #include "archi_base/pointer.def.h"

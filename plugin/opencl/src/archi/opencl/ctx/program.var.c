@@ -24,10 +24,10 @@
  */
 
 #include "archi/opencl/ctx/program.var.h"
-#include "archi/opencl/api/program.fun.h"
-#include "archi/opencl/api/device.fun.h"
-#include "archi/opencl/api/tag.def.h"
-#include "archi/context/api/interface.def.h"
+#include "archi/opencl/i/program.fun.h"
+#include "archi/opencl/i/device.fun.h"
+#include "archi/opencl/i/tag.def.h"
+#include "archi/context/i/interface.def.h"
 #include "archi_base/pointer.fun.h"
 #include "archi_base/pointer.def.h"
 #include "archi_base/tag.def.h"

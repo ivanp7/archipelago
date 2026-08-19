@@ -24,9 +24,9 @@
  */
 
 #include "archi/hashmap/ctx/hashmap.var.h"
-#include "archi/hashmap/api/hashmap.fun.h"
-#include "archi/hashmap/api/tag.def.h"
-#include "archi/context/api/interface.def.h"
+#include "archi/hashmap/i/hashmap.fun.h"
+#include "archi/hashmap/i/tag.def.h"
+#include "archi/context/i/interface.def.h"
 #include "archi_base/pointer.fun.h"
 #include "archi_base/pointer.def.h"
 #include "archi_base/util/plist.fun.h"

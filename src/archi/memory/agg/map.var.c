@@ -26,8 +26,8 @@
 #include "archi/memory/agg/map.var.h"
 #include "archi/exec/agg/graph.var.h"
 #include "archi/memory/exe/map.typ.h"
-#include "archi/memory/api/tag.def.h"
-#include "archi/exec/api/tag.def.h"
+#include "archi/memory/i/tag.def.h"
+#include "archi/exec/i/tag.def.h"
 
 
 static

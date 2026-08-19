@@ -27,8 +27,8 @@
 #ifndef _ARCHI_MEMORY_EXE_MAP_TYP_H_
 #define _ARCHI_MEMORY_EXE_MAP_TYP_H_
 
-#include "archi/memory/api/handle.typ.h"
-#include "archi/exec/api/operation.typ.h"
+#include "archi/memory/i/handle.typ.h"
+#include "archi/exec/i/operation.typ.h"
 #include "archi_base/pointer.typ.h"
 
 

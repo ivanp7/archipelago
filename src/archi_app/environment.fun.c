@@ -24,7 +24,7 @@
  */
 
 #include "archi_app/environment.fun.h"
-#include "../archi/env/api/context.typ.h" // for struct archi_env_context
+#include "../archi/env/i/context.typ.h" // for struct archi_env_context
 
 #include <stdlib.h> // for malloc(), free()
 

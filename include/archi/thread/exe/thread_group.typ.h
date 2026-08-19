@@ -27,10 +27,10 @@
 #ifndef _ARCHI_THREAD_EXE_THREAD_GROUP_TYP_H_
 #define _ARCHI_THREAD_EXE_THREAD_GROUP_TYP_H_
 
-#include "archi/thread/api/handle.typ.h"
-#include "archi/thread/api/work.typ.h"
-#include "archi/thread/api/callback.typ.h"
-#include "archi/thread/api/thread_group.typ.h"
+#include "archi/thread/i/handle.typ.h"
+#include "archi/thread/i/work.typ.h"
+#include "archi/thread/i/callback.typ.h"
+#include "archi/thread/i/thread_group.typ.h"
 
 
 /**

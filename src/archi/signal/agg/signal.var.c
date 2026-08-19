@@ -25,9 +25,9 @@
 
 #include "archi/signal/agg/signal.var.h"
 #include "archi/signal/exe/signal.typ.h"
-#include "archi/signal/api/signal.typ.h"
-#include "archi/signal/api/handler.typ.h"
-#include "archi/signal/api/tag.def.h"
+#include "archi/signal/i/signal.typ.h"
+#include "archi/signal/i/handler.typ.h"
+#include "archi/signal/i/tag.def.h"
 
 
 static

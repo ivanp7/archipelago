@@ -24,7 +24,7 @@
  */
 
 #include "archi/sdl2/ctx/window.var.h"
-#include "archi/sdl2/api/tag.def.h"
+#include "archi/sdl2/i/tag.def.h"
 #include "archi_base/pointer.fun.h"
 #include "archi_base/pointer.def.h"
 #include "archi_base/util/plist.fun.h"

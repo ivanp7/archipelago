@@ -24,7 +24,7 @@
  */
 
 #include "archi/context/ctx/plist.var.h"
-#include "archi/context/api/interface.def.h"
+#include "archi/context/i/interface.def.h"
 #include "archi_base/kvlist.fun.h"
 #include "archi_base/pointer.fun.h"
 #include "archi_base/pointer.def.h"

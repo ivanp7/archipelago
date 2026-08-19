@@ -25,8 +25,8 @@
 
 #include "archi/opencl/exe/kernel.fun.h"
 #include "archi/opencl/exe/kernel.typ.h"
-#include "archi/opencl/api/event.fun.h"
-#include "archi/opencl/api/tag.def.h"
+#include "archi/opencl/i/event.fun.h"
+#include "archi/opencl/i/tag.def.h"
 #include "archi_base/pointer.fun.h"
 
 

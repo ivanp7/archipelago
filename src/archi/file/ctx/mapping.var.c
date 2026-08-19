@@ -24,8 +24,8 @@
  */
 
 #include "archi/file/ctx/mapping.var.h"
-#include "archi/file/api/map.fun.h"
-#include "archi/context/api/interface.def.h"
+#include "archi/file/i/map.fun.h"
+#include "archi/context/i/interface.def.h"
 #include "archi_base/pointer.fun.h"
 #include "archi_base/pointer.def.h"
 #include "archi_base/util/plist.fun.h"

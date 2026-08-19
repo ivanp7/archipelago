@@ -27,7 +27,7 @@
 #ifndef _ARCHI_AGGR_CTX_AGGREGATE_VAR_H_
 #define _ARCHI_AGGR_CTX_AGGREGATE_VAR_H_
 
-#include "archi/context/api/interface.typ.h"
+#include "archi/context/i/interface.typ.h"
 
 
 /**

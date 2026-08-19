@@ -24,9 +24,9 @@
  */
 
 #include "archi/thread/ctx/thread_group.var.h"
-#include "archi/thread/api/thread_group.fun.h"
-#include "archi/thread/api/tag.def.h"
-#include "archi/context/api/interface.def.h"
+#include "archi/thread/i/thread_group.fun.h"
+#include "archi/thread/i/tag.def.h"
+#include "archi/context/i/interface.def.h"
 #include "archi_base/pointer.fun.h"
 #include "archi_base/pointer.def.h"
 #include "archi_base/util/plist.fun.h"

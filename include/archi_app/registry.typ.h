@@ -27,8 +27,8 @@
 #ifndef _ARCHI_APP_REGISTRY_TYP_H_
 #define _ARCHI_APP_REGISTRY_TYP_H_
 
-#include "archi/context/api/handle.typ.h"
-#include "archi/context/api/slot.typ.h"
+#include "archi/context/i/handle.typ.h"
+#include "archi/context/i/slot.typ.h"
 #include "archi_base/kvlist.typ.h"
 #include "archi_base/ref_count.typ.h"
 #include "archi_base/error.typ.h"

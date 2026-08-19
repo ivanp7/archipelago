@@ -24,10 +24,10 @@
  */
 
 #include "archi/exec/ctx/node.var.h"
-#include "archi/exec/api/node.fun.h"
-#include "archi/exec/api/graph.fun.h"
-#include "archi/exec/api/tag.def.h"
-#include "archi/context/api/interface.def.h"
+#include "archi/exec/i/node.fun.h"
+#include "archi/exec/i/graph.fun.h"
+#include "archi/exec/i/tag.def.h"
+#include "archi/context/i/interface.def.h"
 #include "archi_base/pointer.fun.h"
 #include "archi_base/pointer.def.h"
 #include "archi_base/tag.def.h"

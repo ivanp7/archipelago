@@ -24,10 +24,10 @@
  */
 
 #include "archi/file/ctx/file.var.h"
-#include "archi/file/api/file.fun.h"
-#include "archi/file/api/stream.fun.h"
-#include "archi/file/api/tag.def.h"
-#include "archi/context/api/interface.def.h"
+#include "archi/file/i/file.fun.h"
+#include "archi/file/i/stream.fun.h"
+#include "archi/file/i/tag.def.h"
+#include "archi/context/i/interface.def.h"
 #include "archi_base/pointer.fun.h"
 #include "archi_base/pointer.def.h"
 #include "archi_base/util/plist.fun.h"

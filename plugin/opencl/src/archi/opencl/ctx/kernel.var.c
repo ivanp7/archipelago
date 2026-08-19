@@ -24,8 +24,8 @@
  */
 
 #include "archi/opencl/ctx/kernel.var.h"
-#include "archi/opencl/api/tag.def.h"
-#include "archi/context/api/interface.def.h"
+#include "archi/opencl/i/tag.def.h"
+#include "archi/context/i/interface.def.h"
 #include "archi_base/pointer.fun.h"
 #include "archi_base/pointer.def.h"
 #include "archi_base/util/plist.fun.h"

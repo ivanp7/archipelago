@@ -24,8 +24,8 @@
  */
 
 #include "archi/timer/exe/timer.fun.h"
-#include "archi/timer/api/timer.fun.h"
-#include "archi/timer/api/tag.def.h"
+#include "archi/timer/i/timer.fun.h"
+#include "archi/timer/i/tag.def.h"
 #include "archi_base/pointer.fun.h"
 
 #include <stdio.h>

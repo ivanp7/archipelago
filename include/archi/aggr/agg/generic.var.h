@@ -27,7 +27,7 @@
 #ifndef _ARCHI_AGGR_AGG_GENERIC_VAR_H_
 #define _ARCHI_AGGR_AGG_GENERIC_VAR_H_
 
-#include "archi/aggr/api/interface.typ.h"
+#include "archi/aggr/i/interface.typ.h"
 #include "archi/aggr/agg/generic.typ.h"
 
 

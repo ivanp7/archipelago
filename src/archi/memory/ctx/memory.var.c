@@ -24,9 +24,9 @@
  */
 
 #include "archi/memory/ctx/memory.var.h"
-#include "archi/memory/api/interface.fun.h"
-#include "archi/memory/api/tag.def.h"
-#include "archi/context/api/interface.def.h"
+#include "archi/memory/i/interface.fun.h"
+#include "archi/memory/i/tag.def.h"
+#include "archi/context/i/interface.def.h"
 #include "archi_base/pointer.fun.h"
 #include "archi_base/pointer.def.h"
 #include "archi_base/util/plist.fun.h"

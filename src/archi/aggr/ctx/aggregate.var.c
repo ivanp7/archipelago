@@ -24,9 +24,9 @@
  */
 
 #include "archi/aggr/ctx/aggregate.var.h"
-#include "archi/aggr/api/interface.fun.h"
-#include "archi/aggr/api/tag.def.h"
-#include "archi/context/api/interface.def.h"
+#include "archi/aggr/i/interface.fun.h"
+#include "archi/aggr/i/tag.def.h"
+#include "archi/context/i/interface.def.h"
 #include "archi_base/pointer.fun.h"
 #include "archi_base/pointer.def.h"
 #include "archi_base/util/plist.fun.h"

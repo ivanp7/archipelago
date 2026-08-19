@@ -27,7 +27,7 @@
 #ifndef _ARCHI_FONT_PSF2_CTX_FONT_VAR_H_
 #define _ARCHI_FONT_PSF2_CTX_FONT_VAR_H_
 
-#include "archi/context/api/interface.typ.h"
+#include "archi/context/i/interface.typ.h"
 
 
 /**

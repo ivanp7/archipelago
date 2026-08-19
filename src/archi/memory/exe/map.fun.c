@@ -25,7 +25,7 @@
 
 #include "archi/memory/exe/map.fun.h"
 #include "archi/memory/exe/map.typ.h"
-#include "archi/memory/api/interface.fun.h"
+#include "archi/memory/i/interface.fun.h"
 
 #include <string.h> // for memcpy(), memmove()
 

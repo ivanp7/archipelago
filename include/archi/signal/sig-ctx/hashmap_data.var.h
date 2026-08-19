@@ -27,7 +27,7 @@
 #ifndef _ARCHI_SIGNAL_SIG_CTX_HASHMAP_DATA_VAR_H_
 #define _ARCHI_SIGNAL_SIG_CTX_HASHMAP_DATA_VAR_H_
 
-#include "archi/context/api/interface.typ.h"
+#include "archi/context/i/interface.typ.h"
 
 
 /**

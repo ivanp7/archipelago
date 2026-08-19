@@ -26,7 +26,7 @@
 #include "archi/opencl/agg/kernel.var.h"
 #include "archi/opencl/agg/event.var.h"
 #include "archi/opencl/exe/kernel.typ.h"
-#include "archi/opencl/api/tag.def.h"
+#include "archi/opencl/i/tag.def.h"
 
 
 static

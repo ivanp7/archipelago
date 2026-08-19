@@ -27,7 +27,7 @@
 #ifndef _ARCHI_APP_INPUT_FILE_TYP_H_
 #define _ARCHI_APP_INPUT_FILE_TYP_H_
 
-#include "archi/file/api/header.typ.h"
+#include "archi/file/i/header.typ.h"
 #include "archi_base/kvlist.typ.h"
 
 

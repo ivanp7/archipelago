@@ -25,7 +25,7 @@
 
 #include "archi/signal/exe/signal.fun.h"
 #include "archi/signal/exe/signal.typ.h"
-#include "archi/signal/api/signal.fun.h"
+#include "archi/signal/i/signal.fun.h"
 #include "archi_base/util/size.def.h"
 
 #include <stdlib.h> // for malloc()

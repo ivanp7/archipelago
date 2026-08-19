@@ -27,7 +27,7 @@
 #ifndef _ARCHI_THREAD_EXE_THREAD_GROUP_FUN_H_
 #define _ARCHI_THREAD_EXE_THREAD_GROUP_FUN_H_
 
-#include "archi/exec/api/operation.typ.h"
+#include "archi/exec/i/operation.typ.h"
 
 
 /**

@@ -24,9 +24,9 @@
  */
 
 #include "archi/font_psf2/ctx/font.var.h"
-#include "archi/font_psf2/api/font.fun.h"
-#include "archi/font_psf2/api/tag.def.h"
-#include "archi/context/api/interface.def.h"
+#include "archi/font_psf2/i/font.fun.h"
+#include "archi/font_psf2/i/tag.def.h"
+#include "archi/context/i/interface.def.h"
 #include "archi_base/pointer.fun.h"
 #include "archi_base/pointer.def.h"
 #include "archi_base/util/plist.fun.h"

@@ -27,8 +27,8 @@
 #ifndef _ARCHI_APP_SIGNAL_MANAGEMENT_FUN_H_
 #define _ARCHI_APP_SIGNAL_MANAGEMENT_FUN_H_
 
-#include "archi/signal/api/signal.typ.h"
-#include "archi/signal/api/handler.typ.h"
+#include "archi/signal/i/signal.typ.h"
+#include "archi/signal/i/handler.typ.h"
 #include "archi_base/global.typ.h"
 #include "archi_base/error.typ.h"
 

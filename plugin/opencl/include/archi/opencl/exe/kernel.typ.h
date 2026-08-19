@@ -27,7 +27,7 @@
 #ifndef _ARCHI_OPENCL_EXE_KERNEL_TYP_H_
 #define _ARCHI_OPENCL_EXE_KERNEL_TYP_H_
 
-#include "archi/opencl/api/event.typ.h"
+#include "archi/opencl/i/event.typ.h"
 #include "archi_base/pointer.typ.h"
 
 

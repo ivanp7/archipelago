@@ -27,7 +27,7 @@
 #ifndef _ARCHI_OPENCL_EXE_EVENT_TYP_H_
 #define _ARCHI_OPENCL_EXE_EVENT_TYP_H_
 
-#include "archi/timer/api/handle.typ.h"
+#include "archi/timer/i/handle.typ.h"
 
 #include <CL/cl.h>
 

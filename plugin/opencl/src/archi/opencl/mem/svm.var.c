@@ -25,7 +25,7 @@
 
 #include "archi/opencl/mem/svm.var.h"
 #include "archi/opencl/mem/svm.typ.h"
-#include "archi/opencl/api/tag.def.h"
+#include "archi/opencl/i/tag.def.h"
 
 #include <stdlib.h> // for malloc(), free()
 

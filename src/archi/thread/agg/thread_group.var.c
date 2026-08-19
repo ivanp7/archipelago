@@ -25,7 +25,7 @@
 
 #include "archi/thread/agg/thread_group.var.h"
 #include "archi/thread/exe/thread_group.typ.h"
-#include "archi/thread/api/tag.def.h"
+#include "archi/thread/i/tag.def.h"
 
 
 static

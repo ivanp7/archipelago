@@ -25,8 +25,8 @@
 
 #include "archi/opencl/exe/event.fun.h"
 #include "archi/opencl/exe/event.typ.h"
-#include "archi/opencl/api/event.fun.h"
-#include "archi/timer/api/timer.fun.h"
+#include "archi/opencl/i/event.fun.h"
+#include "archi/timer/i/timer.fun.h"
 
 
 ARCHI_DEXGRAPH_OPERATION_FUNC(archi_dexgraph_op__opencl_event_wait)

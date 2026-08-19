@@ -24,9 +24,9 @@
  */
 
 #include "archi_app/signal_management.fun.h"
-#include "archi/signal/api/signal.fun.h"
-#include "archi/signal/api/management.fun.h"
-#include "../archi/signal/api/management.typ.h" // for struct archi_signal_management_context_base
+#include "archi/signal/i/signal.fun.h"
+#include "archi/signal/i/management.fun.h"
+#include "../archi/signal/i/management.typ.h" // for struct archi_signal_management_context_base
 
 #include <stdlib.h> // for malloc(), free()
 #include <threads.h> // for mtx_*

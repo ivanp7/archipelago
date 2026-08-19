@@ -24,8 +24,8 @@
  */
 
 #include "archi_app/registry.fun.h"
-#include "archi/context/api/registry.fun.h"
-#include "archi/context/api/tag.def.h"
+#include "archi/context/i/registry.fun.h"
+#include "archi/context/i/tag.def.h"
 #include "archi/context/ctx/plist.var.h"
 #include "archi/context/ctx/pointer.var.h"
 #include "archi/context/ctx/dptr_array.var.h"

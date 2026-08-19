@@ -43,7 +43,7 @@ MODULES = [
         "archi/sdl2/agg",
         "archi/sdl2/ctx",
 
-        "archi/font_psf2/api",
+        "archi/font_psf2/i",
         "archi/font_psf2/ctx",
         ]
 

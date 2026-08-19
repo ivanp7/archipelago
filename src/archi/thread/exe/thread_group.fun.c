@@ -25,7 +25,7 @@
 
 #include "archi/thread/exe/thread_group.fun.h"
 #include "archi/thread/exe/thread_group.typ.h"
-#include "archi/thread/api/thread_group.fun.h"
+#include "archi/thread/i/thread_group.fun.h"
 
 
 ARCHI_DEXGRAPH_OPERATION_FUNC(archi_dexgraph_op__thread_group_dispatch)

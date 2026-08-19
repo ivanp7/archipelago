@@ -24,9 +24,9 @@
  */
 
 #include "archi/thread/ctx/lfqueue.var.h"
-#include "archi/thread/api/lfqueue.fun.h"
-#include "archi/thread/api/tag.def.h"
-#include "archi/context/api/interface.def.h"
+#include "archi/thread/i/lfqueue.fun.h"
+#include "archi/thread/i/tag.def.h"
+#include "archi/context/i/interface.def.h"
 #include "archi_base/pointer.fun.h"
 #include "archi_base/pointer.def.h"
 #include "archi_base/util/plist.fun.h"

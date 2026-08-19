@@ -27,7 +27,7 @@
 #ifndef _ARCHI_MEMORY_EXE_COPY_FUN_H_
 #define _ARCHI_MEMORY_EXE_COPY_FUN_H_
 
-#include "archi/exec/api/operation.typ.h"
+#include "archi/exec/i/operation.typ.h"
 
 
 /**

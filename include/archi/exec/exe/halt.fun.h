@@ -27,7 +27,7 @@
 #ifndef _ARCHI_EXEC_EXE_HALT_FUN_H_
 #define _ARCHI_EXEC_EXE_HALT_FUN_H_
 
-#include "archi/exec/api/transition.typ.h"
+#include "archi/exec/i/transition.typ.h"
 
 
 /**

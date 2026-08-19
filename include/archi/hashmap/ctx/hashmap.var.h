@@ -27,7 +27,7 @@
 #ifndef _ARCHI_HASHMAP_CTX_HASHMAP_VAR_H_
 #define _ARCHI_HASHMAP_CTX_HASHMAP_VAR_H_
 
-#include "archi/context/api/interface.typ.h"
+#include "archi/context/i/interface.typ.h"
 
 
 /**
