@@ -47,20 +47,20 @@
  * @brief Macro for checking if a callback function is not provided.
  */
 #define ARCHI_CONTEXT_NO_CALLBACK() \
-    (ARCHI_CONTEXT_CALLBACK_PARAMETER.function == NULL)
+    (ARCHI_CONTEXT_CALLBACK_PARAM.function == NULL)
 
 /**
  * @brief Macro for calling a context callback.
  *
  * @note This macro is to be used in functions that include
- * ARCHI_CONTEXT_CALLBACK_PARAMETER_DECL in their parameter list,
+ * ARCHI_CONTEXT_CALLBACK_PARAM_DECL in their parameter list,
  * such as functions defined with ARCHI_CONTEXT_EVAL_FUNC().
  */
-#define ARCHI_CONTEXT_YIELD(value)  do {                    \
-    if (!ARCHI_CONTEXT_NO_CALLBACK())                       \
-        ARCHI_CONTEXT_CALLBACK_PARAMETER.function((value),  \
-                ARCHI_CONTEXT_CALLBACK_PARAMETER.data,      \
-                ARCHI_ERROR_PARAM);                         \
+#define ARCHI_CONTEXT_YIELD(value)  do {                \
+    if (!ARCHI_CONTEXT_NO_CALLBACK())                   \
+        ARCHI_CONTEXT_CALLBACK_PARAM.function((value),  \
+                ARCHI_CONTEXT_CALLBACK_PARAM.data,      \
+                ARCHI_ERROR_PARAM);                     \
 } while (0)
 
 #endif // _ARCHI_CONTEXT_API_INTERFACE_DEF_H_

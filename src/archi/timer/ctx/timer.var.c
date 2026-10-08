@@ -89,7 +89,7 @@ ARCHI_CONTEXT_FINAL_FUNC(archi_context_final__timer)
 static
 ARCHI_CONTEXT_EVAL_FUNC(archi_context_eval__timer)
 {
-    (void) ARCHI_CONTEXT_CALLBACK_PARAMETER;
+    (void) ARCHI_CONTEXT_CALLBACK_PARAM;
 
     if (!call)
     {

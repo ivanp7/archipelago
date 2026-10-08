@@ -93,7 +93,7 @@ typedef ARCHI_CONTEXT_FINAL_FUNC((*archi_context_final_func_t));
         archi_context_slot_t slot, /* [in] Slot designator. */                  \
         bool call, /* [in] Whether call semantics are used. */                  \
         const archi_krcvlist_t *params, /* [in] Call parameters. */             \
-        ARCHI_CONTEXT_CALLBACK_PARAMETER_DECL, /* [in] Output callback. */      \
+        ARCHI_CONTEXT_CALLBACK_PARAM_DECL, /* [in] Output callback. */          \
         ARCHI_ERROR_PARAM_DECL) /* [out] Error. */
 
 /**

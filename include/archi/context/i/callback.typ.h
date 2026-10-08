@@ -59,13 +59,13 @@ typedef struct archi_context_callback {
 /**
  * @brief Context callback parameter identifier.
  */
-#define ARCHI_CONTEXT_CALLBACK_PARAMETER        archi_parameter_context_callback
+#define ARCHI_CONTEXT_CALLBACK_PARAM        archi_parameter_context_callback
 
 /**
  * @brief Context callback parameter declaration for function parameter lists.
  */
-#define ARCHI_CONTEXT_CALLBACK_PARAMETER_DECL   \
-    archi_context_callback_t ARCHI_CONTEXT_CALLBACK_PARAMETER
+#define ARCHI_CONTEXT_CALLBACK_PARAM_DECL   \
+    archi_context_callback_t ARCHI_CONTEXT_CALLBACK_PARAM
 
 #endif // _ARCHI_CONTEXT_API_CALLBACK_TYP_H_
 

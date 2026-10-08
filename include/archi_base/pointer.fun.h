@@ -163,6 +163,11 @@ archi_pointer_attr_compatible(
 /**
  * @brief Check if pointer is valid.
  *
+ * A generic pointer wrapper is invalid if it's a pointer to primitive data,
+ * and one of the following is true:
+ * - the pointer is NULL and the specified data length is not zero;
+ * - the pointer is non-NULL and its address does not satisfy the specified alignment requirement.
+ *
  * @return True if the pointer is valid, false otherwise.
  */
 bool
