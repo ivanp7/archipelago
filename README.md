@@ -455,12 +455,20 @@ The **Memory Type** is determined by the two most significant bits (63–62):
 
         The format is: `[mem.type (2 bits)][N (6 bits)][stride / alignment - 1 (N bits)][length (56-N bits)]`.
 
-        The alignment is calculated as `1 << M`, where *M* is the number of leading zeros in the stride/alignment field (0 ≤ *M* ≤ *N*).
+        > Note that the length field always contains at least one bit,
+        > unlike the stride/alignment field, which can be absent.
+
+        The alignment is calculated as `1 << M`, where *M* is the number of leading zeros
+        in the stride/alignment field (0 ≤ *M* ≤ *N*).
+
+        The stride is then restored using the formula `(field + 1) * alignment`.
 
         * In case when *N* = 0, the format simplifies to: `[mem.type (2 bits)][000000][length (56 bits)]`.
             The alignment and the stride are both `1`.
 
     * **Complex Data** (*N* ≥ 56):
+
+        > The specific value of *N* does not matter in this case; bits 61-56 are a part of the tag field.
 
         Used for opaque objects, structures with flexible array members, and other types not intended to form arrays or be copyable.
 
@@ -473,7 +481,7 @@ The attribute format is exhaustive; every bit combination has a unique, valid me
 
 For 64-bit attributes:
 - Max Primitive Size (length×stride): 64 PiB minus 1 byte
-- Max Primitive Stride/Alignment: 32 PiB
+- Max Primitive Stride & Alignment: 32 PiB
 - Max Data Tag: `0x07ffffffffffffff` (576,460,752,303,423,487)
 - Max Function Tag: `0x3fffffffffffffff` (4,611,686,018,427,387,903)
 
@@ -485,7 +493,8 @@ Compatibility is determined by comparing the actual pointer attributes against t
 Pointers are compatible if they meet one of the following criteria:
 
 1. **Function Match**: both pointers are function types:
-    * Function tags are equal, or at least one of them is `0` (function wildcard).
+    * At least one pointer refers to a function with a tag of `0` (function wildcard).
+    * Function tags are equal.
 
 2. **Data Match**: both pointers are data types:
     * At least one pointer refers to complex data with a tag of `0` (primitive/complex data wildcard).
@@ -494,6 +503,47 @@ Pointers are compatible if they meet one of the following criteria:
         - The strides are equal.
         - The alignment requirements are equal.
         - The length of the tested data is ≥ the length of the sample data.
+
+### Examples
+
+> Note: In the *Binary Attribute* column, `...` denotes omitted bits that follow the specified pattern.
+>
+> E.g., `0...0` means "all zeros", `1...1` means "all ones", and `(10)...(10)` means "alternating bits".
+
+#### Functions
+
+| Scenario    | Tag (hex)            | Tag (bin)         | Binary Attribute (64-bit)    |
+| ----------- | -------------------- | ----------------- | ---------------------------- |
+| zero tag    | `0x0`                | `000...000`       | `11 000...000` |
+| small tag   | `0x38`               | `000...000111000` | `11 000...000111000` |
+| large tag   | `0x2aaaaaaaaaaaaaaa` | `(10)...(10)`     | `11 (10)...(10)`  |
+| maximum tag | `0x3fffffffffffffff` | `111...111`       | `11 111...111` |
+
+#### Data
+
+##### Complex Data
+
+| Scenario    | Memory Type | Tag (hex)           | Tag (bin)                | *N* | Binary Attribute (64-bit)    |
+| ----------- | ----------- | ------------------- | ------------------------ | --- | ---------------------------- |
+| zero tag    | stack       | `0x0`               | `000...000`              | 63  | `00 111111 111...111` |
+| small tag   | writable    | `0x38`              | `000...000111000`        | 63  | `01 111111 111...111000111` |
+| large tag   | writable    | `0x566666666666666` | `000101(0110)...(0110)`  | 58  | `01 111010 (1001)...(1001)` |
+| maximum tag | read-only   | `0x7ffffffffffffff` | `000111...111`           | 56  | `10 111000 000...000` |
+
+##### Primitive Data
+
+| Scenario           | Memory Type | Array Length      | Array Stride                            | Alignment Requirement | *M* (# bits) | *N* (# bits) | Binary Attribute (64-bit) |
+| ------------------ | ----------- | ----------------- | --------------------------------------- | --------------------- | ------------ | ------------ | ------------------------- |
+| all bits zero      | stack       | 0                 | 1 B ((0+1) * 1 bytes)                   | 1 B (1<<0 bytes)      | 0            | 0            | `00 000000  000...000` |
+| byte array (N = 0) | stack       | 255               | 1 B ((0+1) * 1 bytes)                   | 1 B (1<<0 bytes)      | 0            | 0            | `00 000000  000...00011111111` |
+| prime stride       | writable    | 13                | 7 B ((6+1) * 1 bytes)                   | 1 B (1<<0 bytes)      | 0            | 3            | `01 000011 110 000...0001101` |
+| composite stride   | writable    | 25                | 832 B ((51+1) * 16 bytes)               | 16 B (1<<4 bytes)     | 4            | 10           | `01 001010 0000110011 000...00011001` |
+| N = 1, M = 1       | writable    | 128               | 2 B ((0+1) * 2 bytes)                   | 2 B (1<<1 bytes)      | 1            | 1            | `01 000001 0 000...00010000000` |
+| N = 1, M = 0       | writable    | 128               | 2 B ((1+1) * 1 bytes)                   | 1 B (1<<0 bytes)      | 0            | 1            | `01 000001 1 000...00010000000` |
+| N = 56/2, M = N/2  | read-only   | 43                | 256 MiB ((16383+1) * (1<<14) bytes)     | 16 KiB (1<<14 bytes)  | 14           | 28           | `10 011100 000...000111...111 000...000101011` |
+| maximum N, M = N   | read-only   | 1                 | 32 PiB ((0+1) * (1<<55) bytes)          | 32 PiB (1<<55 bytes)  | 55           | 55           | `10 110111 000...000 1` |
+| maximum N, M = 0   | read-only   | 1                 | 32 PiB ((0x7fffffffffffff+1) * 1 bytes) | 1 B (1<<0 bytes)      | 0            | 55           | `10 110111 111...111 1` |
+| maximum data size  | read-only   | (1<<56) - 1       | 1 B ((0+1) * 1 bytes)                   | 1 B (1<<0 bytes)      | 0            | 0            | `10 000000  111...111` |
 
 ## Generic Pointer Validness
 
