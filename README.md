@@ -1,8 +1,9 @@
 # Contents
 
-* [About Archipelago](#about-archipelago)
-    * [The Lifecycle](#the-lifecycle)
-* [System Architecture](#system-architecture)
+* [Introduction](#introduction)
+    * [The Conceptual Model](#the-conceptual-model)
+    * [System Lifecycle](#system-lifecycle)
+    * [System Architecture](#system-architecture)
 * [Component Breakdown](#component-breakdown)
     * [Logging](#logging)
     * [Base](#base)
@@ -10,94 +11,117 @@
         * [Generic Pointers](#generic-pointers)
         * [Key-Value Lists](#key-value-lists)
         * [Error Propagation](#error-propagation)
-    * [Module: Contexts](#module-contexts)
-        * [Contexts and Slots](#contexts-and-slots)
-        * [Context Interfaces](#context-interfaces)
-        * [Context Registry](#context-registry)
-    * [Module: Aggregate Objects](#aggregate-objects)
-    * [Module: Directed Execution Graphs](#directed-execution-graphs)
-    * [Module: Threads](#threads)
-    * [Module: Signal Management](#signal-management)
-    * [Module: Memory](#memory)
-    * [Module: Files](#files)
-    * [Module: Shared Libraries](#shared-libraries)
-    * [Module: Hashmaps](#hashmaps)
-    * [Module: Environment Variables](#environment-variables)
-    * [Module: Parsers](#parsers)
-    * [Module: Timers](#timers)
+    * [Built-In Modules](#built-in-modules)
+        * [Contexts](#contexts)
+            * [Contexts and Slots](#contexts-and-slots)
+            * [Context Interfaces](#context-interfaces)
+            * [Context Registry](#context-registry)
+        * [Aggregate Objects](#aggregate-objects)
+        * [Directed Execution Graphs](#directed-execution-graphs)
+        * [Threads](#threads)
+        * [Signal Management](#signal-management)
+        * [Memory](#memory)
+        * [Files](#files)
+        * [Shared Libraries](#shared-libraries)
+        * [Hashmaps](#hashmaps)
+        * [Environment Variables](#environment-variables)
+        * [Parsers](#parsers)
+        * [Timers](#timers)
     * [Application](#application)
 * [Included Plugins](#included-plugins)
     * [SDL](#sdl)
     * [OpenCL](#opencl)
 * [Technical Implementation Details](#technical-implementation-details)
+    * [Source File Naming Convention](#source-file-naming-convention)
+    * [Submodule Directory Naming Convention](#submodule-directory-naming-convention)
     * [Generic Pointer Attribute Format](#generic-pointer-attribute-format)
         * [Constraints & Limits](#constraints-limits)
         * [Compatibility & Matching](#compatibility-matching)
     * [Generic Pointer Validness](#generic-pointer-validness)
+    * [Memory Image Header Format](#memory-image-header-format)
 * [Quick Start](#quick-start)
     * [Dependencies](#dependencies)
     * [Build Instructions](#build-instructions)
     * [Documentation](#documentation)
 * [License](#license)
 
-# About Archipelago
+# Introduction
 
-**No AI used during development of the project** (not counting use of AI for proofreading documentation comments).
+```
+No AI was used during the development of this project (excluding proofreading of documentation).
+```
 
-**Archipelago** is a modular framework designed to decouple initialization from computational logic.
-Originally developed for rapid OpenCL pipeline prototyping -- specifically to allow modifications to the pipeline without recompiling the application -- it enables developers to construct applications from separate components linked via memory-mapped configuration.
-By managing a string-indexed registry of contexts based on instructions within input files, Archipelago allows for flexible, data-driven component composition.
+**Archipelago** is a modular framework designed to decouple system initialization
+from core application logic.
 
-The core concepts of the system:
+Originally developed for the rapid prototyping of OpenCL pipelines,
+the framework allows developers to modify the sequence and composition of
+computational steps -- and the resources they depend on -- without recompiling the application.
+By utilizing a string-indexed registry of contexts driven by memory-mapped configuration files,
+Archipelago enables a flexible, data-driven approach to component composition.
 
-* **Executable / Application**: The binary implemented in this repository.
-    It provides *built-in* resources and interprets *input files* to manage the *process*.
-* **Built-in**: Resources or functionality provided natively by the *executable*.
-* **Plugins**: External, dynamically loaded libraries that provide custom functionality and resources.
-* **Input Files**: Binary memory images specified as command-line arguments.
-    Each image contains data structures (pointers are supported) and instructions used to modify the *context registry* and thus the *process* state.
+## The Conceptual Model
 
-* **Process**: A running instance of the *application*.
-* **Contexts**: Opaque objects that encapsulate data structures or resources.
-    Contexts are not isolated; they can obtain access to other contexts.
-* **Context Registry**: A string-indexed dictionary of *contexts* maintained by the *application*.
-    Context registry serves as the global state of the *process*.
+To understand how Archipelago operates, it is necessary to define
+the relationship between its primary entities:
 
-## The Lifecycle
+* **The Application**: The core binary that manages the process lifecycle,
+    provides built-in resources, and interprets input configuration files.
+* **Plugins**: External, dynamically loaded libraries
+    that extend the system's functionality and provide custom resources.
+* **Input Files**: Binary memory images provided as command-line arguments.
+    These images contain the data structures and specific instructions
+    used to manipulate the state of the process.
+* **Contexts**: Opaque objects that encapsulate data or resources.
+    Contexts are not isolated; they can interact directly by exchanging pointers,
+    or indirectly through common resources.
+* **The Context Registry**: A string-indexed dictionary of all existing contexts.
+    This registry serves as the global state of the running process.
 
-Input memory images are prepared using external tools prior to execution.
-These tools can be implemented in any language; a Python-based generator is included in this repository.
+## System Lifecycle
 
-The application is launched with all required memory images specified on the command line.
-The order of these files is critical, as images are processed sequentially.
+The execution of an Archipelago application follows a sequence of steps:
 
-1. **Mapping**: Images are mapped to the fixed virtual addresses specified in their headers.
-    Memory ranges must not overlap; otherwise, an error is triggered.
+### 0. Preparation
 
-2. **Registry Operations**: The application reads the lists of registry operations in the mapped memory and executes them in the specified order.
-    There are multiple operation types supported:
-    - Contexts are created or deleted, updating the context registry.
-    - Pointers are exchanged between contexts (contexts can provide and/or accept pointers, based on their respective interface specifications).
-    - Context actions are invoked (contexts can support additional functionality, based on their respective interface specifications).
+Before execution, memory images containing data and context registry instructions
+are generated using external tools (a Python-based generator is provided in this repository).
 
-    The primary computation logic occurs during this stage: libraries are loaded, files are opened, threads are spawned, functions are called, etc.
+### 1. Mapping
 
-3. **Finalization**: The application cleans up any remaining contexts that were not explicitly deleted from the registry.
+Upon launch, the application maps memory images specified on the command line
+to fixed virtual addresses specified in their headers.
+All images are mapped at the same time, therefore their memory ranges must not overlap.
 
-# System Architecture
+### 2. Registry Operations, Initialization & Execution
 
-The system architecture consists of several stacked layers.
+The application processes the mapped memory images sequentially,
+executing a series of registry operations.
 
-The application and external plugins are implemented using the core library, `libarchi`, but remain independent of one another.
+During this stage, the "heavy lifting" of initialization occurs:
+libraries are loaded, threads are spawned, external files are opened,
+and other types of resources are initialized.
+This is the primary stage where the application's logic is executed:
+* **Lifecycle Management**: Contexts are created or deleted within the registry.
+* **Resource Exchange**: Pointers to resources are exchanged between contexts.
+* **Invocation**: Specific context actions are triggered.
 
-The library is composed of loosely coupled modules built upon a common base.
-The logging subsystem is available as a separate component.
-The modules provide functionality used either by the application or as general-purpose utilities.
+### 3. Cleanup
+
+Once the instructions within the memory images have been fully interpreted,
+the application performs a cleanup phase, automatically destroying any remaining contexts
+in the registry that were not explicitly deleted.
+
+## System Architecture
+
+Archipelago is designed as a layered dependency model.
+Each layer provides a set of features that the layers above it consume,
+ensuring a strict hierarchy of dependencies.
 
 ```
 +-------------------+--------------------+
 |    application    |      plugins       |
-+-------------------+--------------------+ -\---\
++===================+====================+ -\---\
 | threads, memory, files, libraries, ... | m
 +----------------------------------------+ o   l
 |        directed execution graphs       | d   i
@@ -105,22 +129,32 @@ The modules provide functionality used either by the application or as general-p
 |             aggregate types            | l   r
 +----------------------------------------+ e   a
 |                contexts                | s   r
-+------------------------+---------------+ -/  y
++========================+===============+ -/  y
 |    base & utilities    |    logging    |
 +------------------------+---------------+ -----/
 ```
 
-Each module is divided into submodules based on their dependencies.
-Submodules follow a standardized naming convention based on the entities they implement:
-- `i`: Module functionality implementation.
-- `ctx`: Context interfaces (dependency: `context` module).
-- `agg`: Aggregate type interfaces (dependency: `aggr` module).
-- `mem`: Memory interfaces (dependency: `memory` module).
-- `exe`: Directed execution graph functions (dependency: `exec` module).
-- `thr`: Threading functions (dependency: `thread` module).
-- `sig`: Signal handling functions (dependency: `signal` module).
+### The Library
 
-Submodule names can be a combination of the above, joined by the hyphen `-` (for example, `sig-ctx`).
+The foundation of the system consists of the logging subsystem and the library base & utilities.
+The library base provides core features utilized throughout the system,
+except for the logging subsystem which is an independent component.
+
+Together, the foundational layer and the modules built upon it constitute
+the **Archipelago Library** (`libarchi`).
+These modules provide the essential functionality required by both
+the **Archipelago application** and external plugins.
+
+### Modular Design & Coupling
+
+To maintain flexibility and minimize binary overhead,
+the system employs a loosely coupled modular architecture:
+
+* **Granular Dependency**: Each module is partitioned into submodules
+    with explicit dependency requirements.
+* **Conditional Compilation**: This granularity allows the build system
+    to selectively exclude specific modules or submodules,
+    optimizing the resulting binaries for different deployment targets.
 
 # Component Breakdown
 
@@ -202,13 +236,15 @@ A set of helper macros is provided to simplify this process.
 
 If an error with non-zero error code gets returned to the application, it is printed to the log.
 
-## Module: Contexts
+## Built-In Modules
+
+### Contexts
 
 The context system is the central part of Archipelago.
 The application is built around it, and the rest of the modules provide context interfaces
 for the facilities they implement.
 
-### Contexts and Slots
+#### Contexts and Slots
 
 A *context* is an opaque object encapsulating a data structure, a resource,
 or any entity that fits into the context model.
@@ -243,7 +279,7 @@ The empty slot has special properties:
 - The empty slot cannot be a set or unset (the empty setter slot can't exist).
 - The empty call slot can be defined.
 
-### Example: File Context
+#### Example: File Context
 
 * **Public Data**: file stream.
 * **Getters**: `fd` (returns file descriptor), `offset` (returns current offset).
@@ -252,7 +288,7 @@ The empty slot has special properties:
 * **Calls**: `read` (reads from file), `write` (writes to file),
     `sync` (synchronizes file with storage).
 
-### Context Interfaces
+#### Context Interfaces
 
 A context type is defined by a *context interface*,
 which contains pointers to the following lifecycle and operational functions:
@@ -266,7 +302,7 @@ allowing the set of available slots to change dynamically.
 For example, a hashmap context provides getter/setter slots corresponding to
 the keys of the values currently stored within it.
 
-### Context Registry
+#### Context Registry
 
 The context registry is a specialized hashmap context used to store
 all existing contexts, including itself.
@@ -294,47 +330,47 @@ through the following registry *operations*:
 | | `assign_slot` | Assigns a value from one slot/context to another. | Unchanged |
 | | `assign_call` | Sets a value returned by a call to a context slot. | Unchanged |
 
-## Module: Aggregate Objects
+### Aggregate Objects
 
 TODO
 
-## Module: Directed Execution Graphs
+### Directed Execution Graphs
 
 TODO
 
-## Module: Threads
+### Threads
 
 TODO
 
-## Module: Signal Management
+### Signal Management
 
 TODO
 
-## Module: Memory
+### Memory
 
 TODO
 
-## Module: Files
+### Files
 
 TODO
 
-## Module: Shared Libraries
+### Shared Libraries
 
 TODO
 
-## Module: Hashmaps
+### Hashmaps
 
 TODO
 
-## Module: Environment Variables
+### Environment Variables
 
 TODO
 
-## Module: Parsers
+### Parsers
 
 TODO
 
-## Module: Timers
+### Timers
 
 TODO
 
@@ -353,6 +389,33 @@ TODO
 TODO
 
 # Technical Implementation Details
+
+## Source File Naming Convention
+
+C headers and source files adhere to the pattern:
+```
+*.XXX.h
+*.XXX.c
+```
+
+`XXX` depends on the primary kind of entities a file implements, and is one of the following:
+- `def`: constants and macros (`#define`);
+- `typ`: custom types (`typedef`);
+- `fun`: functions;
+- `var`: global variables.
+
+## Submodule Directory Naming Convention
+
+Submodules follow a standardized naming convention based on the entities they implement:
+- `i`: Module functionality implementation.
+- `ctx`: Context interfaces (dependency: the context module).
+- `agg`: Aggregate type interfaces (dependency: the aggregate objects module).
+- `mem`: Memory interfaces (dependency: the memory module).
+- `exe`: Directed execution graph functions (dependency: the directed execution graphs module).
+- `thr`: Threading functions (dependency: the threads module).
+- `sig`: Signal handling functions (dependency: the signal management module).
+
+Submodule names can be a combination of the above, joined by the hyphen (for example, `sig-ctx`).
 
 ## Generic Pointer Attribute Format
 
@@ -383,11 +446,16 @@ The **Memory Type** is determined by the two most significant bits (63–62):
     * **Primitive Data** (0 ≤ *N* < 56):
 
         Used for copyable types that can form arrays (scalars, vectors, or simple structures).
-        These are defined by length, stride (element size), and alignment (must be a power of two, and stride must be divisible by alignment).
+        These are defined by length, stride (element size), and alignment requirement.
+
+        Alignment is always a power of two, and stride is always positive and divisible by alignment.
+        These contraints are useful for compressing the representation:
+        alignment exponent is stored instead of the alignment itself,
+        and the quotient of stride over alignment minus one is stored instead of the stride.
 
         The format is: `[mem.type (2 bits)][N (6 bits)][stride / alignment - 1 (N bits)][length (56-N bits)]`.
 
-        The alignment is calculated as `1 << M`, where *M* is the number of leading zeros in the stride/alignment field.
+        The alignment is calculated as `1 << M`, where *M* is the number of leading zeros in the stride/alignment field (0 ≤ *M* ≤ *N*).
 
         * In case when *N* = 0, the format simplifies to: `[mem.type (2 bits)][000000][length (56 bits)]`.
             The alignment and the stride are both `1`.
@@ -434,6 +502,10 @@ Generic pointer is valid if it meets one of the following criteria:
 1. Pointer is function or complex data type.
 2. Pointer is non-null and aligned to the requirement specified in the attributes.
 3. Pointer is null and the primitive data length specified in the attributes is zero.
+
+## Memory Image Header Format
+
+TODO
 
 # Quick Start
 
