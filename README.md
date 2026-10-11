@@ -32,8 +32,9 @@
     * [SDL](#sdl)
     * [OpenCL](#opencl)
 * [Technical Implementation Details](#technical-implementation-details)
+    * [Project Directory Structure](#project-directory-structure)
+        * [Submodule Directory Naming Convention](#submodule-directory-naming-convention)
     * [Source File Naming Convention](#source-file-naming-convention)
-    * [Submodule Directory Naming Convention](#submodule-directory-naming-convention)
     * [Generic Pointer Attribute Format](#generic-pointer-attribute-format)
         * [Constraints & Limits](#constraints-limits)
         * [Compatibility & Matching](#compatibility-matching)
@@ -390,20 +391,36 @@ TODO
 
 # Technical Implementation Details
 
-## Source File Naming Convention
+## Project Directory Structure
 
-C headers and source files follow the pattern `*.XXX.h` / `*.XXX.c`,
-where `XXX` identifies the primary declaration type implemented in that file.
-While a file may contain other types of declarations, the suffix reflects the file's main purpose:
+The project directory structure mirrors the system architecture,
+with source and header files organized into the following directories:
 
-- `def`: Constants and macros (`#define`) -- headers only.
-- `typ`: Custom type definitions (`typedef`) -- headers only.
-- `fun`: Function declarations (in headers), definitions (in sources).
-- `var`: Global variable declarations (in headers), definitions (in sources).
+* `archi_log`: The logging subsystem implementation.
+* `archi_base`: The library base and utilities.
+* `archi`: Implementation of library/plugin modules.
+* `archi_app`: The Archipelago application implementation.
 
-## Submodule Directory Naming Convention
+Both the core library and external plugins store their implemented modules within the `archi` directory.
+Each subdirectory represents a distinct module, which may be composed of one or more submodules.
 
-Submodule naming reflects the entities implemented within them and their corresponding dependencies.
+**Example Hierarchy**:
+
+* `archi`
+    * `archi/module1`
+        * `archi/module1/submodule1`
+        * `archi/module1/submodule2`
+        * `archi/module1/submodule3`
+    * `archi/module2`
+        * `archi/module2/submodule1`
+    * `archi/module3`
+        * `archi/module3/submodule1`
+        * `archi/module3/submodule2`
+
+Submodule directory naming reflects the entities implemented within them
+and their corresponding dependencies.
+
+### Submodule Directory Naming Convention
 
 **Module Implementation**: The `i` submodule contains the primary logic and functionality of the module.
 
@@ -420,6 +437,17 @@ The Archipelago library utilizes the following names for auxiliary submodules:
 
 **Composite Dependencies**: When a submodule depends on multiple modules,
 the tags are joined by hyphens (e.g., `sig-ctx`).
+
+## Source File Naming Convention
+
+C headers and source files follow the pattern `*.XXX.h` / `*.XXX.c`,
+where `XXX` identifies the primary declaration type implemented in that file.
+While a file may contain other types of declarations, the suffix reflects the file's main purpose:
+
+- `def`: Constants and macros (`#define`) -- headers only.
+- `typ`: Custom type definitions (`typedef`) -- headers only.
+- `fun`: Function declarations (in headers), definitions (in sources).
+- `var`: Global variable declarations (in headers), definitions (in sources).
 
 ## Generic Pointer Attribute Format
 
