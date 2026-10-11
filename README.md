@@ -392,30 +392,34 @@ TODO
 
 ## Source File Naming Convention
 
-C headers and source files adhere to the pattern:
-```
-*.XXX.h
-*.XXX.c
-```
+C headers and source files follow the pattern `*.XXX.h` / `*.XXX.c`,
+where `XXX` identifies the primary declaration type implemented in that file.
+While a file may contain other types of declarations, the suffix reflects the file's main purpose:
 
-`XXX` depends on the primary kind of entities a file implements, and is one of the following:
-- `def`: constants and macros (`#define`);
-- `typ`: custom types (`typedef`);
-- `fun`: functions;
-- `var`: global variables.
+- `def`: Constants and macros (`#define`) -- headers only.
+- `typ`: Custom type definitions (`typedef`) -- headers only.
+- `fun`: Function declarations (in headers), definitions (in sources).
+- `var`: Global variable declarations (in headers), definitions (in sources).
 
 ## Submodule Directory Naming Convention
 
-Submodules follow a standardized naming convention based on the entities they implement:
-- `i`: Module functionality implementation.
-- `ctx`: Context interfaces (dependency: the context module).
-- `agg`: Aggregate type interfaces (dependency: the aggregate objects module).
-- `mem`: Memory interfaces (dependency: the memory module).
-- `exe`: Directed execution graph functions (dependency: the directed execution graphs module).
-- `thr`: Threading functions (dependency: the threads module).
-- `sig`: Signal handling functions (dependency: the signal management module).
+Submodule naming reflects the entities implemented within them and their corresponding dependencies.
 
-Submodule names can be a combination of the above, joined by the hyphen (for example, `sig-ctx`).
+**Module Implementation**: The `i` submodule contains the primary logic and functionality of the module.
+
+**Auxiliary Submodules**: Other submodules extend the module implementation
+by integrating facilities provided by other modules.
+The Archipelago library utilizes the following names for auxiliary submodules:
+
+- `ctx`: Context interfaces.
+- `agg`: Aggregate type interfaces.
+- `mem`: Memory interfaces.
+- `exe`: Directed execution graph functions.
+- `thr`: Threading functions.
+- `sig`: Signal handling functions.
+
+**Composite Dependencies**: When a submodule depends on multiple modules,
+the tags are joined by hyphens (e.g., `sig-ctx`).
 
 ## Generic Pointer Attribute Format
 
@@ -456,14 +460,14 @@ The **Memory Type** is determined by the two most significant bits (63–62):
         The format is: `[mem.type (2 bits)][N (6 bits)][stride / alignment - 1 (N bits)][length (56-N bits)]`.
 
         > Note that the length field always contains at least one bit,
-        > unlike the stride/alignment field, which can be absent.
+        > unlike the stride/alignment field which can be absent.
 
         The alignment is calculated as `1 << M`, where *M* is the number of leading zeros
         in the stride/alignment field (0 ≤ *M* ≤ *N*).
 
         The stride is then restored using the formula `(field + 1) * alignment`.
 
-        * In case when *N* = 0, the format simplifies to: `[mem.type (2 bits)][000000][length (56 bits)]`.
+        * **Byte Array**: In case when *N* = 0, the format simplifies to: `[mem.type (2 bits)][000000][length (56 bits)]`.
             The alignment and the stride are both `1`.
 
     * **Complex Data** (*N* ≥ 56):
