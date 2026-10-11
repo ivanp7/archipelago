@@ -1,3 +1,0 @@
-TODO:
-- Describe instruction types
-
