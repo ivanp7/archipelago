@@ -39,10 +39,12 @@
         * [Constraints & Limits](#constraints-limits)
         * [Compatibility & Matching](#compatibility-matching)
     * [Generic Pointer Validness](#generic-pointer-validness)
-    * [Memory Image Header Format](#memory-image-header-format)
+    * [Memory-Mapped File Header for Pointer Support](#memory-mapped-file-header-for-pointer-support)
+    * [Application Input File Header](#application-input-file-header)
 * [Quick Start](#quick-start)
     * [Dependencies](#dependencies)
     * [Build Instructions](#build-instructions)
+    * [Making Input Files Executable](#making-input-files-executable)
     * [Documentation](#documentation)
 * [License](#license)
 
@@ -585,7 +587,11 @@ Generic pointer is valid if it meets one of the following criteria:
 2. Pointer is non-null and aligned to the requirement specified in the attributes.
 3. Pointer is null and the primitive data length specified in the attributes is zero.
 
-## Memory Image Header Format
+## Memory-Mapped File Header for Pointer Support
+
+TODO
+
+## Application Input File Header
 
 TODO
 
@@ -598,9 +604,18 @@ TODO
 ## Build Instructions
 
 The library, the application, and the included plugins are built using the [Ninja](https://ninja-build.org/) build system.
+
 To generate `build.ninja` files, use `configure.py` scripts located in the repository root directory and plugin subdirectories.
 The `configure.py` scripts may be modified for customization (e.g. to change the `MODULES` array listing the built modules, the compilation flags, the output file names, etc).
 The behavior of the scripts are also controlled by several accepted environment variables (search for `INPUT ENVIRONMENT VARIABLE` to find them).
+
+## Making Input Files Executable
+
+Archipelago memory image files can be made directly executable on Linux systems.
+This allows you to run `.archi` files directly, without explicitly calling the Archipelago application.
+
+To register the file format with the kernel via `binfmt_misc`, run `register-binfmt.sh` as root.
+The executable (`archi`) must be installed in a system directory for binaries (listed in your `PATH`).
 
 ## Documentation
 
