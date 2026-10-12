@@ -453,65 +453,91 @@ While a file may contain other types of declarations, the suffix reflects the fi
 
 ## Generic Pointer Attribute Format
 
-The attribute field is 64 bits wide (though the format is adaptable to other widths).
+The attribute format is 64 bits wide (though the format is adaptable to other widths).
 
-The **Memory Type** is determined by the two most significant bits (63–62):
+The **memory type** is determined by bits 63–62:
 
 | Bits 63-62 | Memory Type                | Description |
-| :--------: | -------------------------- | ----------- |
+| ---------- | -------------------------- | ----------- |
 | `00`       | Short-lived, writable data | Stack memory (automatic storage duration) |
-| `01`       | Long-lived, writable data  | Memory that can be written to (e.g., heap); may or may not be readable |
-| `10`       | Long-lived, read-only data | Memory that can be read only (e.g., memory mapping) |
+| `01`       | Long-lived, writable data  | Writable memory (e.g., heap); **may or may not be readable** |
+| `10`       | Long-lived, read-only data | Read-only memory (e.g., memory mapping) |
 | `11`       | Function                   | Executable memory |
 
-1. **Function Pointers**
+> Readability for writable memory is unspecified, which mirrors standard C semantics.
+> In C language, pointers to `const`-qualified types denote read-only memory (memory that shouldn't be written to),
+> but there is no guarantee that pointers to non-`const` types denote memory that can be read.
 
-    If the type is `11`, bits 62–0 store a function tag (unsigned integer ID).
-    - Unequal tags indicate incompatible function types.
-    - A tag of `0` acts as a wildcard, matching any tag and indicating an unspecified function type.
+### Function Pointers
 
-    The format is: `[11][function tag (62 bits)]`.
+If the memory type is `11`, bits 61–0 store a **function tag**.
+- Unequal tags indicate incompatible function types.
+- A tag of `0` acts as a wildcard, matching any tag and indicating an unspecified function type.
 
-2. **Data Pointers**
+**Format**:
 
-    If the type is `00`, `01`, or `10`, the interpretation of bits 62–0 depends on the **Data Kind**
-    (specified by bits 61–56, denoted as *N*, which define the split of bits 55-0 into two parts):
+| Bit Range | Bit Width | Field Value |
+| --------- | --------- | ----------- |
+| (64; 62]  | 2         | Memory type (`11`) |
+| (62; 0]   | 62        | Function tag |
 
-    * **Primitive Data** (0 ≤ *N* < 56):
+### Data Pointers
 
-        Used for copyable types that can form arrays (scalars, vectors, or simple structures).
-        These are defined by length, stride (element size), and alignment requirement.
+If the type is `00`, `01`, or `10`, the interpretation of bits 61–0 depends on the value of bits 61-56 (denoted as *N*).
 
-        Alignment is always a power of two, and stride is always positive and divisible by alignment.
-        These contraints are useful for compressing the representation:
-        alignment exponent is stored instead of the alignment itself,
-        and the quotient of stride over alignment minus one is stored instead of the stride.
+#### Primitive Data (0 ≤ *N* < 56):
 
-        The format is: `[mem.type (2 bits)][N (6 bits)][stride / alignment - 1 (N bits)][length (56-N bits)]`.
+Copyable types that can form arrays (scalars, vectors, or simple structures).
 
-        > Note that the length field always contains at least one bit,
-        > unlike the stride/alignment field which can be absent.
+These are defined by length, stride (element size), and alignment requirement.
+- Alignment must be a power of two.
+- Stride must be positive.
+- Stride must be divisible by alignment.
 
-        The alignment is calculated as `1 << M`, where *M* is the number of leading zeros
-        in the stride/alignment field (0 ≤ *M* ≤ *N*).
+**Format**:
 
-        The stride is then restored using the formula `(field + 1) * alignment`.
+| Bit Range  | Bit Width | Field Value |
+| ---------- | --------- | ----------- |
+| (64; 62]   | 2         | Memory type (`00`, `01`, or `10`) |
+| (62; 56]   | 6         | *N*: width of the next field (must be < 56) |
+| (56; 56-N] | N         | *q* = (stride / alignment) - 1 |
+| (56-N; 0]  | 56-N      | Array length |
 
-        * **Byte Array**: In case when *N* = 0, the format simplifies to: `[mem.type (2 bits)][000000][length (56 bits)]`.
-            The alignment and the stride are both `1`.
+> **Note**: the length field always contains at least one bit,
+> unlike the stride/alignment field, which can be absent if *N* = 0.
 
-    * **Complex Data** (*N* ≥ 56):
+* Alignment is calculated as `1 << M`, where *M* is the number of leading zeros
+in the stride/alignment field (0 ≤ *M* ≤ *N*).
+* Stride is calculated as `(q + 1) * alignment`.
 
-        > The specific value of *N* does not matter in this case; bits 61-56 are a part of the tag field.
+**Byte Array Case**: When *N* = 0, alignment and stride are both `1`, and the format simplifies to:
 
-        Used for opaque objects, structures with flexible array members, and other types not intended to form arrays or be copyable.
+| Bit Range  | Bit Width | Field Value |
+| ---------- | --------- | ----------- |
+| (64; 62]   | 2         | Memory type (`00`, `01`, or `10`) |
+| (62; 56]   | 6         | *N* (`000000`) |
+| (56; 0]    | 56        | Array length |
 
-        The format is: `[mem.type (2 bits)][data tag, bitwise inverted (62 bits)]`.
-        Similar to function tags, these IDs identify the data type; a `0` tag is a wildcard.
+#### Complex Data (*N* ≥ 56):
+
+Opaque objects, structures with flexible array members, and other types not intended to form arrays or be copyable.
+
+> **Note**: In this case, the specific value of *N* is irrelevant;
+> bits 61–56 are treated as part of the data tag field (bits 61–0).
+
+Bits 61-0 store a bitwise-inverted **data tag**.
+Similar to function tags, data tags identify the data type; a tag of `0` acts as a wildcard.
+
+**Format**:
+
+| Bit Range  | Bit Width | Field Value |
+| ---------- | --------- | ----------- |
+| (64; 62]   | 2         | Memory type (`00`, `01`, or `10`) |
+| (62; 0]    | 62        | Data tag, bitwise inverted (value of bits 61-56 must be ≥ 56) |
 
 ### Constraints & Limits
 
-The attribute format is exhaustive; every bit combination has a unique, valid meaning.
+The attribute format is exhaustive; every representation has a unique, valid meaning.
 
 For 64-bit attributes:
 - Max Primitive Size (length×stride): 64 PiB minus 1 byte
@@ -521,19 +547,19 @@ For 64-bit attributes:
 
 ### Compatibility & Matching
 
-Pointer attributes are used to validate that a pointee matches a required specification.
+Pointer attributes are used to validate that the pointer target matches a required specification.
 Compatibility is determined by comparing the actual pointer attributes against the sample attributes.
 
 Pointers are compatible if they meet one of the following criteria:
 
-1. **Function Match**: both pointers are function types:
-    * At least one pointer refers to a function with a tag of `0` (function wildcard).
-    * Function tags are equal.
+* **Function Match**: Both targets are function types.
+    * At least one pointer refers to a function with a tag of `0` (wildcard).
+    * **OR** the function tags are equal.
 
-2. **Data Match**: both pointers are data types:
-    * At least one pointer refers to complex data with a tag of `0` (primitive/complex data wildcard).
-    * Both pointers are complex data types and their tags are equal.
-    * Both pointers are primitive data types, provided that:
+* **Data Match**: Both targets are data types.
+    * At least one pointer refers to complex data with a tag of `0` (wildcard).
+    * **OR** both targets are complex data types and their tags are equal.
+    * **OR** both targets are primitive data types, provided that:
         - The strides are equal.
         - The alignment requirements are equal.
         - The length of the tested data is ≥ the length of the sample data.
@@ -583,7 +609,7 @@ Pointers are compatible if they meet one of the following criteria:
 
 Generic pointer is valid if it meets one of the following criteria:
 
-1. Pointer is function or complex data type.
+1. The target is function or complex data type.
 2. Pointer is non-null and aligned to the requirement specified in the attributes.
 3. Pointer is null and the primitive data length specified in the attributes is zero.
 
