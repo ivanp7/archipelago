@@ -80,7 +80,7 @@ typedef void (*archi_function_t)(void);
  * This scheme allows to describe data of size up to 64 PiB minus 1 byte,
  * with stride and alignment up to 32 PiB, which is enough for practical purposes.
  *
- * When N >= 56, meaning of bits (62; 0] changes: it is now bitwise negation of
+ * When N >= 56, meaning of bits (59; 0] changes: it is now
  * a data type tag (integer in range [0; 0x07FFFFFFFFFFFFFF]) used to distinguish complex data types from one another.
  * Tag #0 is special - it means 'any/unknown type' and is compatible with any other data type,
  * both primitive and complex kinds.

@@ -187,7 +187,7 @@ ARCHI_CONTEXT_INIT_FUNC(archi_context_init__dpointer)
     // Set writability flag
     if (writable_set)
     {
-        context_data->attr &= ~ARCHI_POINTER_TYPE_MASK;
+        context_data->attr &= ~ARCHI_POINTER_ATTR_MASK__TYPE;
         context_data->attr |= writable ? ARCHI_POINTER_TYPE__DATA_WRITABLE :
             ARCHI_POINTER_TYPE__DATA_READONLY;
     }
@@ -283,7 +283,7 @@ ARCHI_CONTEXT_SET_FUNC(archi_context_set__dpointer)
 
         bool writable = *(char*)value.ptr;
 
-        context->attr &= ~ARCHI_POINTER_TYPE_MASK;
+        context->attr &= ~ARCHI_POINTER_ATTR_MASK__TYPE;
         context->attr |= writable ? ARCHI_POINTER_TYPE__DATA_WRITABLE :
             ARCHI_POINTER_TYPE__DATA_READONLY;
     }
@@ -383,7 +383,7 @@ ARCHI_CONTEXT_INIT_FUNC(archi_context_init__pdpointer)
     if (attr == (archi_pointer_attr_t)-1)
         return NULL;
 
-    data.attr = (data.attr & ARCHI_POINTER_TYPE_MASK) | attr;
+    data.attr = (data.attr & ARCHI_POINTER_ATTR_MASK__TYPE) | attr;
 
     // Apply offset
     if (data.ptr != NULL)
@@ -413,13 +413,13 @@ ARCHI_CONTEXT_INIT_FUNC(archi_context_init__pdpointer)
     // Set writability flag
     if (writable_set)
     {
-        context_data->attr &= ~ARCHI_POINTER_TYPE_MASK;
+        context_data->attr &= ~ARCHI_POINTER_ATTR_MASK__TYPE;
         context_data->attr |= writable ? ARCHI_POINTER_TYPE__DATA_WRITABLE :
             ARCHI_POINTER_TYPE__DATA_READONLY;
     }
 
     // Set pointer attributes
-    context_data->attr = (context_data->attr & ARCHI_POINTER_TYPE_MASK) | attr;
+    context_data->attr = (context_data->attr & ARCHI_POINTER_ATTR_MASK__TYPE) | attr;
 
     ARCHI_ERROR_RESET();
     return context_data;
@@ -470,7 +470,7 @@ ARCHI_CONTEXT_EVAL_FUNC(archi_context_eval__pdpointer)
             {
                 value = (archi_rcpointer_t){
                     .ptr = (char*)context->ptr + (ptrdiff_t)offset * (ptrdiff_t)stride,
-                    .attr = (context->attr & ARCHI_POINTER_TYPE_MASK) |
+                    .attr = (context->attr & ARCHI_POINTER_ATTR_MASK__TYPE) |
                         archi_pointer_attr__pdata(length - offset, stride, alignment, NULL),
                     .ref_count = context->ref_count,
                 };
@@ -478,7 +478,7 @@ ARCHI_CONTEXT_EVAL_FUNC(archi_context_eval__pdpointer)
             else
             {
                 value = (archi_rcpointer_t){
-                    .attr = (context->attr & ARCHI_POINTER_TYPE_MASK) |
+                    .attr = (context->attr & ARCHI_POINTER_ATTR_MASK__TYPE) |
                         archi_pointer_attr__pdata(0, stride, alignment, NULL),
                 };
             }
@@ -666,7 +666,7 @@ ARCHI_CONTEXT_EVAL_FUNC(archi_context_eval__pdpointer)
                 return;
             }
 
-            context->attr = (context->attr & ARCHI_POINTER_TYPE_MASK) | attr;
+            context->attr = (context->attr & ARCHI_POINTER_ATTR_MASK__TYPE) | attr;
 
             ARCHI_ERROR_RESET();
         }
@@ -911,7 +911,7 @@ ARCHI_CONTEXT_SET_FUNC(archi_context_set__pdpointer)
 
         bool writable = *(char*)value.ptr;
 
-        context->attr &= ~ARCHI_POINTER_TYPE_MASK;
+        context->attr &= ~ARCHI_POINTER_ATTR_MASK__TYPE;
         context->attr |= writable ? ARCHI_POINTER_TYPE__DATA_WRITABLE :
             ARCHI_POINTER_TYPE__DATA_READONLY;
     }
@@ -939,7 +939,7 @@ ARCHI_CONTEXT_SET_FUNC(archi_context_set__pdpointer)
         if (attr == (archi_pointer_attr_t)-1)
             return;
 
-        context->attr = (context->attr & ARCHI_POINTER_TYPE_MASK) | attr;
+        context->attr = (context->attr & ARCHI_POINTER_ATTR_MASK__TYPE) | attr;
     }
     else if (ARCHI_STRING_COMPARE("stride", ==, slot.name))
     {
@@ -983,7 +983,7 @@ ARCHI_CONTEXT_SET_FUNC(archi_context_set__pdpointer)
         if (attr == (archi_pointer_attr_t)-1)
             return;
 
-        context->attr = (context->attr & ARCHI_POINTER_TYPE_MASK) | attr;
+        context->attr = (context->attr & ARCHI_POINTER_ATTR_MASK__TYPE) | attr;
     }
     else if (ARCHI_STRING_COMPARE("alignment", ==, slot.name))
     {
@@ -1016,7 +1016,7 @@ ARCHI_CONTEXT_SET_FUNC(archi_context_set__pdpointer)
             return;
         }
 
-        context->attr = (context->attr & ARCHI_POINTER_TYPE_MASK) | attr;
+        context->attr = (context->attr & ARCHI_POINTER_ATTR_MASK__TYPE) | attr;
     }
     else
     {
@@ -1112,14 +1112,14 @@ ARCHI_CONTEXT_INIT_FUNC(archi_context_init__cdpointer)
     // Set writability flag
     if (writable_set)
     {
-        context_data->attr &= ~ARCHI_POINTER_TYPE_MASK;
+        context_data->attr &= ~ARCHI_POINTER_ATTR_MASK__TYPE;
         context_data->attr |= writable ? ARCHI_POINTER_TYPE__DATA_WRITABLE :
             ARCHI_POINTER_TYPE__DATA_READONLY;
     }
 
     // Set data type tag
     if (tag_set || !archi_pointer_attr_unpk__cdata(context_data->attr, NULL, NULL))
-        context_data->attr = (context_data->attr & ARCHI_POINTER_TYPE_MASK) | archi_pointer_attr__cdata(tag);
+        context_data->attr = (context_data->attr & ARCHI_POINTER_ATTR_MASK__TYPE) | archi_pointer_attr__cdata(tag);
 
     ARCHI_ERROR_RESET();
     return context_data;
@@ -1215,7 +1215,7 @@ ARCHI_CONTEXT_SET_FUNC(archi_context_set__cdpointer)
             return;
 
         if (!archi_pointer_attr_unpk__cdata(value.attr, NULL, NULL))
-            value.attr = (value.attr & ARCHI_POINTER_TYPE_MASK) | archi_pointer_attr__cdata(0);
+            value.attr = (value.attr & ARCHI_POINTER_ATTR_MASK__TYPE) | archi_pointer_attr__cdata(0);
 
         *context = value;
     }
@@ -1235,7 +1235,7 @@ ARCHI_CONTEXT_SET_FUNC(archi_context_set__cdpointer)
 
         bool writable = *(char*)value.ptr;
 
-        context->attr &= ~ARCHI_POINTER_TYPE_MASK;
+        context->attr &= ~ARCHI_POINTER_ATTR_MASK__TYPE;
         context->attr |= writable ? ARCHI_POINTER_TYPE__DATA_WRITABLE :
             ARCHI_POINTER_TYPE__DATA_READONLY;
     }
@@ -1261,7 +1261,7 @@ ARCHI_CONTEXT_SET_FUNC(archi_context_set__cdpointer)
             return;
         }
 
-        context->attr = (context->attr & ARCHI_POINTER_TYPE_MASK) | archi_pointer_attr__cdata(tag);
+        context->attr = (context->attr & ARCHI_POINTER_ATTR_MASK__TYPE) | archi_pointer_attr__cdata(tag);
     }
     else
     {

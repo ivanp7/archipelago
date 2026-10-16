@@ -27,8 +27,8 @@
 #ifndef _ARCHI_CONTEXT_API_TAG_DEF_H_
 #define _ARCHI_CONTEXT_API_TAG_DEF_H_
 
-#define ARCHI_POINTER_DATA_TAG__CONTEXT_INTERFACE   0x10 ///< Data type tag for archi_context_interface_t.
-#define ARCHI_POINTER_DATA_TAG__CONTEXT             0x11 ///< Data type tag for archi_context_t.
+#define ARCHI_POINTER_DATA_TAG__CONTEXT_INTERFACE   0x18 ///< Data type tag for archi_context_interface_t.
+#define ARCHI_POINTER_DATA_TAG__CONTEXT             0x19 ///< Data type tag for archi_context_t.
 
 #endif // _ARCHI_CONTEXT_API_TAG_DEF_H_
 

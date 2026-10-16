@@ -29,24 +29,28 @@ import signal
 # Base types
 ##############################################################################
 
-ARCHI_POINTER_DATA_TAG__POINTER = 0x02
-ARCHI_POINTER_DATA_TAG__RCPOINTER = 0x03
-ARCHI_POINTER_DATA_TAG__DPTR_ARRAY = 0x04
-ARCHI_POINTER_DATA_TAG__KVLIST = 0x06
-ARCHI_POINTER_DATA_TAG__KRCVLIST = 0x07
-ARCHI_POINTER_FUNC_TAG__STRING_COMP = 0x05
+ARCHI_POINTER_DATA_TAG__POINTER = 0x1
+ARCHI_POINTER_DATA_TAG__RCPOINTER = 0x21
+ARCHI_POINTER_DATA_TAG__KVLIST = 0x2
+ARCHI_POINTER_DATA_TAG__KRCVLIST = 0x42
+ARCHI_POINTER_DATA_TAG__DPTR_ARRAY = 0x40000000000000
+ARCHI_POINTER_FUNC_TAG__STRING_COMP = 0x1
 
 
 class archi_pointer_attr_t(c.c_uint64):
     """Pointer attributes.
     """
-    ATTR_BITS = 64 - 2        # 62
-    SIZE_BITS = ATTR_BITS - 6 # 56
+    ATTR_BITS = 64 - 2              # 62
+    SHAPE_BITS = ATTR_BITS - 6      # 56
+    DATA_TAG_BITS = SHAPE_BITS + 3  # 59
+    FUNC_TAG_BITS = ATTR_BITS       # 62
 
-    DATA_SIZE_MAX   = (1 <<  SIZE_BITS) - 1  # 0x00FFFFFFFFFFFFFF
-    DATA_STRIDE_MAX =  1 << (SIZE_BITS  - 1) # 0x0080000000000000
-    DATA_TAG_MAX = ((1 << ATTR_BITS) - 1) & ~(SIZE_BITS << SIZE_BITS) # 0x07FFFFFFFFFFFFFF
-    FUNC_TAG_MAX =  (1 << ATTR_BITS) - 1                              # 0x3FFFFFFFFFFFFFFF
+    DATA_TAG_SEPARATOR_BITS = 4
+
+    DATA_SIZE_MAX   = (1 <<  SHAPE_BITS) - 1  # 0x00FFFFFFFFFFFFFF
+    DATA_STRIDE_MAX =  1 << (SHAPE_BITS  - 1) # 0x0080000000000000
+    DATA_TAG_MAX = (1 << DATA_TAG_BITS) - 1   # 0x07FFFFFFFFFFFFFF
+    FUNC_TAG_MAX = (1 << FUNC_TAG_BITS) - 1   # 0x3FFFFFFFFFFFFFFF
 
     TYPE_MASK = 0x3 << ATTR_BITS
     DATA_ON_STACK = 0x0 << ATTR_BITS
@@ -111,16 +115,16 @@ class archi_pointer_attr_t(c.c_uint64):
             return (None, None, None)
 
         attr_bits = self.__class__.ATTR_BITS
-        size_bits = self.__class__.SIZE_BITS
+        shape_bits = self.__class__.SHAPE_BITS
 
-        stride_width = (self.value >> size_bits) & ((1 << (attr_bits - size_bits)) - 1)
+        stride_width = (self.value >> shape_bits) & ((1 << (attr_bits - shape_bits)) - 1)
 
-        if stride_width >= size_bits:
+        if stride_width >= shape_bits:
             return (None, None, None)
 
-        length = self.value & ((1 << (size_bits - stride_width)) - 1)
+        length = self.value & ((1 << (shape_bits - stride_width)) - 1)
 
-        stride_over_alignment = (self.value >> (size_bits - stride_width)) & ((1 << stride_width) - 1)
+        stride_over_alignment = (self.value >> (shape_bits - stride_width)) & ((1 << stride_width) - 1)
         alignment_log2 = stride_width - stride_over_alignment.bit_length()
         alignment = 1 << alignment_log2
         stride = (stride_over_alignment + 1) * alignment
@@ -150,41 +154,51 @@ class archi_pointer_attr_t(c.c_uint64):
         """Extract type tag from the attributes.
         """
         attr_bits = self.__class__.ATTR_BITS
+        shape_bits = self.__class__.SHAPE_BITS
 
         if self.is_data:
-            tag = ~self.value & ((1 << attr_bits) - 1) # data type tag
+            stride_width = (self.value >> shape_bits) & ((1 << (attr_bits - shape_bits)) - 1)
 
-            if tag > self.__class__.DATA_TAG_MAX:
+            if stride_width < shape_bits:
                 return None
+
+            return self.value & ((1 << self.__class__.DATA_TAG_BITS) - 1)
         else:
-            tag = self.value & ((1 << attr_bits) - 1) # function type tag
+            return self.value & ((1 << self.__class__.FUNC_TAG_BITS) - 1)
 
-        return tag
-
-    def is_compatible_to(self, other, /):
+    def is_compatible_to(self, sample, /):
         """Check attributes for compatibility.
         """
-        if not isinstance(other, archi_pointer_attr_t):
+        if not isinstance(sample, archi_pointer_attr_t):
             raise TypeError
 
-        if self.is_data and other.is_data:
+        if self.is_data and sample.is_data:
             tag = self.tag
-            other_tag = other.tag
+            sample_tag = sample.tag
 
-            if tag is None and other_tag is None:
+            if tag == 0 or sample_tag == 0: # wildcard
+                return True
+
+            if tag is not None and sample_tag is not None:
+                return (tag ^ sample_tag) & ((1 << (sample_tag.bit_length() \
+                        + self.__class__.DATA_TAG_SEPARATOR_BITS)) - 1) == 0
+            elif tag is None and sample_tag is None:
                 length, stride, alignment = self.layout
-                other_length, other_stride, other_alignment = other.layout
+                sample_length, sample_stride, sample_alignment = sample.layout
 
-                return (stride == other_stride) \
-                        and (alignment == other_alignment) \
-                        and (length >= other_length)
+                return (stride == sample_stride) \
+                        and (alignment == sample_alignment) \
+                        and (length >= sample_length)
             else:
-                return (tag == other_tag) or (tag == 0) or (other_tag == 0)
-        elif self.is_function and other.is_function:
+                return False
+        elif self.is_function and sample.is_function:
             tag = self.tag
-            other_tag = other.tag
+            sample_tag = sample.tag
 
-            return (tag == other_tag) or (tag == 0) or (other_tag == 0)
+            if tag == 0 or sample_tag == 0: # wildcard
+                return True
+
+            return tag == sample_tag
         else:
             return False
 
@@ -213,8 +227,8 @@ class archi_pointer_attr_t(c.c_uint64):
 
         attr_memtype = cls.DATA_WRITABLE if writable \
                 else cls.DATA_READONLY
-        attr_stride_width = stride_width << cls.SIZE_BITS
-        attr_stride_over_alignment = (stride // alignment - 1) << (cls.SIZE_BITS - stride_width)
+        attr_stride_width = stride_width << cls.SHAPE_BITS
+        attr_stride_over_alignment = (stride // alignment - 1) << (cls.SHAPE_BITS - stride_width)
         attr_length = length
 
         return cls(attr_memtype | attr_stride_width | attr_stride_over_alignment | attr_length)
@@ -233,7 +247,7 @@ class archi_pointer_attr_t(c.c_uint64):
 
         attr_memtype = cls.DATA_WRITABLE if writable \
                 else cls.DATA_READONLY
-        attr_tag = (~tag) & ((1 << cls.ATTR_BITS) - 1)
+        attr_tag = tag
 
         return cls(attr_memtype | attr_tag)
 
@@ -324,8 +338,8 @@ archi_kvlist_t._fields_ = \
 # Contexts
 ##############################################################################
 
-ARCHI_POINTER_DATA_TAG__CONTEXT_INTERFACE = 0x10
-ARCHI_POINTER_DATA_TAG__CONTEXT = 0x11
+ARCHI_POINTER_DATA_TAG__CONTEXT_INTERFACE = 0x18
+ARCHI_POINTER_DATA_TAG__CONTEXT = 0x19
 
 
 archi_context_slot_index_t = c.c_longlong
@@ -343,9 +357,9 @@ class archi_context_slot_t(c.Structure):
 # Description of aggregate types
 ##############################################################################
 
-ARCHI_POINTER_DATA_TAG__AGGR_INTERFACE = 0x20
-ARCHI_POINTER_DATA_TAG__AGGR = 0x21
-ARCHI_POINTER_DATA_TAG__AGGR_TYPE = 0x28
+ARCHI_POINTER_DATA_TAG__AGGR_INTERFACE = 0x28
+ARCHI_POINTER_DATA_TAG__AGGR = 0x29
+ARCHI_POINTER_DATA_TAG__AGGR_TYPE = 0x2C
 
 
 class archi_layout_type_t(c.Structure):
@@ -495,10 +509,10 @@ class archi_aggr_type_t(c.Structure):
 # Directed execution graphs
 ##############################################################################
 
-ARCHI_POINTER_DATA_TAG__DEXGRAPH_NODE = 0x30
-ARCHI_POINTER_DATA_TAG__DEXGRAPH_NODE_ARRAY = 0x31
-ARCHI_POINTER_FUNC_TAG__DEXGRAPH_OPERATION = 0x30
-ARCHI_POINTER_FUNC_TAG__DEXGRAPH_TRANSITION = 0x31
+ARCHI_POINTER_DATA_TAG__DEXGRAPH_NODE = 0x38
+ARCHI_POINTER_DATA_TAG__DEXGRAPH_NODE_ARRAY = 0x39
+ARCHI_POINTER_FUNC_TAG__DEXGRAPH_OPERATION = 0x38
+ARCHI_POINTER_FUNC_TAG__DEXGRAPH_TRANSITION = 0x39
 
 
 archi_dexgraph_branch_index_t = c.c_size_t
@@ -507,10 +521,10 @@ archi_dexgraph_branch_index_t = c.c_size_t
 # Concurrent processing
 ##############################################################################
 
-ARCHI_POINTER_DATA_TAG__THREAD_GROUP = 0x40
-ARCHI_POINTER_DATA_TAG__THREAD_LFQUEUE = 0x41
-ARCHI_POINTER_FUNC_TAG__THREAD_WORK = 0x40
-ARCHI_POINTER_FUNC_TAG__THREAD_CALLBACK = 0x41
+ARCHI_POINTER_DATA_TAG__THREAD_GROUP = 0x48
+ARCHI_POINTER_DATA_TAG__THREAD_LFQUEUE = 0x49
+ARCHI_POINTER_FUNC_TAG__THREAD_WORK = 0x48
+ARCHI_POINTER_FUNC_TAG__THREAD_CALLBACK = 0x49
 
 
 class archi_thread_group_start_params_t(c.Structure):
@@ -541,10 +555,10 @@ class archi_thread_lfqueue_alloc_params_t(c.Structure):
 # Signal management
 ##############################################################################
 
-ARCHI_POINTER_DATA_TAG__SIGNAL_SET = 0x50
-ARCHI_POINTER_DATA_TAG__SIGNAL_FLAGS = 0x51
-ARCHI_POINTER_FUNC_TAG__SIGNAL_HANDLER = 0x50
-ARCHI_POINTER_DATA_TAG__SIGNAL_HANDLER_DATA__HASHMAP = 0x58
+ARCHI_POINTER_DATA_TAG__SIGNAL_SET = 0x58
+ARCHI_POINTER_DATA_TAG__SIGNAL_FLAGS = 0x59
+ARCHI_POINTER_FUNC_TAG__SIGNAL_HANDLER = 0x58
+ARCHI_POINTER_DATA_TAG__SIGNAL_HANDLER_DATA__HASHMAP = 0x5C
 
 
 SIGNALS = ['SIGINT', 'SIGQUIT', 'SIGTERM',              # interruption events
@@ -655,15 +669,15 @@ class archi_signal_handler_t(c.Structure):
 # Memory handling
 ##############################################################################
 
-ARCHI_POINTER_DATA_TAG__MEMORY_INTERFACE = 0x60
-ARCHI_POINTER_DATA_TAG__MEMORY = 0x61
-ARCHI_POINTER_DATA_TAG__MEMORY_MAPPING = 0x62
+ARCHI_POINTER_DATA_TAG__MEMORY_INTERFACE = 0x68
+ARCHI_POINTER_DATA_TAG__MEMORY = 0x69
+ARCHI_POINTER_DATA_TAG__MEMORY_MAPPING = 0x6A
 
 ##############################################################################
 # Files
 ##############################################################################
 
-ARCHI_POINTER_DATA_TAG__FILE_STREAM = 0x70
+ARCHI_POINTER_DATA_TAG__FILE_STREAM = 0x78
 
 
 archi_file_descriptor_t = c.c_int
@@ -734,7 +748,7 @@ class archi_file_map_params_t(c.Structure):
 # Shared libraries
 ##############################################################################
 
-ARCHI_POINTER_DATA_TAG__LIBRARY_HANDLE = 0x80
+ARCHI_POINTER_DATA_TAG__LIBRARY_HANDLE = 0x88
 
 
 class archi_library_load_params_t(c.Structure):
@@ -756,8 +770,8 @@ class archi_library_load_params_t(c.Structure):
 # Hashmaps
 ##############################################################################
 
-ARCHI_POINTER_DATA_TAG__HASHMAP = 0x90
-ARCHI_POINTER_FUNC_TAG__HASHMAP_HASH = 0x90
+ARCHI_POINTER_DATA_TAG__HASHMAP = 0x98
+ARCHI_POINTER_FUNC_TAG__HASHMAP_HASH = 0x98
 
 
 class archi_hashmap_alloc_params_t(c.Structure):
@@ -775,7 +789,7 @@ class archi_hashmap_alloc_params_t(c.Structure):
 # Timers
 ##############################################################################
 
-ARCHI_POINTER_DATA_TAG__TIMER = 0xB0
+ARCHI_POINTER_DATA_TAG__TIMER = 0xC8
 
 ##############################################################################
 # Types used in input files

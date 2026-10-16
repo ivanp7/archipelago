@@ -30,13 +30,13 @@ from ..context import TypeAttr, ContextWhitelist, ParametersWhitelist
 
 ### archi/font_psf2 ###
 
-ARCHI_POINTER_DATA_TAG__FONT_PSF2 = 0x864ab572
+ARCHI_POINTER_DATA_TAG__FONT_PSF2 = 0x998
 
 ### archi/sdl2 ###
 
-ARCHI_POINTER_DATA_TAG__SDL2_WINDOW = 0x800
-ARCHI_POINTER_DATA_TAG__SDL2_RENDERER = 0x801
-ARCHI_POINTER_DATA_TAG__SDL2_TEXTURE = 0x802
+ARCHI_POINTER_DATA_TAG__SDL2_WINDOW = 0x988
+ARCHI_POINTER_DATA_TAG__SDL2_RENDERER = 0x989
+ARCHI_POINTER_DATA_TAG__SDL2_TEXTURE = 0x98A
 
 ##############################################################################
 

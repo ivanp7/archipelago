@@ -27,9 +27,9 @@
 #ifndef _ARCHI_HASHMAP_API_TAG_DEF_H_
 #define _ARCHI_HASHMAP_API_TAG_DEF_H_
 
-#define ARCHI_POINTER_DATA_TAG__HASHMAP         0x90 ///< Data type tag for archi_hashmap_t.
+#define ARCHI_POINTER_DATA_TAG__HASHMAP         0x98 ///< Data type tag for archi_hashmap_t.
 
-#define ARCHI_POINTER_FUNC_TAG__HASHMAP_HASH    0x90 ///< Data type tag for archi_hashmap_hash_func_t.
+#define ARCHI_POINTER_FUNC_TAG__HASHMAP_HASH    0x98 ///< Data type tag for archi_hashmap_hash_func_t.
 
 #endif // _ARCHI_HASHMAP_API_TAG_DEF_H_
 

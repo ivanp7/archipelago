@@ -453,6 +453,9 @@ While a file may contain other types of declarations, the suffix reflects the fi
 
 ## Generic Pointer Attribute Format
 
+Pointer attributes are used to validate that the pointer target type is compatible with the required specification.
+Compatibility is determined by matching the actual (tested) pointer attributes against the sample (required) attributes.
+
 The attribute format is 64 bits wide (though the format is adaptable to other widths).
 
 The **memory type** is determined by bits 63–62:
@@ -470,22 +473,41 @@ The **memory type** is determined by bits 63–62:
 
 ### Function Pointers
 
-If the memory type is `11`, bits 61–0 store a **function tag**.
-- Unequal tags indicate incompatible function types.
-- A tag of `0` acts as a wildcard, matching any tag and indicating an unspecified function type.
+If the memory type is `11`, bits 61–0 store a **function tag**, an unsigned integer ID identifying a function type.
+Function tags are used for matching: unequal tags correspond to incompatible functions.
 
 **Format**:
 
-| Bit Range | Bit Width | Field Value |
-| --------- | --------- | ----------- |
-| (64; 62]  | 2         | Memory type (`11`) |
-| (62; 0]   | 62        | Function tag |
+| Bit Range | Field Width | Field Value |
+| --------- | ----------- | ----------- |
+| (64; 62]  | 2           | Memory type (`11`) |
+| (62; 0]   | 62          | Function tag |
 
 ### Data Pointers
 
-If the type is `00`, `01`, or `10`, the interpretation of bits 61–0 depends on the value of bits 61-56 (denoted as *N*).
+If the type is `00`, `01`, or `10`, the interpretation of bits 61–0 depends on the value of bits 61-59:
+- if the value is `111`, bits 61-0 encode a *complex data* type;
+- otherwise, it's a *primitive data* type.
 
-#### Primitive Data (0 ≤ *N* < 56):
+#### Complex Data
+
+Opaque objects, structures with flexible array members, and other types not intended to form arrays or be copyable.
+
+Bits 58-0 store a **data tag**.
+Similar to function tags, data tags identify data types,
+but the matching rules are more complex to support extension of data types (inheritance).
+Data tags allow to encode base and derived types,
+so that derived types are compatible with base types and not vice versa.
+
+**Format**:
+
+| Bit Range  | Field Width | Field Value |
+| ---------- | ----------- | ----------- |
+| (64; 62]   | 2           | Memory type (`00`, `01`, or `10`) |
+| (62; 59]   | 3           | `111` |
+| (59; 0]    | 59          | Data tag |
+
+#### Primitive Data
 
 Copyable types that can form arrays (scalars, vectors, or simple structures).
 
@@ -496,14 +518,15 @@ These are defined by length, stride (element size), and alignment requirement.
 
 **Format**:
 
-| Bit Range  | Bit Width | Field Value |
-| ---------- | --------- | ----------- |
-| (64; 62]   | 2         | Memory type (`00`, `01`, or `10`) |
-| (62; 56]   | 6         | *N*: width of the next field (must be < 56) |
-| (56; 56-N] | N         | *q* = (stride / alignment) - 1 |
-| (56-N; 0]  | 56-N      | Array length |
+| Bit Range  | Field Width | Field Value |
+| ---------- | ----------- | ----------- |
+| (64; 62]   | 2           | Memory type (`00`, `01`, or `10`) |
+| (62; 56]   | 6           | *N*: bit width of the next field |
+| (56; 56-N] | N           | *q* = (stride / alignment) - 1 |
+| (56-N; 0]  | 56-N        | Array length |
 
-> **Note**: the length field always contains at least one bit,
+> **Note**: *N* is always < 56 because bits 61-59 are never `111` for primitive data.
+> Therefore, the length field always contains at least one bit,
 > unlike the stride/alignment field, which can be absent if *N* = 0.
 
 * Alignment is calculated as `1 << M`, where *M* is the number of leading zeros
@@ -512,57 +535,60 @@ in the stride/alignment field (0 ≤ *M* ≤ *N*).
 
 **Byte Array Case**: When *N* = 0, alignment and stride are both `1`, and the format simplifies to:
 
-| Bit Range  | Bit Width | Field Value |
-| ---------- | --------- | ----------- |
-| (64; 62]   | 2         | Memory type (`00`, `01`, or `10`) |
-| (62; 56]   | 6         | *N* (`000000`) |
-| (56; 0]    | 56        | Array length |
-
-#### Complex Data (*N* ≥ 56):
-
-Opaque objects, structures with flexible array members, and other types not intended to form arrays or be copyable.
-
-> **Note**: In this case, the specific value of *N* is irrelevant;
-> bits 61–56 are treated as part of the data tag field (bits 61–0).
-
-Bits 61-0 store a bitwise-inverted **data tag**.
-Similar to function tags, data tags identify the data type; a tag of `0` acts as a wildcard.
-
-**Format**:
-
-| Bit Range  | Bit Width | Field Value |
-| ---------- | --------- | ----------- |
-| (64; 62]   | 2         | Memory type (`00`, `01`, or `10`) |
-| (62; 0]    | 62        | Data tag, bitwise inverted (value of bits 61-56 must be ≥ 56) |
+| Bit Range  | Field Width | Field Value |
+| ---------- | ----------- | ----------- |
+| (64; 62]   | 2           | Memory type (`00`, `01`, or `10`) |
+| (62; 56]   | 6           | *N* (`000000`) |
+| (56; 0]    | 56          | Array length |
 
 ### Constraints & Limits
 
 The attribute format is exhaustive; every representation has a unique, valid meaning.
 
 For 64-bit attributes:
-- Max Primitive Size (length×stride): 64 PiB minus 1 byte
-- Max Primitive Stride & Alignment: 32 PiB
-- Max Data Tag: `0x07ffffffffffffff` (576,460,752,303,423,487)
-- Max Function Tag: `0x3fffffffffffffff` (4,611,686,018,427,387,903)
+- Max primitive size (length×stride): 64 PiB minus 1 byte
+- Max primitive stride & alignment: 32 PiB
+- Number of distinct data tags: 576,460,752,303,423,487 (`0x07ffffffffffffff`)
+- Number of distinct function tags: 4,611,686,018,427,387,903 (`0x3fffffffffffffff`)
 
 ### Compatibility & Matching
 
-Pointer attributes are used to validate that the pointer target matches a required specification.
-Compatibility is determined by comparing the actual pointer attributes against the sample attributes.
+Function types and data types are mutually incompatible.
+Primitive data types and complex data types are mutually incompatible
+(except for the wildcard, which is compatible with any data type).
 
-Pointers are compatible if they meet one of the following criteria:
+#### Matching Function Types
 
-* **Function Match**: Both targets are function types.
-    * At least one pointer refers to a function with a tag of `0` (wildcard).
-    * **OR** the function tags are equal.
+Function types match if their tags meet one of the following criteria:
+* At least one of the tags is a wildcard.
+* **OR** The tags are equal.
 
-* **Data Match**: Both targets are data types.
-    * At least one pointer refers to complex data with a tag of `0` (wildcard).
-    * **OR** both targets are complex data types and their tags are equal.
-    * **OR** both targets are primitive data types, provided that:
-        - The strides are equal.
-        - The alignment requirements are equal.
-        - The length of the tested data is ≥ the length of the sample data.
+The function wildcard tag is defined as a tag with all bits clear (`0`).
+
+#### Matching Data Types
+
+Data types match if they meet one of the following criteria:
+* At least one of the types is complex and its tag is a wildcard.
+* **OR** Both types are primitive, and:
+    - The strides are equal.
+    - The alignment requirements are equal.
+    - The length of the tested array is ≥ the sample array length.
+* **OR** Both types are complex, and:
+    - The tested tag is an *extension* of the sample tag.
+
+> **Note**: memory types of both attributes are irrelevant for matching and ignored.
+
+The data wildcard tag is defined as a tag with all bits clear (`0`).
+
+Tag A is an *extension* of a pattern B, if:
+1. A matches B in all bits of B.
+2. Any differing bits (where A xor B has set bits) are located to the left of B's most significant bit
+    and are separated from it by a gap of at least 4 zeros.
+
+Examples:
+* `100001101` is an extension of `1101` (Differing bit is at pos 8; MSB of B is at pos 3. There are 4 zeros between them).
+* `110001101` is not an extension of `1101` (Differing bits are at pos 8 and 7; only 3 zeros separate the bit at pos 7 from the MSB of B).
+* `1100` is not an extension of `1101` (The tags differ in the bits to the right of B's MSB).
 
 ### Examples
 
@@ -572,8 +598,8 @@ Pointers are compatible if they meet one of the following criteria:
 
 #### Functions
 
-| Scenario    | Tag (hex)            | Tag (bin)         | Binary Attribute (64-bit)    |
-| ----------- | -------------------- | ----------------- | ---------------------------- |
+| Scenario    | Tag (hex)            | Tag (bin)         | Binary Attribute (64-bit) |
+| ----------- | -------------------- | ----------------- | ------------------------- |
 | zero tag    | `0x0`                | `000...000`       | `11 000...000` |
 | small tag   | `0x38`               | `000...000111000` | `11 000...000111000` |
 | large tag   | `0x2aaaaaaaaaaaaaaa` | `(10)...(10)`     | `11 (10)...(10)`  |
@@ -583,12 +609,12 @@ Pointers are compatible if they meet one of the following criteria:
 
 ##### Complex Data
 
-| Scenario    | Memory Type | Tag (hex)           | Tag (bin)                | *N* | Binary Attribute (64-bit)    |
-| ----------- | ----------- | ------------------- | ------------------------ | --- | ---------------------------- |
-| zero tag    | stack       | `0x0`               | `000...000`              | 63  | `00 111111 111...111` |
-| small tag   | writable    | `0x38`              | `000...000111000`        | 63  | `01 111111 111...111000111` |
-| large tag   | writable    | `0x566666666666666` | `000101(0110)...(0110)`  | 58  | `01 111010 (1001)...(1001)` |
-| maximum tag | read-only   | `0x7ffffffffffffff` | `000111...111`           | 56  | `10 111000 000...000` |
+| Scenario    | Memory Type | Tag (hex)           | Tag (bin)            | Binary Attribute (64-bit) |
+| ----------- | ----------- | ------------------- | -------------------- | ------------------------- |
+| zero tag    | stack       | `0x0`               | `000...000`          | `00 111 000...000` |
+| small tag   | writable    | `0x38`              | `000...000111000`    | `01 111 000...000111000` |
+| large tag   | writable    | `0x566666666666666` | `101(0110)...(0110)` | `01 111 101(0110)...(0110)` |
+| maximum tag | read-only   | `0x7ffffffffffffff` | `111...111`          | `10 111 111...111` |
 
 ##### Primitive Data
 

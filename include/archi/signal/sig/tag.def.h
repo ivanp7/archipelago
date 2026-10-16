@@ -27,7 +27,7 @@
 #ifndef _ARCHI_SIGNAL_SIG_TAG_DEF_H_
 #define _ARCHI_SIGNAL_SIG_TAG_DEF_H_
 
-#define ARCHI_POINTER_DATA_TAG__SIGNAL_HANDLER_DATA__HASHMAP    0x58 ///< Data type tag for archi_signal_handler_data__hashmap_t.
+#define ARCHI_POINTER_DATA_TAG__SIGNAL_HANDLER_DATA__HASHMAP    0x5C ///< Data type tag for archi_signal_handler_data__hashmap_t.
 
 #endif // _ARCHI_SIGNAL_SIG_TAG_DEF_H_
 

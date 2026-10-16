@@ -27,7 +27,7 @@
 #ifndef _ARCHI_LIBRARY_API_TAG_DEF_H_
 #define _ARCHI_LIBRARY_API_TAG_DEF_H_
 
-#define ARCHI_POINTER_DATA_TAG__LIBRARY_HANDLE  0x80 ///< Data type tag for archi_library_handle_t.
+#define ARCHI_POINTER_DATA_TAG__LIBRARY_HANDLE  0x88 ///< Data type tag for archi_library_handle_t.
 
 #endif // _ARCHI_LIBRARY_API_TAG_DEF_H_
 

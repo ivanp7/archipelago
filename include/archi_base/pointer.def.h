@@ -41,11 +41,11 @@
  * @brief Kinds of pointees.
  */
 enum {
-    ARCHI_POINTEE__UNSPEC = 0,  ///< Pointee: unspecified/arbitrary/none.
+    ARCHI_POINTEE__UNSPEC = 0,  ///< Unspecified/arbitrary/none.
 
-    ARCHI_POINTEE__PDATA,   ///< Pointee: primitive data.
-    ARCHI_POINTEE__CDATA,   ///< Pointee: complex data.
-    ARCHI_POINTEE__FUNC,    ///< Pointee: function.
+    ARCHI_POINTEE__PDATA,   ///< Primitive data.
+    ARCHI_POINTEE__CDATA,   ///< Complex data.
+    ARCHI_POINTEE__FUNC,    ///< Function.
 };
 
 /*****************************************************************************/
@@ -54,40 +54,38 @@ enum {
 
 /**
  * @def ARCHI_POINTER_DATA_SIZE_MAX
- * @brief Maximum data size that can be stored in pointer attributes.
+ * @brief Maximum data size that can be represented by the attribute format.
  */
 #define ARCHI_POINTER_DATA_SIZE_MAX                 \
-    (((size_t)1 << ARCHI_POINTER_ATTR_BITWIDTH__SIZE) - 1)
+    (((size_t)1 << ARCHI_POINTER_ATTR_BITWIDTH__SHAPE) - 1)
 
 /**
  * @def ARCHI_POINTER_DATA_STRIDE_MAX
- * @brief Maximum data stride that can be stored in pointer attributes.
+ * @brief Maximum data stride that can be represented by the attribute format.
  */
 #define ARCHI_POINTER_DATA_STRIDE_MAX               \
-    (((size_t)1 << (ARCHI_POINTER_ATTR_BITWIDTH__SIZE - 1)))
+    (((size_t)1 << (ARCHI_POINTER_ATTR_BITWIDTH__SHAPE - 1)))
 
 /**
  * @def ARCHI_POINTER_DATA_ALIGNMENT_MAX
- * @brief Maximum alignment that can be stored in pointer attributes.
+ * @brief Maximum alignment that can be represented by the attribute format.
  */
 #define ARCHI_POINTER_DATA_ALIGNMENT_MAX            \
     ARCHI_POINTER_DATA_STRIDE_MAX
 
 /**
  * @def ARCHI_POINTER_DATA_TAG_MAX
- * @brief Maximum tag for a data type.
+ * @brief Maximum data tag that can be represented by the attribute format.
  */
 #define ARCHI_POINTER_DATA_TAG_MAX                  \
-    ((~((archi_pointer_attr_t)ARCHI_POINTER_ATTR_BITWIDTH__SIZE \
-       << ARCHI_POINTER_ATTR_OFFSET__STRIDE_WIDTH)) &           \
-       (((archi_pointer_attr_t)1 << ARCHI_POINTER_ATTR_OFFSET__TYPE) - 1))
+    (((archi_pointer_attr_t)1 << ARCHI_POINTER_ATTR_BITWIDTH__DATA_TAG) - 1)
 
 /**
  * @def ARCHI_POINTER_FUNC_TAG_MAX
- * @brief Maximum tag for a function type.
+ * @brief Maximum function tag that can be represented by the attribute format.
  */
 #define ARCHI_POINTER_FUNC_TAG_MAX                  \
-    (((archi_pointer_attr_t)1 << ARCHI_POINTER_ATTR_OFFSET__TYPE) - 1)
+    (((archi_pointer_attr_t)1 << ARCHI_POINTER_ATTR_BITWIDTH__FUNC_TAG) - 1)
 
 /*****************************************************************************/
 // Bit widths of attributes
@@ -102,31 +100,53 @@ enum {
 
 /**
  * @def ARCHI_POINTER_ATTR_BITWIDTH__TYPE
- * @brief Bit width of pointer type attribute.
+ * @brief Bit width of memory type attribute.
  */
 #define ARCHI_POINTER_ATTR_BITWIDTH__TYPE           2
 
 /**
- * @def ARCHI_POINTER_ATTR_BITWIDTH__STRIDE_WIDTH
- * @brief Bit width of stride bit size attribute.
+ * @def ARCHI_POINTER_ATTR_BITWIDTH__PDATA_N_WIDTH
+ * @brief Bit width of primitive data "N" attribute.
  */
-#define ARCHI_POINTER_ATTR_BITWIDTH__STRIDE_WIDTH   6
+#define ARCHI_POINTER_ATTR_BITWIDTH__PDATA_N_WIDTH  6
 
 /**
- * @def ARCHI_POINTER_ATTR_BITWIDTH__SIZE
+ * @def ARCHI_POINTER_ATTR_BITWIDTH__SHAPE
  * @brief Total bit width of data length and stride/alignment attributes.
  */
-#define ARCHI_POINTER_ATTR_BITWIDTH__SIZE           \
+#define ARCHI_POINTER_ATTR_BITWIDTH__SHAPE          \
     (ARCHI_POINTER_ATTR_BITWIDTH                    \
      - ARCHI_POINTER_ATTR_BITWIDTH__TYPE            \
-     - ARCHI_POINTER_ATTR_BITWIDTH__STRIDE_WIDTH)
+     - ARCHI_POINTER_ATTR_BITWIDTH__PDATA_N_WIDTH)
 
 /**
  * @def ARCHI_POINTER_ATTR_BITWIDTH__LENGTH
  * @brief Bit width of data length attribute.
  */
-#define ARCHI_POINTER_ATTR_BITWIDTH__LENGTH(stride_width)   \
-    (ARCHI_POINTER_ATTR_BITWIDTH__SIZE - stride_width)
+#define ARCHI_POINTER_ATTR_BITWIDTH__LENGTH(N)      \
+    (ARCHI_POINTER_ATTR_BITWIDTH__SHAPE - (N))
+
+/**
+ * @def ARCHI_POINTER_ATTR_BITWIDTH__DATA_TAG_SEPARATOR
+ * @brief Bit width of the token separator in data tags.
+ */
+#define ARCHI_POINTER_ATTR_BITWIDTH__DATA_TAG_SEPARATOR  4
+
+/**
+ * @def ARCHI_POINTER_ATTR_BITWIDTH__DATA_TAG
+ * @brief Bit width of a data tag.
+ */
+#define ARCHI_POINTER_ATTR_BITWIDTH__DATA_TAG       \
+    (ARCHI_POINTER_ATTR_BITWIDTH__SHAPE             \
+     + 3) // shape bitwidth = 56, which is `111000`: the last 3 bits are available for a tag
+
+/**
+ * @def ARCHI_POINTER_ATTR_BITWIDTH__FUNC_TAG
+ * @brief Bit width of a function tag.
+ */
+#define ARCHI_POINTER_ATTR_BITWIDTH__FUNC_TAG       \
+    (ARCHI_POINTER_ATTR_BITWIDTH                    \
+     - ARCHI_POINTER_ATTR_BITWIDTH__TYPE)
 
 /*****************************************************************************/
 // Offsets of attributes
@@ -134,64 +154,69 @@ enum {
 
 /**
  * @def ARCHI_POINTER_ATTR_OFFSET__TYPE
- * @brief Offset to pointer type attribute.
+ * @brief Offset to memory type attribute.
  */
 #define ARCHI_POINTER_ATTR_OFFSET__TYPE             \
     (ARCHI_POINTER_ATTR_BITWIDTH                    \
      - ARCHI_POINTER_ATTR_BITWIDTH__TYPE)
 
 /**
- * @def ARCHI_POINTER_ATTR_OFFSET__STRIDE_WIDTH
- * @brief Offset to stride bit size attribute.
+ * @def ARCHI_POINTER_ATTR_OFFSET__PDATA_N_WIDTH
+ * @brief Offset to primitive data "N" attribute.
  */
-#define ARCHI_POINTER_ATTR_OFFSET__STRIDE_WIDTH     \
+#define ARCHI_POINTER_ATTR_OFFSET__PDATA_N_WIDTH    \
     (ARCHI_POINTER_ATTR_OFFSET__TYPE                \
-     - ARCHI_POINTER_ATTR_BITWIDTH__STRIDE_WIDTH)
+     - ARCHI_POINTER_ATTR_BITWIDTH__PDATA_N_WIDTH)
 
 /**
  * @def ARCHI_POINTER_ATTR_OFFSET__STRIDE_OVER_ALIGNMENT
  * @brief Offset to stride/alignment attribute.
  */
-#define ARCHI_POINTER_ATTR_OFFSET__STRIDE_OVER_ALIGNMENT(stride_width)  \
-    ARCHI_POINTER_ATTR_BITWIDTH__LENGTH((stride_width))
+#define ARCHI_POINTER_ATTR_OFFSET__STRIDE_OVER_ALIGNMENT(N)     \
+    ARCHI_POINTER_ATTR_BITWIDTH__LENGTH((N))
 
 /*****************************************************************************/
-// Pointer type attribute
+// Masks of attributes
 /*****************************************************************************/
 
 /**
- * @def ARCHI_POINTER_TYPE_MASK
- * @brief Attribute mask for pointer type.
+ * @def ARCHI_POINTER_ATTR_MASK__TYPE
+ * @brief Attribute mask for memory type.
  */
-#define ARCHI_POINTER_TYPE_MASK                     \
-    ((archi_pointer_attr_t)0x3 << ARCHI_POINTER_ATTR_OFFSET__TYPE)
+#define ARCHI_POINTER_ATTR_MASK__TYPE               \
+    ((((archi_pointer_attr_t)1 << ARCHI_POINTER_ATTR_BITWIDTH__TYPE) - 1)    \
+     << ARCHI_POINTER_ATTR_OFFSET__TYPE)
+
+/*****************************************************************************/
+// Memory type attribute
+/*****************************************************************************/
 
 /**
  * @def ARCHI_POINTER_TYPE__DATA_ON_STACK
  * @brief Pointer type: short-lived data, writable memory.
  */
-#define ARCHI_POINTER_TYPE__DATA_ON_STACK   /*00*/  \
+#define ARCHI_POINTER_TYPE__DATA_ON_STACK           \
     ((archi_pointer_attr_t)0x0 << ARCHI_POINTER_ATTR_OFFSET__TYPE)
 
 /**
  * @def ARCHI_POINTER_TYPE__DATA_WRITABLE
  * @brief Pointer type: long-lived data, writable memory.
  */
-#define ARCHI_POINTER_TYPE__DATA_WRITABLE   /*01*/  \
+#define ARCHI_POINTER_TYPE__DATA_WRITABLE           \
     ((archi_pointer_attr_t)0x1 << ARCHI_POINTER_ATTR_OFFSET__TYPE)
 
 /**
  * @def ARCHI_POINTER_TYPE__DATA_READONLY
  * @brief Pointer type: long-lived data, read-only memory.
  */
-#define ARCHI_POINTER_TYPE__DATA_READONLY   /*10*/  \
+#define ARCHI_POINTER_TYPE__DATA_READONLY           \
     ((archi_pointer_attr_t)0x2 << ARCHI_POINTER_ATTR_OFFSET__TYPE)
 
 /**
  * @def ARCHI_POINTER_TYPE__FUNCTION
  * @brief Pointer type: function.
  */
-#define ARCHI_POINTER_TYPE__FUNCTION        /*11*/  \
+#define ARCHI_POINTER_TYPE__FUNCTION                \
     ((archi_pointer_attr_t)0x3 << ARCHI_POINTER_ATTR_OFFSET__TYPE)
 
 /*****************************************************************************/
@@ -202,25 +227,29 @@ enum {
  * @brief Check if pointer refers to stack memory.
  */
 #define ARCHI_POINTER_TO_STACK(attr)                \
-    (((attr) & ARCHI_POINTER_TYPE_MASK) == ARCHI_POINTER_TYPE__DATA_ON_STACK)
+    (((attr) & ARCHI_POINTER_ATTR_MASK__TYPE)       \
+     == ARCHI_POINTER_TYPE__DATA_ON_STACK)
 
 /**
  * @brief Check if pointer refers to writable memory (excluding stack memory).
  */
 #define ARCHI_POINTER_TO_WRITABLE_DATA(attr)        \
-    (((attr) & ARCHI_POINTER_TYPE_MASK) == ARCHI_POINTER_TYPE__DATA_WRITABLE)
+    (((attr) & ARCHI_POINTER_ATTR_MASK__TYPE)       \
+     == ARCHI_POINTER_TYPE__DATA_WRITABLE)
 
 /**
  * @brief Check if pointer refers to read-only memory.
  */
 #define ARCHI_POINTER_TO_READONLY_DATA(attr)        \
-    (((attr) & ARCHI_POINTER_TYPE_MASK) == ARCHI_POINTER_TYPE__DATA_READONLY)
+    (((attr) & ARCHI_POINTER_ATTR_MASK__TYPE)       \
+     == ARCHI_POINTER_TYPE__DATA_READONLY)
 
 /**
  * @brief Check if a pointer refers to a function.
  */
 #define ARCHI_POINTER_TO_FUNCTION(attr)             \
-    (((attr) & ARCHI_POINTER_TYPE_MASK) == ARCHI_POINTER_TYPE__FUNCTION)
+    (((attr) & ARCHI_POINTER_ATTR_MASK__TYPE)       \
+     == ARCHI_POINTER_TYPE__FUNCTION)
 
 /**
  * @brief Check if pointer is null.

@@ -27,13 +27,15 @@
 #ifndef _ARCHI_BASE_TAG_DEF_H_
 #define _ARCHI_BASE_TAG_DEF_H_
 
-#define ARCHI_POINTER_DATA_TAG__POINTER     0x02 ///< Data type tag for archi_pointer_t.
-#define ARCHI_POINTER_DATA_TAG__RCPOINTER   0x03 ///< Data type tag for archi_rcpointer_t.
-#define ARCHI_POINTER_DATA_TAG__DPTR_ARRAY  0x04 ///< Data type tag for struct archi_dptr_array.
-#define ARCHI_POINTER_DATA_TAG__KVLIST      0x06 ///< Data type tag for archi_kvlist_t.
-#define ARCHI_POINTER_DATA_TAG__KRCVLIST    0x07 ///< Data type tag for archi_krcvlist_t.
+#define ARCHI_POINTER_DATA_TAG__POINTER     0x1  ///< Data type tag for archi_pointer_t.
+#define ARCHI_POINTER_DATA_TAG__RCPOINTER   0x21 ///< Data type tag for archi_rcpointer_t.
 
-#define ARCHI_POINTER_FUNC_TAG__STRING_COMP 0x05 ///< Function type tag for archi_string_comp_func_t.
+#define ARCHI_POINTER_DATA_TAG__KVLIST      0x2  ///< Data type tag for archi_kvlist_t.
+#define ARCHI_POINTER_DATA_TAG__KRCVLIST    0x42 ///< Data type tag for archi_krcvlist_t.
+
+#define ARCHI_POINTER_DATA_TAG__DPTR_ARRAY  0x40000000000000 ///< Data type tag for struct archi_dptr_array.
+
+#define ARCHI_POINTER_FUNC_TAG__STRING_COMP 0x1 ///< Function type tag for archi_string_comp_func_t.
 
 #endif // _ARCHI_BASE_TAG_DEF_H_
 

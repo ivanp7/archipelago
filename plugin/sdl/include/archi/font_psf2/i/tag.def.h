@@ -27,13 +27,10 @@
 #ifndef _ARCHI_FONT_PSF2_API_TAG_DEF_H_
 #define _ARCHI_FONT_PSF2_API_TAG_DEF_H_
 
-#include "archi/font_psf2/i/font.def.h"
-
-
 /**
  * @brief Data type tag for archi_font_psf2_t.
  */
-#define ARCHI_POINTER_DATA_TAG__FONT_PSF2   ARCHI_FONT_PSF2_MAGIC
+#define ARCHI_POINTER_DATA_TAG__FONT_PSF2   0x998
 
 #endif // _ARCHI_FONT_PSF2_API_TAG_DEF_H_
 

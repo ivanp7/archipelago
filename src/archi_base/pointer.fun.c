@@ -99,7 +99,7 @@ archi_pointer_attr__pdata(
 
     // Compute the stride width attribute
     archi_pointer_attr_t attr_stride_width = stride_width;
-    attr_stride_width <<= ARCHI_POINTER_ATTR_OFFSET__STRIDE_WIDTH;
+    attr_stride_width <<= ARCHI_POINTER_ATTR_OFFSET__PDATA_N_WIDTH;
 
     // Compute the stride/alignment attribute
     archi_pointer_attr_t attr_stride_over_alignment = stride / alignment - 1;
@@ -120,7 +120,10 @@ archi_pointer_attr__cdata(
     if (tag > ARCHI_POINTER_DATA_TAG_MAX)
         return -1;
 
-    return (~tag) & MASK(ARCHI_POINTER_ATTR_OFFSET__TYPE);
+    return (MASK(ARCHI_POINTER_ATTR_BITWIDTH__SHAPE
+                + ARCHI_POINTER_ATTR_BITWIDTH__PDATA_N_WIDTH
+                - ARCHI_POINTER_ATTR_BITWIDTH__DATA_TAG)
+            << ARCHI_POINTER_ATTR_BITWIDTH__DATA_TAG) | tag;
 }
 
 archi_pointer_attr_t
@@ -173,10 +176,10 @@ archi_pointer_attr_unpk__pdata(
     }
 
     // Extract stride attribute bit width
-    int stride_width = (attr >> ARCHI_POINTER_ATTR_OFFSET__STRIDE_WIDTH) &
-        MASK(ARCHI_POINTER_ATTR_BITWIDTH__STRIDE_WIDTH);
+    int stride_width = (attr >> ARCHI_POINTER_ATTR_OFFSET__PDATA_N_WIDTH) &
+        MASK(ARCHI_POINTER_ATTR_BITWIDTH__PDATA_N_WIDTH);
 
-    if (stride_width >= (int)ARCHI_POINTER_ATTR_BITWIDTH__SIZE)
+    if (stride_width >= (int)ARCHI_POINTER_ATTR_BITWIDTH__SHAPE)
     {
         ARCHI_ERROR_SET(ARCHI__ECONSTRAINT, "pointer data type is complex (expected primitive)");
         return false;
@@ -221,10 +224,11 @@ archi_pointer_attr_unpk__cdata(
         return false;
     }
 
-    // Extract complex data type tag
-    archi_pointer_attr_t tag = (~attr) & MASK(ARCHI_POINTER_ATTR_OFFSET__TYPE);
+    // Extract stride attribute bit width
+    int stride_width = (attr >> ARCHI_POINTER_ATTR_OFFSET__PDATA_N_WIDTH) &
+        MASK(ARCHI_POINTER_ATTR_BITWIDTH__PDATA_N_WIDTH);
 
-    if (tag > ARCHI_POINTER_DATA_TAG_MAX)
+    if (stride_width < (int)ARCHI_POINTER_ATTR_BITWIDTH__SHAPE)
     {
         ARCHI_ERROR_SET(ARCHI__ECONSTRAINT, "pointer data type is primitive (expected complex)");
         return false;
@@ -232,7 +236,11 @@ archi_pointer_attr_unpk__cdata(
 
     // Write tag to output parameter
     if (out_tag != NULL)
+    {
+        archi_pointer_attr_t tag = attr & MASK(ARCHI_POINTER_ATTR_BITWIDTH__DATA_TAG);
+
         *out_tag = tag;
+    }
 
     ARCHI_ERROR_RESET();
     return true;
@@ -254,7 +262,7 @@ archi_pointer_attr_unpk__func(
     // Write attributes to output parameters
     if (out_tag != NULL)
     {
-        archi_pointer_attr_t tag = attr & MASK(ARCHI_POINTER_ATTR_OFFSET__TYPE);
+        archi_pointer_attr_t tag = attr & MASK(ARCHI_POINTER_ATTR_BITWIDTH__FUNC_TAG);
 
         *out_tag = tag;
     }
@@ -272,13 +280,27 @@ archi_pointer_attr_compatible(
 
     if (!ARCHI_POINTER_TO_FUNCTION(attr) && !ARCHI_POINTER_TO_FUNCTION(sample)) // both are data types
     {
-        if ((attr & ~ARCHI_POINTER_TYPE_MASK) == (sample & ~ARCHI_POINTER_TYPE_MASK)) // quick test
+        if ((attr & ~ARCHI_POINTER_ATTR_MASK__TYPE) == (sample & ~ARCHI_POINTER_ATTR_MASK__TYPE)) // quick check if attributes are the same
             return true;
 
         bool attr_complex = archi_pointer_attr_unpk__cdata(attr, &attr_tag, NULL);
         bool sample_complex = archi_pointer_attr_unpk__cdata(sample, &sample_tag, NULL);
 
-        if (!attr_complex && !sample_complex) // both are primitive data types
+        if ((attr_complex && !attr_tag) || (sample_complex && !sample_tag)) // wildcard
+            return true; // wildcard is compatible with any data type, primitive or complex
+
+        if (attr_complex && sample_complex) // both are complex data types
+        {
+            if (!attr_tag || !sample_tag) // wildcard
+                return true;
+
+            int mask_width = bitwidth_of(sample_tag) + ARCHI_POINTER_ATTR_BITWIDTH__DATA_TAG_SEPARATOR;
+            if (mask_width > (int)ARCHI_POINTER_ATTR_BITWIDTH__DATA_TAG)
+                mask_width = ARCHI_POINTER_ATTR_BITWIDTH__DATA_TAG;
+
+            return ((attr_tag ^ sample_tag) & MASK(mask_width)) == 0;
+        }
+        else if (!attr_complex && !sample_complex) // both are primitive data types
         {
             size_t attr_length, attr_stride, attr_alignment;
             size_t sample_length, sample_stride, sample_alignment;
@@ -290,21 +312,20 @@ archi_pointer_attr_compatible(
                 (attr_alignment == sample_alignment) &&
                 (attr_length >= sample_length);
         }
-        else if (attr_complex && sample_complex) // both complex data types
-            return (attr_tag == sample_tag) || !attr_tag || !sample_tag;
-        else if ((attr_complex && !attr_tag) || (sample_complex && !sample_tag)) // one complex with tag #0, another - primitive
-            return true; // tag #0 is compatible with any data type
-        else // mismatched types
+        else // one type is complex, another is primitive
             return false;
     }
-    else if (ARCHI_POINTER_TO_FUNCTION(attr) && ARCHI_POINTER_TO_FUNCTION(sample)) // both function types
+    else if (ARCHI_POINTER_TO_FUNCTION(attr) && ARCHI_POINTER_TO_FUNCTION(sample)) // both are function types
     {
         archi_pointer_attr_unpk__func(attr, &attr_tag, NULL);
         archi_pointer_attr_unpk__func(sample, &sample_tag, NULL);
 
-        return (attr_tag == sample_tag) || !attr_tag || !sample_tag;
+        if (!attr_tag || !sample_tag) // wildcard
+            return true;
+
+        return attr_tag == sample_tag;
     }
-    else // mismatched types
+    else // one type is data, another is function
         return false;
 }
 
@@ -393,7 +414,7 @@ archi_rcpointer_memcopy(
     archi_rcpointer_t copy = source;
 
     // Change pointer type
-    copy.attr &= ~ARCHI_POINTER_TYPE_MASK;
+    copy.attr &= ~ARCHI_POINTER_ATTR_MASK__TYPE;
     copy.attr |= ARCHI_POINTER_TYPE__DATA_WRITABLE;
 
     if (source.ptr != NULL)
