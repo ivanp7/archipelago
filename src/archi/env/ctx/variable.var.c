@@ -161,7 +161,7 @@ ARCHI_CONTEXT_SET_FUNC(archi_context_set__env_variable)
 
         ARCHI_POINTER_NULLIFY_EMPTY(value);
 
-        value = archi_rcpointer_own_disown(value, *context, ARCHI_ERROR_PARAM);
+        value = archi_rcpointer_replace(value, *context, ARCHI_ERROR_PARAM);
         if (!value.attr)
             return;
 

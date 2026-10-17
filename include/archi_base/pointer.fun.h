@@ -242,7 +242,7 @@ archi_rcpointer_disown(
  * @return Pointer to claimed entity, or null pointer with attributes == 0 in case of error.
  */
 archi_rcpointer_t
-archi_rcpointer_own_disown(
+archi_rcpointer_replace(
         archi_rcpointer_t owned_entity, ///< [in] Owned entity.
         archi_rcpointer_t disowned_entity, ///< [in] Disowned entity.
         ARCHI_ERROR_PARAM_DECL ///< [out] Error.

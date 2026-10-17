@@ -376,7 +376,7 @@ ARCHI_CONTEXT_SET_FUNC(archi_context_set__dexgraph_node)
             return;
         }
 
-        value = archi_rcpointer_own_disown(value, context_data->ref_sequence_func[index],
+        value = archi_rcpointer_replace(value, context_data->ref_sequence_func[index],
                 ARCHI_ERROR_PARAM);
         if (!value.attr)
             return;
@@ -407,7 +407,7 @@ ARCHI_CONTEXT_SET_FUNC(archi_context_set__dexgraph_node)
             return;
         }
 
-        value = archi_rcpointer_own_disown(value, context_data->ref_sequence_data[index],
+        value = archi_rcpointer_replace(value, context_data->ref_sequence_data[index],
                 ARCHI_ERROR_PARAM);
         if (!value.attr)
             return;
@@ -431,7 +431,7 @@ ARCHI_CONTEXT_SET_FUNC(archi_context_set__dexgraph_node)
             return;
         }
 
-        value = archi_rcpointer_own_disown(value, context_data->ref_transition_func,
+        value = archi_rcpointer_replace(value, context_data->ref_transition_func,
                 ARCHI_ERROR_PARAM);
         if (!value.attr)
             return;
@@ -454,7 +454,7 @@ ARCHI_CONTEXT_SET_FUNC(archi_context_set__dexgraph_node)
             return;
         }
 
-        value = archi_rcpointer_own_disown(value, context_data->ref_transition_data,
+        value = archi_rcpointer_replace(value, context_data->ref_transition_data,
                 ARCHI_ERROR_PARAM);
         if (!value.attr)
             return;
@@ -478,7 +478,7 @@ ARCHI_CONTEXT_SET_FUNC(archi_context_set__dexgraph_node)
             return;
         }
 
-        value = archi_rcpointer_own_disown(value, context_data->ref_branch_array,
+        value = archi_rcpointer_replace(value, context_data->ref_branch_array,
                 ARCHI_ERROR_PARAM);
         if (!value.attr)
             return;
@@ -687,7 +687,7 @@ ARCHI_CONTEXT_SET_FUNC(archi_context_set__dexgraph_node_array)
             return;
         }
 
-        value = archi_rcpointer_own_disown(value, context_data->ref_node[index],
+        value = archi_rcpointer_replace(value, context_data->ref_node[index],
                 ARCHI_ERROR_PARAM);
         if (!value.attr)
             return;

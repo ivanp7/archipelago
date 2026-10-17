@@ -238,7 +238,7 @@ archi_hashmap_set(
             return false;
         }
 
-        value = archi_rcpointer_own_disown(value, node->value, ARCHI_ERROR_PARAM);
+        value = archi_rcpointer_replace(value, node->value, ARCHI_ERROR_PARAM);
         if (!value.attr)
             return false;
 
@@ -366,7 +366,7 @@ archi_hashmap_traverse(
                 break;
 
             case ARCHI_HASHMAP_TRAV_SET:
-                action.new_value = archi_rcpointer_own_disown(action.new_value, node->value,
+                action.new_value = archi_rcpointer_replace(action.new_value, node->value,
                         ARCHI_ERROR_PARAM);
                 if (!action.new_value.attr)
                     return false;

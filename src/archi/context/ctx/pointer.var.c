@@ -121,7 +121,7 @@ ARCHI_CONTEXT_SET_FUNC(archi_context_set__pointer)
             return;
         }
 
-        value = archi_rcpointer_own_disown(value, *context, ARCHI_ERROR_PARAM);
+        value = archi_rcpointer_replace(value, *context, ARCHI_ERROR_PARAM);
         if (!value.attr)
             return;
 
@@ -261,7 +261,7 @@ ARCHI_CONTEXT_SET_FUNC(archi_context_set__dpointer)
             return;
         }
 
-        value = archi_rcpointer_own_disown(value, *context, ARCHI_ERROR_PARAM);
+        value = archi_rcpointer_replace(value, *context, ARCHI_ERROR_PARAM);
         if (!value.attr)
             return;
 
@@ -889,7 +889,7 @@ ARCHI_CONTEXT_SET_FUNC(archi_context_set__pdpointer)
             return;
         }
 
-        value = archi_rcpointer_own_disown(value, *context, ARCHI_ERROR_PARAM);
+        value = archi_rcpointer_replace(value, *context, ARCHI_ERROR_PARAM);
         if (!value.attr)
             return;
 
@@ -1210,7 +1210,7 @@ ARCHI_CONTEXT_SET_FUNC(archi_context_set__cdpointer)
             return;
         }
 
-        value = archi_rcpointer_own_disown(value, *context, ARCHI_ERROR_PARAM);
+        value = archi_rcpointer_replace(value, *context, ARCHI_ERROR_PARAM);
         if (!value.attr)
             return;
 
@@ -1403,7 +1403,7 @@ ARCHI_CONTEXT_SET_FUNC(archi_context_set__fpointer)
             return;
         }
 
-        value = archi_rcpointer_own_disown(value, *context, ARCHI_ERROR_PARAM);
+        value = archi_rcpointer_replace(value, *context, ARCHI_ERROR_PARAM);
         if (!value.attr)
             return;
 

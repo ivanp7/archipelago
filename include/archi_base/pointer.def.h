@@ -255,7 +255,8 @@ enum {
  * @brief Check if pointer is null.
  */
 #define ARCHI_POINTER_IS_NULL(pointer)              \
-    ((ARCHI_POINTER_TO_FUNCTION((pointer).attr) ? (pointer).fptr == NULL : (pointer).ptr == NULL))
+    ((ARCHI_POINTER_TO_FUNCTION((pointer).attr) ?   \
+      (pointer).fptr == NULL : (pointer).ptr == NULL))
 
 /**
  * @brief Unset pointer address if it is primitive data of zero length.

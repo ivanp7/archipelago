@@ -476,7 +476,7 @@ archi_rcpointer_disown(
 }
 
 archi_rcpointer_t
-archi_rcpointer_own_disown(
+archi_rcpointer_replace(
         archi_rcpointer_t owned_entity,
         archi_rcpointer_t disowned_entity,
         ARCHI_ERROR_PARAM_DECL)

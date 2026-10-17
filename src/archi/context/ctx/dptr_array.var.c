@@ -268,7 +268,7 @@ ARCHI_CONTEXT_SET_FUNC(archi_context_set__dptr_array)
             return;
         }
 
-        value = archi_rcpointer_own_disown(value, context_data->ref_element[index], ARCHI_ERROR_PARAM);
+        value = archi_rcpointer_replace(value, context_data->ref_element[index], ARCHI_ERROR_PARAM);
         if (!value.attr)
             return;
 
