@@ -24,6 +24,7 @@
  */
 
 #include "archi_app/registry.fun.h"
+#include "archi_app/tag.def.h"
 #include "archi/context/i/registry.fun.h"
 #include "archi/context/i/tag.def.h"
 #include "archi/context/ctx/plist.var.h"
@@ -152,12 +153,12 @@ archi_print_pointer(
             else
                 mem_type = "on stack";
 
-            archi_print("data, %s, tag = %llu",
+            archi_print("data, %s, tag = %#llX",
                     mem_type, (unsigned long long)tag);
         }
         else if (archi_pointer_attr_unpk__func(value.attr, &tag, NULL))
         {
-            archi_print("function, tag = %llu",
+            archi_print("function, tag = %#llX",
                     (unsigned long long)tag);
         }
         else // must never happen
@@ -283,19 +284,22 @@ archi_print_params(
 
 /*****************************************************************************/
 
-#define OPERATION_PREAMBLE(data_type)                                                                   \
+#define OPERATION_PREAMBLE(data_type, data_tag)                                                         \
     (void) ref_count;                                                                                   \
-    if (!archi_pointer_attr_compatible(data.attr, ARCHI_POINTER_ATTR__PDATA(1, data_type))) {       \
-        ARCHI_ERROR_SET(ARCHI__ECONSTRAINT, "registry operation data has incorrect type"); return; }    \
-    else if (data.ptr == NULL) {                                                                        \
-        ARCHI_ERROR_SET(ARCHI__ECONSTRAINT, "registry operation data pointer is NULL"); return; }       \
+    archi_print_pointer("<op.data>", data);                                                             \
+    if (!archi_pointer_attr_compatible(data.attr, archi_pointer_attr__cdata((data_tag)))) {             \
+        ARCHI_ERROR_SET(ARCHI__ECONSTRAINT,                                                             \
+                "registry operation data has incorrect type, want tag = %#llX",                         \
+                (unsigned long long)(data_tag)); return; }                                              \
     else if (!archi_pointer_valid(data, NULL)) {                                                        \
         ARCHI_ERROR_SET(ARCHI__ECONSTRAINT, "registry operation data pointer is invalid"); return; }    \
+    else if (data.ptr == NULL) {                                                                        \
+        ARCHI_ERROR_SET(ARCHI__ECONSTRAINT, "registry operation data pointer is NULL"); return; }       \
     const data_type *op_data = data.ptr;
 
 ARCHI_APP_REGISTRY_OPERATION_FUNC(archi_app_registry_op__delete)
 {
-    OPERATION_PREAMBLE(archi_app_registry_op_data__delete_t);
+    OPERATION_PREAMBLE(archi_app_registry_op_data__delete_t, ARCHI_POINTER_DATA_TAG__REGISTRY_OP_DATA__DELETE);
 
     if (registry == NULL)
     {
@@ -313,7 +317,7 @@ ARCHI_APP_REGISTRY_OPERATION_FUNC(archi_app_registry_op__delete)
 
 ARCHI_APP_REGISTRY_OPERATION_FUNC(archi_app_registry_op__alias)
 {
-    OPERATION_PREAMBLE(archi_app_registry_op_data__alias_t);
+    OPERATION_PREAMBLE(archi_app_registry_op_data__alias_t, ARCHI_POINTER_DATA_TAG__REGISTRY_OP_DATA__ALIAS);
 
     if (registry == NULL)
     {
@@ -338,7 +342,7 @@ ARCHI_APP_REGISTRY_OPERATION_FUNC(archi_app_registry_op__alias)
 
 ARCHI_APP_REGISTRY_OPERATION_FUNC(archi_app_registry_op__create_as)
 {
-    OPERATION_PREAMBLE(archi_app_registry_op_data__create_as_t);
+    OPERATION_PREAMBLE(archi_app_registry_op_data__create_as_t, ARCHI_POINTER_DATA_TAG__REGISTRY_OP_DATA__CREATE_AS);
 
     if (registry == NULL)
     {
@@ -380,7 +384,7 @@ ARCHI_APP_REGISTRY_OPERATION_FUNC(archi_app_registry_op__create_as)
 
 ARCHI_APP_REGISTRY_OPERATION_FUNC(archi_app_registry_op__create_from)
 {
-    OPERATION_PREAMBLE(archi_app_registry_op_data__create_from_t);
+    OPERATION_PREAMBLE(archi_app_registry_op_data__create_from_t, ARCHI_POINTER_DATA_TAG__REGISTRY_OP_DATA__CREATE_FROM);
 
     if (registry == NULL)
     {
@@ -424,7 +428,7 @@ ARCHI_APP_REGISTRY_OPERATION_FUNC(archi_app_registry_op__create_from)
 
 ARCHI_APP_REGISTRY_OPERATION_FUNC(archi_app_registry_op__create_plist)
 {
-    OPERATION_PREAMBLE(archi_app_registry_op_data__create_plist_t);
+    OPERATION_PREAMBLE(archi_app_registry_op_data__create_plist_t, ARCHI_POINTER_DATA_TAG__REGISTRY_OP_DATA__CREATE_PLIST);
 
     if (registry == NULL)
     {
@@ -472,7 +476,7 @@ ARCHI_APP_REGISTRY_OPERATION_FUNC(archi_app_registry_op__create_plist)
 
 ARCHI_APP_REGISTRY_OPERATION_FUNC(archi_app_registry_op__create_ptr)
 {
-    OPERATION_PREAMBLE(archi_app_registry_op_data__create_ptr_t);
+    OPERATION_PREAMBLE(archi_app_registry_op_data__create_ptr_t, ARCHI_POINTER_DATA_TAG__REGISTRY_OP_DATA__CREATE_PTR);
 
     if (registry == NULL)
     {
@@ -512,7 +516,7 @@ ARCHI_APP_REGISTRY_OPERATION_FUNC(archi_app_registry_op__create_ptr)
 
 ARCHI_APP_REGISTRY_OPERATION_FUNC(archi_app_registry_op__create_dptr_array)
 {
-    OPERATION_PREAMBLE(archi_app_registry_op_data__create_dptr_array_t);
+    OPERATION_PREAMBLE(archi_app_registry_op_data__create_dptr_array_t, ARCHI_POINTER_DATA_TAG__REGISTRY_OP_DATA__CREATE_DPTR_ARRAY);
 
     if (registry == NULL)
     {
@@ -557,7 +561,7 @@ ARCHI_APP_REGISTRY_OPERATION_FUNC(archi_app_registry_op__create_dptr_array)
 
 ARCHI_APP_REGISTRY_OPERATION_FUNC(archi_app_registry_op__invoke)
 {
-    OPERATION_PREAMBLE(archi_app_registry_op_data__invoke_t);
+    OPERATION_PREAMBLE(archi_app_registry_op_data__invoke_t, ARCHI_POINTER_DATA_TAG__REGISTRY_OP_DATA__INVOKE);
 
     if (registry == NULL)
     {
@@ -593,7 +597,7 @@ ARCHI_APP_REGISTRY_OPERATION_FUNC(archi_app_registry_op__invoke)
 
 ARCHI_APP_REGISTRY_OPERATION_FUNC(archi_app_registry_op__unassign)
 {
-    OPERATION_PREAMBLE(archi_app_registry_op_data__unassign_t);
+    OPERATION_PREAMBLE(archi_app_registry_op_data__unassign_t, ARCHI_POINTER_DATA_TAG__REGISTRY_OP_DATA__UNASSIGN);
 
     if (registry == NULL)
     {
@@ -612,7 +616,7 @@ ARCHI_APP_REGISTRY_OPERATION_FUNC(archi_app_registry_op__unassign)
 
 ARCHI_APP_REGISTRY_OPERATION_FUNC(archi_app_registry_op__assign)
 {
-    OPERATION_PREAMBLE(archi_app_registry_op_data__assign_t);
+    OPERATION_PREAMBLE(archi_app_registry_op_data__assign_t, ARCHI_POINTER_DATA_TAG__REGISTRY_OP_DATA__ASSIGN);
 
     if (registry == NULL)
     {
@@ -633,7 +637,7 @@ ARCHI_APP_REGISTRY_OPERATION_FUNC(archi_app_registry_op__assign)
 
 ARCHI_APP_REGISTRY_OPERATION_FUNC(archi_app_registry_op__assign_slot)
 {
-    OPERATION_PREAMBLE(archi_app_registry_op_data__assign_slot_t);
+    OPERATION_PREAMBLE(archi_app_registry_op_data__assign_slot_t, ARCHI_POINTER_DATA_TAG__REGISTRY_OP_DATA__ASSIGN_SLOT);
 
     if (registry == NULL)
     {
@@ -655,7 +659,7 @@ ARCHI_APP_REGISTRY_OPERATION_FUNC(archi_app_registry_op__assign_slot)
 
 ARCHI_APP_REGISTRY_OPERATION_FUNC(archi_app_registry_op__assign_slot_weak)
 {
-    OPERATION_PREAMBLE(archi_app_registry_op_data__assign_slot_t);
+    OPERATION_PREAMBLE(archi_app_registry_op_data__assign_slot_t, ARCHI_POINTER_DATA_TAG__REGISTRY_OP_DATA__ASSIGN_SLOT);
 
     if (registry == NULL)
     {
@@ -677,7 +681,7 @@ ARCHI_APP_REGISTRY_OPERATION_FUNC(archi_app_registry_op__assign_slot_weak)
 
 ARCHI_APP_REGISTRY_OPERATION_FUNC(archi_app_registry_op__assign_call)
 {
-    OPERATION_PREAMBLE(archi_app_registry_op_data__assign_call_t);
+    OPERATION_PREAMBLE(archi_app_registry_op_data__assign_call_t, ARCHI_POINTER_DATA_TAG__REGISTRY_OP_DATA__ASSIGN_CALL);
 
     if (registry == NULL)
     {
@@ -716,7 +720,7 @@ ARCHI_APP_REGISTRY_OPERATION_FUNC(archi_app_registry_op__assign_call)
 
 ARCHI_APP_REGISTRY_OPERATION_FUNC(archi_app_registry_op__assign_call_weak)
 {
-    OPERATION_PREAMBLE(archi_app_registry_op_data__assign_call_t);
+    OPERATION_PREAMBLE(archi_app_registry_op_data__assign_call_t, ARCHI_POINTER_DATA_TAG__REGISTRY_OP_DATA__ASSIGN_CALL);
 
     if (registry == NULL)
     {

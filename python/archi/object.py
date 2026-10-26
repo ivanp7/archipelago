@@ -1043,6 +1043,7 @@ class RegistryOpData_delete(ComplexData):
     """Registry operation data: delete a context.
     """
     TYPE = typ.archi_app_registry_op_data__delete_t
+    TAG = typ.archi_app_registry_op_data__delete_t.TAG
     REFS = {'key': String}
 
     def _write_fields(self, cobject, /):
@@ -1058,6 +1059,7 @@ class RegistryOpData_alias(ComplexData):
     """Registry operation data: create a context alias.
     """
     TYPE = typ.archi_app_registry_op_data__alias_t
+    TAG = typ.archi_app_registry_op_data__alias_t.TAG
     REFS = {'key': String,
             'original_key': String}
 
@@ -1076,6 +1078,7 @@ class RegistryOpData_create_as(ComplexData):
     """Registry operation data: create a context using interface of another context.
     """
     TYPE = typ.archi_app_registry_op_data__create_as_t
+    TAG = typ.archi_app_registry_op_data__create_as_t.TAG
     REFS = {'key': String,
             'sample_key': String,
             'init_params_context_key': String,
@@ -1100,6 +1103,7 @@ class RegistryOpData_create_from(ComplexData):
     """Registry operation data: create a context using interface obtained from another context slot.
     """
     TYPE = typ.archi_app_registry_op_data__create_from_t
+    TAG = typ.archi_app_registry_op_data__create_from_t.TAG
     REFS = {'key': String,
             'source_key': String,
             'source_slot_name': String,
@@ -1132,6 +1136,7 @@ class RegistryOpData_create_plist(ComplexData):
     """Registry operation data: create a parameter list context.
     """
     TYPE = typ.archi_app_registry_op_data__create_plist_t
+    TAG = typ.archi_app_registry_op_data__create_plist_t.TAG
     REFS = {'key': String,
             'params_context_key': String,
             'params_list': KeyValueList}
@@ -1153,6 +1158,7 @@ class RegistryOpData_create_ptr(ComplexData):
     """Registry operation data: create a pointer context.
     """
     TYPE = typ.archi_app_registry_op_data__create_ptr_t
+    TAG = typ.archi_app_registry_op_data__create_ptr_t.TAG
     REFS = {'key': String,
             'pointee': Object}
 
@@ -1171,6 +1177,7 @@ class RegistryOpData_create_dptr_array(ComplexData):
     """Registry operation data: create a data pointer array context.
     """
     TYPE = typ.archi_app_registry_op_data__create_dptr_array_t
+    TAG = typ.archi_app_registry_op_data__create_dptr_array_t.TAG
     REFS = {'key': String}
 
     def _write_fields(self, cobject, /):
@@ -1186,6 +1193,7 @@ class RegistryOpData_invoke(ComplexData):
     """Registry operation data: invoke context call.
     """
     TYPE = typ.archi_app_registry_op_data__invoke_t
+    TAG = typ.archi_app_registry_op_data__invoke_t.TAG
     REFS = {'key': String,
             'slot_name': String,
             'slot_indices': ContextSlotIndices,
@@ -1215,6 +1223,7 @@ class RegistryOpData_unassign(ComplexData):
     """Registry operation data: unset context slot.
     """
     TYPE = typ.archi_app_registry_op_data__unassign_t
+    TAG = typ.archi_app_registry_op_data__unassign_t.TAG
     REFS = {'key': String,
             'slot_name': String,
             'slot_indices': ContextSlotIndices}
@@ -1237,6 +1246,7 @@ class RegistryOpData_assign(ComplexData):
     """Registry operation data: set context slot to value.
     """
     TYPE = typ.archi_app_registry_op_data__assign_t
+    TAG = typ.archi_app_registry_op_data__assign_t.TAG
     REFS = {'key': String,
             'slot_name': String,
             'slot_indices': ContextSlotIndices,
@@ -1262,6 +1272,7 @@ class RegistryOpData_assign_slot(ComplexData):
     """Registry operation data: set context slot to value of another context slot.
     """
     TYPE = typ.archi_app_registry_op_data__assign_slot_t
+    TAG = typ.archi_app_registry_op_data__assign_slot_t.TAG
     REFS = {'key': String,
             'slot_name': String,
             'slot_indices': ContextSlotIndices,
@@ -1294,6 +1305,7 @@ class RegistryOpData_assign_call(ComplexData):
     """Registry operation data: set context slot to result of another context call.
     """
     TYPE = typ.archi_app_registry_op_data__assign_call_t
+    TAG = typ.archi_app_registry_op_data__assign_call_t.TAG
     REFS = {'key': String,
             'slot_name': String,
             'slot_indices': ContextSlotIndices,

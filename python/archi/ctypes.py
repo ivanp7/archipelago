@@ -828,15 +828,33 @@ class archi_app_registry_op_data_params_t(c.Structure):
 # Registry operations: data for basic context registry operations
 ##############################################################################
 
+ARCHI_POINTER_DATA_TAG__REGISTRY_OP_DATA__DELETE = 0x1111
+ARCHI_POINTER_DATA_TAG__REGISTRY_OP_DATA__ALIAS = 0x1112
+ARCHI_POINTER_DATA_TAG__REGISTRY_OP_DATA__CREATE_AS = 0x1113
+ARCHI_POINTER_DATA_TAG__REGISTRY_OP_DATA__CREATE_FROM = 0x1114
+ARCHI_POINTER_DATA_TAG__REGISTRY_OP_DATA__CREATE_PLIST = 0x1115
+ARCHI_POINTER_DATA_TAG__REGISTRY_OP_DATA__CREATE_PTR = 0x1116
+ARCHI_POINTER_DATA_TAG__REGISTRY_OP_DATA__CREATE_DPTR_ARRAY = 0x1117
+ARCHI_POINTER_DATA_TAG__REGISTRY_OP_DATA__INVOKE = 0x1118
+ARCHI_POINTER_DATA_TAG__REGISTRY_OP_DATA__UNASSIGN = 0x1119
+ARCHI_POINTER_DATA_TAG__REGISTRY_OP_DATA__ASSIGN = 0x111A
+ARCHI_POINTER_DATA_TAG__REGISTRY_OP_DATA__ASSIGN_SLOT = 0x111B
+ARCHI_POINTER_DATA_TAG__REGISTRY_OP_DATA__ASSIGN_CALL = 0x111C
+
+
 class archi_app_registry_op_data__delete_t(c.Structure):
     """Registry operation data: delete a context.
     """
+    TAG = ARCHI_POINTER_DATA_TAG__REGISTRY_OP_DATA__DELETE
+
     _fields_ = [('key', c.c_char_p)]
 
 
 class archi_app_registry_op_data__alias_t(c.Structure):
     """Registry operation data: create a context alias.
     """
+    TAG = ARCHI_POINTER_DATA_TAG__REGISTRY_OP_DATA__ALIAS
+
     _fields_ = [('key', c.c_char_p),
                 ('original_key', c.c_char_p)]
 
@@ -844,6 +862,8 @@ class archi_app_registry_op_data__alias_t(c.Structure):
 class archi_app_registry_op_data__create_as_t(c.Structure):
     """Registry operation data: create a context using interface of another context.
     """
+    TAG = ARCHI_POINTER_DATA_TAG__REGISTRY_OP_DATA__CREATE_AS
+
     _fields_ = [('key', c.c_char_p),
                 ('sample_key', c.c_char_p),
                 ('init_params', archi_app_registry_op_data_params_t)]
@@ -852,6 +872,8 @@ class archi_app_registry_op_data__create_as_t(c.Structure):
 class archi_app_registry_op_data__create_from_t(c.Structure):
     """Registry operation data: create a context using interface obtained from another context slot.
     """
+    TAG = ARCHI_POINTER_DATA_TAG__REGISTRY_OP_DATA__CREATE_FROM
+
     _fields_ = [('key', c.c_char_p),
                 ('source_key', c.c_char_p),
                 ('source_slot', archi_context_slot_t),
@@ -861,6 +883,8 @@ class archi_app_registry_op_data__create_from_t(c.Structure):
 class archi_app_registry_op_data__create_plist_t(c.Structure):
     """Registry operation data: create a parameter list context.
     """
+    TAG = ARCHI_POINTER_DATA_TAG__REGISTRY_OP_DATA__CREATE_PLIST
+
     _fields_ = [('key', c.c_char_p),
                 ('params', archi_app_registry_op_data_params_t)]
 
@@ -868,6 +892,8 @@ class archi_app_registry_op_data__create_plist_t(c.Structure):
 class archi_app_registry_op_data__create_ptr_t(c.Structure):
     """Registry operation data: create a pointer context.
     """
+    TAG = ARCHI_POINTER_DATA_TAG__REGISTRY_OP_DATA__CREATE_PTR
+
     _fields_ = [('key', c.c_char_p),
                 ('pointee', archi_pointer_t)]
 
@@ -875,6 +901,8 @@ class archi_app_registry_op_data__create_ptr_t(c.Structure):
 class archi_app_registry_op_data__create_dptr_array_t(c.Structure):
     """Registry operation data: create a data pointer array context.
     """
+    TAG = ARCHI_POINTER_DATA_TAG__REGISTRY_OP_DATA__CREATE_DPTR_ARRAY
+
     _fields_ = [('key', c.c_char_p),
                 ('length', c.c_size_t)]
 
@@ -885,6 +913,8 @@ class archi_app_registry_op_data__create_dptr_array_t(c.Structure):
 class archi_app_registry_op_data__invoke_t(c.Structure):
     """Registry operation data: invoke context call.
     """
+    TAG = ARCHI_POINTER_DATA_TAG__REGISTRY_OP_DATA__INVOKE
+
     _fields_ = [('key', c.c_char_p),
                 ('slot', archi_context_slot_t),
                 ('call_params', archi_app_registry_op_data_params_t)]
@@ -893,6 +923,8 @@ class archi_app_registry_op_data__invoke_t(c.Structure):
 class archi_app_registry_op_data__unassign_t(c.Structure):
     """Registry operation data: unset context slot.
     """
+    TAG = ARCHI_POINTER_DATA_TAG__REGISTRY_OP_DATA__UNASSIGN
+
     _fields_ = [('key', c.c_char_p),
                 ('slot', archi_context_slot_t)]
 
@@ -900,6 +932,8 @@ class archi_app_registry_op_data__unassign_t(c.Structure):
 class archi_app_registry_op_data__assign_t(c.Structure):
     """Registry operation data: set context slot to value.
     """
+    TAG = ARCHI_POINTER_DATA_TAG__REGISTRY_OP_DATA__ASSIGN
+
     _fields_ = [('key', c.c_char_p),
                 ('slot', archi_context_slot_t),
                 ('value', archi_pointer_t)]
@@ -908,6 +942,8 @@ class archi_app_registry_op_data__assign_t(c.Structure):
 class archi_app_registry_op_data__assign_slot_t(c.Structure):
     """Registry operation data: set context slot to value of another context slot.
     """
+    TAG = ARCHI_POINTER_DATA_TAG__REGISTRY_OP_DATA__ASSIGN_SLOT
+
     _fields_ = [('key', c.c_char_p),
                 ('slot', archi_context_slot_t),
                 ('source_key', c.c_char_p),
@@ -917,6 +953,8 @@ class archi_app_registry_op_data__assign_slot_t(c.Structure):
 class archi_app_registry_op_data__assign_call_t(c.Structure):
     """Registry operation data: set context slot to result of another context call.
     """
+    TAG = ARCHI_POINTER_DATA_TAG__REGISTRY_OP_DATA__ASSIGN_CALL
+
     _fields_ = [('key', c.c_char_p),
                 ('slot', archi_context_slot_t),
                 ('source_key', c.c_char_p),
