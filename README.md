@@ -294,7 +294,7 @@ The empty slot has special properties:
 #### Context Interfaces
 
 A context type is defined by a *context interface*,
-which contains pointers to the following lifecycle and operational functions:
+which is a structure containing pointers to the following lifecycle and operational functions:
 * **Initialization**: Allocates and initializes public and private data of a context.
 * **Finalization**: Finalizes and deallocates public and private data of a context.
 * **Evaluation**: Implements *call* and *getter* slots.
@@ -317,21 +317,28 @@ all existing contexts, including itself.
     but actual deallocation is deferred until all references are released.
 
 The application manages context lifecycles and invocations
-through the following registry *operations*:
+through the following registry *operations*.
+
+* Operations on the context registry:
 
 | Category | Operation | Description | Context reference count |
 | -------- | --------- | ----------- | ----------------------- |
 | Deletion | `delete` | Removes a context. | Decremented |
-| Creation/insertion | `alias` | Creates an alternative key for an existing context. | Incremented |
+| Insertion | `alias` | Creates an alternative key for an existing context. | Incremented |
 | | `insert` | Inserts an existing context into the registry. | Incremented |
-| | `create` | Creates a new context using a specific *interface*. | Set to `1` |
+| Creation | `create` | Creates a new context using a specific *interface*. | Set to `1` |
 | | `create_as` | Creates a new context using the *interface* of another. | Set to `1` |
 | | `create_from` | Creates a context using an *interface* fetched from a slot. | Set to `1` |
-| Invocation | `invoke` | Executes a context call. | Unchanged |
-| Assignment | `unassign` | Unsets a specific context slot. | Unchanged |
-| | `assign` | Directly assigns a value to a slot. | Unchanged |
-| | `assign_slot` | Assigns a value from one slot/context to another. | Unchanged |
-| | `assign_call` | Sets a value returned by a call to a context slot. | Unchanged |
+
+* Operations on a context slot:
+
+| Category | Operation | Description |
+| -------- | --------- | ----------- |
+| Invocation | `invoke` | Executes a context call. |
+| Assignment | `unassign` | Unsets a specific context slot. |
+| | `assign` | Directly assigns a value to a context slot. |
+| | `assign_slot` | Assigns a value from one context slot to another. |
+| | `assign_call` | Sets a context call invocation result to a context slot. |
 
 ### Aggregate Objects
 
