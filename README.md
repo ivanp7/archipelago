@@ -641,11 +641,29 @@ Generic pointer is valid if it meets one of the following criteria:
 
 ## Memory-Mapped File Header for Pointer Support
 
-TODO
+Memory-mapped files can begin with a special header that enables the use of pointers within the file.
+This header contains the following fields:
+
+1. **Required Mapping Address**: The specific memory address where the header (and the subsequent file) must be located.
+2. **Payload Size**: The size of the file in bytes, excluding the header.
+
+Mapping a file to its specified address ensures that the memory region is predictable
+and that all internal pointers remain valid.
+
+When pointer support is enabled, the file is processed in two steps:
+
+1. **Probe**: The header is mapped to a temporary address to retrieve the required mapping address and the file size.
+    The remainder of the file is not yet mapped.
+2. **Placement**: The temporary mapping is removed, and the entire file is mapped at the required address.
 
 ## Application Input File Header
 
-TODO
+Every input file provided to the application must begin with a header containing the following fields:
+
+1. **Memory-Mapped File Header**: As described in the [Memory-Mapped File Header for Pointer Support](#memory-mapped-file-header-for-pointer-support) section.
+2. **Magic Bytes**: An 8-byte C-string `[archi]` (including the null-terminator).
+3. **Contents Pointer**: A pointer to a key-value list of the file's contents (non-reference-counted).
+    Keys within this list designate the types of values; duplicate keys are permitted.
 
 # Quick Start
 
