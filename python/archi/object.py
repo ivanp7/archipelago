@@ -1497,7 +1497,7 @@ class SignalSet(PrimitiveData):
     """Immutable representation of a set of POSIX signals.
     """
     # Input file contents key for signal sets
-    INPUT_FILE_KEY = 'signals'
+    INPUT_FILE_KEY = 'archi/sig'
 
     def __init__(self, cobject, /):
         """Initialize a representation of a set of POSIX signals.

@@ -409,7 +409,7 @@ class Registry:
                               signal_handler=ctx.SignalHandlerDataHashmapContext('archi.signal_handler'))
 
     # Input file contents key for lists of registry operations
-    INPUT_FILE_KEY = 'reg_ops'
+    INPUT_FILE_KEY = 'archi/ops'
 
     # Implementation class
     IMPL = _RegistryImpl

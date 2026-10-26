@@ -27,8 +27,8 @@
 #ifndef _ARCHI_APP_INPUT_FILE_DEF_H_
 #define _ARCHI_APP_INPUT_FILE_DEF_H_
 
-#define ARCHI_APP_INPUT_FILE_CONTENTS__OPERATIONS   "reg_ops" ///< File contents key: list of context registry operations.
-#define ARCHI_APP_INPUT_FILE_CONTENTS__SIGNALS      "signals" ///< File contents key: signal watch set.
+#define ARCHI_APP_INPUT_FILE_CONTENTS__OPERATIONS   "archi/ops" ///< File contents key: list of context registry operations.
+#define ARCHI_APP_INPUT_FILE_CONTENTS__SIGNALS      "archi/sig" ///< File contents key: signal watch set.
 
 #endif // _ARCHI_APP_INPUT_FILE_DEF_H_
 

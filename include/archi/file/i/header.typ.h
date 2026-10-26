@@ -38,7 +38,7 @@
  */
 typedef struct archi_file_ptr_support_header {
     void *addr;  ///< Address of the mapped memory starting location.
-    size_t size; ///< Size of the memory in bytes, excluding the header.
+    size_t size; ///< Payload size in bytes: size of the memory excluding the header.
 } archi_file_ptr_support_header_t;
 
 #endif // _ARCHI_FILE_API_HEADER_TYP_H_
