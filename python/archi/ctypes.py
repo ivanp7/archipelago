@@ -176,7 +176,7 @@ class archi_pointer_attr_t(c.c_uint64):
             tag = self.tag
             sample_tag = sample.tag
 
-            if tag == 0 or sample_tag == 0: # wildcard
+            if not tag or not sample_tag: # wildcard
                 return True
 
             if tag is not None and sample_tag is not None:
@@ -195,7 +195,7 @@ class archi_pointer_attr_t(c.c_uint64):
             tag = self.tag
             sample_tag = sample.tag
 
-            if tag == 0 or sample_tag == 0: # wildcard
+            if not tag or not sample_tag: # wildcard
                 return True
 
             return tag == sample_tag
@@ -247,9 +247,10 @@ class archi_pointer_attr_t(c.c_uint64):
 
         attr_memtype = cls.DATA_WRITABLE if writable \
                 else cls.DATA_READONLY
+        attr_complex_flag = ((1 << (cls.ATTR_BITS - cls.DATA_TAG_BITS)) - 1) << cls.DATA_TAG_BITS
         attr_tag = tag
 
-        return cls(attr_memtype | attr_tag)
+        return cls(attr_memtype | attr_complex_flag | attr_tag)
 
     @classmethod
     def function(cls, tag=0):

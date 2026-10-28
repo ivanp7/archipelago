@@ -316,7 +316,7 @@ class Context(_ContextTyping):
         return object.__getattribute__(context, '_').key
 
     def __repr__(self, /):
-        return repr(object.__getattribute__(context, '_'))
+        return repr(object.__getattribute__(self, '_'))
 
     def __eq__(self, other, /):
         if not other.__class__ is self.__class__:

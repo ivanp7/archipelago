@@ -400,6 +400,28 @@ exec_list(
             archi_log_debug(__func__, "     * [file #%zu, list #%zu, operation #%zu (%zu)] :: %s",
                     file_index, list_index, num_operations, archi_process.num_operations, operation_list->key);
 
+            if (ARCHI_POINTER_TO_FUNCTION(operation_list->value.attr))
+            {
+                archi_log_error(__func__, "Operation data pointer has a function type");
+                exit(EXIT_FAILURE);
+            }
+
+            // Log the operation type and data attributes
+            {
+                archi_pointer_attr_t tag;
+
+                if (archi_pointer_attr_unpk__cdata(operation_list->value.attr, &tag, NULL))
+                    archi_log_debug(__func__, "       operation data tag = %#llx", (unsigned long long)tag);
+                else
+                {
+                    size_t length, stride, alignment;
+                    archi_pointer_attr_unpk__pdata(operation_list->value.attr, &length, &stride, &alignment, NULL);
+
+                    archi_log_debug(__func__, "       operation data length = %zu, stride = %zu, alignment = %zu",
+                            length, stride, alignment);
+                }
+            }
+
             // Find the current operation function
             archi_app_registry_operation_func_t operation_fn = NULL;
             {

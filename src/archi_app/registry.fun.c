@@ -153,12 +153,12 @@ archi_print_pointer(
             else
                 mem_type = "on stack";
 
-            archi_print("data, %s, tag = %#llX",
+            archi_print("data, %s, tag = %#llx",
                     mem_type, (unsigned long long)tag);
         }
         else if (archi_pointer_attr_unpk__func(value.attr, &tag, NULL))
         {
-            archi_print("function, tag = %#llX",
+            archi_print("function, tag = %#llx",
                     (unsigned long long)tag);
         }
         else // must never happen
@@ -286,10 +286,9 @@ archi_print_params(
 
 #define OPERATION_PREAMBLE(data_type, data_tag)                                                         \
     (void) ref_count;                                                                                   \
-    archi_print_pointer("<op.data>", data);                                                             \
     if (!archi_pointer_attr_compatible(data.attr, archi_pointer_attr__cdata((data_tag)))) {             \
         ARCHI_ERROR_SET(ARCHI__ECONSTRAINT,                                                             \
-                "registry operation data has incorrect type, want tag = %#llX",                         \
+                "registry operation data has incorrect type, want tag = %#llx",                         \
                 (unsigned long long)(data_tag)); return; }                                              \
     else if (!archi_pointer_valid(data, NULL)) {                                                        \
         ARCHI_ERROR_SET(ARCHI__ECONSTRAINT, "registry operation data pointer is invalid"); return; }    \
