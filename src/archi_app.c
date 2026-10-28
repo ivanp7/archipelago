@@ -161,7 +161,7 @@ void
 print_logo(void);
 
 ///////////////////////////////////////////////////////////////////////////////
-// Bootstrapping & cleanup steps
+// Initialization & cleanup steps
 ///////////////////////////////////////////////////////////////////////////////
 
 static
@@ -227,9 +227,9 @@ main(
 
     parse_args(argc, argv);
 
-    ///////////////////////////////
-    // Early bootstrapping phase //
-    ///////////////////////////////
+    ////////////////////////////////
+    // Early initialization phase //
+    ////////////////////////////////
 
     // Initialize logging
     {
@@ -265,22 +265,22 @@ main(
 
     // Initialize environment global state
     {
-        archi_log_debug(__func__, "Initializing environment global state...");
+        archi_log_info(__func__, "Initializing global state for the environment...");
 
         if (!archi_app_env_initialize())
         {
-            archi_log_error(__func__, "Error: couldn't initialize environment global state.");
+            archi_log_error(__func__, "Error: couldn't initialize global state for the environment.");
             exit(EXIT_FAILURE);
         }
 
         archi_global_context_set__env(archi_app_env_global_context());
     }
 
-    /////////////////////////
-    // Bootstrapping phase //
-    /////////////////////////
+    //////////////////////////
+    // Initialization phase //
+    //////////////////////////
 
-    archi_log_info(__func__, "Bootstrapping the application...");
+    archi_log_notice(__func__, "Initializing the application...");
 
     open_and_map_input_files();
     create_context_registry();
@@ -291,11 +291,13 @@ main(
     // Execution phase //
     /////////////////////
 
+    archi_log_notice(__func__, "Executing the operations...");
+
     for (size_t i = 0; i < archi_process.args.num_inputs; i++)
     {
         if (!archi_process.args.dry_run)
         {
-            archi_log_debug(__func__, " * updating input file mapping contexts (current = #%zu) in the registry...", i);
+            archi_log_info(__func__, " * updating input file mapping contexts (current = #%zu) in the registry...", i);
 
             // Insert the previous input file context to the registry
             INSERT_CONTEXT(ARCHI_APP_REGISTRY_CONTEXT__INPUT_FILE_PREV,
@@ -318,7 +320,7 @@ main(
             // Disown the previous input file
             if (i > 0)
             {
-                archi_log_debug(__func__, " * disowning file mapping context #%zu...", i-1);
+                archi_log_info(__func__, " * disowning file mapping context #%zu...", i-1);
 
                 archi_context_finalize(archi_process.context.input_file[i-1]);
                 archi_process.context.input_file[i-1] = NULL;
@@ -330,7 +332,7 @@ main(
     {
         // Disown the last input file
         {
-            archi_log_debug(__func__, " * disowning file mapping context #%zu...", archi_process.args.num_inputs-1);
+            archi_log_info(__func__, " * disowning file mapping context #%zu...", archi_process.args.num_inputs-1);
 
             archi_context_finalize(archi_process.context.input_file[archi_process.args.num_inputs-1]);
             archi_process.context.input_file[archi_process.args.num_inputs-1] = NULL;
@@ -345,7 +347,7 @@ exec_file(
         archi_context_t file_context,
         size_t file_index)
 {
-    archi_log_debug(__func__, " * executing file #%zu ('%s')...", file_index,
+    archi_log_info(__func__, " * executing file #%zu ('%s')...", file_index,
             archi_process.args.input[file_index]);
 
     size_t num_operation_lists = 0; // number of traversed operation lists in the current file
@@ -375,7 +377,7 @@ exec_file(
             continue;
         }
 
-        archi_log_debug(__func__, "   * [file #%zu] executing operation list #%zu...",
+        archi_log_info(__func__, "   * [file #%zu] executing operation list #%zu...",
                 file_index, num_operation_lists - 1);
 
         // Execute the current operation list
@@ -397,8 +399,8 @@ exec_list(
     {
         if (operation_list->key != NULL)
         {
-            archi_log_debug(__func__, "     * [file #%zu, list #%zu, operation #%zu (%zu)] :: %s",
-                    file_index, list_index, num_operations, archi_process.num_operations, operation_list->key);
+            archi_log_info(__func__, "     * [operation #%zu (%zu)] :: %s",
+                    num_operations, archi_process.num_operations, operation_list->key);
 
             if (ARCHI_POINTER_TO_FUNCTION(operation_list->value.attr))
             {
@@ -443,12 +445,16 @@ exec_list(
                 // Log the current operation data
                 if (archi_print_lock(ARCHI_LOG_VERBOSITY__DEBUG))
                 {
+                    archi_print_color(ARCHI_LOG_COLOR_DEBUG);
+
                     INIT_ERROR();
                     /*********************************************/
                     operation_fn(NULL, operation_list->value, NULL,
                             &archi_process.error);
                     /*********************************************/
                     print_error();
+
+                    archi_print_color(ARCHI_COLOR_RESET);
 
                     archi_print_unlock();
 
@@ -476,7 +482,7 @@ exec_list(
                         operation_list->key);
         }
         else // no-op
-            archi_log_debug(__func__, "     * [file #%zu, list #%zu, operation #%zu (%zu)]",
+            archi_log_info(__func__, "     * [file #%zu, list #%zu, operation #%zu (%zu)]",
                     file_index, list_index, num_operations, archi_process.num_operations);
 
         // Increment operation counters
@@ -492,19 +498,19 @@ exit_clean(void) // is called on exit() or if main() returns
     // Finalization phase //
     ////////////////////////
 
-    archi_log_info(__func__, "Shutting down the application...");
+    archi_log_notice(__func__, "Shutting down the application...");
 
     finalize_signal_management();
     finalize_contexts();
 
     if (archi_global_context__env() != NULL)
     {
-        archi_log_debug(__func__, "Finalizing environment global state...");
+        archi_log_info(__func__, "Finalizing global state for the environment...");
 
         archi_app_env_finalize();
     }
 
-    archi_log_info(__func__, "The application has exited normally.");
+    archi_log_notice(__func__, "The application has exited normally.");
 
     archi_app_log_finalize();
 }
@@ -512,11 +518,11 @@ exit_clean(void) // is called on exit() or if main() returns
 void
 exit_quick(void) // is called on quick_exit()
 {
-    archi_log_info(__func__, "The application has exited without the finalization procedures.");
+    archi_log_notice(__func__, "The application has exited without the finalization procedures.");
 }
 
 ///////////////////////////////////////////////////////////////////////////////
-// Bootstrapping & cleanup steps
+// Initialization & cleanup steps
 ///////////////////////////////////////////////////////////////////////////////
 
 void
@@ -525,7 +531,7 @@ create_context_registry(void)
     if (archi_process.args.dry_run)
         return;
 
-    archi_log_debug(__func__, "Creating the context registry...");
+    archi_log_info(__func__, "Creating the context registry...");
 
     // Prepare context initialization parameters
     archi_hashmap_alloc_params_t hashmap_params = {
@@ -555,7 +561,7 @@ create_context_registry(void)
     if (archi_process.context.registry == NULL)
         exit(EXIT_FAILURE);
 
-    archi_log_debug(__func__, "Inserting the context registry into itself...");
+    archi_log_info(__func__, "Inserting the context registry into itself...");
 
     INSERT_CONTEXT(ARCHI_APP_REGISTRY_CONTEXT__REGISTRY, archi_process.context.registry);
 }
@@ -566,7 +572,7 @@ create_builtin_contexts(void)
     if (archi_process.args.dry_run)
         return;
 
-    archi_log_debug(__func__, "Creating the library handle context of the executable...");
+    archi_log_info(__func__, "Creating the library handle context of the executable...");
 
     archi_rcpointer_t interface =
         INTERFACE_PTR(archi_context_interface__library);
@@ -587,7 +593,7 @@ finalize_contexts(void)
 {
     if (archi_process.context.registry != NULL)
     {
-        archi_log_debug(__func__, "Finalizing context registry...");
+        archi_log_info(__func__, "Finalizing context registry...");
 
         // Remove all contexts from the registry
         archi_hashmap_traverse(archi_context_data(archi_process.context.registry).ptr,
@@ -601,7 +607,7 @@ finalize_contexts(void)
     {
         for (size_t i = 0; i < archi_process.args.num_inputs; i++)
         {
-            archi_log_debug(__func__, "Finalizing file #%zu mapping context...", i);
+            archi_log_info(__func__, "Finalizing file #%zu mapping context...", i);
 
             archi_context_finalize(archi_process.context.input_file[i]);
         }
@@ -719,7 +725,7 @@ void
 open_and_map_input_files(void)
 {
     // Allocate and initialize the array of input file contexts
-    archi_log_debug(__func__, "Allocating the array of input file contexts...");
+    archi_log_info(__func__, "Allocating the array of input file contexts...");
 
     archi_process.context.input_file = malloc(
             sizeof(*archi_process.context.input_file) * archi_process.args.num_inputs);
@@ -732,22 +738,22 @@ open_and_map_input_files(void)
     for (size_t i = 0; i < archi_process.args.num_inputs; i++)
         archi_process.context.input_file[i] = NULL;
 
-    archi_log_debug(__func__, "Opening and mapping input files...");
+    archi_log_info(__func__, "Opening and mapping input files...");
 
     for (size_t i = 0; i < archi_process.args.num_inputs; i++)
     {
         // Open input file
-        archi_log_debug(__func__, " * opening file #%zu ('%s')", i, archi_process.args.input[i]);
+        archi_log_info(__func__, " * opening file #%zu ('%s')", i, archi_process.args.input[i]);
         archi_file_descriptor_t fd = open_input_file(i);
 
         // Map input file to memory, creating a context
-        archi_log_debug(__func__, " * mapping file #%zu ('%s') into memory", i, archi_process.args.input[i]);
+        archi_log_info(__func__, " * mapping file #%zu ('%s') into memory", i, archi_process.args.input[i]);
         map_input_file(i, fd);
 
         // Check input file format
         archi_rcpointer_t input_file = archi_context_data(archi_process.context.input_file[i]);
 
-        archi_log_debug(__func__, " * checking format of file #%zu ('%s')", i, archi_process.args.input[i]);
+        archi_log_info(__func__, " * checking format of file #%zu ('%s')", i, archi_process.args.input[i]);
         check_input_file_format(input_file);
 
         // Log file address & size
@@ -781,7 +787,7 @@ bool
 prepare_signal_watch_set(void)
 {
     // Allocate signal watch set
-    archi_log_debug(__func__, "Allocating the signal watch set...");
+    archi_log_info(__func__, "Allocating the signal watch set...");
 
     archi_process.signal.watch_set = archi_signal_set_alloc();
     if (archi_process.signal.watch_set == NULL)
@@ -793,7 +799,7 @@ prepare_signal_watch_set(void)
     // Join signal watch sets from all files into one
     for (size_t i = 0; i < archi_process.args.num_inputs; i++)
     {
-        archi_log_debug(__func__, " * joining signal watch sets from file #%zu ('%s')",
+        archi_log_info(__func__, " * joining signal watch sets from file #%zu ('%s')",
                 i, archi_process.args.input[i]);
 
         size_t num_signal_sets = 0;
@@ -844,7 +850,7 @@ prepare_signal_watch_set(void)
 
     if (enable_signal_management_thread)
     {
-        archi_log_debug(__func__, "Signal management thread: ENABLED");
+        archi_log_info(__func__, "Signal management thread: ENABLED");
 
         // Log the signal watch set
         if (archi_print_lock(ARCHI_LOG_VERBOSITY__DEBUG))
@@ -858,7 +864,7 @@ prepare_signal_watch_set(void)
     }
     else
     {
-        archi_log_debug(__func__, "Signal management thread: DISABLED");
+        archi_log_info(__func__, "Signal management thread: DISABLED");
 
         // Free the signal watch set
         free(archi_process.signal.watch_set);
@@ -878,7 +884,7 @@ initialize_signal_management(void)
     if (!prepare_signal_watch_set())
         return; // signal management subsystem is not required
 
-    archi_log_debug(__func__, "Initializing the signal handler data context...");
+    archi_log_info(__func__, "Initializing the signal handler data context...");
 
     {
         // Prepare context initialization parameters
@@ -911,7 +917,7 @@ initialize_signal_management(void)
             exit(EXIT_FAILURE);
     }
 
-    archi_log_debug(__func__, "Starting the signal management thread...");
+    archi_log_info(__func__, "Starting the signal management thread...");
 
     archi_process.signal.handler.function = archi_signal_handler__hashmap;
     archi_process.signal.handler.data = archi_context_data(archi_process.signal.handler_data).ptr;
@@ -933,13 +939,13 @@ finalize_signal_management(void)
     if (archi_process.signal.watch_set == NULL)
         return; // signal management subsystem hasn't been initialized
 
-    archi_log_debug(__func__, "Stopping the signal management thread...");
+    archi_log_info(__func__, "Stopping the signal management thread...");
 
     archi_app_signal_management_stop();
 
     if (archi_process.signal.handler_data != NULL)
     {
-        archi_log_debug(__func__, "Finalizing the signal handler data context...");
+        archi_log_info(__func__, "Finalizing the signal handler data context...");
 
         archi_context_finalize(archi_process.signal.handler_data);
         archi_process.signal.handler_data = NULL;
