@@ -409,6 +409,11 @@ exec_list(
                 archi_log_error(__func__, "Operation data pointer has a function type");
                 exit(EXIT_FAILURE);
             }
+            else if (!archi_pointer_valid(operation_list->value, NULL))
+            {
+                archi_log_error(__func__, "Operation data pointer is invalid");
+                exit(EXIT_FAILURE);
+            }
 
             // Log the operation type and data attributes
             {
@@ -447,7 +452,7 @@ exec_list(
                 // Log the current operation data
                 if (archi_print_lock(ARCHI_LOG_VERBOSITY__DEBUG))
                 {
-                    archi_print_color(ARCHI_LOG_COLOR_DEBUG);
+                    archi_print_color(ARCHI_COLOR_RESET);
 
                     INIT_ERROR();
                     /*********************************************/

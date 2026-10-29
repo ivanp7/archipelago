@@ -39,137 +39,171 @@
 
 static
 void
-archi_print_key(
-        const char *field,
-        const char *key)
-{
-    archi_print_indent(1);
-    archi_print("%s = ", field);
-    {
-        if (key != NULL)
-            archi_print("\"%s\"", key);
-        else
-            archi_print("NULL");
-
-        archi_print("\n");
-    }
-}
-
-static
-void
-archi_print_size(
-        const char *field,
-        size_t size)
-{
-    archi_print_indent(1);
-    archi_print("%s = ", field);
-    {
-        archi_print("%zu", size);
-
-        archi_print("\n");
-    }
-}
-
-static
-void
-archi_print_slot(
-        const char *field,
+archi_print_context_slot(
+        const char *key,
         archi_context_slot_t slot)
 {
-    archi_print_indent(1);
-    archi_print("%s.name = ", field);
+    archi_print_color(ARCHI_COLOR_RESET);
+
+    archi_print("[");
+
+    if (key != NULL)
     {
+        archi_print("\"");
+
+        archi_print_color(ARCHI_COLOR_BG_BLUE ARCHI_COLOR_FG_BRI_WHITE);
+        archi_print_string(key);
+        archi_print_color(ARCHI_COLOR_RESET);
+
+        archi_print("\"");
+    }
+    else
+        archi_print("NULL");
+
+    if (((slot.name != NULL) && (slot.name[0] != '\0')) || (slot.num_indices != 0))
+    {
+        archi_print(" slot");
+
         if (slot.name != NULL)
-            archi_print("\"%s\"", slot.name);
-        else
-            archi_print("NULL");
-
-        archi_print("\n");
-    }
-
-    archi_print_indent(1);
-    archi_print("%s.index = [%zu]", field, slot.num_indices);
-    {
-        if (slot.index != NULL)
         {
-            archi_print("{");
-            for (size_t i = 0; i < slot.num_indices; i++)
-                archi_print(" %lli", slot.index[i]);
-            archi_print(" }");
-        }
-        else
-            archi_print(" NULL");
+            archi_print(" \"");
 
-        archi_print("\n");
+            archi_print_color(ARCHI_COLOR_BG_WHITE ARCHI_COLOR_FG_BLACK);
+            archi_print_string(slot.name);
+            archi_print_color(ARCHI_COLOR_RESET);
+
+            archi_print("\"");
+        }
+
+        if (slot.num_indices != 0)
+        {
+            archi_print(" indices: [%zu]{", slot.num_indices);
+
+            archi_print_color(ARCHI_COLOR_BG_WHITE ARCHI_COLOR_FG_BLACK);
+            for (size_t i = 0; i < slot.num_indices; i++)
+            {
+                archi_print("%s%lli", (slot.index[i] > 0) ? "+" : "", slot.index[i]);
+
+                if (i < slot.num_indices - 1)
+                    archi_print(",");
+            }
+            archi_print_color(ARCHI_COLOR_RESET);
+
+            archi_print("}");
+        }
     }
+
+    archi_print("]");
+}
+
+static
+void
+archi_print_context(
+        const char *key)
+{
+    archi_print_context_slot(key, (archi_context_slot_t){0});
 }
 
 static
 bool
 archi_print_pointer(
-        const char *field,
         archi_pointer_t value)
 {
     bool viewable = false;
 
-    archi_print_indent(1);
-    archi_print("%s = ", field);
+    archi_print_color(ARCHI_COLOR_RESET);
+
+    if (!archi_pointer_valid(value, NULL))
     {
-        if (!archi_pointer_valid(value, NULL))
-            archi_print("(INVALID) ");
-
-        if (value.ptr != NULL)
-            archi_print("%p", value.ptr);
-        else
-            archi_print("NULL");
-
-        archi_print(" <");
-
-        size_t length, stride, alignment;
-        archi_pointer_attr_t tag;
-
-        if (archi_pointer_attr_unpk__pdata(value.attr, &length, &stride, &alignment, NULL))
-        {
-            const char *mem_type;
-
-            if (ARCHI_POINTER_TO_READONLY_DATA(value.attr))
-                mem_type = "read-only";
-            else if (ARCHI_POINTER_TO_WRITABLE_DATA(value.attr))
-                mem_type = "writable";
-            else
-                mem_type = "on stack";
-
-            archi_print("data, %s, length = %zu, stride = %zu, alignment = %#zx",
-                    mem_type, length, stride, alignment);
-
-            viewable = true;
-        }
-        else if (archi_pointer_attr_unpk__cdata(value.attr, &tag, NULL))
-        {
-            const char *mem_type;
-
-            if (ARCHI_POINTER_TO_READONLY_DATA(value.attr))
-                mem_type = "read-only";
-            else if (ARCHI_POINTER_TO_WRITABLE_DATA(value.attr))
-                mem_type = "writable";
-            else
-                mem_type = "on stack";
-
-            archi_print("data, %s, tag = %#llx",
-                    mem_type, (unsigned long long)tag);
-        }
-        else if (archi_pointer_attr_unpk__func(value.attr, &tag, NULL))
-        {
-            archi_print("function, tag = %#llx",
-                    (unsigned long long)tag);
-        }
-        else // must never happen
-        {
-            archi_print("unknown");
-        }
-
-        archi_print(">\n");
+        archi_print_color(ARCHI_COLOR_FG_RED);
+        archi_print("(INVALID) ");
+        archi_print_color(ARCHI_COLOR_RESET);
     }
+
+    if (!ARCHI_POINTER_IS_NULL(value))
+        archi_print("%p", value.ptr); // generally incorrect, but there is no specifier for function pointers
+    else
+        archi_print("NULL");
+
+    archi_print(" <");
+
+    size_t length, stride, alignment;
+    archi_pointer_attr_t tag;
+
+    if (archi_pointer_attr_unpk__pdata(value.attr, &length, &stride, &alignment, NULL))
+    {
+        const char *mem_type;
+
+        if (ARCHI_POINTER_TO_READONLY_DATA(value.attr))
+            mem_type = "read-only";
+        else if (ARCHI_POINTER_TO_WRITABLE_DATA(value.attr))
+            mem_type = "writable";
+        else
+            mem_type = "on stack";
+
+        archi_print_color(ARCHI_COLOR_FG_BRI_YELLOW);
+        archi_print("data");
+        archi_print_color(ARCHI_COLOR_RESET);
+        archi_print(", ");
+        archi_print_color(ARCHI_COLOR_FG_BRI_YELLOW);
+        archi_print_string(mem_type);
+        archi_print_color(ARCHI_COLOR_RESET);
+        archi_print(", length = ");
+        archi_print_color(ARCHI_COLOR_FG_BRI_YELLOW);
+        archi_print("%zu", length);
+        archi_print_color(ARCHI_COLOR_RESET);
+        archi_print(", stride = ");
+        archi_print_color(ARCHI_COLOR_FG_BRI_YELLOW);
+        archi_print("%zu", stride);
+        archi_print_color(ARCHI_COLOR_RESET);
+        archi_print(", alignment = ");
+        archi_print_color(ARCHI_COLOR_FG_BRI_YELLOW);
+        archi_print("%#zx", alignment);
+        archi_print_color(ARCHI_COLOR_RESET);
+
+        viewable = true;
+    }
+    else if (archi_pointer_attr_unpk__cdata(value.attr, &tag, NULL))
+    {
+        const char *mem_type;
+
+        if (ARCHI_POINTER_TO_READONLY_DATA(value.attr))
+            mem_type = "read-only";
+        else if (ARCHI_POINTER_TO_WRITABLE_DATA(value.attr))
+            mem_type = "writable";
+        else
+            mem_type = "on stack";
+
+        archi_print_color(ARCHI_COLOR_FG_BRI_YELLOW);
+        archi_print("data");
+        archi_print_color(ARCHI_COLOR_RESET);
+        archi_print(", ");
+        archi_print_color(ARCHI_COLOR_FG_BRI_YELLOW);
+        archi_print_string(mem_type);
+        archi_print_color(ARCHI_COLOR_RESET);
+        archi_print(", tag = ");
+        archi_print_color(ARCHI_COLOR_FG_BRI_YELLOW);
+        archi_print("%#llx", (unsigned long long)tag);
+        archi_print_color(ARCHI_COLOR_RESET);
+    }
+    else if (archi_pointer_attr_unpk__func(value.attr, &tag, NULL))
+    {
+        archi_print_color(ARCHI_COLOR_FG_BRI_YELLOW);
+        archi_print("function");
+        archi_print_color(ARCHI_COLOR_RESET);
+        archi_print(", tag = ");
+        archi_print_color(ARCHI_COLOR_FG_BRI_YELLOW);
+        archi_print("%#llx", (unsigned long long)tag);
+        archi_print_color(ARCHI_COLOR_RESET);
+    }
+    else // must never happen
+    {
+        archi_print_color(ARCHI_COLOR_FG_RED);
+        archi_print("unknown");
+        archi_print_color(ARCHI_COLOR_RESET);
+    }
+
+    archi_print(">");
 
     return viewable;
 }
@@ -177,11 +211,14 @@ archi_print_pointer(
 static
 void
 archi_print_pointer_with_contents(
-        const char *field,
-        archi_pointer_t value)
+        archi_pointer_t value,
+        unsigned indent_level)
 {
-    if (!archi_print_pointer(field, value))
+    if (!archi_print_pointer(value))
+    {
+        archi_print("\n");
         return;
+    }
 
     size_t length, stride;
     archi_pointer_attr_unpk__pdata(value.attr, &length, &stride, NULL, NULL);
@@ -192,8 +229,12 @@ archi_print_pointer_with_contents(
 
 #define PRINT_WIDTH             80
 #define PRINT_AS(type, format)  do {                        \
-        archi_print_indent(3);                              \
-        archi_print("as " #type ":");                       \
+        archi_print_indent(indent_level);                   \
+        archi_print("as ");                                 \
+        archi_print_color(ARCHI_COLOR_FG_MAGENTA);          \
+        archi_print_string(#type);                          \
+        archi_print_color(ARCHI_COLOR_RESET);               \
+        archi_print(":");                                   \
         int printed_chars = 0;                              \
         for (size_t index = 0; index < length; index++) {   \
             if (printed_chars >= PRINT_WIDTH) {             \
@@ -207,6 +248,8 @@ archi_print_pointer_with_contents(
         }                                                   \
         archi_print("\n");                                  \
     } while (0)
+
+    archi_print("\n");
 
     if (stride == sizeof(char))
     {
@@ -255,7 +298,8 @@ archi_print_pointer_with_contents(
     if (size > MAX_SIZE)
         size = MAX_SIZE;
 
-    archi_print_hex_dump(value.ptr, size, false, 3);
+    archi_print("\n");
+    archi_print_hex_dump(value.ptr, size, false, indent_level);
 
 #undef MAX_SIZE
 }
@@ -263,24 +307,21 @@ archi_print_pointer_with_contents(
 static
 void
 archi_print_params(
-        const char *field,
-        const archi_kvlist_t *params)
+        const archi_kvlist_t *params,
+        unsigned indent_level)
 {
-    archi_print_indent(1);
-    archi_print("%s:", field);
+    for (; params != NULL; params = params->next)
     {
-        if (params != NULL)
-        {
-            archi_print("\n");
+        archi_print_indent(indent_level);
 
-            for (; params != NULL; params = params->next)
-            {
-                archi_print_indent(1);
-                archi_print_pointer_with_contents(params->key, params->value);
-            }
-        }
-        else
-            archi_print(" NULL\n");
+        archi_print("\"");
+        archi_print_color(ARCHI_COLOR_BG_CYAN ARCHI_COLOR_FG_BRI_WHITE);
+        archi_print_string(params->key);
+        archi_print_color(ARCHI_COLOR_RESET);
+        archi_print("\"");
+
+        archi_print(" = ");
+        archi_print_pointer_with_contents(params->value, indent_level + 1);
     }
 }
 
@@ -292,8 +333,6 @@ archi_print_params(
         ARCHI_ERROR_SET(ARCHI__ECONSTRAINT,                                                             \
                 "registry operation data has incorrect type, want tag = %#llx",                         \
                 (unsigned long long)(data_tag)); return; }                                              \
-    else if (!archi_pointer_valid(data, NULL)) {                                                        \
-        ARCHI_ERROR_SET(ARCHI__ECONSTRAINT, "registry operation data pointer is invalid"); return; }    \
     else if (data.ptr == NULL) {                                                                        \
         ARCHI_ERROR_SET(ARCHI__ECONSTRAINT, "registry operation data pointer is NULL"); return; }       \
     const data_type *op_data = data.ptr;
@@ -305,7 +344,12 @@ ARCHI_APP_REGISTRY_OPERATION_FUNC(archi_app_registry_op__delete)
     if (registry == NULL)
     {
         // Print operation data and return
-        archi_print_key("key", op_data->key);
+        archi_print_indent(1);
+
+        archi_print_color(ARCHI_COLOR_FG_RED);
+        archi_print("delete ");
+        archi_print_context(op_data->key);
+        archi_print("\n");
 
         ARCHI_ERROR_RESET();
         return;
@@ -323,8 +367,22 @@ ARCHI_APP_REGISTRY_OPERATION_FUNC(archi_app_registry_op__alias)
     if (registry == NULL)
     {
         // Print operation data and return
-        archi_print_key("key", op_data->key);
-        archi_print_key("original_key", op_data->original_key);
+        archi_print_indent(1);
+
+        archi_print_color(ARCHI_COLOR_FG_GREEN);
+        archi_print("add ");
+        archi_print_context(op_data->key);
+        archi_print("\n");
+
+        archi_print_indent(2);
+
+        archi_print("as ");
+        archi_print_color(ARCHI_COLOR_FG_BRI_MAGENTA);
+        archi_print("alias");
+        archi_print_color(ARCHI_COLOR_RESET);
+        archi_print(" of ");
+        archi_print_context(op_data->original_key);
+        archi_print("\n");
 
         ARCHI_ERROR_RESET();
         return;
@@ -348,10 +406,38 @@ ARCHI_APP_REGISTRY_OPERATION_FUNC(archi_app_registry_op__create_as)
     if (registry == NULL)
     {
         // Print operation data and return
-        archi_print_key("key", op_data->key);
-        archi_print_key("sample_key", op_data->sample_key);
-        archi_print_key("init_params.context_key", op_data->init_params.context_key);
-        archi_print_params("init_params.list", op_data->init_params.list);
+        archi_print_indent(1);
+
+        archi_print_color(ARCHI_COLOR_FG_GREEN);
+        archi_print("add ");
+        archi_print_context(op_data->key);
+        archi_print("\n");
+
+        archi_print_indent(2);
+
+        archi_print("using ");
+        archi_print_color(ARCHI_COLOR_FG_BRI_MAGENTA);
+        archi_print("interface");
+        archi_print_color(ARCHI_COLOR_FG_BRI_YELLOW);
+        archi_print(" OF ");
+        archi_print_context(op_data->sample_key);
+        archi_print("\n");
+
+        if (op_data->init_params.context_key != NULL)
+        {
+            archi_print_indent(2);
+            archi_print("with parameter list ");
+            archi_print_context(op_data->init_params.context_key);
+            archi_print("\n");
+        }
+
+        if (op_data->init_params.list != NULL)
+        {
+            archi_print_indent(2);
+            archi_print("with parameters:\n");
+            archi_print_params(op_data->init_params.list, 3);
+            archi_print("\n");
+        }
 
         ARCHI_ERROR_RESET();
         return;
@@ -390,11 +476,38 @@ ARCHI_APP_REGISTRY_OPERATION_FUNC(archi_app_registry_op__create_from)
     if (registry == NULL)
     {
         // Print operation data and return
-        archi_print_key("key", op_data->key);
-        archi_print_key("source_key", op_data->source_key);
-        archi_print_slot("source_slot", op_data->source_slot);
-        archi_print_key("init_params.context_key", op_data->init_params.context_key);
-        archi_print_params("init_params.list", op_data->init_params.list);
+        archi_print_indent(1);
+
+        archi_print_color(ARCHI_COLOR_FG_GREEN);
+        archi_print("add ");
+        archi_print_context(op_data->key);
+        archi_print("\n");
+
+        archi_print_indent(2);
+
+        archi_print("using ");
+        archi_print_color(ARCHI_COLOR_FG_BRI_MAGENTA);
+        archi_print("interface");
+        archi_print_color(ARCHI_COLOR_FG_BRI_YELLOW);
+        archi_print(" AT ");
+        archi_print_context_slot(op_data->source_key, op_data->source_slot);
+        archi_print("\n");
+
+        if (op_data->init_params.context_key != NULL)
+        {
+            archi_print_indent(2);
+            archi_print("with parameter list ");
+            archi_print_context(op_data->init_params.context_key);
+            archi_print("\n");
+        }
+
+        if (op_data->init_params.list != NULL)
+        {
+            archi_print_indent(2);
+            archi_print("with parameters:\n");
+            archi_print_params(op_data->init_params.list, 3);
+            archi_print("\n");
+        }
 
         ARCHI_ERROR_RESET();
         return;
@@ -434,9 +547,36 @@ ARCHI_APP_REGISTRY_OPERATION_FUNC(archi_app_registry_op__create_plist)
     if (registry == NULL)
     {
         // Print operation data and return
-        archi_print_key("key", op_data->key);
-        archi_print_key("params.context_key", op_data->params.context_key);
-        archi_print_params("params.list", op_data->params.list);
+        archi_print_indent(1);
+
+        archi_print_color(ARCHI_COLOR_FG_GREEN);
+        archi_print("add ");
+        archi_print_context(op_data->key);
+        archi_print("\n");
+
+        archi_print_indent(2);
+
+        archi_print("as ");
+        archi_print_color(ARCHI_COLOR_FG_BRI_MAGENTA);
+        archi_print("parameter list");
+        archi_print_color(ARCHI_COLOR_RESET);
+        archi_print("\n");
+
+        if (op_data->params.context_key != NULL)
+        {
+            archi_print_indent(2);
+            archi_print("with parent parameter list ");
+            archi_print_context(op_data->params.context_key);
+            archi_print("\n");
+        }
+
+        if (op_data->params.list != NULL)
+        {
+            archi_print_indent(2);
+            archi_print("with parameters:\n");
+            archi_print_params(op_data->params.list, 3);
+            archi_print("\n");
+        }
 
         ARCHI_ERROR_RESET();
         return;
@@ -482,8 +622,21 @@ ARCHI_APP_REGISTRY_OPERATION_FUNC(archi_app_registry_op__create_ptr)
     if (registry == NULL)
     {
         // Print operation data and return
-        archi_print_key("key", op_data->key);
-        archi_print_pointer_with_contents("pointee", op_data->pointee);
+        archi_print_indent(1);
+
+        archi_print_color(ARCHI_COLOR_FG_GREEN);
+        archi_print("add ");
+        archi_print_context(op_data->key);
+        archi_print("\n");
+
+        archi_print_indent(2);
+
+        archi_print("as ");
+        archi_print_color(ARCHI_COLOR_FG_BRI_MAGENTA);
+        archi_print("pointer");
+        archi_print_color(ARCHI_COLOR_RESET);
+        archi_print(" to ");
+        archi_print_pointer_with_contents(op_data->pointee, 3);
 
         ARCHI_ERROR_RESET();
         return;
@@ -522,8 +675,25 @@ ARCHI_APP_REGISTRY_OPERATION_FUNC(archi_app_registry_op__create_dptr_array)
     if (registry == NULL)
     {
         // Print operation data and return
-        archi_print_key("key", op_data->key);
-        archi_print_size("length", op_data->length);
+        archi_print_indent(1);
+
+        archi_print_color(ARCHI_COLOR_FG_GREEN);
+        archi_print("add ");
+        archi_print_context(op_data->key);
+        archi_print("\n");
+
+        archi_print_indent(2);
+
+        archi_print("as ");
+        archi_print_color(ARCHI_COLOR_FG_BRI_MAGENTA);
+        archi_print("array");
+        archi_print_color(ARCHI_COLOR_RESET);
+        archi_print(" of ");
+        archi_print_color(ARCHI_COLOR_FG_BRI_YELLOW);
+        archi_print("%zu", op_data->length);
+        archi_print_color(ARCHI_COLOR_RESET);
+        archi_print(" pointers to data\n");
+        archi_print("\n");
 
         ARCHI_ERROR_RESET();
         return;
@@ -567,10 +737,28 @@ ARCHI_APP_REGISTRY_OPERATION_FUNC(archi_app_registry_op__invoke)
     if (registry == NULL)
     {
         // Print operation data and return
-        archi_print_key("key", op_data->key);
-        archi_print_slot("slot", op_data->slot);
-        archi_print_key("call_params.context_key", op_data->call_params.context_key);
-        archi_print_params("call_params.list", op_data->call_params.list);
+        archi_print_indent(1);
+
+        archi_print_color(ARCHI_COLOR_FG_YELLOW);
+        archi_print("invoke ");
+        archi_print_context_slot(op_data->key, op_data->slot);
+        archi_print("\n");
+
+        if (op_data->call_params.context_key != NULL)
+        {
+            archi_print_indent(2);
+            archi_print("with parameter list ");
+            archi_print_context(op_data->call_params.context_key);
+            archi_print("\n");
+        }
+
+        if (op_data->call_params.list != NULL)
+        {
+            archi_print_indent(2);
+            archi_print("with parameters:\n");
+            archi_print_params(op_data->call_params.list, 3);
+            archi_print("\n");
+        }
 
         ARCHI_ERROR_RESET();
         return;
@@ -603,8 +791,12 @@ ARCHI_APP_REGISTRY_OPERATION_FUNC(archi_app_registry_op__unassign)
     if (registry == NULL)
     {
         // Print operation data and return
-        archi_print_key("key", op_data->key);
-        archi_print_slot("slot", op_data->slot);
+        archi_print_indent(1);
+
+        archi_print_color(ARCHI_COLOR_FG_BLUE);
+        archi_print("unassign ");
+        archi_print_context_slot(op_data->key, op_data->slot);
+        archi_print("\n");
 
         ARCHI_ERROR_RESET();
         return;
@@ -622,9 +814,17 @@ ARCHI_APP_REGISTRY_OPERATION_FUNC(archi_app_registry_op__assign)
     if (registry == NULL)
     {
         // Print operation data and return
-        archi_print_key("key", op_data->key);
-        archi_print_slot("slot", op_data->slot);
-        archi_print_pointer_with_contents("value", op_data->value);
+        archi_print_indent(1);
+
+        archi_print_color(ARCHI_COLOR_FG_BLUE);
+        archi_print("assign ");
+        archi_print_context_slot(op_data->key, op_data->slot);
+        archi_print("\n");
+
+        archi_print_indent(2);
+
+        archi_print("to ");
+        archi_print_pointer_with_contents(op_data->value, 3);
 
         ARCHI_ERROR_RESET();
         return;
@@ -643,10 +843,18 @@ ARCHI_APP_REGISTRY_OPERATION_FUNC(archi_app_registry_op__assign_slot)
     if (registry == NULL)
     {
         // Print operation data and return
-        archi_print_key("key", op_data->key);
-        archi_print_slot("slot", op_data->slot);
-        archi_print_key("source_key", op_data->source_key);
-        archi_print_slot("source_slot", op_data->source_slot);
+        archi_print_indent(1);
+
+        archi_print_color(ARCHI_COLOR_FG_BLUE);
+        archi_print("assign ");
+        archi_print_context_slot(op_data->key, op_data->slot);
+        archi_print("\n");
+
+        archi_print_indent(2);
+
+        archi_print("to ");
+        archi_print_context_slot(op_data->source_key, op_data->source_slot);
+        archi_print("\n");
 
         ARCHI_ERROR_RESET();
         return;
@@ -665,10 +873,18 @@ ARCHI_APP_REGISTRY_OPERATION_FUNC(archi_app_registry_op__assign_slot_weak)
     if (registry == NULL)
     {
         // Print operation data and return
-        archi_print_key("key", op_data->key);
-        archi_print_slot("slot", op_data->slot);
-        archi_print_key("source_key", op_data->source_key);
-        archi_print_slot("source_slot", op_data->source_slot);
+        archi_print_indent(1);
+
+        archi_print_color(ARCHI_COLOR_FG_BLUE);
+        archi_print("assign ");
+        archi_print_context_slot(op_data->key, op_data->slot);
+        archi_print("\n");
+
+        archi_print_indent(2);
+
+        archi_print("to weak reference to ");
+        archi_print_context_slot(op_data->source_key, op_data->source_slot);
+        archi_print("\n");
 
         ARCHI_ERROR_RESET();
         return;
@@ -687,12 +903,34 @@ ARCHI_APP_REGISTRY_OPERATION_FUNC(archi_app_registry_op__assign_call)
     if (registry == NULL)
     {
         // Print operation data and return
-        archi_print_key("key", op_data->key);
-        archi_print_slot("slot", op_data->slot);
-        archi_print_key("source_key", op_data->source_key);
-        archi_print_slot("source_slot", op_data->source_slot);
-        archi_print_key("source_call_params.context_key", op_data->source_call_params.context_key);
-        archi_print_params("source_call_params.list", op_data->source_call_params.list);
+        archi_print_indent(1);
+
+        archi_print_color(ARCHI_COLOR_FG_BLUE);
+        archi_print("assign ");
+        archi_print_context_slot(op_data->key, op_data->slot);
+        archi_print("\n");
+
+        archi_print_indent(2);
+
+        archi_print("to call ");
+        archi_print_context_slot(op_data->source_key, op_data->source_slot);
+        archi_print("\n");
+
+        if (op_data->source_call_params.context_key != NULL)
+        {
+            archi_print_indent(2);
+            archi_print("with parameter list ");
+            archi_print_context(op_data->source_call_params.context_key);
+            archi_print("\n");
+        }
+
+        if (op_data->source_call_params.list != NULL)
+        {
+            archi_print_indent(2);
+            archi_print("with parameters:\n");
+            archi_print_params(op_data->source_call_params.list, 3);
+            archi_print("\n");
+        }
 
         ARCHI_ERROR_RESET();
         return;
@@ -726,12 +964,34 @@ ARCHI_APP_REGISTRY_OPERATION_FUNC(archi_app_registry_op__assign_call_weak)
     if (registry == NULL)
     {
         // Print operation data and return
-        archi_print_key("key", op_data->key);
-        archi_print_slot("slot", op_data->slot);
-        archi_print_key("source_key", op_data->source_key);
-        archi_print_slot("source_slot", op_data->source_slot);
-        archi_print_key("source_call_params.context_key", op_data->source_call_params.context_key);
-        archi_print_params("source_call_params.list", op_data->source_call_params.list);
+        archi_print_indent(1);
+
+        archi_print_color(ARCHI_COLOR_FG_BLUE);
+        archi_print("assign ");
+        archi_print_context_slot(op_data->key, op_data->slot);
+        archi_print("\n");
+
+        archi_print_indent(2);
+
+        archi_print("to weak reference to call ");
+        archi_print_context_slot(op_data->source_key, op_data->source_slot);
+        archi_print("\n");
+
+        if (op_data->source_call_params.context_key != NULL)
+        {
+            archi_print_indent(2);
+            archi_print("with parameter list ");
+            archi_print_context(op_data->source_call_params.context_key);
+            archi_print("\n");
+        }
+
+        if (op_data->source_call_params.list != NULL)
+        {
+            archi_print_indent(2);
+            archi_print("with parameters:\n");
+            archi_print_params(op_data->source_call_params.list, 3);
+            archi_print("\n");
+        }
 
         ARCHI_ERROR_RESET();
         return;
