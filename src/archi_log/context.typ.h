@@ -39,6 +39,7 @@ struct archi_log_context {
     FILE *stream; ///< Stream to print messages to.
     struct timespec start_time; ///< Application start time.
     int verbosity_level;        ///< Log verbosity level.
+    int indentation_width;      ///< Log indentation width.
     bool colorful;              ///< Whether color is used in log messages.
 #ifndef __STDC_NO_THREADS__
     mtx_t *lock; ///< Mutex for message printing atomicity.

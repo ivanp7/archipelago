@@ -95,6 +95,7 @@ struct archi_app_args {
     // Logging options
     bool no_logo;  ///< True if the application logo is not displayed.
     bool no_color; ///< True if color codes are not used when printing log messages.
+    int indentation_width; ///< Number of indentation spaces.
     int verbosity_level; ///< Logging verbosity level.
 };
 
@@ -233,7 +234,8 @@ main(
 
     // Initialize logging
     {
-        if (!archi_app_log_initialize(NULL, archi_process.args.verbosity_level, !archi_process.args.no_color))
+        if (!archi_app_log_initialize(NULL, archi_process.args.verbosity_level,
+                    archi_process.args.indentation_width, !archi_process.args.no_color))
         {
             fprintf(stderr, "Error: couldn't initialize logging.\n");
             return EXIT_FAILURE;
@@ -1125,14 +1127,17 @@ print_error(void)
 
 ///////////////////////////////////////////////////////////////////////////////
 
-#define ARCHI_LOG_VERBOSITY__DEFAULT_LOWER ARCHI_LOG_VERBOSITY__NOTICE ///< Lower of two default verbosity levels.
-#define ARCHI_LOG_VERBOSITY__DEFAULT_HIGHER ARCHI_LOG_VERBOSITY__INFO  ///< Higher of two default verbosity levels.
+#define ARCHI_LOG_INDENTATION__DEFAULT  4
+
+#define ARCHI_LOG_VERBOSITY__DEFAULT_LOWER  ARCHI_LOG_VERBOSITY__NOTICE ///< Lower of two default verbosity levels.
+#define ARCHI_LOG_VERBOSITY__DEFAULT_HIGHER ARCHI_LOG_VERBOSITY__INFO   ///< Higher of two default verbosity levels.
 
 enum {
     ARGKEY_DRY_RUN = 'n',
 
     ARGKEY_NO_LOGO = 'L',
     ARGKEY_NO_COLOR = 'm',
+    ARGKEY_INDENTATION = 's',
     ARGKEY_VERBOSITY = 'v',
 
     ARGKEY_VERSION = 0xFE,
@@ -1153,6 +1158,8 @@ args_options[] = {
                                     .doc = "Don't print the logo"},
     {.key = ARGKEY_NO_COLOR,    .name = "no-color", .group = 2,
                                     .doc = "Monochrome logging, don't use ANSI escape codes"},
+    {.key = ARGKEY_INDENTATION, .name = "indent",  .arg = "[WIDTH]", .group = 2,
+                                    .doc = "Set indentation width"},
     {.key = ARGKEY_VERBOSITY,   .name = "verbose",  .arg = "[LEVEL]", .flags = OPTION_ARG_OPTIONAL, .group = 2,
                                     .doc = "Set log verbosity level (number/name, see below)"},
 
@@ -1185,6 +1192,12 @@ args_parser_func(
 
         case ARGKEY_NO_COLOR:
             args->no_color = true;
+            break;
+
+        case ARGKEY_INDENTATION:
+            args->indentation_width = atoi(arg);
+            if (args->indentation_width < 0)
+                args->indentation_width = 0;
             break;
 
         case ARGKEY_VERBOSITY:
@@ -1272,6 +1285,7 @@ parse_args(
         char *argv[])
 {
     archi_process.args = (struct archi_app_args){
+        .indentation_width = ARCHI_LOG_INDENTATION__DEFAULT,
         .verbosity_level = ARCHI_LOG_VERBOSITY__DEFAULT_LOWER,
     };
 

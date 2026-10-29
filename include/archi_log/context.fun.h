@@ -89,6 +89,17 @@ int
 archi_log_verbosity(void);
 
 /**
+ * @brief Retrieve the log indentation level.
+ *
+ * If the logger is not initialized, it returns 0.
+ *
+ * @return
+ *   Log indentation width.
+ */
+int
+archi_log_indentation(void);
+
+/**
  * @brief Determine whether colored output is enabled for log messages.
  *
  * Checks the logger context to see if log messages

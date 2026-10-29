@@ -34,11 +34,8 @@
 #include "archi_base/pointer.fun.h"
 #include "archi_base/pointer.def.h"
 #include "archi_log/print.fun.h"
+#include "archi_log/color.def.h"
 
-
-#define INDENTATION_STEP    4
-#define INDENTATION         (INDENTATION_STEP * 1)
-#define INDENTATION2        (INDENTATION_STEP * 3)
 
 static
 void
@@ -46,7 +43,8 @@ archi_print_key(
         const char *field,
         const char *key)
 {
-    archi_print("%*s%s = ", INDENTATION, "", field);
+    archi_print_indent(1);
+    archi_print("%s = ", field);
     {
         if (key != NULL)
             archi_print("\"%s\"", key);
@@ -63,7 +61,8 @@ archi_print_size(
         const char *field,
         size_t size)
 {
-    archi_print("%*s%s = ", INDENTATION, "", field);
+    archi_print_indent(1);
+    archi_print("%s = ", field);
     {
         archi_print("%zu", size);
 
@@ -77,7 +76,8 @@ archi_print_slot(
         const char *field,
         archi_context_slot_t slot)
 {
-    archi_print("%*s%s.name = ", INDENTATION, "", field);
+    archi_print_indent(1);
+    archi_print("%s.name = ", field);
     {
         if (slot.name != NULL)
             archi_print("\"%s\"", slot.name);
@@ -87,7 +87,8 @@ archi_print_slot(
         archi_print("\n");
     }
 
-    archi_print("%*s%s.index = [%zu]", INDENTATION, "", field, slot.num_indices);
+    archi_print_indent(1);
+    archi_print("%s.index = [%zu]", field, slot.num_indices);
     {
         if (slot.index != NULL)
         {
@@ -111,7 +112,8 @@ archi_print_pointer(
 {
     bool viewable = false;
 
-    archi_print("%*s%s = ", INDENTATION, "", field);
+    archi_print_indent(1);
+    archi_print("%s = ", field);
     {
         if (!archi_pointer_valid(value, NULL))
             archi_print("(INVALID) ");
@@ -190,7 +192,8 @@ archi_print_pointer_with_contents(
 
 #define PRINT_WIDTH             80
 #define PRINT_AS(type, format)  do {                        \
-        archi_print("%*sas " #type ":", INDENTATION2, "");  \
+        archi_print_indent(3);                              \
+        archi_print("as " #type ":");                       \
         int printed_chars = 0;                              \
         for (size_t index = 0; index < length; index++) {   \
             if (printed_chars >= PRINT_WIDTH) {             \
@@ -252,7 +255,7 @@ archi_print_pointer_with_contents(
     if (size > MAX_SIZE)
         size = MAX_SIZE;
 
-    archi_print_hex_dump(value.ptr, size, false, INDENTATION2);
+    archi_print_hex_dump(value.ptr, size, false, 3);
 
 #undef MAX_SIZE
 }
@@ -263,7 +266,8 @@ archi_print_params(
         const char *field,
         const archi_kvlist_t *params)
 {
-    archi_print("%*s%s:", INDENTATION, "", field);
+    archi_print_indent(1);
+    archi_print("%s:", field);
     {
         if (params != NULL)
         {
@@ -271,7 +275,7 @@ archi_print_params(
 
             for (; params != NULL; params = params->next)
             {
-                archi_print("%*s", INDENTATION_STEP, "");
+                archi_print_indent(1);
                 archi_print_pointer_with_contents(params->key, params->value);
             }
         }
@@ -279,8 +283,6 @@ archi_print_params(
             archi_print(" NULL\n");
     }
 }
-
-#undef INDENTATION
 
 /*****************************************************************************/
 

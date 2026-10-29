@@ -54,6 +54,9 @@ ARCHI_GLOBAL_GET_FUNC(archi_app_log_global_context);
  *     Desired verbosity level. Values < 0 become 0; values >
  *     ARCHI_LOG_VERBOSITY_MAX become ARCHI_LOG_VERBOSITY_MAX.
  *
+ * @param[in] indentation
+ *     Desired intentation width. Values < 0 become 0.
+ *
  * @param[in] colorful
  *     True to allow use of color in log messages, false to force monochrome output.
  *
@@ -66,6 +69,7 @@ bool
 archi_app_log_initialize(
         FILE *stream,
         int level,
+        int indentation,
         bool colorful
 );
 

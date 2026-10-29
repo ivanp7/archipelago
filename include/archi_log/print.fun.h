@@ -85,7 +85,7 @@ archi_print(
  *
  * @note This function must be protected by `archi_print_lock()`.
  *
- * If @p color is NULL, the function does nothing.
+ * If @p string is NULL, the function does nothing.
  *
  * @param[in] string
  *     Null-terminated string.
@@ -95,6 +95,21 @@ archi_print(
 int
 archi_print_string(
         const char *string
+);
+
+/**
+ * @brief Print indentation to the log stream.
+ *
+ * @note This function must be protected by `archi_print_lock()`.
+ *
+ * @param[in] level
+ *     Indentation level.
+ *
+ * @return Number of printed characters, or negative value on error.
+ */
+int
+archi_print_indent(
+        unsigned level
 );
 
 /**
@@ -131,15 +146,15 @@ archi_print_color(
  * @param[in] absolute
  *     If true, print memory addresses in the left column, otherwise print offsets relative the the memory pointer.
  *
- * @param[in] indentation
- *     Number of indentation spaces at the beginning of each output line.
+ * @param[in] indent_level
+ *     The indentation level of each output line.
  */
 void
 archi_print_hex_dump(
         const void *memory,
         size_t length,
         bool absolute,
-        unsigned indentation
+        unsigned indent_level
 );
 
 /*****************************************************************************/

@@ -42,6 +42,7 @@ bool
 archi_app_log_initialize(
         FILE *stream,
         int level,
+        int indentation,
         bool colorful)
 {
     if (archi_logger.stream != NULL)
@@ -60,6 +61,12 @@ archi_app_log_initialize(
         level = ARCHI_LOG_VERBOSITY_MAX;
 
     archi_logger.verbosity_level = level;
+
+    // Set indentation width
+    if (indentation < 0)
+        indentation = 0;
+
+    archi_logger.indentation_width = indentation;
 
     // Set logging color use flag
     archi_logger.colorful = colorful;

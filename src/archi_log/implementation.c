@@ -92,6 +92,15 @@ archi_log_verbosity(void)
     return archi_logger->verbosity_level;
 }
 
+int
+archi_log_indentation(void)
+{
+    if (archi_logger == NULL)
+        return 0;
+
+    return archi_logger->indentation_width;
+}
+
 bool
 archi_log_colorful(void)
 {
@@ -179,6 +188,13 @@ archi_print_string(
 }
 
 int
+archi_print_indent(
+        unsigned level)
+{
+    return archi_print("%*s", archi_log_indentation() * level, "");
+}
+
+int
 archi_print_color(
         const char *string)
 {
@@ -193,7 +209,7 @@ archi_print_hex_dump(
         const void *memory,
         size_t length,
         bool absolute,
-        unsigned indentation)
+        unsigned indent_level)
 {
     if (archi_logger == NULL)
         return;
@@ -225,28 +241,28 @@ archi_print_hex_dump(
 
     for (; addr < end_addr; addr += BYTES_PER_LINE)
     {
-        // Print left padding with spaces
-        fprintf(archi_logger->stream, "%*s", (int)indentation, "");
+        // Print indentation
+        archi_print_indent(indent_level);
 
         if (absolute) // Print address
-            fprintf(archi_logger->stream, "%0*zx:", width, (size_t)addr);
+            archi_print("%0*zx:", width, (size_t)addr);
         else // Print offset
-            fprintf(archi_logger->stream, "%0*tx:", width, (ptrdiff_t)(addr - start_addr));
+            archi_print("%0*tx:", width, (ptrdiff_t)(addr - start_addr));
 
         // Print line bytes in hexadecimal format
         for (uintptr_t i = 0; i < BYTES_PER_LINE; i++)
         {
             if (i % 2 == 0)
-                fprintf(archi_logger->stream, " "); // separator between pairs of bytes
+                archi_print(" "); // separator between pairs of bytes
 
             if ((addr + i >= start_addr) && (addr + i < end_addr))
-                fprintf(archi_logger->stream, "%02hhx", *(unsigned char*)(addr + i));
+                archi_print("%02hhx", *(unsigned char*)(addr + i));
             else
-                fprintf(archi_logger->stream, "%2s", "");
+                archi_print("%2s", "");
         }
 
         // Print separator whitespace
-        fprintf(archi_logger->stream, "  ");
+        archi_print("  ");
 
         // Print line bytes as characters
         for (uintptr_t i = 0; i < BYTES_PER_LINE; i++)
@@ -256,16 +272,16 @@ archi_print_hex_dump(
                 int c = *(unsigned char*)(addr + i);
 
                 if ((c >= 0x20) && (c < 0x7F)) // printable ASCII character
-                    fprintf(archi_logger->stream, "%c", c);
+                    archi_print("%c", c);
                 else
-                    fprintf(archi_logger->stream, ".");
+                    archi_print(".");
             }
             else
-                fprintf(archi_logger->stream, " ");
+                archi_print(" ");
         }
 
         // Print the newline
-        fprintf(archi_logger->stream, "\n");
+        archi_print("\n");
     }
 
 #undef BYTES_PER_LINE
