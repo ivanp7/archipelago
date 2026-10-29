@@ -342,7 +342,68 @@ through the following registry *operations*.
 
 ### Aggregate Objects
 
-TODO
+The module implements a dynamic mechanism for accessing members of structures and unions.
+Instead of using `.` or `->` operators, members are accessed via their names (represented as C-strings).
+
+A specialized context interface provides a unified way of interacting with aggregate objects,
+eliminating the need to create separate context interfaces for every individual structure or union type.
+
+#### Aggregate Interfaces
+
+An aggregate type (a structure, union, or an array of either) is described by an *aggregate interface*.
+This is a structure containing the following fields:
+
+* Values:
+    - **Aggregate Type Metadata Tag**: The data tag of the metadata type accepted by the aggregate interface functions.
+* Function Pointers:
+    - **Tag**: Returns the data tag of the described aggregate type.
+    - **Layout**: Returns the layout of the aggregate type (size, alignment, and the stride of the flexible array member).
+    - **Number of References**: Returns the total number of reference-counted members.
+    - **Reference Index**: Returns the index of a specified reference-counted member.
+    - **Initialization**: Initializes an aggregate object.
+    - **Finalization**: Finalizes an aggregate object.
+    - **Getter**: Returns a generic pointer to a specified member.
+    - **Setter**: Sets the value behind a generic pointer to a specified member.
+
+Each *aggregate interface* has its own type of metadata accepted by its functions.
+
+A *member specifier* is a structure containing:
+
+* **Name**: A C-string representing the name of the member.
+* **Index**: An index into the array. Non-array members are treated as arrays of length 1 (index always 0).
+    Multidimensional arrays are treated as one-dimensional arrays.
+
+Nested members are specified by a sequence of *member specifiers*, ordered from the top level down to the nested levels.
+
+##### The Generic Aggregate Interface
+
+The generic aggregate interface describes all types of structures
+(including those with optional flexible array members), unions, and arrays thereof.
+
+A description of the aggregate type is provided to the interface functions as metadata.
+
+Aggregate members are categorized as follows:
+
+* **Value**: A scalar type (non-pointer).
+    Optionally described by a data tag.
+* **Pointer**: A data or function pointer.
+    Described by either a pointee type tag or a pointee type layout (size + alignment),
+    depending on the pointer type.
+* **Aggregate**: A nested aggregate type, described by an array of nested members.
+
+Each aggregate member is described by:
+
+- Size
+- Alignment requirement
+- Offset
+- Number of elements (`1` for non-array members, `0` for flexible array members)
+- Name
+
+The top level of an aggregate type is additionally described by:
+
+- Data tag
+- Object initialization value
+- Flexible array element initialization value (optional)
 
 ### Directed Execution Graphs
 
