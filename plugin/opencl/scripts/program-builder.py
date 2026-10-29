@@ -166,7 +166,7 @@ def read_binaries(path_map):
 ###############################################################################
 # Form the list of registry operations
 
-PREFIX = 'cl_program_builder'
+PREFIX = 'clpb'
 
 
 app = Registry(require=[Registry.BUILTIN.executable])
@@ -219,8 +219,8 @@ with app.temp_context(Registry.key('plugin.opencl', PREFIX),
                  'LFLAGS': EnvironmentVariablesProcedure.Variable('LFLAGS', default=args.lflags)})
 
         with app.temp_context(Registry.key('array_libraries', PREFIX), list_libraries) as libraries, \
-                app.temp_context(Registry.key('kvlist_headers'), Parameters(**dict_headers)) as headers, \
-                app.temp_context(Registry.key('kvlist_sources'), Parameters(**dict_sources)) as sources, \
+                app.temp_context(Registry.key('kvlist_headers', PREFIX), Parameters(**dict_headers)) as headers, \
+                app.temp_context(Registry.key('kvlist_sources', PREFIX), Parameters(**dict_sources)) as sources, \
                 envvar_procedure.finalized(envvar_procedure.cleanup, app, PREFIX) as env:
             # Delete contexts of program libraries
             for library_context in list_libraries:
