@@ -293,13 +293,22 @@ archi_print_pointer_with_contents(
 #undef PRINT_AS
 #undef PRINT_WIDTH
 
-#define MAX_SIZE    (16*4) // 4 lines of 16 bytes each
+    archi_print("\n");
+
+#define MAX_SIZE    (16*8) // 8 lines of 16 bytes each
+
+    archi_print_hex_dump(value.ptr, (size <= MAX_SIZE) ? size : MAX_SIZE, false, indent_level);
 
     if (size > MAX_SIZE)
-        size = MAX_SIZE;
+    {
+        archi_print_indent(indent_level);
 
-    archi_print("\n");
-    archi_print_hex_dump(value.ptr, size, false, indent_level);
+        archi_print_color(ARCHI_COLOR_FG_BRI_YELLOW);
+        archi_print("...");
+        archi_print_color(ARCHI_COLOR_RESET);
+
+        archi_print("\n");
+    }
 
 #undef MAX_SIZE
 }
