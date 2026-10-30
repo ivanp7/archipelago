@@ -39,7 +39,7 @@ struct archi_dexgraph_node_array;
  * @brief Directed execution graph node.
  */
 typedef struct archi_dexgraph_node {
-    char *name; ///< Node name.
+    const char *name; ///< Node name.
 
     archi_dexgraph_transition_t transition; ///< Execution transition.
     const struct archi_dexgraph_node_array *branch; ///< Array of branches to transit execution to.

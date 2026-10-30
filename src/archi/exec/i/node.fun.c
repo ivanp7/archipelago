@@ -32,7 +32,6 @@
 
 archi_dexgraph_node_t*
 archi_dexgraph_node_alloc(
-        const char *name,
         size_t sequence_length)
 {
     archi_dexgraph_node_t *node = malloc(
@@ -40,13 +39,7 @@ archi_dexgraph_node_alloc(
     if (node == NULL)
         return NULL;
 
-    node->name = archi_string_copy(name);
-    if ((node->name == NULL) && (name != NULL))
-    {
-        free(node);
-        return NULL;
-    }
-
+    node->name = NULL;
     node->transition = (archi_dexgraph_transition_t){0};
     node->branch = NULL;
     {
@@ -63,10 +56,6 @@ void
 archi_dexgraph_node_free(
         archi_dexgraph_node_t *node)
 {
-    if (node == NULL)
-        return;
-
-    free(node->name);
     free(node);
 }
 
@@ -93,9 +82,6 @@ void
 archi_dexgraph_node_array_free(
         archi_dexgraph_node_array_t *node_array)
 {
-    if (node_array == NULL)
-        return;
-
     free(node_array);
 }
 

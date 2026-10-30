@@ -39,7 +39,6 @@
  */
 archi_dexgraph_node_t*
 archi_dexgraph_node_alloc(
-        const char *name, ///< [in] Node name.
         size_t sequence_length ///< [in] Length of the sequence of operation functions.
 );
 

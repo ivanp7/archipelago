@@ -56,6 +56,7 @@
  *      - "index"   : (archi_dexgraph_branch_index_t) initial operation function index
  *
  * Setter slots:
+ * - "name"                         : (char[]) node name
  * - "sequence.function" [index]    : (archi_dexgraph_operation_func_t) operation function #index
  * - "sequence.data" [index]        : data of operation function #index
  * - "transition.function"          : (archi_dexgraph_transition_func_t) transition function
