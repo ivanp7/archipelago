@@ -24,83 +24,108 @@
  */
 
 #include "archi/exec/i/graph.fun.h"
-#include "archi/exec/i/node.typ.h"
+#include "archi/exec/i/node.fun.h"
 
+
+void
+archi_dexgraph_execute_node_op(
+        archi_dexgraph_frame_t frame,
+        ARCHI_ERROR_PARAM_DECL)
+{
+    if ((frame.node == NULL) || (frame.op_index >= frame.node->sequence_length))
+    {
+        ARCHI_ERROR_RESET();
+        return;
+    }
+
+    archi_dexgraph_operation_t operation = frame.node->sequence[frame.op_index];
+
+    if (operation.function != NULL)
+    {
+        ARCHI_ERROR_UNSET();
+        /****************************************************/
+        operation.function(operation.data, ARCHI_ERROR_PARAM);
+        /****************************************************/
+    }
+    else
+        ARCHI_ERROR_RESET();
+}
+
+size_t
+archi_dexgraph_execute_node_ops(
+        archi_dexgraph_frame_t frame,
+        ARCHI_ERROR_PARAM_DECL)
+{
+    if (frame.node == NULL)
+    {
+        ARCHI_ERROR_RESET();
+        return frame.op_index;
+    }
+
+    archi_error_t error;
+
+    for (; frame.op_index < frame.node->sequence_length; frame.op_index++)
+    {
+        archi_dexgraph_execute_node_op(frame, &error);
+        if (error.code != 0)
+            break;
+    }
+
+    ARCHI_ERROR_ASSIGN(error);
+    return frame.op_index;
+}
+
+size_t
+archi_dexgraph_execute_node_trans(
+        const archi_dexgraph_node_t *node,
+        ARCHI_ERROR_PARAM_DECL)
+{
+    if (node == NULL)
+    {
+        ARCHI_ERROR_RESET();
+        return ARCHI_DEXGRAPH_HALT;
+    }
+
+    archi_dexgraph_transition_t transition = node->transition;
+
+    if (transition.function != NULL)
+    {
+        ARCHI_ERROR_UNSET();
+        /*************************************************************/
+        return transition.function(transition.data, ARCHI_ERROR_PARAM);
+        /*************************************************************/
+    }
+    else
+    {
+        ARCHI_ERROR_RESET();
+        return (transition.data != NULL) ? *(size_t*)transition.data : 0;
+    }
+}
 
 archi_dexgraph_frame_t
 archi_dexgraph_execute(
         archi_dexgraph_frame_t frame,
-        enum archi_dexgraph_exec_mode mode,
         ARCHI_ERROR_PARAM_DECL)
 {
-    if ((mode < ARCHI_DEXGRAPH__NO_INTERRUPT) || (mode > ARCHI_DEXGRAPH__INTERRUPT_OPERATION))
-    {
-        ARCHI_ERROR_SET(ARCHI__ECONSTRAINT, "unknown DEG execution mode %i", mode);
-        return frame;
-    }
-
     archi_error_t error;
     ARCHI_ERROR_VAR_RESET(&error);
 
     while (frame.node != NULL)
     {
         // Execute the sequence of operation functions
-        for (; frame.index < frame.node->sequence_length; frame.index++)
-        {
-            archi_dexgraph_operation_t operation = frame.node->sequence[frame.index];
+        frame.op_index = archi_dexgraph_execute_node_ops(frame, &error);
+        if (error.code != 0)
+            break;
 
-            if (operation.function != NULL)
-            {
-                ARCHI_ERROR_VAR_UNSET(&error);
-                /*****************************************/
-                operation.function(operation.data, &error);
-                /*****************************************/
+        // Execute the transition function
+        size_t branch_index = archi_dexgraph_execute_node_trans(frame.node, &error);
+        if (error.code != 0)
+            break;
 
-                if (error.code != 0)
-                    goto interrupt;
-                else if (mode >= ARCHI_DEXGRAPH__INTERRUPT_OPERATION)
-                {
-                    frame.index++;
-                    goto interrupt;
-                }
-            }
-        }
-
-        // Select a branch to transit execution to
-        archi_dexgraph_branch_index_t branch_index;
-        {
-            archi_dexgraph_transition_t transition = frame.node->transition;
-
-            if (transition.function != NULL)
-            {
-                ARCHI_ERROR_VAR_UNSET(&error);
-                /**********************************************************/
-                branch_index = transition.function(transition.data, &error);
-                /**********************************************************/
-
-                if (error.code != 0)
-                    goto interrupt;
-            }
-            else if (transition.data != NULL)
-                branch_index = *(archi_dexgraph_branch_index_t*)transition.data;
-            else
-                branch_index = 0;
-        }
-
-        // Proceed to the selected branch
-        const archi_dexgraph_node_array_t *branch = frame.node->branch;
-
-        if ((branch != NULL) && (branch_index < branch->num_nodes))
-            frame.node = branch->node[branch_index];
-        else // non-existent branch or ARCHI_DEXGRAPH_HALT
-            frame.node = NULL;
-
-        frame.index = 0;
-
-        if (mode >= ARCHI_DEXGRAPH__INTERRUPT_TRANSITION)
-            goto interrupt;
+        // Obtain the selected branch
+        frame.node = archi_dexgraph_node_branch(frame.node, branch_index);
+        frame.op_index = 0;
     }
-interrupt:
 
     ARCHI_ERROR_ASSIGN(error);
     return frame;

@@ -41,6 +41,7 @@ struct archi_context_data__dexgraph_node {
 
     // References
     archi_rcpointer_t ref_name;
+    archi_rcpointer_t ref_data;
 
     archi_rcpointer_t ref_transition_func;
     archi_rcpointer_t ref_transition_data;
@@ -56,12 +57,15 @@ ARCHI_CONTEXT_INIT_FUNC(archi_context_init__dexgraph_node)
 {
     // Parse parameters
     size_t sequence_length = 0;
-    archi_rcpointer_t name = {0}, transition_func = {0}, transition_data = {0}, branch_array = {0};
+    archi_rcpointer_t name = {0}, data = {0}, transition_func = {0}, transition_data = {0}, branch_array = {0};
     {
         archi_plist_param_t parsed[] = {
             {.name = "name",
                 .check = {archi_value_check__attr, (archi_pointer_attr_t[]){ARCHI_POINTER_ATTR__PDATA(0, char)}},
                 .assign = {archi_plist_assign__rcpointer, &name, sizeof(name), NULL}},
+            {.name = "data",
+                .check = {archi_value_check__attr, (archi_pointer_attr_t[]){archi_pointer_attr__cdata(0)}},
+                .assign = {archi_plist_assign__rcpointer, &data, sizeof(data), NULL}},
             {.name = "sequence_length",
                 .check = {archi_value_check__attr, (archi_pointer_attr_t[]){ARCHI_POINTER_ATTR__PDATA(1, size_t)}},
                 .assign = {archi_plist_assign__value, &sequence_length, sizeof(sequence_length), NULL}},
@@ -136,6 +140,10 @@ ARCHI_CONTEXT_INIT_FUNC(archi_context_init__dexgraph_node)
     if (!context_data->ref_name.attr)
         goto failure;
 
+    context_data->ref_data = archi_rcpointer_own(data, ARCHI_ERROR_PARAM);
+    if (!context_data->ref_data.attr)
+        goto failure;
+
     context_data->ref_transition_func = archi_rcpointer_own(transition_func, ARCHI_ERROR_PARAM);
     if (!context_data->ref_transition_func.attr)
         goto failure;
@@ -152,6 +160,7 @@ ARCHI_CONTEXT_INIT_FUNC(archi_context_init__dexgraph_node)
     archi_dexgraph_node_t *node = context_data->node.ptr;
 
     node->name = context_data->ref_name.cptr;
+    node->data = context_data->ref_data.ptr;
     node->transition.function = (archi_dexgraph_transition_func_t)context_data->ref_transition_func.fptr;
     node->transition.data = context_data->ref_transition_data.ptr;
     node->branch = context_data->ref_branch_array.cptr;
@@ -161,6 +170,7 @@ ARCHI_CONTEXT_INIT_FUNC(archi_context_init__dexgraph_node)
 
 failure:
     archi_rcpointer_disown(context_data->ref_name);
+    archi_rcpointer_disown(context_data->ref_data);
     archi_rcpointer_disown(context_data->ref_transition_func);
     archi_rcpointer_disown(context_data->ref_transition_data);
     archi_rcpointer_disown(context_data->ref_branch_array);
@@ -189,6 +199,7 @@ ARCHI_CONTEXT_FINAL_FUNC(archi_context_final__dexgraph_node)
     }
 
     archi_rcpointer_disown(context_data->ref_name);
+    archi_rcpointer_disown(context_data->ref_data);
     archi_rcpointer_disown(context_data->ref_transition_func);
     archi_rcpointer_disown(context_data->ref_transition_data);
     archi_rcpointer_disown(context_data->ref_branch_array);
@@ -219,6 +230,16 @@ ARCHI_CONTEXT_EVAL_FUNC(archi_context_eval__dexgraph_node)
             }
 
             ARCHI_CONTEXT_YIELD(context_data->ref_name);
+        }
+        else if (ARCHI_STRING_COMPARE("data", ==, slot.name))
+        {
+            if (slot.num_indices != 0)
+            {
+                ARCHI_ERROR_SET(ARCHI__EINDEX, "number of slot indices isn't 0");
+                return;
+            }
+
+            ARCHI_CONTEXT_YIELD(context_data->ref_data);
         }
         else if (ARCHI_STRING_COMPARE("sequence.length", ==, slot.name))
         {
@@ -317,13 +338,16 @@ ARCHI_CONTEXT_EVAL_FUNC(archi_context_eval__dexgraph_node)
                 return;
             }
 
+            archi_dexgraph_frame_t frame = {
+                .node = node,
+            };
+
             // Parse parameters
-            size_t index = 0;
             {
                 archi_plist_param_t parsed[] = {
-                    {.name = "index",
-                        .check = {archi_value_check__attr, (archi_pointer_attr_t[]){ARCHI_POINTER_ATTR__PDATA(1, archi_dexgraph_branch_index_t)}},
-                        .assign = {archi_plist_assign__value, &index, sizeof(index), NULL}},
+                    {.name = "op_index",
+                        .check = {archi_value_check__attr, (archi_pointer_attr_t[]){ARCHI_POINTER_ATTR__PDATA(1, size_t)}},
+                        .assign = {archi_plist_assign__value, &frame.op_index, sizeof(frame.op_index), NULL}},
                     {0},
                 };
 
@@ -332,12 +356,7 @@ ARCHI_CONTEXT_EVAL_FUNC(archi_context_eval__dexgraph_node)
             }
 
             // Execute the graph
-            archi_dexgraph_frame_t frame = {
-                .node = node,
-                .index = index,
-            };
-
-            archi_dexgraph_execute(frame, ARCHI_DEXGRAPH__NO_INTERRUPT, ARCHI_ERROR_PARAM);
+            archi_dexgraph_execute(frame, ARCHI_ERROR_PARAM);
         }
         else
             ARCHI_ERROR_SET(ARCHI__EKEY, "unknown slot '%s' encountered", slot.name);
@@ -378,6 +397,29 @@ ARCHI_CONTEXT_SET_FUNC(archi_context_set__dexgraph_node)
 
         node->name = value.cptr;
         context_data->ref_name = value;
+
+        ARCHI_ERROR_RESET();
+    }
+    else if (ARCHI_STRING_COMPARE("data", ==, slot.name))
+    {
+        if (slot.num_indices != 0)
+        {
+            ARCHI_ERROR_SET(ARCHI__EINDEX, "number of slot indices isn't 0");
+            return;
+        }
+        else if (ARCHI_POINTER_TO_FUNCTION(value.attr))
+        {
+            ARCHI_ERROR_SET(ARCHI__ECONSTRAINT, "assigned value is not data");
+            return;
+        }
+
+        value = archi_rcpointer_replace(value, context_data->ref_data,
+                ARCHI_ERROR_PARAM);
+        if (!value.attr)
+            return;
+
+        node->data = value.ptr;
+        context_data->ref_data = value;
 
         ARCHI_ERROR_RESET();
     }

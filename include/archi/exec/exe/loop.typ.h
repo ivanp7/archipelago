@@ -34,8 +34,8 @@
  * @brief Transition function data: loop N times.
  */
 typedef struct archi_dexgraph_transition_data__loop_times {
-    archi_dexgraph_branch_index_t iteration; ///< Current iteration number.
-    archi_dexgraph_branch_index_t num_iterations; ///< Number of iterations to do.
+    size_t iteration; ///< Current iteration number.
+    size_t num_iterations; ///< Number of iterations to do.
 } archi_dexgraph_transition_data__loop_times_t;
 
 #endif // _ARCHI_EXEC_EXE_LOOP_TYP_H_

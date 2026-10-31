@@ -95,6 +95,7 @@ static
 const archi_aggr_member_t
 MEMBERS_dexgraph_node[] = {
     ARCHI_AGGR_MEMBER__POINTER(archi_dexgraph_node_t, name, 1, PTYPE_string),
+    ARCHI_AGGR_MEMBER__POINTER(archi_dexgraph_node_t, data, 1, PTYPE_data),
     ARCHI_AGGR_MEMBER__AGGREGATE(archi_dexgraph_node_t, transition, 1,
             archi_aggr_type__dexgraph_transition.top_level),
     ARCHI_AGGR_MEMBER__POINTER(archi_dexgraph_node_t, branch, 1, PTYPE_dexgraph_node_array),

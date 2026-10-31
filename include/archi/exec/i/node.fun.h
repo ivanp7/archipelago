@@ -53,6 +53,20 @@ archi_dexgraph_node_free(
 );
 
 /**
+ * @brief Get node branch with the specified index.
+ *
+ * The function checks for NULL pointers and the index range.
+ * NULL is returned for any invalid inputs.
+ *
+ * @return Pointer to a node branch, or NULL if there is no such branch.
+ */
+const archi_dexgraph_node_t*
+archi_dexgraph_node_branch(
+        const archi_dexgraph_node_t *node, ///< [in] Node.
+        size_t branch_index ///< [in] Index of a branch.
+);
+
+/**
  * @brief Allocate a node array.
  *
  * @return Newly allocated node array.

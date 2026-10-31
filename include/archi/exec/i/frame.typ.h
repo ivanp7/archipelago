@@ -39,7 +39,7 @@ struct archi_dexgraph_node;
  */
 typedef struct archi_dexgraph_frame {
     const struct archi_dexgraph_node *node; ///< Node.
-    size_t index; ///< Operation function sequence index.
+    size_t op_index; ///< Operation function sequence index.
 } archi_dexgraph_frame_t;
 
 #endif // _ARCHI_EXEC_API_FRAME_TYP_H_

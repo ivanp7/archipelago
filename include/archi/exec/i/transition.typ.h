@@ -33,22 +33,17 @@
 
 
 /**
- * @brief Index of a branch.
- */
-typedef size_t archi_dexgraph_branch_index_t;
-
-/**
  * @brief Special branch index value for DEG execution halting.
  */
-#define ARCHI_DEXGRAPH_HALT  ((archi_dexgraph_branch_index_t)-1)
+#define ARCHI_DEXGRAPH_HALT  ((size_t)-1)
 
 /**
  * @brief Signature of a transition function.
  *
  * @return Index of the selected branch, or ARCHI_DEXGRAPH_HALT.
  */
-#define ARCHI_DEXGRAPH_TRANSITION_FUNC(func_name)   archi_dexgraph_branch_index_t func_name(    \
-        void *data, /* [in] Transition function data. */                                        \
+#define ARCHI_DEXGRAPH_TRANSITION_FUNC(func_name)   size_t func_name(   \
+        void *data, /* [in] Transition function data. */                \
         ARCHI_ERROR_PARAM_DECL) /* [out] Error. */
 
 /**

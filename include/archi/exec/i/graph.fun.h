@@ -32,42 +32,64 @@
 
 
 /**
- * @brief Directed execution graph execution mode.
- *
- * The greater the number -- the more interruptions will be.
+ * @brief Execute a single operation at the specified frame.
  */
-enum archi_dexgraph_exec_mode {
-    ARCHI_DEXGRAPH__NO_INTERRUPT = 0,     ///< Execute without interruptions until halted (or error).
-    ARCHI_DEXGRAPH__INTERRUPT_TRANSITION, ///< Execute interrupting at node transitions (or error).
-    ARCHI_DEXGRAPH__INTERRUPT_OPERATION,  ///< Execute interrupting between operations (always).
-};
+void
+archi_dexgraph_execute_node_op(
+        archi_dexgraph_frame_t frame, ///< [in] Frame.
+        ARCHI_ERROR_PARAM_DECL ///< [out] Error.
+);
+
+/**
+ * @brief Execute the rest of node operations starting at the specified frame.
+ *
+ * The function calls non-NULL operation functions in the current node sequence,
+ * starting from the specified index, halting if any function returns non-zero error code.
+ *
+ * @return Index of the first operation not executed (successfully).
+ */
+size_t
+archi_dexgraph_execute_node_ops(
+        archi_dexgraph_frame_t frame, ///< [in] Frame.
+        ARCHI_ERROR_PARAM_DECL ///< [out] Error.
+);
+
+/**
+ * @brief Execute the node transition function.
+ *
+ * If the transition function is not NULL, it is called with the transition data
+ * and its return value is the branch index.
+ *
+ * Otherwise, the transition data is interpreted as the branch index.
+ * If the pointer is not NULL, it is dereferenced;
+ * if it's NULL, the default value of `0` is used instead.
+ *
+ * @return Index of the chosen branch.
+ */
+size_t
+archi_dexgraph_execute_node_trans(
+        const struct archi_dexgraph_node *node, ///< [in] Node.
+        ARCHI_ERROR_PARAM_DECL ///< [out] Error.
+);
 
 /**
  * @brief Execute a directed graph starting at the specified frame.
  *
- * The algorithm steps:
- * 1. call non-null functions in the current node sequence, starting from the specified index,
- *    halting if any function returns non-zero error code;
- * 2. obtain branch index from the current node transition,
- *    halting if transition function returns non-zero error code;
- * 3. reset current node sequence index to zero;
- * 4. if branch index is equal to the special halt value, unset current node pointer and halt;
- * 5. update current node pointer and proceed to step 1 if the pointer is non-null, otherwise halt.
+ * This function implements the most basic graph execution algorithm:
+ * 1. execute the current node operation functions;
+ * 2. execute the current node transition function;
+ * 3. update the current node;
+ * 4. repeat until the current node is NULL.
  *
- * Transitions to the next branch are done as follows:
- * 1. if transition function is not NULL, it is called with transition data to obtain branch index;
- * 2. otherwise, if transition data is not NULL, it is dereferenced to read branch index;
- * 3. in case both transition function and data are NULL, the default value of zero is used as branch index.
+ * Returned frame contains NULL node if execution terminated without errors.
+ * Otherwise, it stores the current node pointer and operation index
+ * of the location where an error occured.
  *
- * Output frame context is empty if execution halted without error.
- * Otherwise, it contains the current node pointer and sequence index of the function where error occured.
- *
- * @return Execution frame at the interruption point.
+ * @return Execution frame at the halt point.
  */
 archi_dexgraph_frame_t
 archi_dexgraph_execute(
         archi_dexgraph_frame_t frame, ///< [in] Frame.
-        enum archi_dexgraph_exec_mode mode, ///< Execution mode.
         ARCHI_ERROR_PARAM_DECL ///< [out] Error.
 );
 

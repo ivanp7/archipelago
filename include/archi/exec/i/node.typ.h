@@ -40,6 +40,7 @@ struct archi_dexgraph_node_array;
  */
 typedef struct archi_dexgraph_node {
     const char *name; ///< Node name.
+    void *data; ///< Node data.
 
     archi_dexgraph_transition_t transition; ///< Execution transition.
     const struct archi_dexgraph_node_array *branch; ///< Array of branches to transit execution to.

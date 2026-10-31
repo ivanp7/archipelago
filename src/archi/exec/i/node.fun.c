@@ -40,6 +40,7 @@ archi_dexgraph_node_alloc(
         return NULL;
 
     node->name = NULL;
+    node->data = NULL;
     node->transition = (archi_dexgraph_transition_t){0};
     node->branch = NULL;
     {
@@ -57,6 +58,22 @@ archi_dexgraph_node_free(
         archi_dexgraph_node_t *node)
 {
     free(node);
+}
+
+const archi_dexgraph_node_t*
+archi_dexgraph_node_branch(
+        const archi_dexgraph_node_t *node,
+        size_t branch_index)
+{
+    if (node == NULL)
+        return NULL;
+
+    const archi_dexgraph_node_array_t *branch = node->branch;
+
+    if ((branch == NULL) || (branch_index >= branch->num_nodes))
+        return NULL;
+
+    return branch->node[branch_index];
 }
 
 archi_dexgraph_node_array_t*

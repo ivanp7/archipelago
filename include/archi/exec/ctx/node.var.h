@@ -35,6 +35,7 @@
  *
  * Initialization parameters:
  * - "name"             : (char[]) node name
+ * - "data"             : node data
  * - "sequence_length"  : (size_t) number of functions in the node sequence
  * - "transition_func"  : (archi_dexgraph_transition_func_t) transition function
  * - "transition_data"  : data of transition function
@@ -42,6 +43,7 @@
  *
  * Getter slots:
  * - "name"                         : (char[]) node name
+ * - "data"                         : node data
  * - "sequence.length"              : (size_t) number of functions in the node sequence
  * - "sequence.function" [index]    : (archi_dexgraph_operation_func_t) operation function #index
  * - "sequence.data" [index]        : data of operation function #index
@@ -53,10 +55,11 @@
  * - "execute"  : execute DEG with this node as entry node
  *      returns: <nothing>
  *      parameters:
- *      - "index"   : (archi_dexgraph_branch_index_t) initial operation function index
+ *      - "op_index"    : (size_t) initial operation function index
  *
  * Setter slots:
  * - "name"                         : (char[]) node name
+ * - "data"                         : node data
  * - "sequence.function" [index]    : (archi_dexgraph_operation_func_t) operation function #index
  * - "sequence.data" [index]        : data of operation function #index
  * - "transition.function"          : (archi_dexgraph_transition_func_t) transition function
