@@ -163,6 +163,8 @@ the system employs a loosely coupled modular architecture:
 
 ## Logging
 
+Directory: `archi_log`.
+
 A standalone, singleton logging component that outputs to a configurable stream.
 
 ### Filtering
@@ -189,6 +191,8 @@ H:MM:SS.mmm.uuu [LVL] (origin) text
 * `text`: The log message content.
 
 ## Base
+
+Directory: `archi_base`.
 
 The library base provides the foundational data structures and utilities upon which the rest of the system is built.
 
@@ -241,7 +245,11 @@ If an error with non-zero error code gets returned to the application, it is pri
 
 ## Built-In Modules
 
+Directory: `archi`.
+
 ### Contexts
+
+Directory: `archi/context`.
 
 The context system is the central part of Archipelago.
 The application is built around it, and the rest of the modules provide context interfaces
@@ -342,6 +350,8 @@ through the following registry *operations*.
 
 ### Aggregate Objects
 
+Directory: `archi/aggr`.
+
 The module implements a dynamic mechanism for accessing members of structures and unions.
 Instead of using `.` or `->` operators, members are accessed via their names (represented as C-strings).
 
@@ -407,45 +417,105 @@ The top level of an aggregate type is additionally described by:
 
 ### Directed Execution Graphs
 
-TODO
+Directory: `archi/exec`.
+
+Archipelago utilizes *directed execution graphs* to construct algorithms from primitive "blocks" at runtime.
+This is useful for computational pipelines or other complex procedures that must be flexible
+(modifiable without recompiling).
+Directed execution graphs can be created node by node within the context system similar to other contexts.
+
+#### Nodes
+
+A graph consists of nodes connected by directed transitions. Each node contains:
+
+* **Name**: An optional C-string for logging and debugging.
+* **Data**: An optional pointer to data used for the implementation of an execution procedure.
+* **Operations**: An array of functions (and associated data) executed linearly.
+* **Branches**: An array of pointers to potential destination nodes.
+* **Transition**: A function (and associated data) used to determine which branch to follow next.
+
+#### Execution Logic
+
+Execution is tracked via a frame (the current node and the current operation index).
+
+1. **Operation Phase**: Operations are executed sequentially, starting from the current operation index.
+    If any function returns an error, the entire execution is interrupted.
+2. **Transition Phase**: Once all operations are complete, the transition function selects the next branch.
+3. **Branch Index Translation**: The current node's data is interpreted as a branch index table.
+    If the table is not null, it is used to fetch the effective index.
+4. **Branch Node Fetch**: The new node is fetched from the list of branches of the current node.
+5. **Update**: The current node is updated, the operation index is reset to 0.
+6. **Termination**: Execution ends if: a branch index is equal to the `HALT` value or is out of range;
+    a branch node pointer is null; or an error occurs.
+
+Steps 1, 2, and 4 are implemented as separate functions.
+This is useful for implementation of alternative execution algorithms.
+
+The implementation recognizes the following edge cases:
+
+* **No-ops**: null operation functions are treated as no-ops.
+* **Implicit Transition**: If the transition function is null,
+    the transition data is dereferenced as a branch index.
+    If both are null, it defaults to branch `0`.
+* **Branch Index Translation Default**: If an input index is out of range, it is mapped to the `HALT` value.
 
 ### Threads
+
+Directory: `archi/thread`.
 
 TODO
 
 ### Signal Management
 
+Directory: `archi/signal`.
+
 TODO
 
 ### Memory
+
+Directory: `archi/memory`.
 
 TODO
 
 ### Files
 
+Directory: `archi/file`.
+
 TODO
 
 ### Shared Libraries
+
+Directory: `archi/library`.
 
 TODO
 
 ### Hashmaps
 
+Directory: `archi/hashmap`.
+
 TODO
 
 ### Environment Variables
+
+Directory: `archi/env`.
 
 TODO
 
 ### Parsers
 
+Directory: `archi/parser`.
+
 TODO
 
 ### Timers
 
+Directory: `archi/timer`.
+
 TODO
 
 ## Application
+
+Directory: `archi_app`.
 
 TODO
 
@@ -453,9 +523,13 @@ TODO
 
 ## SDL
 
+Directory: `archi/sdl2`, `archi/font_psf2`.
+
 TODO
 
 ## OpenCL
+
+Directory: `archi/opencl`.
 
 TODO
 

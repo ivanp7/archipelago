@@ -39,6 +39,7 @@ ARCHI_DEXGRAPH_TRANSITION_FUNC(archi_dexgraph_transition__loop_times)
     }
     else if (loop->num_iterations == 0)
     {
+        // as in do-while, one iteration is already done at the time of check
         ARCHI_ERROR_SET(ARCHI__ECONSTRAINT, "number of loop iterations cannot be zero");
         return ARCHI_DEXGRAPH_HALT;
     }
