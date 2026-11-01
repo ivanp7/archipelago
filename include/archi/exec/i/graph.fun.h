@@ -78,8 +78,17 @@ archi_dexgraph_execute_node_trans(
  * This function implements the most basic graph execution algorithm:
  * 1. execute the current node operation functions;
  * 2. execute the current node transition function;
- * 3. update the current node;
- * 4. repeat until the current node is NULL.
+ * 3. translate the branch index using the current translation table (optional);
+ * 4. update the current node;
+ * 5. repeat until the current node is NULL.
+ *
+ * Branch index translation tables are stored in the `data` field of the node structure.
+ *
+ * A translation table is an array of `size_t`, where the first element
+ * is the number of entries, and the rest are the mapping entries:
+ * `new_index := table[old_index + 1]`, where `old_index < table[0]`.
+ * Out-of-range indices are mapped to ARCHI_DEXGRAPH_HALT.
+ * If a table is NULL, the branch index is mapped to itself.
  *
  * Returned frame contains NULL node if execution terminated without errors.
  * Otherwise, it stores the current node pointer and operation index

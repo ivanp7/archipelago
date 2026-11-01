@@ -122,6 +122,11 @@ archi_dexgraph_execute(
         if (error.code != 0)
             break;
 
+        // Translate the branch index using the table
+        const size_t *table = frame.node->data;
+        if (table != NULL)
+            branch_index = (branch_index < table[0]) ? table[1 + branch_index] : ARCHI_DEXGRAPH_HALT;
+
         // Obtain the selected branch
         frame.node = archi_dexgraph_node_branch(frame.node, branch_index);
         frame.op_index = 0;
