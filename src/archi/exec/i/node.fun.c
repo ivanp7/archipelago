@@ -60,6 +60,17 @@ archi_dexgraph_node_free(
     free(node);
 }
 
+archi_dexgraph_operation_t
+archi_dexgraph_node_operation(
+        const archi_dexgraph_node_t *node,
+        size_t op_index)
+{
+    if ((node == NULL) || (op_index >= node->sequence_length))
+        return (archi_dexgraph_operation_t){0};
+
+    return node->sequence[op_index];
+}
+
 const archi_dexgraph_node_t*
 archi_dexgraph_node_branch(
         const archi_dexgraph_node_t *node,
@@ -75,6 +86,8 @@ archi_dexgraph_node_branch(
 
     return branch->node[branch_index];
 }
+
+/*****************************************************************************/
 
 archi_dexgraph_node_array_t*
 archi_dexgraph_node_array_alloc(

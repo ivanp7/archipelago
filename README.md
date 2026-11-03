@@ -441,14 +441,12 @@ Execution is tracked via a frame (the current node and the current operation ind
 1. **Operation Phase**: Operations are executed sequentially, starting from the current operation index.
     If any function returns an error, the entire execution is interrupted.
 2. **Transition Phase**: Once all operations are complete, the transition function selects the next branch.
-3. **Branch Index Translation**: The current node's data is interpreted as a branch index table.
-    If the table is not null, it is used to fetch the effective index.
-4. **Branch Node Fetch**: The new node is fetched from the list of branches of the current node.
-5. **Update**: The current node is updated, the operation index is reset to 0.
-6. **Termination**: Execution ends if: a branch index is equal to the `HALT` value or is out of range;
+3. **Branch Node Fetch**: The new node is fetched from the list of branches of the current node.
+4. **Update**: The current node is updated, the operation index is reset to 0.
+5. **Termination**: Execution ends if: a branch index is equal to the `HALT` value or is out of range;
     a branch node pointer is null; or an error occurs.
 
-Steps 1, 2, and 4 are implemented as separate functions.
+Steps 1, 2, and 3 are implemented as separate functions.
 This is useful for implementation of alternative execution algorithms.
 
 The implementation recognizes the following edge cases:
@@ -457,7 +455,6 @@ The implementation recognizes the following edge cases:
 * **Implicit Transition**: If the transition function is null,
     the transition data is dereferenced as a branch index.
     If both are null, it defaults to branch `0`.
-* **Branch Index Translation Default**: If an input index is out of range, it is mapped to the `HALT` value.
 
 ### Threads
 

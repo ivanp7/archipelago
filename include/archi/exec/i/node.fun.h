@@ -53,6 +53,20 @@ archi_dexgraph_node_free(
 );
 
 /**
+ * @brief Get node operation with the specified index.
+ *
+ * The function checks for the index range.
+ * The empty operation is returned for any invalid inputs.
+ *
+ * @return An operation with the specified index.
+ */
+archi_dexgraph_operation_t
+archi_dexgraph_node_operation(
+        const archi_dexgraph_node_t *node, ///< [in] Node.
+        size_t op_index ///< [in] Index of an operation.
+);
+
+/**
  * @brief Get node branch with the specified index.
  *
  * The function checks for NULL pointers and the index range.
@@ -65,6 +79,8 @@ archi_dexgraph_node_branch(
         const archi_dexgraph_node_t *node, ///< [in] Node.
         size_t branch_index ///< [in] Index of a branch.
 );
+
+/*****************************************************************************/
 
 /**
  * @brief Allocate a node array.
