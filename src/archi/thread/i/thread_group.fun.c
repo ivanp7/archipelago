@@ -123,7 +123,7 @@ struct archi_thread_group {
 /*****************************************************************************/
 
 struct archi_thread_arg {
-    archi_thread_group_t context;
+    archi_thread_group_t thread_group;
     size_t thread_idx;
 };
 
@@ -133,13 +133,13 @@ archi_thread(
         void *arg)
 {
     // Copy context and thread index
-    archi_thread_group_t context;
+    archi_thread_group_t thread_group;
     size_t thread_idx;
     {
         struct archi_thread_arg *thread_arg = arg;
         assert(thread_arg != NULL);
 
-        context = thread_arg->context;
+        thread_group = thread_arg->thread_group;
         thread_idx = thread_arg->thread_idx;
 
         // Free the temporary argument object
@@ -158,16 +158,16 @@ archi_thread(
 
         struct archi_thread_group_dispatch dispatch;
         {
-            MTX_LOCK(context->ping.mtx);
+            MTX_LOCK(thread_group->ping.mtx);
 
             // Wait for a work task or stop signal
-            while (context->ping.flag != ping_sense)
-                CND_WAIT(context->ping.cnd, context->ping.mtx);
+            while (thread_group->ping.flag != ping_sense)
+                CND_WAIT(thread_group->ping.cnd, thread_group->ping.mtx);
 
             // Store a local copy of the dispatch
-            dispatch = context->dispatch;
+            dispatch = thread_group->dispatch;
 
-            MTX_UNLOCK(context->ping.mtx);
+            MTX_UNLOCK(thread_group->ping.mtx);
         }
 
         // Terminate on stop signal
@@ -175,7 +175,7 @@ archi_thread(
             return 0;
 
         // Acquire first work item
-        size_t work_item_idx = atomic_fetch_add_explicit(&context->num_work_items_done,
+        size_t work_item_idx = atomic_fetch_add_explicit(&thread_group->num_work_items_done,
                 dispatch.params.batch_size, memory_order_relaxed);
         size_t remaining_work_items = dispatch.params.batch_size;
 
@@ -191,15 +191,15 @@ archi_thread(
                 work_item_idx++;
             else
             {
-                work_item_idx = atomic_fetch_add_explicit(&context->num_work_items_done,
+                work_item_idx = atomic_fetch_add_explicit(&thread_group->num_work_items_done,
                         dispatch.params.batch_size, memory_order_relaxed);
                 remaining_work_items = dispatch.params.batch_size;
             }
         }
 
         // Check if the current thread is the last
-        if (atomic_fetch_add_explicit(&context->num_threads_done, 1,
-                    memory_order_release) == context->num_threads - 1)
+        if (atomic_fetch_add_explicit(&thread_group->num_threads_done, 1,
+                    memory_order_release) == thread_group->num_threads - 1)
         {
             atomic_thread_fence(memory_order_acquire); // synchronize memory writes from other threads
 
@@ -210,18 +210,18 @@ archi_thread(
 
             // Update pong flag
             {
-                MTX_LOCK(context->pong.mtx);
+                MTX_LOCK(thread_group->pong.mtx);
 
-                context->pong.flag = pong_sense;
+                thread_group->pong.flag = pong_sense;
 
-                MTX_UNLOCK(context->pong.mtx);
+                MTX_UNLOCK(thread_group->pong.mtx);
             }
 
             // Wake the master thread
-            CND_BROADCAST(context->pong.cnd);
+            CND_BROADCAST(thread_group->pong.cnd);
 
             // Clear the busyness flag
-            atomic_flag_clear_explicit(&context->busy, memory_order_relaxed);
+            atomic_flag_clear_explicit(&thread_group->busy, memory_order_relaxed);
         }
     }
 }
@@ -236,14 +236,14 @@ archi_thread_group_create(
     size_t thread_idx = 0;
 
     // Initialize threads context
-    archi_thread_group_t context = malloc(sizeof(*context));
-    if (context == NULL)
+    archi_thread_group_t thread_group = malloc(sizeof(*thread_group));
+    if (thread_group == NULL)
     {
         ARCHI_ERROR_SET(ARCHI__EMEMORY, "couldn't allocate thread group context");
         goto failure;
     }
 
-    *context = (struct archi_thread_group){
+    *thread_group = (struct archi_thread_group){
         .num_threads = params.num_threads,
         .busy = ATOMIC_FLAG_INIT,
     };
@@ -253,7 +253,7 @@ archi_thread_group_create(
         // Create mutexes and condition variables
         int res;
 
-        res = cnd_init(&context->ping.cnd);
+        res = cnd_init(&thread_group->ping.cnd);
         if (res != thrd_success)
         {
             if (res == thrd_nomem)
@@ -264,16 +264,16 @@ archi_thread_group_create(
             goto failure;
         }
 
-        res = mtx_init(&context->ping.mtx, mtx_plain);
+        res = mtx_init(&thread_group->ping.mtx, mtx_plain);
         if (res != thrd_success)
         {
             ARCHI_ERROR_SET(ARCHI__ESYSTEM, "couldn't initialize mutex");
 
-            cnd_destroy(&context->ping.cnd);
+            cnd_destroy(&thread_group->ping.cnd);
             goto failure;
         }
 
-        res = cnd_init(&context->pong.cnd);
+        res = cnd_init(&thread_group->pong.cnd);
         if (res != thrd_success)
         {
             if (res == thrd_nomem)
@@ -281,25 +281,25 @@ archi_thread_group_create(
             else
                 ARCHI_ERROR_SET(ARCHI__ESYSTEM, "couldn't initialize condition variable");
 
-            cnd_destroy(&context->ping.cnd);
-            mtx_destroy(&context->ping.mtx);
+            cnd_destroy(&thread_group->ping.cnd);
+            mtx_destroy(&thread_group->ping.mtx);
             goto failure;
         }
 
-        res = mtx_init(&context->pong.mtx, mtx_plain);
+        res = mtx_init(&thread_group->pong.mtx, mtx_plain);
         if (res != thrd_success)
         {
             ARCHI_ERROR_SET(ARCHI__ESYSTEM, "couldn't initialize mutex");
 
-            cnd_destroy(&context->ping.cnd);
-            mtx_destroy(&context->ping.mtx);
-            cnd_destroy(&context->pong.cnd);
+            cnd_destroy(&thread_group->ping.cnd);
+            mtx_destroy(&thread_group->ping.mtx);
+            cnd_destroy(&thread_group->pong.cnd);
             goto failure;
         }
 
         // Create threads
-        context->threads = malloc(sizeof(*context->threads) * params.num_threads);
-        if (context->threads == NULL)
+        thread_group->threads = malloc(sizeof(*thread_group->threads) * params.num_threads);
+        if (thread_group->threads == NULL)
         {
             ARCHI_ERROR_SET(ARCHI__EMEMORY, "couldn't allocate array of threads [%zu]", params.num_threads);
             goto failure;
@@ -315,9 +315,9 @@ archi_thread_group_create(
             goto failure;
         }
 
-        *thread_arg = (struct archi_thread_arg){.context = context, .thread_idx = thread_idx};
+        *thread_arg = (struct archi_thread_arg){.thread_group = thread_group, .thread_idx = thread_idx};
 
-        int res = thrd_create(&context->threads[thread_idx], archi_thread, thread_arg);
+        int res = thrd_create(&thread_group->threads[thread_idx], archi_thread, thread_arg);
         if (res != thrd_success)
         {
             if (res == thrd_nomem)
@@ -331,13 +331,13 @@ archi_thread_group_create(
     }
 
     ARCHI_ERROR_RESET();
-    return context;
+    return thread_group;
 
 failure:
-    if (context != NULL)
+    if (thread_group != NULL)
     {
-        context->num_threads = thread_idx; // number of created threads
-        archi_thread_group_destroy(context);
+        thread_group->num_threads = thread_idx; // number of created threads
+        archi_thread_group_destroy(thread_group);
     }
 
     return NULL;
@@ -345,54 +345,54 @@ failure:
 
 void
 archi_thread_group_destroy(
-        archi_thread_group_t context)
+        archi_thread_group_t thread_group)
 {
-    if (context == NULL)
+    if (thread_group == NULL)
         return;
 
     // Wait while busy
-    while (atomic_flag_test_and_set_explicit(&context->busy, memory_order_relaxed))
-        archi_thread_group_wait(context);
+    while (atomic_flag_test_and_set_explicit(&thread_group->busy, memory_order_relaxed))
+        archi_thread_group_wait(thread_group);
 
-    if (context->num_threads > 0)
+    if (thread_group->num_threads > 0)
     {
         {
-            MTX_LOCK(context->ping.mtx);
+            MTX_LOCK(thread_group->ping.mtx);
 
             // Set stop signal
-            context->dispatch = (struct archi_thread_group_dispatch){0};
+            thread_group->dispatch = (struct archi_thread_group_dispatch){0};
 
             // Update ping flag
-            context->ping.flag = !context->ping.sense;
+            thread_group->ping.flag = !thread_group->ping.sense;
 
-            MTX_UNLOCK(context->ping.mtx);
+            MTX_UNLOCK(thread_group->ping.mtx);
         }
 
         // Wake slave threads
-        CND_BROADCAST(context->ping.cnd);
+        CND_BROADCAST(thread_group->ping.cnd);
     }
 
     // Join threads and free memory
-    for (size_t i = 0; i < context->num_threads; i++)
-        thrd_join(context->threads[i], (int*)NULL);
+    for (size_t i = 0; i < thread_group->num_threads; i++)
+        thrd_join(thread_group->threads[i], (int*)NULL);
 
-    free(context->threads);
+    free(thread_group->threads);
 
     // Destroy mutexes, condition variables, and free memory
-    if (context->num_threads > 0)
+    if (thread_group->num_threads > 0)
     {
-        cnd_destroy(&context->ping.cnd);
-        mtx_destroy(&context->ping.mtx);
-        cnd_destroy(&context->pong.cnd);
-        mtx_destroy(&context->pong.mtx);
+        cnd_destroy(&thread_group->ping.cnd);
+        mtx_destroy(&thread_group->ping.mtx);
+        cnd_destroy(&thread_group->pong.cnd);
+        mtx_destroy(&thread_group->pong.mtx);
     }
 
-    free(context);
+    free(thread_group);
 }
 
 bool
 archi_thread_group_dispatch(
-        archi_thread_group_t context,
+        archi_thread_group_t thread_group,
 
         archi_thread_group_work_t work,
         archi_thread_group_callback_t callback,
@@ -400,7 +400,7 @@ archi_thread_group_dispatch(
         archi_thread_group_dispatch_params_t params,
         ARCHI_ERROR_PARAM_DECL)
 {
-    if (context == NULL)
+    if (thread_group == NULL)
     {
         ARCHI_ERROR_SET(ARCHI__ECONSTRAINT, "thread group context is NULL");
         return false;
@@ -423,47 +423,47 @@ archi_thread_group_dispatch(
         return true;
     }
 
-    if (context->num_threads > 0)
+    if (thread_group->num_threads > 0)
     {
         // Fail if slave threads are busy
-        if (atomic_flag_test_and_set_explicit(&context->busy, memory_order_relaxed))
+        if (atomic_flag_test_and_set_explicit(&thread_group->busy, memory_order_relaxed))
         {
             ARCHI_ERROR_RESET();
             return false;
         }
 
         {
-            MTX_LOCK(context->ping.mtx);
-            MTX_LOCK(context->pong.mtx);
+            MTX_LOCK(thread_group->ping.mtx);
+            MTX_LOCK(thread_group->pong.mtx);
 
             // Calculate batch size if it's not specified
             if (params.batch_size == 0)
-                params.batch_size = 1 + (params.size - 1) / context->num_threads;
+                params.batch_size = 1 + (params.size - 1) / thread_group->num_threads;
 
             // Assign the work
-            context->dispatch = (struct archi_thread_group_dispatch){
+            thread_group->dispatch = (struct archi_thread_group_dispatch){
                 .work = work,
                 .callback = callback,
                 .params = params,
             };
 
             // Initialize counters
-            atomic_store_explicit(&context->num_work_items_done, 0, memory_order_relaxed);
-            atomic_store_explicit(&context->num_threads_done, 0, memory_order_relaxed);
+            atomic_store_explicit(&thread_group->num_work_items_done, 0, memory_order_relaxed);
+            atomic_store_explicit(&thread_group->num_threads_done, 0, memory_order_relaxed);
 
             // Toggle flag sense
-            context->ping.sense = !context->ping.sense;
-            context->pong.sense = !context->pong.sense;
+            thread_group->ping.sense = !thread_group->ping.sense;
+            thread_group->pong.sense = !thread_group->pong.sense;
 
             // Update ping flag
-            context->ping.flag = context->ping.sense;
+            thread_group->ping.flag = thread_group->ping.sense;
 
-            MTX_UNLOCK(context->pong.mtx);
-            MTX_UNLOCK(context->ping.mtx);
+            MTX_UNLOCK(thread_group->pong.mtx);
+            MTX_UNLOCK(thread_group->ping.mtx);
         }
 
         // Wake slave threads
-        CND_BROADCAST(context->ping.cnd);
+        CND_BROADCAST(thread_group->ping.cnd);
     }
     else // do all the work in this thread
     {
@@ -480,54 +480,54 @@ archi_thread_group_dispatch(
 
 void
 archi_thread_group_wait(
-        archi_thread_group_t context)
+        archi_thread_group_t thread_group)
 {
-    if (context == NULL)
+    if (thread_group == NULL)
         return;
 
     {
-        MTX_LOCK(context->pong.mtx);
+        MTX_LOCK(thread_group->pong.mtx);
 
-        bool pong_sense = context->pong.sense;
-        while (context->pong.flag != pong_sense)
-            CND_WAIT(context->pong.cnd, context->pong.mtx);
+        bool pong_sense = thread_group->pong.sense;
+        while (thread_group->pong.flag != pong_sense)
+            CND_WAIT(thread_group->pong.cnd, thread_group->pong.mtx);
 
-        MTX_UNLOCK(context->pong.mtx);
+        MTX_UNLOCK(thread_group->pong.mtx);
     }
 }
 
 void
 archi_thread_group_wait_until(
-        archi_thread_group_t context,
+        archi_thread_group_t thread_group,
         const struct timespec *time_point)
 {
-    if (context == NULL)
+    if (thread_group == NULL)
         return;
 
     if (time_point == NULL)
     {
-        archi_thread_group_wait(context);
+        archi_thread_group_wait(thread_group);
         return;
     }
 
     {
-        MTX_LOCK(context->pong.mtx);
+        MTX_LOCK(thread_group->pong.mtx);
 
-        bool pong_sense = context->pong.sense;
-        while (context->pong.flag != pong_sense)
-            CND_TIMEDWAIT(context->pong.cnd, context->pong.mtx, time_point);
+        bool pong_sense = thread_group->pong.sense;
+        while (thread_group->pong.flag != pong_sense)
+            CND_TIMEDWAIT(thread_group->pong.cnd, thread_group->pong.mtx, time_point);
 
-        MTX_UNLOCK(context->pong.mtx);
+        MTX_UNLOCK(thread_group->pong.mtx);
     }
 }
 
 size_t
 archi_thread_group_num_threads(
-        archi_thread_group_t context)
+        archi_thread_group_t thread_group)
 {
-    if (context == NULL)
+    if (thread_group == NULL)
         return 0;
 
-    return context->num_threads;
+    return thread_group->num_threads;
 }
 
