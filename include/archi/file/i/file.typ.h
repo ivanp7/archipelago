@@ -24,8 +24,8 @@
  */
 
 #pragma once
-#ifndef _ARCHI_FILE_API_FILE_TYP_H_
-#define _ARCHI_FILE_API_FILE_TYP_H_
+#ifndef _ARCHI_FILE_I_FILE_TYP_H_
+#define _ARCHI_FILE_I_FILE_TYP_H_
 
 #include <stddef.h> // for size_t
 #include <stdbool.h>
@@ -70,5 +70,5 @@ typedef struct archi_file_map_params {
     int flags;     ///< Other flags.
 } archi_file_map_params_t;
 
-#endif // _ARCHI_FILE_API_FILE_TYP_H_
+#endif // _ARCHI_FILE_I_FILE_TYP_H_
 

@@ -24,8 +24,8 @@
  */
 
 #pragma once
-#ifndef _ARCHI_TIMER_API_HANDLE_TYP_H_
-#define _ARCHI_TIMER_API_HANDLE_TYP_H_
+#ifndef _ARCHI_TIMER_I_HANDLE_TYP_H_
+#define _ARCHI_TIMER_I_HANDLE_TYP_H_
 
 struct archi_timer;
 
@@ -34,5 +34,5 @@ struct archi_timer;
  */
 typedef struct archi_timer *archi_timer_t;
 
-#endif // _ARCHI_TIMER_API_HANDLE_TYP_H_
+#endif // _ARCHI_TIMER_I_HANDLE_TYP_H_
 

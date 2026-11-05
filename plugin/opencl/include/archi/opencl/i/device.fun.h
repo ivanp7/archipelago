@@ -24,8 +24,8 @@
  */
 
 #pragma once
-#ifndef _ARCHI_OPENCL_API_DEVICE_FUN_H_
-#define _ARCHI_OPENCL_API_DEVICE_FUN_H_
+#ifndef _ARCHI_OPENCL_I_DEVICE_FUN_H_
+#define _ARCHI_OPENCL_I_DEVICE_FUN_H_
 
 #include "archi/opencl/i/device.typ.h"
 #include "archi_base/error.typ.h"
@@ -56,5 +56,5 @@ archi_opencl_platdev_set(
         ARCHI_ERROR_PARAM_DECL ///< [out] Error.
 );
 
-#endif // _ARCHI_OPENCL_API_DEVICE_FUN_H_
+#endif // _ARCHI_OPENCL_I_DEVICE_FUN_H_
 

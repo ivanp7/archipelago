@@ -24,8 +24,8 @@
  */
 
 #pragma once
-#ifndef _ARCHI_CONTEXT_API_CALLBACK_FUN_H_
-#define _ARCHI_CONTEXT_API_CALLBACK_FUN_H_
+#ifndef _ARCHI_CONTEXT_I_CALLBACK_FUN_H_
+#define _ARCHI_CONTEXT_I_CALLBACK_FUN_H_
 
 #include "archi/context/i/callback.typ.h"
 
@@ -35,5 +35,5 @@
  */
 ARCHI_CONTEXT_CALLBACK_FUNC(archi_context_callback__getter);
 
-#endif // _ARCHI_CONTEXT_API_CALLBACK_FUN_H_
+#endif // _ARCHI_CONTEXT_I_CALLBACK_FUN_H_
 

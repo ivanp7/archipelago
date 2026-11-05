@@ -24,12 +24,12 @@
  */
 
 #pragma once
-#ifndef _ARCHI_SDL2_API_TAG_DEF_H_
-#define _ARCHI_SDL2_API_TAG_DEF_H_
+#ifndef _ARCHI_SDL2_I_TAG_DEF_H_
+#define _ARCHI_SDL2_I_TAG_DEF_H_
 
 #define ARCHI_POINTER_DATA_TAG__SDL2_WINDOW     0x988 ///< Data type tag for SDL_Window.
 #define ARCHI_POINTER_DATA_TAG__SDL2_RENDERER   0x989 ///< Data type tag for SDL_Renderer.
 #define ARCHI_POINTER_DATA_TAG__SDL2_TEXTURE    0x98A ///< Data type tag for SDL_Texture.
 
-#endif // _ARCHI_SDL2_API_TAG_DEF_H_
+#endif // _ARCHI_SDL2_I_TAG_DEF_H_
 

@@ -24,8 +24,8 @@
  */
 
 #pragma once
-#ifndef _ARCHI_ENV_API_CONTEXT_FUN_H_
-#define _ARCHI_ENV_API_CONTEXT_FUN_H_
+#ifndef _ARCHI_ENV_I_CONTEXT_FUN_H_
+#define _ARCHI_ENV_I_CONTEXT_FUN_H_
 
 #include "archi_base/global.typ.h"
 
@@ -55,5 +55,5 @@ ARCHI_GLOBAL_SET_FUNC(archi_global_context_set__env);
  */
 ARCHI_GLOBAL_GET_FUNC(archi_global_context__env);
 
-#endif // _ARCHI_ENV_API_CONTEXT_FUN_H_
+#endif // _ARCHI_ENV_I_CONTEXT_FUN_H_
 

@@ -24,8 +24,8 @@
  */
 
 #pragma once
-#ifndef _ARCHI_CONTEXT_API_INTERFACE_TYP_H_
-#define _ARCHI_CONTEXT_API_INTERFACE_TYP_H_
+#ifndef _ARCHI_CONTEXT_I_INTERFACE_TYP_H_
+#define _ARCHI_CONTEXT_I_INTERFACE_TYP_H_
 
 #include "archi/context/i/slot.typ.h"
 #include "archi/context/i/callback.typ.h"
@@ -136,5 +136,5 @@ typedef struct archi_context_interface {
     archi_context_set_func_t set_fn;   ///< Context slot setter function.
 } archi_context_interface_t;
 
-#endif // _ARCHI_CONTEXT_API_INTERFACE_TYP_H_
+#endif // _ARCHI_CONTEXT_I_INTERFACE_TYP_H_
 

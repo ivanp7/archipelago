@@ -24,8 +24,8 @@
  */
 
 #pragma once
-#ifndef _ARCHI_FONT_PSF2_API_HANDLE_TYP_H_
-#define _ARCHI_FONT_PSF2_API_HANDLE_TYP_H_
+#ifndef _ARCHI_FONT_PSF2_I_HANDLE_TYP_H_
+#define _ARCHI_FONT_PSF2_I_HANDLE_TYP_H_
 
 #include <stdint.h> // for uint32_t
 
@@ -37,5 +37,5 @@ struct archi_font_psf2;
  */
 typedef struct archi_font_psf2 *archi_font_psf2_t;
 
-#endif // _ARCHI_FONT_PSF2_API_HANDLE_TYP_H_
+#endif // _ARCHI_FONT_PSF2_I_HANDLE_TYP_H_
 

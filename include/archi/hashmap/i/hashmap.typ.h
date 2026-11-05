@@ -24,8 +24,8 @@
  */
 
 #pragma once
-#ifndef _ARCHI_HASHMAP_API_HASHMAP_TYP_H_
-#define _ARCHI_HASHMAP_API_HASHMAP_TYP_H_
+#ifndef _ARCHI_HASHMAP_I_HASHMAP_TYP_H_
+#define _ARCHI_HASHMAP_I_HASHMAP_TYP_H_
 
 #include "archi_base/pointer.typ.h"
 
@@ -136,5 +136,5 @@ typedef struct archi_hashmap_trav_action {
  */
 typedef ARCHI_HASHMAP_TRAV_KV_FUNC((*archi_hashmap_trav_kv_func_t));
 
-#endif // _ARCHI_HASHMAP_API_HASHMAP_TYP_H_
+#endif // _ARCHI_HASHMAP_I_HASHMAP_TYP_H_
 

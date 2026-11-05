@@ -24,13 +24,13 @@
  */
 
 #pragma once
-#ifndef _ARCHI_LIBRARY_API_HANDLE_TYP_H_
-#define _ARCHI_LIBRARY_API_HANDLE_TYP_H_
+#ifndef _ARCHI_LIBRARY_I_HANDLE_TYP_H_
+#define _ARCHI_LIBRARY_I_HANDLE_TYP_H_
 
 /**
  * @brief Shared library handle.
  */
 typedef void *archi_library_handle_t;
 
-#endif // _ARCHI_LIBRARY_API_HANDLE_TYP_H_
+#endif // _ARCHI_LIBRARY_I_HANDLE_TYP_H_
 

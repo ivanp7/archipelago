@@ -24,8 +24,8 @@
  */
 
 #pragma once
-#ifndef _ARCHI_EXEC_API_OPERATION_TYP_H_
-#define _ARCHI_EXEC_API_OPERATION_TYP_H_
+#ifndef _ARCHI_EXEC_I_OPERATION_TYP_H_
+#define _ARCHI_EXEC_I_OPERATION_TYP_H_
 
 #include "archi_base/error.typ.h"
 
@@ -50,5 +50,5 @@ typedef struct archi_dexgraph_operation {
     void *data; ///< Operation function data.
 } archi_dexgraph_operation_t;
 
-#endif // _ARCHI_EXEC_API_OPERATION_TYP_H_
+#endif // _ARCHI_EXEC_I_OPERATION_TYP_H_
 

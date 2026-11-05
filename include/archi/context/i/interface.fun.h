@@ -24,8 +24,8 @@
  */
 
 #pragma once
-#ifndef _ARCHI_CONTEXT_API_INTERFACE_FUN_H_
-#define _ARCHI_CONTEXT_API_INTERFACE_FUN_H_
+#ifndef _ARCHI_CONTEXT_I_INTERFACE_FUN_H_
+#define _ARCHI_CONTEXT_I_INTERFACE_FUN_H_
 
 #include "archi/context/i/handle.typ.h"
 #include "archi/context/i/slot.typ.h"
@@ -195,5 +195,5 @@ archi_context_set_from_call(
         ARCHI_ERROR_PARAM_DECL ///< [out] Error.
 );
 
-#endif // _ARCHI_CONTEXT_API_INTERFACE_FUN_H_
+#endif // _ARCHI_CONTEXT_I_INTERFACE_FUN_H_
 

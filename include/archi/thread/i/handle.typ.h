@@ -24,8 +24,8 @@
  */
 
 #pragma once
-#ifndef _ARCHI_THREAD_API_HANDLE_TYP_H_
-#define _ARCHI_THREAD_API_HANDLE_TYP_H_
+#ifndef _ARCHI_THREAD_I_HANDLE_TYP_H_
+#define _ARCHI_THREAD_I_HANDLE_TYP_H_
 
 #include <stddef.h> // for size_t
 
@@ -43,5 +43,5 @@ typedef struct archi_thread_group *archi_thread_group_t;
  */
 typedef struct archi_thread_lfqueue *archi_thread_lfqueue_t;
 
-#endif // _ARCHI_THREAD_API_HANDLE_TYP_H_
+#endif // _ARCHI_THREAD_I_HANDLE_TYP_H_
 

@@ -24,10 +24,10 @@
  */
 
 #pragma once
-#ifndef _ARCHI_FILE_API_TAG_DEF_H_
-#define _ARCHI_FILE_API_TAG_DEF_H_
+#ifndef _ARCHI_FILE_I_TAG_DEF_H_
+#define _ARCHI_FILE_I_TAG_DEF_H_
 
 #define ARCHI_POINTER_DATA_TAG__FILE_STREAM     0x78 ///< Data type tag for archi_file_stream_t.
 
-#endif // _ARCHI_FILE_API_TAG_DEF_H_
+#endif // _ARCHI_FILE_I_TAG_DEF_H_
 

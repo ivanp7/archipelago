@@ -24,8 +24,8 @@
  */
 
 #pragma once
-#ifndef _ARCHI_FILE_API_MAP_FUN_H_
-#define _ARCHI_FILE_API_MAP_FUN_H_
+#ifndef _ARCHI_FILE_I_MAP_FUN_H_
+#define _ARCHI_FILE_I_MAP_FUN_H_
 
 #include "archi/file/i/handle.typ.h"
 #include "archi/file/i/file.typ.h"
@@ -66,5 +66,5 @@ archi_file_unmap(
         size_t size ///< [in] Size of mapped memory.
 );
 
-#endif // _ARCHI_FILE_API_MAP_FUN_H_
+#endif // _ARCHI_FILE_I_MAP_FUN_H_
 

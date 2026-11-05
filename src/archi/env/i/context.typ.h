@@ -24,8 +24,8 @@
  */
 
 #pragma once
-#ifndef _SRC_ARCHI_ENV_API_CONTEXT_TYP_H_
-#define _SRC_ARCHI_ENV_API_CONTEXT_TYP_H_
+#ifndef _SRC_ARCHI_ENV_I_CONTEXT_TYP_H_
+#define _SRC_ARCHI_ENV_I_CONTEXT_TYP_H_
 
 #ifndef __STDC_NO_THREADS__
 #  include <threads.h> // for mtx_t
@@ -41,5 +41,5 @@ struct archi_env_context {
     bool initialized; ///< Whether the context was initialized.
 };
 
-#endif // _SRC_ARCHI_ENV_API_CONTEXT_TYP_H_
+#endif // _SRC_ARCHI_ENV_I_CONTEXT_TYP_H_
 

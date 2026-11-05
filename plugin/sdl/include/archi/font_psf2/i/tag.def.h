@@ -24,13 +24,13 @@
  */
 
 #pragma once
-#ifndef _ARCHI_FONT_PSF2_API_TAG_DEF_H_
-#define _ARCHI_FONT_PSF2_API_TAG_DEF_H_
+#ifndef _ARCHI_FONT_PSF2_I_TAG_DEF_H_
+#define _ARCHI_FONT_PSF2_I_TAG_DEF_H_
 
 /**
  * @brief Data type tag for archi_font_psf2_t.
  */
 #define ARCHI_POINTER_DATA_TAG__FONT_PSF2   0x998
 
-#endif // _ARCHI_FONT_PSF2_API_TAG_DEF_H_
+#endif // _ARCHI_FONT_PSF2_I_TAG_DEF_H_
 

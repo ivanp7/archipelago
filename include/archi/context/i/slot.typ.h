@@ -24,8 +24,8 @@
  */
 
 #pragma once
-#ifndef _ARCHI_CONTEXT_API_SLOT_TYP_H_
-#define _ARCHI_CONTEXT_API_SLOT_TYP_H_
+#ifndef _ARCHI_CONTEXT_I_SLOT_TYP_H_
+#define _ARCHI_CONTEXT_I_SLOT_TYP_H_
 
 #include <stddef.h> // for size_t
 
@@ -57,5 +57,5 @@ typedef struct archi_context_slot {
 #define ARCHI_CONTEXT_SLOT_EMPTY(slot)      \
     (((slot).name[0] == '\0') && ((slot).num_indices == 0))
 
-#endif // _ARCHI_CONTEXT_API_SLOT_TYP_H_
+#endif // _ARCHI_CONTEXT_I_SLOT_TYP_H_
 

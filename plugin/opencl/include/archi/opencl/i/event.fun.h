@@ -24,8 +24,8 @@
  */
 
 #pragma once
-#ifndef _ARCHI_OPENCL_API_EVENT_FUN_H_
-#define _ARCHI_OPENCL_API_EVENT_FUN_H_
+#ifndef _ARCHI_OPENCL_I_EVENT_FUN_H_
+#define _ARCHI_OPENCL_I_EVENT_FUN_H_
 
 #include "archi/opencl/i/event.typ.h"
 #include "archi_base/error.typ.h"
@@ -63,5 +63,5 @@ archi_opencl_event_assign(
         cl_event event ///< [in] Event.
 );
 
-#endif // _ARCHI_OPENCL_API_EVENT_FUN_H_
+#endif // _ARCHI_OPENCL_I_EVENT_FUN_H_
 

@@ -24,8 +24,8 @@
  */
 
 #pragma once
-#ifndef _ARCHI_OPENCL_API_DEVICE_TYP_H_
-#define _ARCHI_OPENCL_API_DEVICE_TYP_H_
+#ifndef _ARCHI_OPENCL_I_DEVICE_TYP_H_
+#define _ARCHI_OPENCL_I_DEVICE_TYP_H_
 
 #include <CL/cl.h>
 
@@ -40,5 +40,5 @@ typedef struct archi_opencl_platdev {
     cl_device_id device_id[];  ///< Array of OpenCL device IDs.
 } archi_opencl_platdev_t;
 
-#endif // _ARCHI_OPENCL_API_DEVICE_TYP_H_
+#endif // _ARCHI_OPENCL_I_DEVICE_TYP_H_
 

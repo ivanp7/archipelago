@@ -24,8 +24,8 @@
  */
 
 #pragma once
-#ifndef _ARCHI_FONT_PSF2_API_FONT_FUN_H_
-#define _ARCHI_FONT_PSF2_API_FONT_FUN_H_
+#ifndef _ARCHI_FONT_PSF2_I_FONT_FUN_H_
+#define _ARCHI_FONT_PSF2_I_FONT_FUN_H_
 
 #include "archi/font_psf2/i/handle.typ.h"
 #include "archi/font_psf2/i/font.typ.h"
@@ -106,5 +106,5 @@ archi_font_psf2_draw_glyph(
         const unsigned char *bg_pixel  ///< [in] Glyph background color.
 );
 
-#endif // _ARCHI_FONT_PSF2_API_FONT_FUN_H_
+#endif // _ARCHI_FONT_PSF2_I_FONT_FUN_H_
 

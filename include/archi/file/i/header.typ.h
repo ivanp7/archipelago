@@ -24,8 +24,8 @@
  */
 
 #pragma once
-#ifndef _ARCHI_FILE_API_HEADER_TYP_H_
-#define _ARCHI_FILE_API_HEADER_TYP_H_
+#ifndef _ARCHI_FILE_I_HEADER_TYP_H_
+#define _ARCHI_FILE_I_HEADER_TYP_H_
 
 #include <stddef.h> // for size_t
 
@@ -41,5 +41,5 @@ typedef struct archi_file_ptr_support_header {
     size_t size; ///< Payload size in bytes: size of the memory excluding the header.
 } archi_file_ptr_support_header_t;
 
-#endif // _ARCHI_FILE_API_HEADER_TYP_H_
+#endif // _ARCHI_FILE_I_HEADER_TYP_H_
 

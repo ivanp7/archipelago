@@ -24,8 +24,8 @@
  */
 
 #pragma once
-#ifndef _ARCHI_CONTEXT_API_HANDLE_TYP_H_
-#define _ARCHI_CONTEXT_API_HANDLE_TYP_H_
+#ifndef _ARCHI_CONTEXT_I_HANDLE_TYP_H_
+#define _ARCHI_CONTEXT_I_HANDLE_TYP_H_
 
 struct archi_context;
 
@@ -34,5 +34,5 @@ struct archi_context;
  */
 typedef struct archi_context *archi_context_t;
 
-#endif // _ARCHI_CONTEXT_API_HANDLE_TYP_H_
+#endif // _ARCHI_CONTEXT_I_HANDLE_TYP_H_
 

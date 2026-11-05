@@ -24,8 +24,8 @@
  */
 
 #pragma once
-#ifndef _ARCHI_EXEC_API_NODE_FUN_H_
-#define _ARCHI_EXEC_API_NODE_FUN_H_
+#ifndef _ARCHI_EXEC_I_NODE_FUN_H_
+#define _ARCHI_EXEC_I_NODE_FUN_H_
 
 #include "archi/exec/i/node.typ.h"
 
@@ -66,5 +66,5 @@ archi_dexgraph_node_operation(
         size_t op_index ///< [in] Index of an operation.
 );
 
-#endif // _ARCHI_EXEC_API_NODE_FUN_H_
+#endif // _ARCHI_EXEC_I_NODE_FUN_H_
 

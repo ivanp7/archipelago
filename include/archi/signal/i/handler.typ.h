@@ -24,8 +24,8 @@
  */
 
 #pragma once
-#ifndef _ARCHI_SIGNAL_API_HANDLER_TYP_H_
-#define _ARCHI_SIGNAL_API_HANDLER_TYP_H_
+#ifndef _ARCHI_SIGNAL_I_HANDLER_TYP_H_
+#define _ARCHI_SIGNAL_I_HANDLER_TYP_H_
 
 #include <stdbool.h>
 
@@ -92,5 +92,5 @@ typedef struct archi_signal_handler {
     void *data; ///< Signal hander function data.
 } archi_signal_handler_t;
 
-#endif // _ARCHI_SIGNAL_API_HANDLER_TYP_H_
+#endif // _ARCHI_SIGNAL_I_HANDLER_TYP_H_
 

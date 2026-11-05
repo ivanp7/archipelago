@@ -24,8 +24,8 @@
  */
 
 #pragma once
-#ifndef _ARCHI_MEMORY_API_INTERFACE_HEAP_VAR_H_
-#define _ARCHI_MEMORY_API_INTERFACE_HEAP_VAR_H_
+#ifndef _ARCHI_MEMORY_I_INTERFACE_HEAP_VAR_H_
+#define _ARCHI_MEMORY_I_INTERFACE_HEAP_VAR_H_
 
 #include "archi/memory/i/interface.typ.h"
 
@@ -37,5 +37,5 @@ extern
 const archi_memory_interface_t
 archi_memory_interface__heap;
 
-#endif // _ARCHI_MEMORY_API_INTERFACE_HEAP_VAR_H_
+#endif // _ARCHI_MEMORY_I_INTERFACE_HEAP_VAR_H_
 

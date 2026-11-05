@@ -24,10 +24,10 @@
  */
 
 #pragma once
-#ifndef _ARCHI_TIMER_API_TAG_DEF_H_
-#define _ARCHI_TIMER_API_TAG_DEF_H_
+#ifndef _ARCHI_TIMER_I_TAG_DEF_H_
+#define _ARCHI_TIMER_I_TAG_DEF_H_
 
 #define ARCHI_POINTER_DATA_TAG__TIMER   0xC8 ///< Data type tag for archi_timer_t.
 
-#endif // _ARCHI_TIMER_API_TAG_DEF_H_
+#endif // _ARCHI_TIMER_I_TAG_DEF_H_
 

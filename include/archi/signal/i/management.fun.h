@@ -24,8 +24,8 @@
  */
 
 #pragma once
-#ifndef _ARCHI_SIGNAL_API_MANAGEMENT_FUN_H_
-#define _ARCHI_SIGNAL_API_MANAGEMENT_FUN_H_
+#ifndef _ARCHI_SIGNAL_I_MANAGEMENT_FUN_H_
+#define _ARCHI_SIGNAL_I_MANAGEMENT_FUN_H_
 
 #include "archi/signal/i/signal.typ.h"
 #include "archi/signal/i/handler.typ.h"
@@ -106,5 +106,5 @@ archi_signal_management_handler_set(
         archi_signal_handler_t signal_handler
 );
 
-#endif // _ARCHI_SIGNAL_API_MANAGEMENT_FUN_H_
+#endif // _ARCHI_SIGNAL_I_MANAGEMENT_FUN_H_
 

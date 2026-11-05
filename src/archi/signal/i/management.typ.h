@@ -24,8 +24,8 @@
  */
 
 #pragma once
-#ifndef _SRC_ARCHI_SIGNAL_API_MANAGEMENT_TYP_H_
-#define _SRC_ARCHI_SIGNAL_API_MANAGEMENT_TYP_H_
+#ifndef _SRC_ARCHI_SIGNAL_I_MANAGEMENT_TYP_H_
+#define _SRC_ARCHI_SIGNAL_I_MANAGEMENT_TYP_H_
 
 #include "archi/signal/i/signal.typ.h"
 #include "archi/signal/i/handler.typ.h"
@@ -40,5 +40,5 @@ struct archi_signal_management_context_base {
     mtx_t *signal_handler_lock;
 };
 
-#endif // _SRC_ARCHI_SIGNAL_API_MANAGEMENT_TYP_H_
+#endif // _SRC_ARCHI_SIGNAL_I_MANAGEMENT_TYP_H_
 

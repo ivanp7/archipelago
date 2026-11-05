@@ -24,8 +24,8 @@
  */
 
 #pragma once
-#ifndef _ARCHI_CONTEXT_API_INTERFACE_DEF_H_
-#define _ARCHI_CONTEXT_API_INTERFACE_DEF_H_
+#ifndef _ARCHI_CONTEXT_I_INTERFACE_DEF_H_
+#define _ARCHI_CONTEXT_I_INTERFACE_DEF_H_
 
 #include "archi/context/i/callback.typ.h"
 #include "archi_base/ref_count.typ.h"
@@ -63,5 +63,5 @@
                 ARCHI_ERROR_PARAM);                     \
 } while (0)
 
-#endif // _ARCHI_CONTEXT_API_INTERFACE_DEF_H_
+#endif // _ARCHI_CONTEXT_I_INTERFACE_DEF_H_
 

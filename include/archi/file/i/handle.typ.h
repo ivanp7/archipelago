@@ -24,8 +24,8 @@
  */
 
 #pragma once
-#ifndef _ARCHI_FILE_API_HANDLE_TYP_H_
-#define _ARCHI_FILE_API_HANDLE_TYP_H_
+#ifndef _ARCHI_FILE_I_HANDLE_TYP_H_
+#define _ARCHI_FILE_I_HANDLE_TYP_H_
 
 #include <stdio.h> // for FILE
 
@@ -40,5 +40,5 @@ typedef int archi_file_descriptor_t;
  */
 typedef FILE *archi_file_stream_t;
 
-#endif // _ARCHI_FILE_API_HANDLE_TYP_H_
+#endif // _ARCHI_FILE_I_HANDLE_TYP_H_
 

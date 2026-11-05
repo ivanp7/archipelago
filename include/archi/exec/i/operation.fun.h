@@ -24,8 +24,8 @@
  */
 
 #pragma once
-#ifndef _ARCHI_EXEC_API_OPERATION_FUN_H_
-#define _ARCHI_EXEC_API_OPERATION_FUN_H_
+#ifndef _ARCHI_EXEC_I_OPERATION_FUN_H_
+#define _ARCHI_EXEC_I_OPERATION_FUN_H_
 
 #include "archi/exec/i/operation.typ.h"
 #include "archi_base/error.typ.h"
@@ -42,5 +42,5 @@ archi_dexgraph_operation_call(
         ARCHI_ERROR_PARAM_DECL ///< [out] Error.
 );
 
-#endif // _ARCHI_EXEC_API_OPERATION_FUN_H_
+#endif // _ARCHI_EXEC_I_OPERATION_FUN_H_
 

@@ -24,8 +24,8 @@
  */
 
 #pragma once
-#ifndef _ARCHI_LIBRARY_API_GLOBAL_FUN_H_
-#define _ARCHI_LIBRARY_API_GLOBAL_FUN_H_
+#ifndef _ARCHI_LIBRARY_I_GLOBAL_FUN_H_
+#define _ARCHI_LIBRARY_I_GLOBAL_FUN_H_
 
 #include "archi/library/i/handle.typ.h"
 #include "archi_base/global.typ.h"
@@ -48,5 +48,5 @@ archi_library_initialize_global(
         archi_global_init_spec_t init_spec ///< [in] Global object initialization specification.
 );
 
-#endif // _ARCHI_LIBRARY_API_GLOBAL_FUN_H_
+#endif // _ARCHI_LIBRARY_I_GLOBAL_FUN_H_
 

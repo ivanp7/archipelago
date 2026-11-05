@@ -24,8 +24,8 @@
  */
 
 #pragma once
-#ifndef _ARCHI_MEMORY_API_INTERFACE_FUN_H_
-#define _ARCHI_MEMORY_API_INTERFACE_FUN_H_
+#ifndef _ARCHI_MEMORY_I_INTERFACE_FUN_H_
+#define _ARCHI_MEMORY_I_INTERFACE_FUN_H_
 
 #include "archi/memory/i/handle.typ.h"
 #include "archi/memory/i/interface.typ.h"
@@ -210,5 +210,5 @@ archi_memory_unmap(
         archi_memory_mapping_t mapping ///< [in] Memory mapping handle.
 );
 
-#endif // _ARCHI_MEMORY_API_INTERFACE_FUN_H_
+#endif // _ARCHI_MEMORY_I_INTERFACE_FUN_H_
 

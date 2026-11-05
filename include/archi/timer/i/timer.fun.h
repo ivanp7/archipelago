@@ -24,8 +24,8 @@
  */
 
 #pragma once
-#ifndef _ARCHI_TIMER_API_TIMER_FUN_H_
-#define _ARCHI_TIMER_API_TIMER_FUN_H_
+#ifndef _ARCHI_TIMER_I_TIMER_FUN_H_
+#define _ARCHI_TIMER_I_TIMER_FUN_H_
 
 #include "archi/timer/i/handle.typ.h"
 
@@ -159,5 +159,5 @@ archi_timer_time_last(
         archi_timer_t timer ///< [in] Timer.
 );
 
-#endif // _ARCHI_TIMER_API_TIMER_FUN_H_
+#endif // _ARCHI_TIMER_I_TIMER_FUN_H_
 

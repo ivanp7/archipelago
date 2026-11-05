@@ -24,8 +24,8 @@
  */
 
 #pragma once
-#ifndef _ARCHI_EXEC_API_FRAME_FUN_H_
-#define _ARCHI_EXEC_API_FRAME_FUN_H_
+#ifndef _ARCHI_EXEC_I_FRAME_FUN_H_
+#define _ARCHI_EXEC_I_FRAME_FUN_H_
 
 #include "archi/exec/i/frame.typ.h"
 #include "archi_base/error.typ.h"
@@ -66,5 +66,5 @@ archi_dexgraph_execute(
         ARCHI_ERROR_PARAM_DECL ///< [out] Error.
 );
 
-#endif // _ARCHI_EXEC_API_FRAME_FUN_H_
+#endif // _ARCHI_EXEC_I_FRAME_FUN_H_
 

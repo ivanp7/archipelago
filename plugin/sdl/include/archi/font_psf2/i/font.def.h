@@ -24,13 +24,13 @@
  */
 
 #pragma once
-#ifndef _ARCHI_FONT_PSF2_API_FONT_DEF_H_
-#define _ARCHI_FONT_PSF2_API_FONT_DEF_H_
+#ifndef _ARCHI_FONT_PSF2_I_FONT_DEF_H_
+#define _ARCHI_FONT_PSF2_I_FONT_DEF_H_
 
 /**
  * @brief Magic constant of PC Screen Font version 2.
  */
 #define ARCHI_FONT_PSF2_MAGIC   0x864ab572
 
-#endif // _ARCHI_FONT_PSF2_API_FONT_DEF_H_
+#endif // _ARCHI_FONT_PSF2_I_FONT_DEF_H_
 

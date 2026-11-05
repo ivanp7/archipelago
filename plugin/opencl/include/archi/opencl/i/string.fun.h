@@ -24,8 +24,8 @@
  */
 
 #pragma once
-#ifndef _ARCHI_OPENCL_API_STRING_FUN_H_
-#define _ARCHI_OPENCL_API_STRING_FUN_H_
+#ifndef _ARCHI_OPENCL_I_STRING_FUN_H_
+#define _ARCHI_OPENCL_I_STRING_FUN_H_
 
 #include <CL/cl.h>
 
@@ -50,5 +50,5 @@ archi_opencl_string_build_status(
         cl_build_status status ///< Program build status.
 );
 
-#endif // _ARCHI_OPENCL_API_STRING_FUN_H_
+#endif // _ARCHI_OPENCL_I_STRING_FUN_H_
 

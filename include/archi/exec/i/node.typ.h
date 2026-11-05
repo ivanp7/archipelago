@@ -24,8 +24,8 @@
  */
 
 #pragma once
-#ifndef _ARCHI_EXEC_API_NODE_TYP_H_
-#define _ARCHI_EXEC_API_NODE_TYP_H_
+#ifndef _ARCHI_EXEC_I_NODE_TYP_H_
+#define _ARCHI_EXEC_I_NODE_TYP_H_
 
 #include "archi/exec/i/operation.typ.h"
 #include "archi/exec/i/transition.typ.h"
@@ -46,5 +46,5 @@ typedef struct archi_dexgraph_node {
     archi_dexgraph_operation_t sequence[]; ///< Node operation sequence.
 } archi_dexgraph_node_t;
 
-#endif // _ARCHI_EXEC_API_NODE_TYP_H_
+#endif // _ARCHI_EXEC_I_NODE_TYP_H_
 

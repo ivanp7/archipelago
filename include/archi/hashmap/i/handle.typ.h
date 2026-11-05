@@ -24,8 +24,8 @@
  */
 
 #pragma once
-#ifndef _ARCHI_HASHMAP_API_HANDLE_TYP_H_
-#define _ARCHI_HASHMAP_API_HANDLE_TYP_H_
+#ifndef _ARCHI_HASHMAP_I_HANDLE_TYP_H_
+#define _ARCHI_HASHMAP_I_HANDLE_TYP_H_
 
 struct archi_hashmap;
 
@@ -34,5 +34,5 @@ struct archi_hashmap;
  */
 typedef struct archi_hashmap *archi_hashmap_t;
 
-#endif // _ARCHI_HASHMAP_API_HANDLE_TYP_H_
+#endif // _ARCHI_HASHMAP_I_HANDLE_TYP_H_
 

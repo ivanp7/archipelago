@@ -24,8 +24,8 @@
  */
 
 #pragma once
-#ifndef _ARCHI_CONTEXT_API_REGISTRY_TYP_H_
-#define _ARCHI_CONTEXT_API_REGISTRY_TYP_H_
+#ifndef _ARCHI_CONTEXT_I_REGISTRY_TYP_H_
+#define _ARCHI_CONTEXT_I_REGISTRY_TYP_H_
 
 #include "archi_base/kvlist.typ.h"
 
@@ -38,5 +38,5 @@ typedef struct archi_context_registry_params {
     archi_krcvlist_t *list; ///< Static parameter list.
 } archi_context_registry_params_t;
 
-#endif // _ARCHI_CONTEXT_API_REGISTRY_TYP_H_
+#endif // _ARCHI_CONTEXT_I_REGISTRY_TYP_H_
 

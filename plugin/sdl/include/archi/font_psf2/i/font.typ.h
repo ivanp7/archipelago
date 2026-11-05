@@ -24,8 +24,8 @@
  */
 
 #pragma once
-#ifndef _ARCHI_FONT_PSF2_API_FONT_TYP_H_
-#define _ARCHI_FONT_PSF2_API_FONT_TYP_H_
+#ifndef _ARCHI_FONT_PSF2_I_FONT_TYP_H_
+#define _ARCHI_FONT_PSF2_I_FONT_TYP_H_
 
 #include <stdint.h> // for uint32_t
 
@@ -53,5 +53,5 @@ typedef struct archi_font_psf2_header {
 #define ARCHI_FONT_PSF2_SIZE(header)   \
     ((header).header_size + (size_t)(header).bytes_per_glyph * (header).num_glyphs)
 
-#endif // _ARCHI_FONT_PSF2_API_FONT_TYP_H_
+#endif // _ARCHI_FONT_PSF2_I_FONT_TYP_H_
 

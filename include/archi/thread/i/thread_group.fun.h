@@ -24,8 +24,8 @@
  */
 
 #pragma once
-#ifndef _ARCHI_THREAD_API_THREAD_GROUP_FUN_H_
-#define _ARCHI_THREAD_API_THREAD_GROUP_FUN_H_
+#ifndef _ARCHI_THREAD_I_THREAD_GROUP_FUN_H_
+#define _ARCHI_THREAD_I_THREAD_GROUP_FUN_H_
 
 #include "archi/thread/i/handle.typ.h"
 #include "archi/thread/i/thread_group.typ.h"
@@ -116,5 +116,5 @@ archi_thread_group_num_threads(
         archi_thread_group_t thread_group ///< [in] Thread group.
 );
 
-#endif // _ARCHI_THREAD_API_THREAD_GROUP_FUN_H_
+#endif // _ARCHI_THREAD_I_THREAD_GROUP_FUN_H_
 

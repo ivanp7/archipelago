@@ -24,8 +24,8 @@
  */
 
 #pragma once
-#ifndef _ARCHI_SIGNAL_API_SIGNAL_TYP_H_
-#define _ARCHI_SIGNAL_API_SIGNAL_TYP_H_
+#ifndef _ARCHI_SIGNAL_I_SIGNAL_TYP_H_
+#define _ARCHI_SIGNAL_I_SIGNAL_TYP_H_
 
 #ifdef __STDC_NO_ATOMICS__
 #  error Atomics are required, but not supported by the compiler.
@@ -199,5 +199,5 @@ typedef struct archi_signal_flags {
     archi_signal_flag_t rt_signal[]; ///< Real-time signals (SIGRTMIN+index).
 } archi_signal_flags_t;
 
-#endif // _ARCHI_SIGNAL_API_SIGNAL_TYP_H_
+#endif // _ARCHI_SIGNAL_I_SIGNAL_TYP_H_
 

@@ -24,8 +24,8 @@
  */
 
 #pragma once
-#ifndef _ARCHI_THREAD_API_CALLBACK_TYP_H_
-#define _ARCHI_THREAD_API_CALLBACK_TYP_H_
+#ifndef _ARCHI_THREAD_I_CALLBACK_TYP_H_
+#define _ARCHI_THREAD_I_CALLBACK_TYP_H_
 
 #include <stddef.h> // for size_t
 
@@ -54,5 +54,5 @@ typedef struct archi_thread_group_callback {
     void *data; ///< Callback data.
 } archi_thread_group_callback_t;
 
-#endif // _ARCHI_THREAD_API_CALLBACK_TYP_H_
+#endif // _ARCHI_THREAD_I_CALLBACK_TYP_H_
 

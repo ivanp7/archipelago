@@ -24,8 +24,8 @@
  */
 
 #pragma once
-#ifndef _ARCHI_OPENCL_API_PROGRAM_FUN_H_
-#define _ARCHI_OPENCL_API_PROGRAM_FUN_H_
+#ifndef _ARCHI_OPENCL_I_PROGRAM_FUN_H_
+#define _ARCHI_OPENCL_I_PROGRAM_FUN_H_
 
 #include "archi/opencl/i/program.typ.h"
 #include "archi/opencl/i/device.typ.h"
@@ -150,5 +150,5 @@ archi_opencl_program_create(
         ARCHI_ERROR_PARAM_DECL ///< [out] Error.
 );
 
-#endif // _ARCHI_OPENCL_API_PROGRAM_FUN_H_
+#endif // _ARCHI_OPENCL_I_PROGRAM_FUN_H_
 

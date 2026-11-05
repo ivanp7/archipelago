@@ -24,8 +24,8 @@
  */
 
 #pragma once
-#ifndef _ARCHI_SIGNAL_API_SIGNAL_FUN_H_
-#define _ARCHI_SIGNAL_API_SIGNAL_FUN_H_
+#ifndef _ARCHI_SIGNAL_I_SIGNAL_FUN_H_
+#define _ARCHI_SIGNAL_I_SIGNAL_FUN_H_
 
 #include "archi/signal/i/signal.typ.h"
 
@@ -209,5 +209,5 @@ archi_signal_flags_alloc(void);
     atomic_store_explicit(&(flag), false, memory_order_relaxed);    \
 } while (0)
 
-#endif // _ARCHI_SIGNAL_API_SIGNAL_FUN_H_
+#endif // _ARCHI_SIGNAL_I_SIGNAL_FUN_H_
 

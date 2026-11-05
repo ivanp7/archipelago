@@ -24,8 +24,8 @@
  */
 
 #pragma once
-#ifndef _ARCHI_ENV_API_VARIABLE_FUN_H_
-#define _ARCHI_ENV_API_VARIABLE_FUN_H_
+#ifndef _ARCHI_ENV_I_VARIABLE_FUN_H_
+#define _ARCHI_ENV_I_VARIABLE_FUN_H_
 
 #include "archi_base/error.typ.h"
 
@@ -50,5 +50,5 @@ archi_env_get(
         ARCHI_ERROR_PARAM_DECL ///< [out] Error.
 );
 
-#endif // _ARCHI_ENV_API_VARIABLE_FUN_H_
+#endif // _ARCHI_ENV_I_VARIABLE_FUN_H_
 

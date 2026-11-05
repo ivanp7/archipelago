@@ -24,8 +24,8 @@
  */
 
 #pragma once
-#ifndef _ARCHI_AGGR_API_INTERFACE_FUN_H_
-#define _ARCHI_AGGR_API_INTERFACE_FUN_H_
+#ifndef _ARCHI_AGGR_I_INTERFACE_FUN_H_
+#define _ARCHI_AGGR_I_INTERFACE_FUN_H_
 
 #include "archi/aggr/i/handle.typ.h"
 #include "archi/aggr/i/interface.typ.h"
@@ -181,5 +181,5 @@ archi_aggr_set(
         ARCHI_ERROR_PARAM_DECL ///< [out] Error.
 );
 
-#endif // _ARCHI_AGGR_API_INTERFACE_FUN_H_
+#endif // _ARCHI_AGGR_I_INTERFACE_FUN_H_
 

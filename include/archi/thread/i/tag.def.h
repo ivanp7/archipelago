@@ -24,8 +24,8 @@
  */
 
 #pragma once
-#ifndef _ARCHI_THREAD_API_TAG_DEF_H_
-#define _ARCHI_THREAD_API_TAG_DEF_H_
+#ifndef _ARCHI_THREAD_I_TAG_DEF_H_
+#define _ARCHI_THREAD_I_TAG_DEF_H_
 
 #define ARCHI_POINTER_DATA_TAG__THREAD_GROUP        0x48 ///< Data type tag for archi_thread_group_t.
 #define ARCHI_POINTER_DATA_TAG__THREAD_LFQUEUE      0x49 ///< Data type tag for archi_thread_lfqueue_t.
@@ -33,5 +33,5 @@
 #define ARCHI_POINTER_FUNC_TAG__THREAD_WORK         0x48 ///< Function type tag for archi_thread_group_work_func_t.
 #define ARCHI_POINTER_FUNC_TAG__THREAD_CALLBACK     0x49 ///< Function type tag for archi_thread_group_callback_func_t.
 
-#endif // _ARCHI_THREAD_API_TAG_DEF_H_
+#endif // _ARCHI_THREAD_I_TAG_DEF_H_
 

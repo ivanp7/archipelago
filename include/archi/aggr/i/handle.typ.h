@@ -24,8 +24,8 @@
  */
 
 #pragma once
-#ifndef _ARCHI_AGGR_API_HANDLE_TYP_H_
-#define _ARCHI_AGGR_API_HANDLE_TYP_H_
+#ifndef _ARCHI_AGGR_I_HANDLE_TYP_H_
+#define _ARCHI_AGGR_I_HANDLE_TYP_H_
 
 struct archi_aggr;
 
@@ -34,5 +34,5 @@ struct archi_aggr;
  */
 typedef struct archi_aggr *archi_aggr_t;
 
-#endif // _ARCHI_AGGR_API_HANDLE_TYP_H_
+#endif // _ARCHI_AGGR_I_HANDLE_TYP_H_
 

@@ -24,8 +24,8 @@
  */
 
 #pragma once
-#ifndef _ARCHI_HASHMAP_API_HASHMAP_FUN_H_
-#define _ARCHI_HASHMAP_API_HASHMAP_FUN_H_
+#ifndef _ARCHI_HASHMAP_I_HASHMAP_FUN_H_
+#define _ARCHI_HASHMAP_I_HASHMAP_FUN_H_
 
 #include "archi/hashmap/i/handle.typ.h"
 #include "archi/hashmap/i/hashmap.typ.h"
@@ -137,5 +137,5 @@ archi_hashmap_capacity(
  */
 ARCHI_HASHMAP_TRAV_KV_FUNC(archi_hashmap_trav_kv__unset_all);
 
-#endif // _ARCHI_HASHMAP_API_HASHMAP_FUN_H_
+#endif // _ARCHI_HASHMAP_I_HASHMAP_FUN_H_
 

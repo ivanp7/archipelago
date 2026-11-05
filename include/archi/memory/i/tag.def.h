@@ -24,12 +24,12 @@
  */
 
 #pragma once
-#ifndef _ARCHI_MEMORY_API_TAG_DEF_H_
-#define _ARCHI_MEMORY_API_TAG_DEF_H_
+#ifndef _ARCHI_MEMORY_I_TAG_DEF_H_
+#define _ARCHI_MEMORY_I_TAG_DEF_H_
 
 #define ARCHI_POINTER_DATA_TAG__MEMORY_INTERFACE    0x68 ///< Data type tag for archi_memory_interface_t.
 #define ARCHI_POINTER_DATA_TAG__MEMORY              0x69 ///< Data type tag for archi_memory_t.
 #define ARCHI_POINTER_DATA_TAG__MEMORY_MAPPING      0x6A ///< Data type tag for archi_memory_mapping_t.
 
-#endif // _ARCHI_MEMORY_API_TAG_DEF_H_
+#endif // _ARCHI_MEMORY_I_TAG_DEF_H_
 

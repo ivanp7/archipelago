@@ -24,8 +24,8 @@
  */
 
 #pragma once
-#ifndef _ARCHI_EXEC_API_FRAME_TYP_H_
-#define _ARCHI_EXEC_API_FRAME_TYP_H_
+#ifndef _ARCHI_EXEC_I_FRAME_TYP_H_
+#define _ARCHI_EXEC_I_FRAME_TYP_H_
 
 #include <stddef.h> // for size_t
 
@@ -47,5 +47,5 @@ typedef struct archi_dexgraph_frame {
  */
 #define ARCHI_DEXGRAPH_TRANS_INDEX  ((size_t)-1)
 
-#endif // _ARCHI_EXEC_API_FRAME_TYP_H_
+#endif // _ARCHI_EXEC_I_FRAME_TYP_H_
 

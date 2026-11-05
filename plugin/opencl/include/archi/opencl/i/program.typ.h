@@ -24,8 +24,8 @@
  */
 
 #pragma once
-#ifndef _ARCHI_OPENCL_API_PROGRAM_TYP_H_
-#define _ARCHI_OPENCL_API_PROGRAM_TYP_H_
+#ifndef _ARCHI_OPENCL_I_PROGRAM_TYP_H_
+#define _ARCHI_OPENCL_I_PROGRAM_TYP_H_
 
 #include <stddef.h> // for size_t
 
@@ -51,5 +51,5 @@ typedef struct archi_opencl_program_bin {
     size_t *size;            ///< Sizes of the binaries for each device.
 } archi_opencl_program_bin_t;
 
-#endif // _ARCHI_OPENCL_API_PROGRAM_TYP_H_
+#endif // _ARCHI_OPENCL_I_PROGRAM_TYP_H_
 

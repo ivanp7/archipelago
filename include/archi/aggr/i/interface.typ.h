@@ -24,8 +24,8 @@
  */
 
 #pragma once
-#ifndef _ARCHI_AGGR_API_INTERFACE_TYP_H_
-#define _ARCHI_AGGR_API_INTERFACE_TYP_H_
+#ifndef _ARCHI_AGGR_I_INTERFACE_TYP_H_
+#define _ARCHI_AGGR_I_INTERFACE_TYP_H_
 
 #include "archi_base/pointer.typ.h"
 #include "archi_base/error.typ.h"
@@ -190,5 +190,5 @@ typedef struct archi_aggr_interface {
     archi_aggr_set_func_t set_fn;       ///< Aggregate object member setter function.
 } archi_aggr_interface_t;
 
-#endif // _ARCHI_AGGR_API_INTERFACE_TYP_H_
+#endif // _ARCHI_AGGR_I_INTERFACE_TYP_H_
 

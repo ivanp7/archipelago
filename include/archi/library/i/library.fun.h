@@ -24,8 +24,8 @@
  */
 
 #pragma once
-#ifndef _ARCHI_LIBRARY_API_LIBRARY_FUN_H_
-#define _ARCHI_LIBRARY_API_LIBRARY_FUN_H_
+#ifndef _ARCHI_LIBRARY_I_LIBRARY_FUN_H_
+#define _ARCHI_LIBRARY_I_LIBRARY_FUN_H_
 
 #include "archi/library/i/handle.typ.h"
 #include "archi/library/i/library.typ.h"
@@ -61,5 +61,5 @@ archi_library_get_symbol(
         const char *symbol ///< [in] Symbol name.
 );
 
-#endif // _ARCHI_LIBRARY_API_LIBRARY_FUN_H_
+#endif // _ARCHI_LIBRARY_I_LIBRARY_FUN_H_
 

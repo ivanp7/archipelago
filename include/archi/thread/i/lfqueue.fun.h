@@ -24,8 +24,8 @@
  */
 
 #pragma once
-#ifndef _ARCHI_THREAD_API_LFQUEUE_FUN_H_
-#define _ARCHI_THREAD_API_LFQUEUE_FUN_H_
+#ifndef _ARCHI_THREAD_I_LFQUEUE_FUN_H_
+#define _ARCHI_THREAD_I_LFQUEUE_FUN_H_
 
 #include "archi/thread/i/handle.typ.h"
 #include "archi/thread/i/lfqueue.typ.h"
@@ -99,5 +99,5 @@ archi_thread_lfqueue_elt_size(
         archi_thread_lfqueue_t queue ///< [in] Queue.
 );
 
-#endif // _ARCHI_THREAD_API_LFQUEUE_FUN_H_
+#endif // _ARCHI_THREAD_I_LFQUEUE_FUN_H_
 

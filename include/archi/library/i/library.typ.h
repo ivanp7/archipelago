@@ -24,8 +24,8 @@
  */
 
 #pragma once
-#ifndef _ARCHI_LIBRARY_API_LIBRARY_TYP_H_
-#define _ARCHI_LIBRARY_API_LIBRARY_TYP_H_
+#ifndef _ARCHI_LIBRARY_I_LIBRARY_TYP_H_
+#define _ARCHI_LIBRARY_I_LIBRARY_TYP_H_
 
 #include <stdbool.h>
 
@@ -40,5 +40,5 @@ typedef struct archi_library_load_params {
     int flags;   ///< Other flags for dlopen().
 } archi_library_load_params_t;
 
-#endif // _ARCHI_LIBRARY_API_LIBRARY_TYP_H_
+#endif // _ARCHI_LIBRARY_I_LIBRARY_TYP_H_
 

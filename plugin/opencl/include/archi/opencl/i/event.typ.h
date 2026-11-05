@@ -24,8 +24,8 @@
  */
 
 #pragma once
-#ifndef _ARCHI_OPENCL_API_EVENT_TYP_H_
-#define _ARCHI_OPENCL_API_EVENT_TYP_H_
+#ifndef _ARCHI_OPENCL_I_EVENT_TYP_H_
+#define _ARCHI_OPENCL_I_EVENT_TYP_H_
 
 #include <CL/cl.h>
 
@@ -46,5 +46,5 @@ typedef struct archi_opencl_event_ptr_array {
     cl_event **event_ptr;  ///< Array of output event pointers.
 } archi_opencl_event_ptr_array_t;
 
-#endif // _ARCHI_OPENCL_API_EVENT_TYP_H_
+#endif // _ARCHI_OPENCL_I_EVENT_TYP_H_
 

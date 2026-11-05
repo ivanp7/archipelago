@@ -24,8 +24,8 @@
  */
 
 #pragma once
-#ifndef _ARCHI_MEMORY_API_HANDLE_TYP_H_
-#define _ARCHI_MEMORY_API_HANDLE_TYP_H_
+#ifndef _ARCHI_MEMORY_I_HANDLE_TYP_H_
+#define _ARCHI_MEMORY_I_HANDLE_TYP_H_
 
 struct archi_memory;
 struct archi_memory_mapping;
@@ -40,5 +40,5 @@ typedef struct archi_memory *archi_memory_t;
  */
 typedef struct archi_memory_mapping *archi_memory_mapping_t;
 
-#endif // _ARCHI_MEMORY_API_HANDLE_TYP_H_
+#endif // _ARCHI_MEMORY_I_HANDLE_TYP_H_
 
