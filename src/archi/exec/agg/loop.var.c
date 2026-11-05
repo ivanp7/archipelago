@@ -20,7 +20,7 @@
 
 /**
  * @file
- * @brief Aggregate type descriptions for data of transition functions for loops.
+ * @brief Aggregate type descriptions for data of condition functions for loops.
  */
 
 #include "archi/exec/agg/loop.var.h"
@@ -35,13 +35,13 @@ VTYPE_size = ARCHI_AGGR_MEMBER_TYPE__VALUE(size_t, 0);
 
 static
 const archi_aggr_member_t
-MEMBERS_dexgraph_transition_data__loop_times[] = {
-    ARCHI_AGGR_MEMBER__VALUE(archi_dexgraph_transition_data__loop_times_t, iteration, 1, VTYPE_size),
-    ARCHI_AGGR_MEMBER__VALUE(archi_dexgraph_transition_data__loop_times_t, num_iterations, 1, VTYPE_size),
+MEMBERS_dexgraph_condition_data__loop_times[] = {
+    ARCHI_AGGR_MEMBER__VALUE(archi_dexgraph_condition_data__loop_times_t, num_iterations, 1, VTYPE_size),
+    ARCHI_AGGR_MEMBER__VALUE(archi_dexgraph_condition_data__loop_times_t, iteration, 1, VTYPE_size),
 };
 
 const archi_aggr_type_t
-archi_aggr_type__dexgraph_transition_data__loop_times = ARCHI_AGGR_TYPE(
-        archi_dexgraph_transition_data__loop_times_t, 0,
-        MEMBERS_dexgraph_transition_data__loop_times);
+archi_aggr_type__dexgraph_condition_data__loop_times = ARCHI_AGGR_TYPE(
+        archi_dexgraph_condition_data__loop_times_t, 0,
+        MEMBERS_dexgraph_condition_data__loop_times);
 

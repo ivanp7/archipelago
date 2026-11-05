@@ -20,66 +20,39 @@
 
 /**
  * @file
- * @brief Directed execution graph operations.
+ * @brief Transition functions for branching in directed execution graphs.
  */
 
-#include "archi/exec/i/graph.fun.h"
-#include "archi/exec/i/node.fun.h"
-#include "archi/exec/i/operation.fun.h"
-#include "archi/exec/i/transition.fun.h"
+#include "archi/exec/exe/branch.fun.h"
+#include "archi/exec/exe/branch.typ.h"
 
 
-size_t
-archi_dexgraph_execute_node(
-        archi_dexgraph_frame_t frame,
-        ARCHI_ERROR_PARAM_DECL)
+ARCHI_DEXGRAPH_TRANSITION_FUNC(archi_dexgraph_transition__branch)
 {
-    if (frame.node == NULL)
+    const archi_dexgraph_transition_data__branch_t *branch = data;
+
+    if (branch == NULL)
     {
-        ARCHI_ERROR_RESET();
-        return frame.op_index;
+        ARCHI_ERROR_SET(ARCHI__ECONSTRAINT, "branch description is NULL");
+        return NULL;
+    }
+    else if (branch->function == NULL)
+    {
+        ARCHI_ERROR_SET(ARCHI__ECONSTRAINT, "branch condition function is NULL");
+        return NULL;
     }
 
     archi_error_t error;
-    ARCHI_ERROR_VAR_RESET(&error);
+    ARCHI_ERROR_VAR_UNSET(&error);
 
-    for (; frame.op_index < frame.node->sequence_length; frame.op_index++)
-    {
-        archi_dexgraph_operation_execute(frame.node->sequence[frame.op_index], &error);
-        if (error.code != 0)
-            break;
-    }
-
+    /******************************************************/
+    bool condition = branch->function(branch->data, &error);
+    /******************************************************/
     ARCHI_ERROR_ASSIGN(error);
-    return frame.op_index;
-}
 
-archi_dexgraph_frame_t
-archi_dexgraph_execute(
-        archi_dexgraph_frame_t frame,
-        ARCHI_ERROR_PARAM_DECL)
-{
-    archi_error_t error;
-    ARCHI_ERROR_VAR_RESET(&error);
+    if (error.code != 0)
+        return NULL;
 
-    while (frame.node != NULL)
-    {
-        // Execute the sequence of operation functions
-        frame.op_index = archi_dexgraph_execute_node(frame, &error);
-        if (error.code != 0)
-            break;
-
-        // Execute the transition function
-        size_t branch_index = archi_dexgraph_transition_execute(frame.node->transition, &error);
-        if (error.code != 0)
-            break;
-
-        // Obtain the selected branch
-        frame.node = archi_dexgraph_node_branch(frame.node, branch_index);
-        frame.op_index = 0;
-    }
-
-    ARCHI_ERROR_ASSIGN(error);
-    return frame;
+    return branch->target[condition];
 }
 

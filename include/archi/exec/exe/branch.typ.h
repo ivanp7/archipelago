@@ -20,17 +20,29 @@
 
 /**
  * @file
- * @brief Transition functions for execution halting in directed execution graphs.
+ * @brief Data for transition functions for branching in directed execution graphs.
  */
 
-#include "archi/exec/exe/halt.fun.h"
+#pragma once
+#ifndef _ARCHI_EXEC_EXE_BRANCH_TYP_H_
+#define _ARCHI_EXEC_EXE_BRANCH_TYP_H_
+
+#include "archi/exec/exe/condition.typ.h"
+
+#include <stdbool.h>
 
 
-ARCHI_DEXGRAPH_TRANSITION_FUNC(archi_dexgraph_transition__halt)
-{
-    (void) data;
+struct archi_dexgraph_node;
 
-    ARCHI_ERROR_RESET();
-    return ARCHI_DEXGRAPH_HALT;
-}
+/**
+ * @brief Transition function data: branch.
+ */
+typedef struct archi_dexgraph_transition_data__branch {
+    archi_dexgraph_condition_func_t function; ///< Condition function.
+    void *data; ///< Condition function data.
+
+    const struct archi_dexgraph_node *target[2]; ///< Branch targets for both condition cases.
+} archi_dexgraph_transition_data__branch_t;
+
+#endif // _ARCHI_EXEC_EXE_BRANCH_TYP_H_
 

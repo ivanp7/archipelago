@@ -32,12 +32,12 @@
 
 
 /**
- * @brief Execute an operation.
+ * @brief Call a node operation.
  *
  * If the operation function is NULL, it is a no-op.
  */
 void
-archi_dexgraph_operation_execute(
+archi_dexgraph_operation_call(
         archi_dexgraph_operation_t operation, ///< [in] Operation.
         ARCHI_ERROR_PARAM_DECL ///< [out] Error.
 );

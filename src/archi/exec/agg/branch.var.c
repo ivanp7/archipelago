@@ -20,24 +20,43 @@
 
 /**
  * @file
- * @brief Transition functions for termination in directed execution graphs.
+ * @brief Aggregate type descriptions for data of transition functions for branching.
  */
 
-#pragma once
-#ifndef _ARCHI_EXEC_EXE_HALT_FUN_H_
-#define _ARCHI_EXEC_EXE_HALT_FUN_H_
+#include "archi/exec/agg/branch.var.h"
+#include "archi/exec/agg/graph.var.h"
+#include "archi/exec/exe/branch.typ.h"
+#include "archi/exec/exe/tag.def.h"
+#include "archi/exec/i/tag.def.h"
 
-#include "archi/exec/i/transition.typ.h"
 
+static
+const archi_aggr_member_type__pointer_t
+PTYPE_data = ARCHI_AGGR_MEMBER_TYPE__POINTER_TO_CDATA(void*, 0);
 
-/**
- * @brief Transition function: immediate halt.
- *
- * Function data type: <none>.
- *
- * @return ARCHI_DEXGRAPH_HALT.
- */
-ARCHI_DEXGRAPH_TRANSITION_FUNC(archi_dexgraph_transition__halt);
+static
+const archi_aggr_member_type__pointer_t
+PTYPE_dexgraph_condition_func = ARCHI_AGGR_MEMBER_TYPE__POINTER_TO_FUNC(archi_dexgraph_condition_func_t,
+        ARCHI_POINTER_FUNC_TAG__DEXGRAPH_CONDITION);
 
-#endif // _ARCHI_EXEC_EXE_HALT_FUN_H_
+static
+const archi_aggr_member_type__pointer_t
+PTYPE_dexgraph_node = ARCHI_AGGR_MEMBER_TYPE__POINTER_TO_CDATA(struct archi_dexgraph_node*,
+        ARCHI_POINTER_DATA_TAG__DEXGRAPH_NODE);
+
+/*****************************************************************************/
+
+static
+const archi_aggr_member_t
+MEMBERS_dexgraph_transition_data__branch[] = {
+    ARCHI_AGGR_MEMBER__POINTER(archi_dexgraph_transition_data__branch_t, function, 1, PTYPE_dexgraph_condition_func),
+    ARCHI_AGGR_MEMBER__POINTER(archi_dexgraph_transition_data__branch_t, data, 1, PTYPE_data),
+    ARCHI_AGGR_MEMBER__POINTER(archi_dexgraph_transition_data__branch_t, target, 2, PTYPE_dexgraph_node),
+};
+
+const archi_aggr_type_t
+archi_aggr_type__dexgraph_transition_data__branch = ARCHI_AGGR_TYPE(
+        archi_dexgraph_transition_data__branch_t,
+        ARCHI_POINTER_DATA_TAG__DEXGRAPH_TRANSITION_DATA__BRANCH,
+        MEMBERS_dexgraph_transition_data__branch);
 

@@ -20,23 +20,28 @@
 
 /**
  * @file
- * @brief Data for transition functions for loops in directed execution graphs.
+ * @brief Data for condition functions for loops in directed execution graphs.
  */
 
 #pragma once
 #ifndef _ARCHI_EXEC_EXE_LOOP_TYP_H_
 #define _ARCHI_EXEC_EXE_LOOP_TYP_H_
 
-#include "archi/exec/i/transition.typ.h"
+#include <stddef.h> // for size_t
 
 
 /**
- * @brief Transition function data: loop N times.
+ * @brief Condition function data: loop N times.
+ *
+ * The condition function will return false `num_iterations` times,
+ * then return true once and reset the iteration counter.
+ *
+ * If `num_iterations` is 0, the function will return true every time.
  */
-typedef struct archi_dexgraph_transition_data__loop_times {
-    size_t iteration; ///< Current iteration number.
+typedef struct archi_dexgraph_condition_data__loop_times {
     size_t num_iterations; ///< Number of iterations to do.
-} archi_dexgraph_transition_data__loop_times_t;
+    size_t iteration; ///< Current iteration number.
+} archi_dexgraph_condition_data__loop_times_t;
 
 #endif // _ARCHI_EXEC_EXE_LOOP_TYP_H_
 

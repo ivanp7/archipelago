@@ -43,16 +43,6 @@ PTYPE_data = ARCHI_AGGR_MEMBER_TYPE__POINTER_TO_CDATA(void*, 0);
 
 static
 const archi_aggr_member_type__pointer_t
-PTYPE_dexgraph_node = ARCHI_AGGR_MEMBER_TYPE__POINTER_TO_CDATA(archi_dexgraph_node_t*,
-        ARCHI_POINTER_DATA_TAG__DEXGRAPH_NODE);
-
-static
-const archi_aggr_member_type__pointer_t
-PTYPE_dexgraph_node_array = ARCHI_AGGR_MEMBER_TYPE__POINTER_TO_CDATA(archi_dexgraph_node_array_t*,
-        ARCHI_POINTER_DATA_TAG__DEXGRAPH_NODE_ARRAY);
-
-static
-const archi_aggr_member_type__pointer_t
 PTYPE_dexgraph_operation_func = ARCHI_AGGR_MEMBER_TYPE__POINTER_TO_FUNC(archi_dexgraph_operation_func_t,
         ARCHI_POINTER_FUNC_TAG__DEXGRAPH_OPERATION);
 
@@ -95,10 +85,9 @@ static
 const archi_aggr_member_t
 MEMBERS_dexgraph_node[] = {
     ARCHI_AGGR_MEMBER__POINTER(archi_dexgraph_node_t, name, 1, PTYPE_string),
-    ARCHI_AGGR_MEMBER__POINTER(archi_dexgraph_node_t, data, 1, PTYPE_data),
+    ARCHI_AGGR_MEMBER__POINTER(archi_dexgraph_node_t, metadata, 1, PTYPE_data),
     ARCHI_AGGR_MEMBER__AGGREGATE(archi_dexgraph_node_t, transition, 1,
             archi_aggr_type__dexgraph_transition.top_level),
-    ARCHI_AGGR_MEMBER__POINTER(archi_dexgraph_node_t, branch, 1, PTYPE_dexgraph_node_array),
     ARCHI_AGGR_MEMBER__VALUE(archi_dexgraph_node_t, sequence_length, 1, VTYPE_size),
     ARCHI_AGGR_MEMBER__AGGREGATE(archi_dexgraph_node_t, sequence, 0,
             archi_aggr_type__dexgraph_operation.top_level),
@@ -108,18 +97,4 @@ const archi_aggr_type_t
 archi_aggr_type__dexgraph_node = ARCHI_AGGR_TYPE(
         archi_dexgraph_node_t, ARCHI_POINTER_DATA_TAG__DEXGRAPH_NODE,
         MEMBERS_dexgraph_node);
-
-/*****************************************************************************/
-
-static
-const archi_aggr_member_t
-MEMBERS_dexgraph_node_array[] = {
-    ARCHI_AGGR_MEMBER__VALUE(archi_dexgraph_node_array_t, num_nodes, 1, VTYPE_size),
-    ARCHI_AGGR_MEMBER__POINTER(archi_dexgraph_node_array_t, node, 0, PTYPE_dexgraph_node),
-};
-
-const archi_aggr_type_t
-archi_aggr_type__dexgraph_node_array = ARCHI_AGGR_TYPE(
-        archi_dexgraph_node_array_t, ARCHI_POINTER_DATA_TAG__DEXGRAPH_NODE_ARRAY,
-        MEMBERS_dexgraph_node_array);
 

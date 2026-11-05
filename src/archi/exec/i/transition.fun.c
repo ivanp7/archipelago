@@ -26,8 +26,8 @@
 #include "archi/exec/i/transition.fun.h"
 
 
-size_t
-archi_dexgraph_transition_execute(
+const struct archi_dexgraph_node*
+archi_dexgraph_transition_target(
         archi_dexgraph_transition_t transition,
         ARCHI_ERROR_PARAM_DECL)
 {
@@ -41,7 +41,7 @@ archi_dexgraph_transition_execute(
     else
     {
         ARCHI_ERROR_RESET();
-        return (transition.data != NULL) ? *(size_t*)transition.data : 0;
+        return transition.data;
     }
 }
 

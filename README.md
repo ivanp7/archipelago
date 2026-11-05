@@ -431,30 +431,35 @@ A graph consists of nodes connected by directed transitions. Each node contains:
 * **Name**: An optional C-string for logging and debugging.
 * **Data**: An optional pointer to data used for the implementation of an execution procedure.
 * **Operations**: An array of functions (and associated data) executed linearly.
-* **Branches**: An array of pointers to potential destination nodes.
-* **Transition**: A function (and associated data) used to determine which branch to follow next.
+* **Transition**: A function (and associated data) used to determine the successor node.
 
-#### Execution Logic
+#### Execution
 
-Execution is tracked via a frame (the current node and the current operation index).
+Execution state is described by a *frame*, which is a combination of a pointer to the current node
+and the current operation index within that node.
 
-1. **Operation Phase**: Operations are executed sequentially, starting from the current operation index.
-    If any function returns an error, the entire execution is interrupted.
-2. **Transition Phase**: Once all operations are complete, the transition function selects the next branch.
-3. **Branch Node Fetch**: The new node is fetched from the list of branches of the current node.
-4. **Update**: The current node is updated, the operation index is reset to 0.
-5. **Termination**: Execution ends if: a branch index is equal to the `HALT` value or is out of range;
-    a branch node pointer is null; or an error occurs.
+1. **Operation Phase**: Operations of the current node are executed sequentially,
+    starting from the current operation index.
+    A NULL function is treated as a 'no-op'.
+    If any operation returns an error, the entire execution is interrupted.
+2. **Transition Phase**: The transition function of the current node is called to determine the successor node.
+    If the function is NULL, the transition function data is interpreted as a pointer to the successor node.
+    If an error occurs, the entire execution is interrupted.
+3. **Loop**: The current node is set to the successor node, the operation index is reset to 0.
+    Execution continues until the successor node is NULL.
 
-Steps 1, 2, and 3 are implemented as separate functions.
-This is useful for implementation of alternative execution algorithms.
+Both phases are implemented as separate functions,
+which is useful for implementing of alternative execution algorithms.
 
-The implementation recognizes the following edge cases:
+#### Branching & Conditions
 
-* **No-ops**: null operation functions are treated as no-ops.
-* **Implicit Transition**: If the transition function is null,
-    the transition data is dereferenced as a branch index.
-    If both are null, it defaults to branch `0`.
+An example of a transition function is the built-in 'branch' function.
+This function allows to choose between two branches,
+depending on a boolean value returned by the specified condition function.
+
+An example of a condition function is the built-in function for looping 'N times'.
+This function returns 'false' for N times while incrementing an iteration counter,
+then returns 'true' and resets the counter.
 
 ### Threads
 

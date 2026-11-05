@@ -511,9 +511,11 @@ class archi_aggr_type_t(c.Structure):
 ##############################################################################
 
 ARCHI_POINTER_DATA_TAG__DEXGRAPH_NODE = 0x38
-ARCHI_POINTER_DATA_TAG__DEXGRAPH_NODE_ARRAY = 0x39
 ARCHI_POINTER_FUNC_TAG__DEXGRAPH_OPERATION = 0x38
 ARCHI_POINTER_FUNC_TAG__DEXGRAPH_TRANSITION = 0x39
+
+ARCHI_POINTER_DATA_TAG__DEXGRAPH_TRANSITION_DATA__BRANCH = 0x39
+ARCHI_POINTER_FUNC_TAG__DEXGRAPH_CONDITION = 0x3A
 
 ##############################################################################
 # Concurrent processing

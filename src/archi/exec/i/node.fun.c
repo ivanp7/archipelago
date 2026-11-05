@@ -40,9 +40,8 @@ archi_dexgraph_node_alloc(
         return NULL;
 
     node->name = NULL;
-    node->data = NULL;
+    node->metadata = NULL;
     node->transition = (archi_dexgraph_transition_t){0};
-    node->branch = NULL;
     {
         size_t *sequence_length_ptr = (size_t*)&node->sequence_length;
         *sequence_length_ptr = sequence_length;
@@ -69,49 +68,5 @@ archi_dexgraph_node_operation(
         return (archi_dexgraph_operation_t){0};
 
     return node->sequence[op_index];
-}
-
-const archi_dexgraph_node_t*
-archi_dexgraph_node_branch(
-        const archi_dexgraph_node_t *node,
-        size_t branch_index)
-{
-    if (node == NULL)
-        return NULL;
-
-    const archi_dexgraph_node_array_t *branch = node->branch;
-
-    if ((branch == NULL) || (branch_index >= branch->num_nodes))
-        return NULL;
-
-    return branch->node[branch_index];
-}
-
-/*****************************************************************************/
-
-archi_dexgraph_node_array_t*
-archi_dexgraph_node_array_alloc(
-        size_t num_nodes)
-{
-    archi_dexgraph_node_array_t *node_array = malloc(
-            ARCHI_SIZEOF_FLEXIBLE(archi_dexgraph_node_array_t, node, num_nodes));
-    if (node_array == NULL)
-        return NULL;
-
-    {
-        size_t *num_nodes_ptr = (size_t*)&node_array->num_nodes;
-        *num_nodes_ptr = num_nodes;
-    }
-    for (size_t i = 0; i < num_nodes; i++)
-        node_array->node[i] = NULL;
-
-    return node_array;
-}
-
-void
-archi_dexgraph_node_array_free(
-        archi_dexgraph_node_array_t *node_array)
-{
-    free(node_array);
 }
 

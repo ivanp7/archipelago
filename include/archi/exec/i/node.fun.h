@@ -66,39 +66,5 @@ archi_dexgraph_node_operation(
         size_t op_index ///< [in] Index of an operation.
 );
 
-/**
- * @brief Get node branch with the specified index.
- *
- * The function checks for NULL pointers and the index range.
- * NULL is returned for any invalid inputs.
- *
- * @return Pointer to a node branch, or NULL if there is no such branch.
- */
-const archi_dexgraph_node_t*
-archi_dexgraph_node_branch(
-        const archi_dexgraph_node_t *node, ///< [in] Node.
-        size_t branch_index ///< [in] Index of a branch.
-);
-
-/*****************************************************************************/
-
-/**
- * @brief Allocate a node array.
- *
- * @return Newly allocated node array.
- */
-archi_dexgraph_node_array_t*
-archi_dexgraph_node_array_alloc(
-        size_t num_nodes ///< [in] Size of array of nodes.
-);
-
-/**
- * @brief Deallocate a node array.
- */
-void
-archi_dexgraph_node_array_free(
-        archi_dexgraph_node_array_t *node_array ///< [in] Node array.
-);
-
 #endif // _ARCHI_EXEC_API_NODE_FUN_H_
 

@@ -29,21 +29,17 @@
 
 #include "archi_base/error.typ.h"
 
-#include <stddef.h> // for size_t
 
-
-/**
- * @brief Special branch index value for DEG execution halting.
- */
-#define ARCHI_DEXGRAPH_HALT  ((size_t)-1)
+struct archi_dexgraph_node;
 
 /**
  * @brief Signature of a transition function.
  *
- * @return Index of the selected branch, or ARCHI_DEXGRAPH_HALT.
+ * @return The successor node, or NULL.
  */
-#define ARCHI_DEXGRAPH_TRANSITION_FUNC(func_name)   size_t func_name(   \
-        void *data, /* [in] Transition function data. */                \
+#define ARCHI_DEXGRAPH_TRANSITION_FUNC(func_name)           \
+    const struct archi_dexgraph_node* func_name(            \
+        void *data, /* [in] Transition function data. */    \
         ARCHI_ERROR_PARAM_DECL) /* [out] Error. */
 
 /**

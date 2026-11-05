@@ -31,23 +31,26 @@
 
 
 struct archi_signal_flags;
+struct archi_dexgraph_node;
 
 /**
- * @brief Association of a signal index to a corresponding branch index.
+ * @brief Association of a signal index to a corresponding target index.
  */
 typedef struct archi_dexgraph_transition_data__signal_detect__signal {
-    int index; ///< Signal index.
-    size_t branch_index; ///< Branch index.
+    int number; ///< Signal number.
+    const struct archi_dexgraph_node *target; ///< Target node for the signal.
 } archi_dexgraph_transition_data__signal_detect__signal_t;
 
 /**
- * @brief Transition function data: signal flags and array of 'signal index'-'branch index' pairs.
+ * @brief Transition function data: signal flags and array of 'signal index'-'target index' pairs.
  */
 typedef struct archi_dexgraph_transition_data__signal_detect {
     const struct archi_signal_flags *flags; ///< Signal flags.
 
-    const size_t num_signals; ///< Number of signal-to-branch associations.
-    archi_dexgraph_transition_data__signal_detect__signal_t signal[]; ///< Signal-to-branch associations.
+    const struct archi_dexgraph_node *default_target; ///< Target node for the absense of signals.
+
+    const size_t num_signals; ///< Number of signal-to-target associations.
+    archi_dexgraph_transition_data__signal_detect__signal_t signal[]; ///< Signal-to-target associations.
 } archi_dexgraph_transition_data__signal_detect_t;
 
 #endif // _ARCHI_SIGNAL_EXE_SIGNAL_TYP_H_

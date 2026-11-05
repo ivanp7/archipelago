@@ -20,51 +20,31 @@
 
 /**
  * @file
- * @brief Directed execution graph operations.
+ * @brief Data for transition functions for branching in directed execution graphs.
  */
 
 #pragma once
-#ifndef _ARCHI_EXEC_API_GRAPH_FUN_H_
-#define _ARCHI_EXEC_API_GRAPH_FUN_H_
+#ifndef _ARCHI_EXEC_EXE_CONDITION_TYP_H_
+#define _ARCHI_EXEC_EXE_CONDITION_TYP_H_
 
-#include "archi/exec/i/frame.typ.h"
 #include "archi_base/error.typ.h"
 
+#include <stdbool.h>
+
 
 /**
- * @brief Execute the rest of node operations starting at the specified frame.
+ * @brief Signature of a condition function.
  *
- * The function calls non-NULL operation functions in the current node sequence,
- * starting from the specified index, halting if any function returns non-zero error code.
- *
- * @return Index of the first operation not executed (successfully).
+ * @return The successor node, or NULL.
  */
-size_t
-archi_dexgraph_execute_node(
-        archi_dexgraph_frame_t frame, ///< [in] Frame.
-        ARCHI_ERROR_PARAM_DECL ///< [out] Error.
-);
+#define ARCHI_DEXGRAPH_CONDITION_FUNC(func_name)    bool func_name( \
+        void *data, /* [in] Condition function data. */             \
+        ARCHI_ERROR_PARAM_DECL) /* [out] Error. */
 
 /**
- * @brief Execute a directed graph starting at the specified frame.
- *
- * This function implements the most basic graph execution algorithm:
- * 1. execute the current node operation functions;
- * 2. execute the current node transition function;
- * 3. update the current node;
- * 4. repeat until the current node is NULL.
- *
- * Returned frame contains NULL node if execution terminated without errors.
- * Otherwise, it stores the current node pointer and operation index
- * of the location where an error occured.
- *
- * @return Execution frame at the halt point.
+ * @brief Condition function type.
  */
-archi_dexgraph_frame_t
-archi_dexgraph_execute(
-        archi_dexgraph_frame_t frame, ///< [in] Frame.
-        ARCHI_ERROR_PARAM_DECL ///< [out] Error.
-);
+typedef ARCHI_DEXGRAPH_CONDITION_FUNC((*archi_dexgraph_condition_func_t));
 
-#endif // _ARCHI_EXEC_API_GRAPH_FUN_H_
+#endif // _ARCHI_EXEC_EXE_CONDITION_TYP_H_
 

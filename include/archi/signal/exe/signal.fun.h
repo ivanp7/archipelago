@@ -41,7 +41,7 @@ struct archi_dexgraph_transition_data__signal_detect;
  */
 struct archi_dexgraph_transition_data__signal_detect*
 archi_dexgraph_transition_data__signal_detect_alloc(
-        size_t num_signals ///< Number of signal-branch associations.
+        size_t num_signals ///< Number of signal-target associations.
 );
 
 /**
@@ -49,7 +49,7 @@ archi_dexgraph_transition_data__signal_detect_alloc(
  *
  * Function data type: archi_dexgraph_transition_data__signal_detect_t.
  *
- * @return 0 if none of the signal flags is set, specified branch index otherwise.
+ * @return 0 if none of the signal flags is set, specified target index otherwise.
  */
 ARCHI_DEXGRAPH_TRANSITION_FUNC(archi_dexgraph_transition__signal_detect);
 

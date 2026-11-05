@@ -20,28 +20,24 @@
 
 /**
  * @file
- * @brief Data for transition functions for branch index mapping in directed execution graphs.
+ * @brief Transition functions for branches in directed execution graphs.
  */
 
 #pragma once
-#ifndef _ARCHI_EXEC_EXE_MAPPED_TYP_H_
-#define _ARCHI_EXEC_EXE_MAPPED_TYP_H_
+#ifndef _ARCHI_EXEC_EXE_BRANCH_FUN_H_
+#define _ARCHI_EXEC_EXE_BRANCH_FUN_H_
 
 #include "archi/exec/i/transition.typ.h"
 
 
 /**
- * @brief Transition function data: map branch index according to the table.
+ * @brief Transition function: branch.
  *
- * The mapping is done by fetching the new index from the table at the old index:
- * `new_index = old_index < table_length ? table[old_index] : ARCHI_DEXGRAPH_HALT`
+ * Function data type: archi_dexgraph_transition_data__branch_t.
+ *
+ * @return Pointer to the selected branch node.
  */
-typedef struct archi_dexgraph_transition_data__mapped {
-    archi_dexgraph_transition_t transition; ///< Transition.
+ARCHI_DEXGRAPH_TRANSITION_FUNC(archi_dexgraph_transition__branch);
 
-    const size_t table_length; ///< Branch index table length.
-    size_t table[]; ///< Branch index table.
-} archi_dexgraph_transition_data__mapped_t;
-
-#endif // _ARCHI_EXEC_EXE_MAPPED_TYP_H_
+#endif // _ARCHI_EXEC_EXE_BRANCH_FUN_H_
 

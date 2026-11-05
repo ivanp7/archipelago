@@ -20,24 +20,16 @@
 
 /**
  * @file
- * @brief Transition functions for branch index mapping in directed execution graphs.
+ * @brief Data and function type tags.
  */
 
 #pragma once
-#ifndef _ARCHI_EXEC_EXE_MAPPED_FUN_H_
-#define _ARCHI_EXEC_EXE_MAPPED_FUN_H_
+#ifndef _ARCHI_EXEC_EXE_TAG_DEF_H_
+#define _ARCHI_EXEC_EXE_TAG_DEF_H_
 
-#include "archi/exec/i/transition.typ.h"
+#define ARCHI_POINTER_DATA_TAG__DEXGRAPH_TRANSITION_DATA__BRANCH    0x39 ///< Data type tag for archi_dexgraph_transition_data__branch_t.
 
+#define ARCHI_POINTER_FUNC_TAG__DEXGRAPH_CONDITION  0x3A ///< Function type tag for archi_dexgraph_transition_func_t.
 
-/**
- * @brief Transition function: map branch index according to the table.
- *
- * Function data type: archi_dexgraph_transition_data__mapped_t.
- *
- * @return Mapped branch index, or ARCHI_DEXGRAPH_HALT by default.
- */
-ARCHI_DEXGRAPH_TRANSITION_FUNC(archi_dexgraph_transition__mapped);
-
-#endif // _ARCHI_EXEC_EXE_MAPPED_FUN_H_
+#endif // _ARCHI_EXEC_EXE_TAG_DEF_H_
 

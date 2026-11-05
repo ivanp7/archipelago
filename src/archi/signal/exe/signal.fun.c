@@ -46,7 +46,7 @@ archi_dexgraph_transition_data__signal_detect_alloc(
         *num_signals_ptr = num_signals;
     }
     for (size_t i = 0; i < num_signals; i++)
-        detect->signal[i] = (archi_dexgraph_transition_data__signal_detect__signal_t){.index = i};
+        detect->signal[i] = (archi_dexgraph_transition_data__signal_detect__signal_t){0};
 
     return detect;
 }
@@ -58,45 +58,45 @@ ARCHI_DEXGRAPH_TRANSITION_FUNC(archi_dexgraph_transition__signal_detect)
     if (detect == NULL)
     {
         ARCHI_ERROR_SET(ARCHI__ECONSTRAINT, "data of signal detection transition function is NULL");
-        return ARCHI_DEXGRAPH_HALT;
+        return NULL;
     }
     else if (detect->flags == NULL)
     {
         ARCHI_ERROR_SET(ARCHI__ECONSTRAINT, "signal flags is NULL");
-        return ARCHI_DEXGRAPH_HALT;
+        return NULL;
     }
 
     const archi_signal_flags_t *flags = detect->flags;
 
     for (size_t i = 0; i < detect->num_signals; i++)
     {
-        int signal_index = detect->signal[i].index;
+        int signal_no = detect->signal[i].number;
 
-        if ((signal_index < 0) || (signal_index >= ARCHI_SIGNAL_NUMBER + ARCHI_SIGNAL_NUMBER_REALTIME))
+        if ((signal_no < 0) || (signal_no >= ARCHI_SIGNAL_NUMBER + ARCHI_SIGNAL_NUMBER_REALTIME))
         {
-            ARCHI_ERROR_SET(ARCHI__ECONSTRAINT, "invalid signal index %i encountered", signal_index);
-            return ARCHI_DEXGRAPH_HALT;
+            ARCHI_ERROR_SET(ARCHI__ECONSTRAINT, "invalid signal index %i encountered", signal_no);
+            return NULL;
         }
 
-        if (signal_index < ARCHI_SIGNAL_NUMBER)
+        if (signal_no < ARCHI_SIGNAL_NUMBER)
         {
-            if (ARCHI_SIGNAL_FLAG_IS_SET(flags->signal[signal_index]))
+            if (ARCHI_SIGNAL_FLAG_IS_SET(flags->signal[signal_no]))
             {
                 ARCHI_ERROR_RESET();
-                return detect->signal[i].branch_index;
+                return detect->signal[i].target;
             }
         }
         else
         {
-            if (ARCHI_SIGNAL_FLAG_IS_SET(flags->rt_signal[signal_index - ARCHI__SIGRTMIN]))
+            if (ARCHI_SIGNAL_FLAG_IS_SET(flags->rt_signal[signal_no - ARCHI__SIGRTMIN]))
             {
                 ARCHI_ERROR_RESET();
-                return detect->signal[i].branch_index;
+                return detect->signal[i].target;
             }
         }
     }
 
     ARCHI_ERROR_RESET();
-    return 0;
+    return detect->default_target;
 }
 

@@ -20,7 +20,7 @@
 
 /**
  * @file
- * @brief Aggregate type descriptions for data of transition functions for loops.
+ * @brief Aggregate type descriptions for data of condition functions for loops.
  */
 
 #pragma once
@@ -31,11 +31,11 @@
 
 
 /**
- * @brief Aggregate type description for archi_dexgraph_transition_data__loop_times_t.
+ * @brief Aggregate type description for archi_dexgraph_condition_data__loop_times_t.
  */
 extern
 const archi_aggr_type_t
-archi_aggr_type__dexgraph_transition_data__loop_times;
+archi_aggr_type__dexgraph_condition_data__loop_times;
 
 #endif // _ARCHI_EXEC_AGG_LOOP_VAR_H_
 

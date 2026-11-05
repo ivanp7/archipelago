@@ -25,38 +25,22 @@
 
 #include "archi/exec/exe/loop.fun.h"
 #include "archi/exec/exe/loop.typ.h"
-#include "archi_base/pointer.fun.h"
 
 
-ARCHI_DEXGRAPH_TRANSITION_FUNC(archi_dexgraph_transition__loop_times)
+ARCHI_DEXGRAPH_CONDITION_FUNC(archi_dexgraph_condition__loop_times)
 {
-    archi_dexgraph_transition_data__loop_times_t *loop = data;
+    archi_dexgraph_condition_data__loop_times_t *loop = data;
 
     if (loop == NULL)
     {
         ARCHI_ERROR_SET(ARCHI__ECONSTRAINT, "loop state is NULL");
-        return ARCHI_DEXGRAPH_HALT;
-    }
-    else if (loop->num_iterations == 0)
-    {
-        // as in do-while, one iteration is already done at the time of check
-        ARCHI_ERROR_SET(ARCHI__ECONSTRAINT, "number of loop iterations cannot be zero");
-        return ARCHI_DEXGRAPH_HALT;
+        return false;
     }
 
     ARCHI_ERROR_RESET();
 
-    if (loop->iteration + 1 < loop->num_iterations)
-    {
-        // Do another iteration
-        loop->iteration++;
-        return 0;
-    }
-    else
-    {
-        // Break the loop
-        loop->iteration = 0;
-        return 1;
-    }
+    return (loop->iteration < loop->num_iterations)
+        ? (loop->iteration++, false)   // do another iteration
+        : (loop->iteration = 0, true); // break the loop
 }
 

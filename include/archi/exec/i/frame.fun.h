@@ -20,42 +20,51 @@
 
 /**
  * @file
- * @brief Aggregate type descriptions for data of transition functions for branch index mapping.
+ * @brief Operations with directed execution graph frames.
  */
 
-#include "archi/exec/agg/mapped.var.h"
-#include "archi/exec/agg/graph.var.h"
-#include "archi/exec/agg/tag.def.h"
-#include "archi/exec/exe/mapped.typ.h"
+#pragma once
+#ifndef _ARCHI_EXEC_API_FRAME_FUN_H_
+#define _ARCHI_EXEC_API_FRAME_FUN_H_
+
+#include "archi/exec/i/frame.typ.h"
+#include "archi_base/error.typ.h"
 
 
-static
-const archi_aggr_member_type__value_t
-VTYPE_size = ARCHI_AGGR_MEMBER_TYPE__VALUE(size_t, 0);
+/**
+ * @brief Execute the rest of node operations starting at the specified frame.
+ *
+ * The function calls non-NULL operation functions in the current node sequence,
+ * starting from the specified index, halting if any function returns non-zero error code.
+ *
+ * @return Index of the first operation not executed (successfully).
+ */
+size_t
+archi_dexgraph_execute_node(
+        archi_dexgraph_frame_t frame, ///< [in] Frame.
+        ARCHI_ERROR_PARAM_DECL ///< [out] Error.
+);
 
-/*****************************************************************************/
+/**
+ * @brief Execute a directed graph starting at the specified frame.
+ *
+ * This function implements the most basic graph execution algorithm:
+ * 1. execute the current node operation functions;
+ * 2. execute the current node transition function;
+ * 3. update the current node;
+ * 4. repeat until the current node is NULL.
+ *
+ * Returned frame contains NULL node if execution terminated without errors.
+ * Otherwise, it stores the current node pointer and operation index
+ * of the location where an error occured.
+ *
+ * @return Execution frame at the halt point.
+ */
+archi_dexgraph_frame_t
+archi_dexgraph_execute(
+        archi_dexgraph_frame_t frame, ///< [in] Frame.
+        ARCHI_ERROR_PARAM_DECL ///< [out] Error.
+);
 
-static
-const archi_aggr_member_t
-MEMBERS_dexgraph_transition_data__mapped[] = {
-    ARCHI_AGGR_MEMBER__AGGREGATE(archi_dexgraph_transition_data__mapped_t, transition, 1,
-            archi_aggr_type__dexgraph_transition.top_level),
-    ARCHI_AGGR_MEMBER__VALUE(archi_dexgraph_transition_data__mapped_t, table_length, 1, VTYPE_size),
-    ARCHI_AGGR_MEMBER__VALUE(archi_dexgraph_transition_data__mapped_t, table, 0, VTYPE_size),
-};
-
-#ifdef __GNUC__
-#  pragma GCC diagnostic push
-#  pragma GCC diagnostic ignored "-Wmissing-braces"
-#endif
-
-const archi_aggr_type_t
-archi_aggr_type__dexgraph_transition_data__mapped = ARCHI_AGGR_TYPE(
-        archi_dexgraph_transition_data__mapped_t,
-        ARCHI_POINTER_DATA_TAG__DEXGRAPH_TRANSITION_DATA__MAPPED,
-        MEMBERS_dexgraph_transition_data__mapped);
-
-#ifdef __GNUC__
-#  pragma GCC diagnostic pop
-#endif
+#endif // _ARCHI_EXEC_API_FRAME_FUN_H_
 

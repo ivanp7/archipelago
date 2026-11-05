@@ -32,19 +32,16 @@
 
 
 /**
- * @brief Execute an transition.
+ * @brief Obtain the transition successor node.
  *
  * If the transition function is not NULL, it is called with the transition data
- * and its return value is the branch index.
+ * to obtain the successor node.
+ * Otherwise, the transition data is interpreted as the pointer to the successor node.
  *
- * Otherwise, the transition data is interpreted as the branch index.
- * If the pointer is not NULL, it is dereferenced;
- * if it's NULL, the default value of `0` is used instead.
- *
- * @return Index of the chosen branch.
+ * @return The successor node, or NULL.
  */
-size_t
-archi_dexgraph_transition_execute(
+const struct archi_dexgraph_node*
+archi_dexgraph_transition_target(
         archi_dexgraph_transition_t transition, ///< [in] Transition.
         ARCHI_ERROR_PARAM_DECL ///< [out] Error.
 );

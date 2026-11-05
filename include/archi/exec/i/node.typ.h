@@ -33,29 +33,18 @@
 #include <stddef.h> // for size_t
 
 
-struct archi_dexgraph_node_array;
-
 /**
  * @brief Directed execution graph node.
  */
 typedef struct archi_dexgraph_node {
     const char *name; ///< Node name.
-    void *data; ///< Node data.
+    void *metadata; ///< Node metadata.
 
-    archi_dexgraph_transition_t transition; ///< Execution transition.
-    const struct archi_dexgraph_node_array *branch; ///< Array of branches to transit execution to.
+    archi_dexgraph_transition_t transition; ///< Node transition.
 
-    const size_t sequence_length; ///< Length of the node sequence.
-    archi_dexgraph_operation_t sequence[]; ///< Node sequence.
+    const size_t sequence_length; ///< Length of the node operation sequence.
+    archi_dexgraph_operation_t sequence[]; ///< Node operation sequence.
 } archi_dexgraph_node_t;
-
-/**
- * @brief Array of directed execution graph nodes.
- */
-typedef struct archi_dexgraph_node_array {
-    const size_t num_nodes; ///< Number of nodes.
-    const archi_dexgraph_node_t *node[]; ///< Array of nodes.
-} archi_dexgraph_node_array_t;
 
 #endif // _ARCHI_EXEC_API_NODE_TYP_H_
 

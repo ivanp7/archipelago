@@ -28,6 +28,7 @@
 #include "archi/signal/i/signal.typ.h"
 #include "archi/signal/i/handler.typ.h"
 #include "archi/signal/i/tag.def.h"
+#include "archi/exec/i/tag.def.h"
 
 
 static
@@ -52,6 +53,11 @@ const archi_aggr_member_type__pointer_t
 PTYPE_signal_handler_func = ARCHI_AGGR_MEMBER_TYPE__POINTER_TO_FUNC(archi_signal_handler_func_t,
         ARCHI_POINTER_FUNC_TAG__SIGNAL_HANDLER);
 
+static
+const archi_aggr_member_type__pointer_t
+PTYPE_dexgraph_node = ARCHI_AGGR_MEMBER_TYPE__POINTER_TO_CDATA(struct archi_dexgraph_node*,
+        ARCHI_POINTER_DATA_TAG__DEXGRAPH_NODE);
+
 /*****************************************************************************/
 
 static
@@ -71,8 +77,8 @@ archi_aggr_type__signal_handler = ARCHI_AGGR_TYPE(
 static
 const archi_aggr_member_t
 MEMBERS_dexgraph_transition_data__signal_detect__signal[] = {
-    ARCHI_AGGR_MEMBER__VALUE(archi_dexgraph_transition_data__signal_detect__signal_t, index, 1, VTYPE_int),
-    ARCHI_AGGR_MEMBER__VALUE(archi_dexgraph_transition_data__signal_detect__signal_t, branch_index, 1, VTYPE_size),
+    ARCHI_AGGR_MEMBER__VALUE(archi_dexgraph_transition_data__signal_detect__signal_t, number, 1, VTYPE_int),
+    ARCHI_AGGR_MEMBER__POINTER(archi_dexgraph_transition_data__signal_detect__signal_t, target, 1, PTYPE_dexgraph_node),
 };
 
 static
@@ -86,6 +92,7 @@ static
 const archi_aggr_member_t
 MEMBERS_dexgraph_transition_data__signal_detect[] = {
     ARCHI_AGGR_MEMBER__POINTER(archi_dexgraph_transition_data__signal_detect_t, flags, 1, PTYPE_signal_flags),
+    ARCHI_AGGR_MEMBER__POINTER(archi_dexgraph_transition_data__signal_detect_t, default_target, 1, PTYPE_dexgraph_node),
     ARCHI_AGGR_MEMBER__VALUE(archi_dexgraph_transition_data__signal_detect_t, num_signals, 1, VTYPE_size),
     ARCHI_AGGR_MEMBER__AGGREGATE(archi_dexgraph_transition_data__signal_detect_t, signal, 0,
             TYPE_dexgraph_transition_data__signal_detect__signal),

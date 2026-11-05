@@ -27,7 +27,7 @@
 
 
 void
-archi_dexgraph_operation_execute(
+archi_dexgraph_operation_call(
         archi_dexgraph_operation_t operation,
         ARCHI_ERROR_PARAM_DECL)
 {

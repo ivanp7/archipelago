@@ -20,7 +20,7 @@
 
 /**
  * @file
- * @brief Types for directed execution graph operations.
+ * @brief Directed execution graph frame type.
  */
 
 #pragma once
@@ -33,14 +33,19 @@
 struct archi_dexgraph_node;
 
 /**
- * @brief Execution frame for directed execution graph.
+ * @brief Execution frame of a directed execution graph.
  *
- * The first executed operation will be `node->sequence[index]`.
+ * The currently executed operation is `node->sequence[index]`.
  */
 typedef struct archi_dexgraph_frame {
     const struct archi_dexgraph_node *node; ///< Node.
-    size_t op_index; ///< Operation function sequence index.
+    size_t op_index; ///< Operation index.
 } archi_dexgraph_frame_t;
+
+/**
+ * @brief Invalid operation index designating transition.
+ */
+#define ARCHI_DEXGRAPH_TRANS_INDEX  ((size_t)-1)
 
 #endif // _ARCHI_EXEC_API_FRAME_TYP_H_
 

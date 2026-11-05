@@ -20,25 +20,22 @@
 
 /**
  * @file
- * @brief Transition functions for branch index mapping in directed execution graphs.
+ * @brief Aggregate type descriptions for data of transition functions for branching.
  */
 
-#include "archi/exec/exe/mapped.fun.h"
-#include "archi/exec/exe/mapped.typ.h"
-#include "archi/exec/i/transition.fun.h"
+#pragma once
+#ifndef _ARCHI_EXEC_AGG_BRANCH_VAR_H_
+#define _ARCHI_EXEC_AGG_BRANCH_VAR_H_
+
+#include "archi/aggr/agg/generic.typ.h"
 
 
-ARCHI_DEXGRAPH_TRANSITION_FUNC(archi_dexgraph_transition__mapped)
-{
-    const archi_dexgraph_transition_data__mapped_t *mapped = data;
+/**
+ * @brief Aggregate type description for archi_dexgraph_transition_data__branch_t.
+ */
+extern
+const archi_aggr_type_t
+archi_aggr_type__dexgraph_transition_data__branch;
 
-    if (mapped == NULL)
-    {
-        ARCHI_ERROR_RESET();
-        return 0;
-    }
-
-    size_t branch_index = archi_dexgraph_transition_execute(mapped->transition, ARCHI_ERROR_PARAM);
-    return (branch_index < mapped->table_length) ? mapped->table[branch_index] : ARCHI_DEXGRAPH_HALT;
-}
+#endif // _ARCHI_EXEC_AGG_BRANCH_VAR_H_
 
