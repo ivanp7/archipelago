@@ -803,7 +803,7 @@ ARCHI_APP_REGISTRY_OPERATION_FUNC(archi_app_registry_op__unassign)
         archi_print_indent(1);
 
         archi_print_color(ARCHI_COLOR_FG_BLUE);
-        archi_print("unassign ");
+        archi_print("unset ");
         archi_print_context_slot(op_data->key, op_data->slot);
         archi_print("\n");
 
@@ -826,7 +826,7 @@ ARCHI_APP_REGISTRY_OPERATION_FUNC(archi_app_registry_op__assign)
         archi_print_indent(1);
 
         archi_print_color(ARCHI_COLOR_FG_BLUE);
-        archi_print("assign ");
+        archi_print("set ");
         archi_print_context_slot(op_data->key, op_data->slot);
         archi_print("\n");
 
@@ -855,7 +855,7 @@ ARCHI_APP_REGISTRY_OPERATION_FUNC(archi_app_registry_op__assign_slot)
         archi_print_indent(1);
 
         archi_print_color(ARCHI_COLOR_FG_BLUE);
-        archi_print("assign ");
+        archi_print("set ");
         archi_print_context_slot(op_data->key, op_data->slot);
         archi_print("\n");
 
@@ -885,7 +885,7 @@ ARCHI_APP_REGISTRY_OPERATION_FUNC(archi_app_registry_op__assign_slot_weak)
         archi_print_indent(1);
 
         archi_print_color(ARCHI_COLOR_FG_BLUE);
-        archi_print("assign ");
+        archi_print("set ");
         archi_print_context_slot(op_data->key, op_data->slot);
         archi_print("\n");
 
@@ -915,7 +915,7 @@ ARCHI_APP_REGISTRY_OPERATION_FUNC(archi_app_registry_op__assign_call)
         archi_print_indent(1);
 
         archi_print_color(ARCHI_COLOR_FG_BLUE);
-        archi_print("assign ");
+        archi_print("set ");
         archi_print_context_slot(op_data->key, op_data->slot);
         archi_print("\n");
 
@@ -976,7 +976,7 @@ ARCHI_APP_REGISTRY_OPERATION_FUNC(archi_app_registry_op__assign_call_weak)
         archi_print_indent(1);
 
         archi_print_color(ARCHI_COLOR_FG_BLUE);
-        archi_print("assign ");
+        archi_print("set ");
         archi_print_context_slot(op_data->key, op_data->slot);
         archi_print("\n");
 
