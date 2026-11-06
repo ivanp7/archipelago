@@ -428,8 +428,8 @@ Directed execution graphs can be created node by node within the context system 
 
 A graph consists of nodes connected by directed transitions. Each node contains:
 
-* **Name**: An optional C-string for logging and debugging.
-* **Data**: An optional pointer to data used for the implementation of an execution procedure.
+* **Name**: An optional C-string containing node name for logging and debugging.
+* **Metadata**: An optional pointer to metadata.
 * **Operations**: An array of functions (and associated data) executed linearly.
 * **Transition**: A function (and associated data) used to determine the successor node.
 
@@ -465,7 +465,61 @@ then returns 'true' and resets the counter.
 
 Directory: `archi/thread`.
 
-TODO
+Archipelago provides several features useful for concurrent computations.
+
+#### Thread Groups
+
+A *thread group* consists of a fixed number of threads specialized for splitting computational tasks
+evenly to achieve a performance boost.
+It is created and managed via the interface provided by the module.
+
+Thread groups are either *busy* or *waiting*:
+
+* A **waiting group** is idle and available for a work dispatch; all groups are created in this state.
+* A **busy group** has at least one thread that has not yet finished its assigned work,
+    or there are unprocessed work items remaining.
+    Once all work is complete, the group returns to the *waiting* state.
+
+Work is divided into several indexed *work items*, which are processed concurrently.
+Each item is processed exactly once; the order of processing is unspecified.
+
+Work is assigned to a thread group using the *dispatch* operation.
+This operation fails if the group is currently busy.
+The *wait* operation can be used to ensure that the group has finished the current task.
+
+A work task is defined by the following parameters:
+
+* **Work Function**: The function called concurrently by multiple threads to process work items.
+* **Work Data**: Data to be processed by the work function.
+* **Callback Function**: An optional function called after all work items have been processed.
+* **Callback Data**: Data passed to the callback function.
+* **Work Size**: The number of work items to be processed.
+* **Work Offset**: The starting index for work items;
+    the resulting index range is `[work_offset; work_offset + work_size)`.
+* **Batch Size**: The number of work items processed by a single thread at once.
+    A value of `0` is a special case, equivalent to `1 + (work_size - 1) / num_threads`.
+
+Work functions accept the following parameters:
+
+* **Work Data**: A pointer to a function-specific structure.
+* **Work Item Index**: The index of the current work item.
+* **Thread Index**: The index of the thread calling the work function.
+
+Callback functions accept the following parameters:
+
+* **Callback Data**: A pointer to a function-specific structure.
+* **Work Offset**: The starting value of the work item indexes.
+* **Work Size**: The total number of work items processed.
+* **Thread Index**: The index of the thread calling the callback function.
+
+#### Lock-Free Queues
+
+Lock-free queues are designed for concurrent environments, operating without internal locks.
+This provides high performance under heavy loads when shared between multiple threads.
+
+Like a standard queue, a lock-free queue supports push and pop operations,
+but with one additional limitation: its capacity is fixed upon creation
+and must be a power of two (and within the limit).
 
 ### Signal Management
 
