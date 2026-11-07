@@ -20,7 +20,7 @@
 
 /**
  * @file
- * @brief Key-value list type.
+ * @brief Key-value list types.
  */
 
 #pragma once
@@ -30,31 +30,23 @@
 #include "archi_base/pointer.typ.h"
 
 
+struct archi_kvlist_base;
+
+/**
+ * @brief List of key-value pairs (base).
+ */
+typedef struct archi_kvlist_base {
+    const struct archi_kvlist_base *next; ///< Pointer to the next list node.
+    const char *key; ///< Key.
+} archi_kvlist_base_t;
+
 /**
  * @brief List of key-value pairs.
  */
 typedef struct archi_kvlist {
-    const struct archi_kvlist *next; ///< Pointer to the next list node.
-
-    const char *key;       ///< Key.
+    archi_kvlist_base_t n; ///< Node base.
     archi_pointer_t value; ///< Value.
 } archi_kvlist_t;
-
-/**
- * @brief List of key-value pairs (with reference counted values).
- */
-typedef union archi_krcvlist {
-    struct {
-        archi_kvlist_t n; ///< Node base.
-        archi_reference_count_t ref_count; ///< Value reference counter.
-    };
-    struct {
-        const union archi_krcvlist *next; ///< Pointer to the next list node.
-
-        const char *key;         ///< Key.
-        archi_rcpointer_t value; ///< Value.
-    };
-} archi_krcvlist_t;
 
 #endif // _ARCHI_BASE_KVLIST_TYP_H_
 

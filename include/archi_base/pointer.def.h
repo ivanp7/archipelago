@@ -20,7 +20,7 @@
 
 /**
  * @file
- * @brief Macros and constants for pointer wrapper types.
+ * @brief Macros and constants for the generic pointer type.
  */
 
 #pragma once

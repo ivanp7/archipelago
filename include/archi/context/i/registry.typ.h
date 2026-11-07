@@ -27,7 +27,7 @@
 #ifndef _ARCHI_CONTEXT_I_REGISTRY_TYP_H_
 #define _ARCHI_CONTEXT_I_REGISTRY_TYP_H_
 
-#include "archi_base/kvlist.typ.h"
+#include "archi_base/krcvlist.typ.h"
 
 
 /**

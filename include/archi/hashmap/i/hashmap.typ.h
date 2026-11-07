@@ -27,7 +27,7 @@
 #ifndef _ARCHI_HASHMAP_I_HASHMAP_TYP_H_
 #define _ARCHI_HASHMAP_I_HASHMAP_TYP_H_
 
-#include "archi_base/pointer.typ.h"
+#include "archi_base/rcpointer.typ.h"
 
 #include <stddef.h>
 #include <stdbool.h>

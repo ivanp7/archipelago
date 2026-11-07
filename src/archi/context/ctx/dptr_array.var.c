@@ -25,6 +25,7 @@
 
 #include "archi/context/ctx/dptr_array.var.h"
 #include "archi/context/i/interface.def.h"
+#include "archi_base/rcpointer.fun.h"
 #include "archi_base/pointer.fun.h"
 #include "archi_base/pointer.def.h"
 #include "archi_base/tag.def.h"

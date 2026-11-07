@@ -37,12 +37,15 @@
  * This function iterates a parameter list and stores the first value of each parameter
  * into the array of descriptions.
  *
+ * If `ref_counted` is false, the list type is `archi_kvlist_t`,
+ * otherwise it's `archi_krcvlist_t`.
+ *
  * @return True on success, false on failure.
  */
 bool
 archi_plist_parse(
-        const archi_kvlist_t *params, ///< [in] Parameter list.
-        bool with_ref_count, ///< [in] Whether values in the list are reference-counted.
+        const archi_kvlist_base_t *params, ///< [in] Parameter list.
+        bool ref_counted, ///< [in] Whether values in the list are reference-counted.
         archi_plist_param_t parsed[], ///< [in,out] NULL-terminated array of parameter descriptions.
         bool ignore_unknown, ///< [in] Ignore unknown parameters.
         ARCHI_ERROR_PARAM_DECL ///< [out] Error.

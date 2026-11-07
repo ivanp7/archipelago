@@ -24,14 +24,16 @@
  */
 
 #include "archi_base/util/plist.fun.h"
+#include "archi_base/krcvlist.typ.h"
+#include "archi_base/rcpointer.fun.h"
 #include "archi_base/pointer.fun.h"
 #include "archi_base/pointer.def.h"
 
 
 bool
 archi_plist_parse(
-        const archi_kvlist_t *params,
-        bool with_ref_count,
+        const archi_kvlist_base_t *params,
+        bool ref_counted,
         archi_plist_param_t parsed[],
         bool ignore_unknown,
         ARCHI_ERROR_PARAM_DECL)
@@ -75,7 +77,15 @@ archi_plist_parse(
             {
                 ARCHI_ERROR_VAR(error);
 
-                if (!archi_pointer_valid(params->value, &error))
+                archi_pointer_t value;
+                {
+                    if (!ref_counted)
+                        value = ((archi_kvlist_t*)params)->value;
+                    else
+                        value = ((archi_krcvlist_t*)params)->value.p;
+                }
+
+                if (!archi_pointer_valid(value, &error))
                 {
                     ARCHI_ERROR_SET(error.code, "parameter '%s' has invalid pointer: %s",
                             params->key, error.message);
@@ -86,7 +96,7 @@ archi_plist_parse(
                 {
                     ARCHI_ERROR_VAR_UNSET(&error);
 
-                    if (!parsed[i].check.fn(params->value, parsed[i].check.data, &error))
+                    if (!parsed[i].check.fn(value, parsed[i].check.data, &error))
                     {
                         ARCHI_ERROR_SET(ARCHI__ECONSTRAINT, "parameter '%s' has incorrect value: %s",
                                 params->key, error.message);
@@ -98,10 +108,10 @@ archi_plist_parse(
             // Set the parameter value
             parsed[i].value_set = true;
 
-            if (!with_ref_count)
-                parsed[i].value = archi_rcpointer(params->value, NULL);
+            if (!ref_counted)
+                parsed[i].value = archi_rcpointer(((archi_kvlist_t*)params)->value, NULL);
             else
-                parsed[i].value = ((const archi_krcvlist_t*)params)->value;
+                parsed[i].value = ((archi_krcvlist_t*)params)->value;
 
             // Proceed to the next parameter
             goto next_parameter;

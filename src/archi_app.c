@@ -362,11 +362,11 @@ exec_file(
         contents = input_file_header->contents;
     }
 
-    for (; contents != NULL; contents = contents->next)
+    for (; contents != NULL; contents = (archi_kvlist_t*)contents->n.next)
     {
         // Skip everything that is not an operation list
-        if ((contents->key == NULL) || ARCHI_STRING_COMPARE(
-                    ARCHI_APP_INPUT_FILE_CONTENTS__OPERATIONS, !=, contents->key))
+        if ((contents->n.key == NULL) || ARCHI_STRING_COMPARE(
+                    ARCHI_APP_INPUT_FILE_CONTENTS__OPERATIONS, !=, contents->n.key))
             continue;
 
         num_operation_lists++;
@@ -397,12 +397,12 @@ exec_list(
 {
     size_t num_operations = 0; // number of executed operations in the current list
 
-    for (; operation_list != NULL; operation_list = operation_list->next)
+    for (; operation_list != NULL; operation_list = (archi_kvlist_t*)operation_list->n.next)
     {
-        if (operation_list->key != NULL)
+        if (operation_list->n.key != NULL)
         {
             archi_log_info(__func__, "     * [operation #%zu (%zu)] :: %s",
-                    num_operations, archi_process.num_operations, operation_list->key);
+                    num_operations, archi_process.num_operations, operation_list->n.key);
 
             if (ARCHI_POINTER_TO_FUNCTION(operation_list->value.attr))
             {
@@ -437,7 +437,7 @@ exec_list(
                 size_t op_index = 0;
                 while (archi_app_registry_operations[op_index].name != NULL)
                 {
-                    if (ARCHI_STRING_COMPARE(operation_list->key, ==,
+                    if (ARCHI_STRING_COMPARE(operation_list->n.key, ==,
                                 archi_app_registry_operations[op_index].name))
                     {
                         operation_fn = archi_app_registry_operations[op_index].function;
@@ -486,7 +486,7 @@ exec_list(
             }
             else
                 archi_log_warning(__func__, "Operation of type \"%s\" is not supported, ignoring...",
-                        operation_list->key);
+                        operation_list->n.key);
         }
         else // no-op
             archi_log_info(__func__, "     * [file #%zu, list #%zu, operation #%zu (%zu)]",
@@ -547,7 +547,7 @@ create_context_registry(void)
 
     archi_krcvlist_t params[] = {
         {
-            .key = "params",
+            .n.key = "params",
             .value = {
                 .ptr = &hashmap_params,
                 .attr = ARCHI_POINTER_TYPE__DATA_ON_STACK |
@@ -661,7 +661,7 @@ map_input_file(
 
     archi_krcvlist_t params[] = {
         {
-            .key = "fd",
+            .n.key = "fd",
             .value = {
                 .ptr = &fd,
                 .attr = ARCHI_POINTER_TYPE__DATA_ON_STACK |
@@ -669,7 +669,7 @@ map_input_file(
             },
         },
         {
-            .key = "params",
+            .n.key = "params",
             .value = {
                 .ptr = &map_params,
                 .attr = ARCHI_POINTER_TYPE__DATA_ON_STACK |
@@ -677,7 +677,7 @@ map_input_file(
             },
         },
     };
-    params[0].next = &params[1];
+    params[0].n.next = &params[1].n;
 
     // Initialize a file mapping context
     archi_rcpointer_t interface =
@@ -818,11 +818,11 @@ prepare_signal_watch_set(void)
             contents = input_file_header->contents;
         }
 
-        for (; contents != NULL; contents = contents->next)
+        for (; contents != NULL; contents = (archi_kvlist_t*)contents->n.next)
         {
             // Skip everything that is not a signal set
-            if ((contents->key == NULL) || ARCHI_STRING_COMPARE(
-                        ARCHI_APP_INPUT_FILE_CONTENTS__SIGNALS, !=, contents->key))
+            if ((contents->n.key == NULL) || ARCHI_STRING_COMPARE(
+                        ARCHI_APP_INPUT_FILE_CONTENTS__SIGNALS, !=, contents->n.key))
                 continue;
 
             num_signal_sets++;
@@ -901,7 +901,7 @@ initialize_signal_management(void)
 
         archi_krcvlist_t params[] = {
             {
-                .key = "params",
+                .n.key = "params",
                 .value = {
                     .ptr = &hashmap_params,
                     .attr = ARCHI_POINTER_TYPE__DATA_ON_STACK |

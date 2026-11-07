@@ -20,14 +20,12 @@
 
 /**
  * @file
- * @brief The pointer wrapper type.
+ * @brief The generic pointer type.
  */
 
 #pragma once
 #ifndef _ARCHI_BASE_POINTER_TYP_H_
 #define _ARCHI_BASE_POINTER_TYP_H_
-
-#include "archi_base/ref_count.typ.h"
 
 #include <stdint.h> // for uint64_t
 
@@ -120,27 +118,6 @@ typedef struct archi_pointer {
     };
     archi_pointer_attr_t attr; ///< Pointer attributes.
 } archi_pointer_t;
-
-/**
- * @struct archi_rcpointer_t
- * @brief Generic wrapper for reference counted data/function pointers with attributes.
- *
- * This type extends `archi_pointer_t` with a reference counter of the pointee.
- */
-typedef struct archi_rcpointer {
-    union {
-        archi_pointer_t p; ///< Managed pointer.
-        struct {
-            union {
-                archi_data_t ptr;      ///< Pointer to writable data.
-                archi_rodata_t cptr;   ///< Pointer to read-only data.
-                archi_function_t fptr; ///< Pointer to function.
-            };
-            archi_pointer_attr_t attr; ///< Pointer attributes.
-        };
-    };
-    archi_reference_count_t ref_count; ///< Reference counter of the pointee.
-} archi_rcpointer_t;
 
 #endif // _ARCHI_BASE_POINTER_TYP_H_
 

@@ -27,7 +27,7 @@
 #ifndef _ARCHI_BASE_UTIL_PLIST_TYP_H_
 #define _ARCHI_BASE_UTIL_PLIST_TYP_H_
 
-#include "archi_base/pointer.typ.h"
+#include "archi_base/rcpointer.typ.h"
 #include "archi_base/util/string.typ.h"
 #include "archi_base/util/check.typ.h"
 

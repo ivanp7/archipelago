@@ -20,16 +20,12 @@
 
 /**
  * @file
- * @brief Operations with pointers.
+ * @brief Operations with generic pointers.
  */
 
 #include "archi_base/pointer.fun.h"
 #include "archi_base/pointer.def.h"
-#include "archi_base/ref_count.fun.h"
 #include "archi_base/util/size.def.h"
-
-#include <stdlib.h> // for aligned_alloc(), free()
-#include <string.h> // for memcpy()
 
 
 #define MASK(width) (((archi_pointer_attr_t)1 << (width)) - 1)
@@ -49,7 +45,7 @@ bitwidth_of(
 }
 
 /*****************************************************************************/
-// Pointer attributes interface
+// Pointer attributes operations
 /*****************************************************************************/
 
 archi_pointer_attr_t
@@ -330,7 +326,7 @@ archi_pointer_attr_compatible(
 }
 
 /*****************************************************************************/
-// Pointer interface
+// Pointer operations
 /*****************************************************************************/
 
 bool
@@ -378,115 +374,5 @@ archi_pointer_valid(
 
     ARCHI_ERROR_RESET();
     return true;
-}
-
-archi_rcpointer_t
-archi_rcpointer(
-        archi_pointer_t p,
-        archi_reference_count_t ref_count)
-{
-    return (archi_rcpointer_t){
-        .p = p,
-        .ref_count = (!ARCHI_POINTER_IS_NULL(p) && !ARCHI_POINTER_TO_STACK(p.attr)) ? ref_count : NULL,
-    };
-}
-
-/*****************************************************************************/
-// Reference counted pointer interface
-/*****************************************************************************/
-
-archi_rcpointer_t
-archi_rcpointer_memcopy(
-        archi_rcpointer_t source,
-        ARCHI_ERROR_PARAM_DECL)
-{
-    // Check validness of source pointer
-    if (!archi_pointer_valid(source.p, ARCHI_ERROR_PARAM))
-        return (archi_rcpointer_t){0};
-
-    // Parse source pointer attributes
-    size_t length, stride, alignment;
-    if (!archi_pointer_attr_unpk__pdata(source.attr, &length, &stride, &alignment,
-                ARCHI_ERROR_PARAM))
-        return (archi_rcpointer_t){0};
-
-    // Copy the pointer
-    archi_rcpointer_t copy = source;
-
-    // Change pointer type
-    copy.attr &= ~ARCHI_POINTER_ATTR_MASK__TYPE;
-    copy.attr |= ARCHI_POINTER_TYPE__DATA_WRITABLE;
-
-    if (source.ptr != NULL)
-    {
-        // Allocate the memory copy
-        size_t size = length * stride;
-
-        copy.ptr = aligned_alloc(alignment, size);
-        if (copy.ptr == NULL)
-        {
-            ARCHI_ERROR_SET(ARCHI__EMEMORY, "couldn't allocate memory copy (%zu bytes, alignment = %#zx)",
-                    size, alignment);
-            return (archi_rcpointer_t){0};
-        }
-
-        // Allocate the reference counter
-        copy.ref_count = archi_reference_count_alloc(free, copy.ptr);
-        if (copy.ref_count == NULL)
-        {
-            free(copy.ptr);
-
-            ARCHI_ERROR_SET(ARCHI__EMEMORY, "couldn't allocate reference counter of memory copy");
-            return (archi_rcpointer_t){0};
-        }
-
-        // Copy memory contents
-        memcpy(copy.ptr, source.ptr, size);
-    }
-
-    ARCHI_ERROR_RESET();
-    return copy;
-}
-
-archi_rcpointer_t
-archi_rcpointer_own(
-        archi_rcpointer_t entity,
-        ARCHI_ERROR_PARAM_DECL)
-{
-    if (!ARCHI_POINTER_TO_STACK(entity.attr))
-        archi_reference_count_increment(entity.ref_count);
-    else
-    {
-        archi_rcpointer_t entity_copy = archi_rcpointer_memcopy(entity, ARCHI_ERROR_PARAM);
-        if ((entity_copy.ptr == NULL) && (entity.ptr != NULL))
-            return (archi_rcpointer_t){.attr = ARCHI_POINTER_TYPE__DATA_ON_STACK};
-
-        entity = entity_copy;
-    }
-
-    ARCHI_ERROR_RESET();
-    return entity;
-}
-
-void
-archi_rcpointer_disown(
-        archi_rcpointer_t entity)
-{
-    archi_reference_count_decrement(entity.ref_count);
-}
-
-archi_rcpointer_t
-archi_rcpointer_replace(
-        archi_rcpointer_t owned_entity,
-        archi_rcpointer_t disowned_entity,
-        ARCHI_ERROR_PARAM_DECL)
-{
-    owned_entity = archi_rcpointer_own(owned_entity, ARCHI_ERROR_PARAM);
-    if (!owned_entity.attr)
-        return (archi_rcpointer_t){0};
-
-    archi_rcpointer_disown(disowned_entity);
-
-    return owned_entity;
 }
 

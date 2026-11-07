@@ -25,175 +25,14 @@
 
 #include "archi_base/kvlist.fun.h"
 #include "archi_base/pointer.fun.h"
-#include "archi_base/ref_count.fun.h"
 #include "archi_base/util/string.fun.h"
 
 #include <stdlib.h> // for malloc(), free()
 
 
-archi_kvlist_t*
-archi_kvlist_node_alloc(
-        const char *key,
-        bool alloc_ref_count)
-{
-    archi_kvlist_t *node = malloc(!alloc_ref_count ?
-            sizeof(archi_kvlist_t) : sizeof(archi_krcvlist_t));
-    if (node == NULL)
-        return NULL;
-
-    if (key != NULL)
-    {
-        key = archi_string_copy(key);
-        if (key == NULL)
-        {
-            free(node);
-            return NULL;
-        }
-    }
-
-    if (!alloc_ref_count)
-        *node = (archi_kvlist_t){
-            .key = key,
-        };
-    else
-        *(archi_krcvlist_t*)node = (archi_krcvlist_t){
-            .key = key,
-        };
-
-    return node;
-}
-
-void
-archi_kvlist_node_free(
-        archi_kvlist_t *node)
-{
-    if (node == NULL)
-        return;
-
-    free((char*)node->key);
-    free(node);
-}
-
-/*****************************************************************************/
-
-archi_kvlist_t*
-archi_kvlist_copy(
-        const archi_kvlist_t *head,
-        bool alloc_ref_count,
-        archi_reference_count_t ref_count,
-        archi_kvlist_t **out_tail)
-{
-    if (head == NULL)
-    {
-        if (out_tail != NULL)
-            *out_tail = NULL;
-        return NULL;
-    }
-
-    archi_kvlist_t *copy_head = NULL, *copy_tail = NULL;
-
-    for (; head != NULL; head = head->next)
-    {
-        archi_kvlist_t *node = archi_kvlist_node_alloc(head->key, alloc_ref_count);
-        if (node == NULL)
-            goto failure;
-
-        if (!alloc_ref_count)
-            node->value = head->value;
-        else
-            ((archi_krcvlist_t*)node)->value = archi_rcpointer(head->value, ref_count);
-
-        if (copy_tail != NULL)
-        {
-            copy_tail->next = node;
-            copy_tail = node;
-        }
-        else
-            copy_head = copy_tail = node;
-    }
-
-    if (out_tail != NULL)
-        *out_tail = copy_tail;
-    return copy_head;
-
-failure:
-    archi_kvlist_free(copy_head);
-
-    if (out_tail != NULL)
-        *out_tail = NULL;
-    return NULL;
-}
-
-archi_krcvlist_t*
-archi_krcvlist_copy(
-        const archi_krcvlist_t *head,
-        archi_krcvlist_t **out_tail)
-{
-    if (head == NULL)
-    {
-        if (out_tail != NULL)
-            *out_tail = NULL;
-        return NULL;
-    }
-
-    archi_krcvlist_t *copy_head = NULL, *copy_tail = NULL;
-
-    for (; head != NULL; head = head->next)
-    {
-        archi_krcvlist_t *node = (archi_krcvlist_t*)archi_kvlist_node_alloc(head->key, true);
-        if (node == NULL)
-            goto failure;
-
-        node->value = head->value;
-
-        if (copy_tail != NULL)
-        {
-            copy_tail->next = node;
-            copy_tail = node;
-        }
-        else
-            copy_head = copy_tail = node;
-    }
-
-    if (out_tail != NULL)
-        *out_tail = copy_tail;
-    return copy_head;
-
-failure:
-    archi_krcvlist_free(copy_head, false);
-
-    if (out_tail != NULL)
-        *out_tail = NULL;
-    return NULL;
-}
-
-void
-archi_kvlist_free(
-        archi_kvlist_t *head)
-{
-    archi_krcvlist_free((archi_krcvlist_t*)head, false);
-}
-
-void
-archi_krcvlist_free(
-        archi_krcvlist_t *head,
-        bool decrement_ref_counts)
-{
-    while (head != NULL)
-    {
-        archi_krcvlist_t *next = (archi_krcvlist_t*)head->next;
-        {
-            if (decrement_ref_counts)
-                archi_reference_count_decrement(head->ref_count);
-            archi_kvlist_node_free(&head->n);
-        }
-        head = next;
-    }
-}
-
-const archi_kvlist_t*
+const archi_kvlist_base_t*
 archi_kvlist_tail(
-        const archi_kvlist_t *head,
+        const archi_kvlist_base_t *head,
         size_t *out_length)
 {
     if (head == NULL)
@@ -215,9 +54,9 @@ archi_kvlist_tail(
     return head;
 }
 
-const archi_kvlist_t*
+const archi_kvlist_base_t*
 archi_kvlist_nth_node(
-        const archi_kvlist_t *head,
+        const archi_kvlist_base_t *head,
         size_t index)
 {
     while ((head != NULL) && (index > 0))
@@ -229,9 +68,9 @@ archi_kvlist_nth_node(
     return head;
 }
 
-const archi_kvlist_t*
+const archi_kvlist_base_t*
 archi_kvlist_find(
-        const archi_kvlist_t *head,
+        const archi_kvlist_base_t *head,
         const char *key,
         archi_string_comp_func_t comp_fn,
         size_t *out_index)
@@ -255,5 +94,100 @@ archi_kvlist_find(
     if (out_index != NULL)
         *out_index = index;
     return NULL;
+}
+
+/*****************************************************************************/
+
+archi_kvlist_t*
+archi_kvlist_node_alloc(
+        const char *key)
+{
+    archi_kvlist_t *node = malloc(sizeof(*node));
+    if (node == NULL)
+        return NULL;
+
+    if (key != NULL)
+    {
+        key = archi_string_copy(key);
+        if (key == NULL)
+        {
+            free(node);
+            return NULL;
+        }
+    }
+
+    *node = (archi_kvlist_t){
+        .n.key = key,
+    };
+
+    return node;
+}
+
+void
+archi_kvlist_node_free(
+        archi_kvlist_t *node)
+{
+    if (node == NULL)
+        return;
+
+    free((char*)node->n.key);
+    free(node);
+}
+
+archi_kvlist_t*
+archi_kvlist_copy(
+        const archi_kvlist_t *head,
+        archi_kvlist_t **out_tail)
+{
+    if (head == NULL)
+    {
+        if (out_tail != NULL)
+            *out_tail = NULL;
+        return NULL;
+    }
+
+    archi_kvlist_t *copy_head = NULL, *copy_tail = NULL;
+
+    for (; head != NULL; head = (archi_kvlist_t*)head->n.next)
+    {
+        archi_kvlist_t *node = archi_kvlist_node_alloc(head->n.key);
+        if (node == NULL)
+            goto failure;
+
+        node->value = head->value;
+
+        if (copy_tail != NULL)
+        {
+            copy_tail->n.next = (archi_kvlist_base_t*)node;
+            copy_tail = node;
+        }
+        else
+            copy_head = copy_tail = node;
+    }
+
+    if (out_tail != NULL)
+        *out_tail = copy_tail;
+    return copy_head;
+
+failure:
+    archi_kvlist_free(copy_head);
+
+    if (out_tail != NULL)
+        *out_tail = NULL;
+    return NULL;
+}
+
+void
+archi_kvlist_free(
+        archi_kvlist_t *head)
+{
+    while (head != NULL)
+    {
+        archi_kvlist_t *next = (archi_kvlist_t*)head->n.next;
+
+        archi_kvlist_node_free(head);
+
+        head = next;
+    }
 }
 

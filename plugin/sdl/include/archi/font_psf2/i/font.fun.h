@@ -29,7 +29,7 @@
 
 #include "archi/font_psf2/i/handle.typ.h"
 #include "archi/font_psf2/i/font.typ.h"
-#include "archi_base/pointer.typ.h"
+#include "archi_base/rcpointer.typ.h"
 #include "archi_base/error.typ.h"
 
 #include <stdbool.h>

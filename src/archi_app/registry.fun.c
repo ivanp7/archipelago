@@ -30,7 +30,8 @@
 #include "archi/context/ctx/plist.var.h"
 #include "archi/context/ctx/pointer.var.h"
 #include "archi/context/ctx/dptr_array.var.h"
-#include "archi_base/kvlist.fun.h"
+#include "archi_base/krcvlist.fun.h"
+#include "archi_base/rcpointer.fun.h"
 #include "archi_base/pointer.fun.h"
 #include "archi_base/pointer.def.h"
 #include "archi_log/print.fun.h"
@@ -319,13 +320,13 @@ archi_print_params(
         const archi_kvlist_t *params,
         unsigned indent_level)
 {
-    for (; params != NULL; params = params->next)
+    for (; params != NULL; params = (archi_kvlist_t*)params->n.next)
     {
         archi_print_indent(indent_level);
 
         archi_print("\"");
         archi_print_color(ARCHI_COLOR_BG_CYAN ARCHI_COLOR_FG_BRI_WHITE);
-        archi_print_string(params->key);
+        archi_print_string(params->n.key);
         archi_print_color(ARCHI_COLOR_RESET);
         archi_print("\"");
 
@@ -461,7 +462,7 @@ ARCHI_APP_REGISTRY_OPERATION_FUNC(archi_app_registry_op__create_as)
     // Copy the parameter list
     archi_context_registry_params_t init_params = {
         .context_key = op_data->init_params.context_key,
-        .list = (archi_krcvlist_t*)archi_kvlist_copy(op_data->init_params.list, true, ref_count, NULL),
+        .list = archi_krcvlist_copy_kvlist(op_data->init_params.list, ref_count, NULL),
     };
 
     if ((op_data->init_params.list != NULL) && (init_params.list == NULL))
@@ -531,7 +532,7 @@ ARCHI_APP_REGISTRY_OPERATION_FUNC(archi_app_registry_op__create_from)
     // Copy the parameter list
     archi_context_registry_params_t init_params = {
         .context_key = op_data->init_params.context_key,
-        .list = (archi_krcvlist_t*)archi_kvlist_copy(op_data->init_params.list, true, ref_count, NULL),
+        .list = archi_krcvlist_copy_kvlist(op_data->init_params.list, ref_count, NULL),
     };
 
     if ((op_data->init_params.list != NULL) && (init_params.list == NULL))
@@ -600,7 +601,7 @@ ARCHI_APP_REGISTRY_OPERATION_FUNC(archi_app_registry_op__create_plist)
     // Copy the parameter list
     archi_context_registry_params_t params = {
         .context_key = op_data->params.context_key,
-        .list = (archi_krcvlist_t*)archi_kvlist_copy(op_data->params.list, true, ref_count, NULL),
+        .list = archi_krcvlist_copy_kvlist(op_data->params.list, ref_count, NULL),
     };
 
     if ((op_data->params.list != NULL) && (params.list == NULL))
@@ -667,7 +668,7 @@ ARCHI_APP_REGISTRY_OPERATION_FUNC(archi_app_registry_op__create_ptr)
     // Do the operation
     archi_krcvlist_t params[] = {
         {
-            .key = "pointee",
+            .n.key = "pointee",
             .value = archi_rcpointer(op_data->pointee, ref_count),
         },
     };
@@ -724,7 +725,7 @@ ARCHI_APP_REGISTRY_OPERATION_FUNC(archi_app_registry_op__create_dptr_array)
     // Do the operation
     archi_krcvlist_t params[] = {
         {
-            .key = "length",
+            .n.key = "length",
             .value = {
                 .cptr = &op_data->length,
                 .attr = ARCHI_POINTER_TYPE__DATA_READONLY |
@@ -776,7 +777,7 @@ ARCHI_APP_REGISTRY_OPERATION_FUNC(archi_app_registry_op__invoke)
     // Copy the parameter list
     archi_context_registry_params_t call_params = {
         .context_key = op_data->call_params.context_key,
-        .list = (archi_krcvlist_t*)archi_kvlist_copy(op_data->call_params.list, true, ref_count, NULL),
+        .list = archi_krcvlist_copy_kvlist(op_data->call_params.list, ref_count, NULL),
     };
 
     if ((op_data->call_params.list != NULL) && (call_params.list == NULL))
@@ -948,7 +949,7 @@ ARCHI_APP_REGISTRY_OPERATION_FUNC(archi_app_registry_op__assign_call)
     // Copy the parameter list
     archi_context_registry_params_t source_call_params = {
         .context_key = op_data->source_call_params.context_key,
-        .list = (archi_krcvlist_t*)archi_kvlist_copy(op_data->source_call_params.list, true, ref_count, NULL),
+        .list = archi_krcvlist_copy_kvlist(op_data->source_call_params.list, ref_count, NULL),
     };
 
     if ((op_data->source_call_params.list != NULL) && (source_call_params.list == NULL))
@@ -1009,7 +1010,7 @@ ARCHI_APP_REGISTRY_OPERATION_FUNC(archi_app_registry_op__assign_call_weak)
     // Copy the parameter list
     archi_context_registry_params_t source_call_params = {
         .context_key = op_data->source_call_params.context_key,
-        .list = (archi_krcvlist_t*)archi_kvlist_copy(op_data->source_call_params.list, true, ref_count, NULL),
+        .list = archi_krcvlist_copy_kvlist(op_data->source_call_params.list, ref_count, NULL),
     };
 
     if ((op_data->source_call_params.list != NULL) && (source_call_params.list == NULL))

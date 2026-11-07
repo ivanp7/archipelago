@@ -24,9 +24,9 @@ archi_opencl_program_src_from_kvlist(
     archi_opencl_program_src_t sources = {0};
 
     // Count files and perform checks
-    for (const archi_kvlist_t *node = list; node != NULL; node = node->next)
+    for (const archi_kvlist_t *node = list; node != NULL; node = (archi_kvlist_t*)node->n.next)
     {
-        if (node->key == NULL)
+        if (node->n.key == NULL)
         {
             ARCHI_ERROR_SET(ARCHI__ECONSTRAINT, "source name is NULL");
             return (archi_opencl_program_src_t){0};
@@ -90,7 +90,7 @@ archi_opencl_program_src_from_kvlist(
 
     // Fill the storage
     size_t index = 0;
-    for (const archi_kvlist_t *node = list; node != NULL; node = node->next, index++)
+    for (const archi_kvlist_t *node = list; node != NULL; node = (archi_kvlist_t*)node->n.next, index++)
     {
         size_t length;
         archi_pointer_attr_unpk__pdata(node->value.attr, &length, NULL, NULL, NULL);
@@ -98,7 +98,7 @@ archi_opencl_program_src_from_kvlist(
         if (copy_buffers)
         {
             // Copy pathname
-            sources.pathname[index] = archi_string_copy(node->key);
+            sources.pathname[index] = archi_string_copy(node->n.key);
             if (sources.pathname[index] == NULL)
             {
                 ARCHI_ERROR_SET(ARCHI__EMEMORY, "couldn't allocate copy of pathname");
@@ -117,7 +117,7 @@ archi_opencl_program_src_from_kvlist(
         }
         else
         {
-            sources.pathname[index] = (char*)node->key;
+            sources.pathname[index] = (char*)node->n.key;
             sources.content[index] = node->value.ptr;
         }
 

@@ -27,7 +27,7 @@
 #ifndef _ARCHI_AGGR_I_INTERFACE_TYP_H_
 #define _ARCHI_AGGR_I_INTERFACE_TYP_H_
 
-#include "archi_base/pointer.typ.h"
+#include "archi_base/rcpointer.typ.h"
 #include "archi_base/error.typ.h"
 #include "archi_base/util/size.typ.h"
 

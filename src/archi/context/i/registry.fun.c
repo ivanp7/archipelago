@@ -77,9 +77,10 @@ archi_context_params_concatenate(
     }
 
     // Append the 'dynamic' list to the 'static' list
-    archi_krcvlist_t *sparams_tail = (archi_krcvlist_t*)archi_kvlist_tail((archi_kvlist_t*)sparams, NULL);
+    archi_krcvlist_t *sparams_tail = (archi_krcvlist_t*)archi_kvlist_tail(
+            (archi_kvlist_base_t*)sparams, NULL);
     if (sparams_tail != NULL)
-        sparams_tail->next = dparams;
+        sparams_tail->n.next = (archi_kvlist_base_t*)dparams;
 
     // Prepare the parameter list
     params_info.params = (sparams != NULL) ? sparams : dparams;
@@ -97,7 +98,7 @@ archi_context_params_finalize_concatenation(
 {
     // Split the 'dynamic' list from the 'static' list
     if (params_info.sparams_tail != NULL)
-        params_info.sparams_tail->next = NULL;
+        params_info.sparams_tail->n.next = NULL;
 }
 
 ///////////////////////////////////////////////////////////////////////////////

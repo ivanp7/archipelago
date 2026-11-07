@@ -30,8 +30,8 @@
 #include "archi/context/i/handle.typ.h"
 #include "archi/context/i/slot.typ.h"
 #include "archi/context/i/callback.typ.h"
-#include "archi_base/pointer.typ.h"
-#include "archi_base/kvlist.typ.h"
+#include "archi_base/rcpointer.typ.h"
+#include "archi_base/krcvlist.typ.h"
 #include "archi_base/error.typ.h"
 
 #include <stdbool.h>

@@ -29,7 +29,7 @@
 
 #include "archi/memory/i/handle.typ.h"
 #include "archi/memory/i/interface.typ.h"
-#include "archi_base/pointer.typ.h"
+#include "archi_base/rcpointer.typ.h"
 
 
 /**

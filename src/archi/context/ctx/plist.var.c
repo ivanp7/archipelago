@@ -25,7 +25,9 @@
 
 #include "archi/context/ctx/plist.var.h"
 #include "archi/context/i/interface.def.h"
+#include "archi_base/krcvlist.fun.h"
 #include "archi_base/kvlist.fun.h"
+#include "archi_base/rcpointer.fun.h"
 #include "archi_base/pointer.fun.h"
 #include "archi_base/pointer.def.h"
 #include "archi_base/ref_count.fun.h"
@@ -56,13 +58,13 @@ archi_context_parameters_copy(
     }
 
     // Increment reference counters of values, copy stack memory
-    for (archi_krcvlist_t *node = head; node != NULL; node = (archi_krcvlist_t*)node->next)
+    for (archi_krcvlist_t *node = head; node != NULL; node = (archi_krcvlist_t*)node->n.next)
     {
         node->value = archi_rcpointer_own(node->value, ARCHI_ERROR_PARAM);
         if (!node->value.attr) // failed to own
         {
             // Undo the work
-            for (const archi_krcvlist_t *node2 = head; node2 != node; node2 = node2->next)
+            for (const archi_krcvlist_t *node2 = head; node2 != node; node2 = (archi_krcvlist_t*)node2->n.next)
                 archi_rcpointer_disown(node2->value);
 
             archi_krcvlist_free(head, false);
@@ -71,7 +73,7 @@ archi_context_parameters_copy(
     }
 
     if (tail != NULL)
-        tail->next = base;
+        tail->n.next = (archi_kvlist_base_t*)base;
 
     return head;
 }
@@ -188,7 +190,7 @@ ARCHI_CONTEXT_SET_FUNC(archi_context_set__plist)
     if (node == NULL)
     {
         // Create new node
-        node = (archi_krcvlist_t*)archi_kvlist_node_alloc(slot.name, true);
+        node = archi_krcvlist_node_alloc(slot.name);
         if (node == NULL)
         {
             archi_rcpointer_disown(value);
@@ -197,7 +199,7 @@ ARCHI_CONTEXT_SET_FUNC(archi_context_set__plist)
             return;
         }
 
-        node->next = context->ptr;
+        node->n.next = context->ptr;
         node->value = value;
 
         // Update context pointer and attributes

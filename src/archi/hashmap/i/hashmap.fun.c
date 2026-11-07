@@ -24,7 +24,7 @@
  */
 
 #include "archi/hashmap/i/hashmap.fun.h"
-#include "archi_base/pointer.fun.h"
+#include "archi_base/rcpointer.fun.h"
 #include "archi_base/util/size.def.h"
 #include "archi_base/util/string.fun.h"
 
