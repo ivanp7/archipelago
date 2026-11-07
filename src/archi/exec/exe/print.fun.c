@@ -27,7 +27,6 @@
 #include "archi/exec/exe/print.typ.h"
 #include "archi_base/pointer.fun.h"
 #include "archi_base/pointer.def.h"
-#include "archi_base/tag.def.h"
 
 #include <stdio.h> // for printf()
 #include <wchar.h> // for wint_t
