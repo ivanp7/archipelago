@@ -29,7 +29,7 @@
 #include "archi/exec/i/transition.fun.h"
 
 
-size_t
+archi_dexgraph_frame_t
 archi_dexgraph_execute_node(
         archi_dexgraph_frame_t frame,
         ARCHI_ERROR_PARAM_DECL)
@@ -37,23 +37,34 @@ archi_dexgraph_execute_node(
     if (frame.node == NULL)
     {
         ARCHI_ERROR_RESET();
-        return ARCHI_DEXGRAPH_TRANS_INDEX;
+        return (archi_dexgraph_frame_t){0};
     }
 
     archi_error_t error;
-    ARCHI_ERROR_VAR_RESET(&error);
 
+    // Execute the sequence of operation functions
     for (; frame.op_index < frame.node->sequence_length; frame.op_index++)
     {
         archi_dexgraph_operation_call(frame.node->sequence[frame.op_index], &error);
+
         if (error.code != 0)
-            goto break_loop;
+            goto finish;
     }
     frame.op_index = ARCHI_DEXGRAPH_TRANS_INDEX; // reached transition successfully
 
-break_loop:
+    // Execute the transition function
+    const archi_dexgraph_node_t *target =
+        archi_dexgraph_transition_target(frame.node->transition, &error);
+
+    if (error.code != 0)
+        goto finish;
+
+    // Update the frame
+    frame = (archi_dexgraph_frame_t){.node = target};
+
+finish:
     ARCHI_ERROR_ASSIGN(error);
-    return frame.op_index;
+    return frame;
 }
 
 archi_dexgraph_frame_t
@@ -64,22 +75,8 @@ archi_dexgraph_execute(
     archi_error_t error;
     ARCHI_ERROR_VAR_RESET(&error);
 
-    while (frame.node != NULL)
-    {
-        // Execute the sequence of operation functions
-        frame.op_index = archi_dexgraph_execute_node(frame, &error);
-        if (error.code != 0)
-            break;
-
-        // Get the transition target
-        const archi_dexgraph_node_t *target =
-            archi_dexgraph_transition_target(frame.node->transition, &error);
-        if (error.code != 0)
-            break;
-
-        // Update the frame
-        frame = (archi_dexgraph_frame_t){.node = target};
-    }
+    while ((frame.node != NULL) && (error.code == 0))
+        frame = archi_dexgraph_execute_node(frame, &error);
 
     ARCHI_ERROR_ASSIGN(error);
     return frame;

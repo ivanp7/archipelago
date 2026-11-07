@@ -32,14 +32,17 @@
 
 
 /**
- * @brief Execute the rest of node operations starting at the specified frame.
+ * @brief Execute the rest of node operations and the transition, starting at the specified frame.
  *
  * The function calls non-NULL operation functions in the current node sequence,
  * starting from the specified index, halting if any function returns non-zero error code.
  *
- * @return Index of the first operation not executed (successfully).
+ * Then, the transition function is called to determine the successor node.
+ * If it fails, the returned frame is pointing to the current node.
+ *
+ * @return Frame of the halt point.
  */
-size_t
+archi_dexgraph_frame_t
 archi_dexgraph_execute_node(
         archi_dexgraph_frame_t frame, ///< [in] Frame.
         ARCHI_ERROR_PARAM_DECL ///< [out] Error.
@@ -58,7 +61,7 @@ archi_dexgraph_execute_node(
  * Otherwise, it stores the current node pointer and operation index
  * of the location where an error occured.
  *
- * @return Execution frame at the halt point.
+ * @return Frame of the halt point.
  */
 archi_dexgraph_frame_t
 archi_dexgraph_execute(
