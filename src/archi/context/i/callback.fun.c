@@ -24,11 +24,24 @@
  */
 
 #include "archi/context/i/callback.fun.h"
+#include "archi_base/pointer.fun.h"
 
 
 ARCHI_CONTEXT_CALLBACK_FUNC(archi_context_callback__getter)
 {
-    archi_rcpointer_t *output = data;
+    if (!archi_pointer_attr_compatible(data.attr,
+                ARCHI_POINTER_ATTR__PDATA(1, archi_rcpointer_t*)))
+    {
+        ARCHI_ERROR_SET(ARCHI__ECONSTRAINT, "callback data attributes are incorrect");
+        return;
+    }
+    else if (data.ptr == NULL)
+    {
+        ARCHI_ERROR_SET(ARCHI__ECONSTRAINT, "callback data is NULL");
+        return;
+    }
+
+    archi_rcpointer_t *output = data.ptr;
     *output = value;
 
     ARCHI_ERROR_RESET();

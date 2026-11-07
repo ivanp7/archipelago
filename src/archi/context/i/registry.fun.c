@@ -116,10 +116,15 @@ archi_context_registry_get(
     }
 
     archi_rcpointer_t context = {0};
+    archi_context_callback_t callback = {
+        .function = archi_context_callback__getter,
+        .data = {
+            .ptr = &context,
+            .attr = ARCHI_POINTER_TYPE__DATA_ON_STACK | ARCHI_POINTER_ATTR__PDATA(1, archi_rcpointer_t*),
+        },
+    };
 
-    archi_context_get(registry, (archi_context_slot_t){.name = key},
-            (archi_context_callback_t){.function = archi_context_callback__getter, .data = &context},
-            ARCHI_ERROR_PARAM);
+    archi_context_get(registry, (archi_context_slot_t){.name = key}, callback, ARCHI_ERROR_PARAM);
 
     if (!context.attr)
         return NULL;
@@ -304,13 +309,18 @@ archi_context_registry_create_from(
         return NULL;
 
     // Obtain the interface
-    archi_rcpointer_t interface = {0};
-
     ARCHI_ERROR_VAR(error);
 
-    archi_context_get(source_context, source_slot,
-            (archi_context_callback_t){.function = archi_context_callback__getter,
-            .data = &interface}, &error);
+    archi_rcpointer_t interface = {0};
+    archi_context_callback_t callback = {
+        .function = archi_context_callback__getter,
+        .data = {
+            .ptr = &interface,
+            .attr = ARCHI_POINTER_TYPE__DATA_ON_STACK | ARCHI_POINTER_ATTR__PDATA(1, archi_rcpointer_t*),
+        },
+    };
+
+    archi_context_get(source_context, source_slot, callback, &error);
     ARCHI_ERROR_ASSIGN(error);
 
     if (error.code != 0)

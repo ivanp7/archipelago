@@ -195,7 +195,7 @@ struct archi_context_callback_wrapper_data {
 static
 ARCHI_CONTEXT_CALLBACK_FUNC(archi_context_callback_wrapper)
 {
-    struct archi_context_callback_wrapper_data *wrapper_data = data;
+    struct archi_context_callback_wrapper_data *wrapper_data = data.ptr;
 
     // Protect the callback from multiple calls
     if (!wrapper_data->called_once)
@@ -297,7 +297,7 @@ archi_context_get(
         /****************************************************************************/
         interface_ptr->eval_fn(context->data, slot, false, NULL,
                 (archi_context_callback_t){.function = archi_context_callback_wrapper,
-                .data = &wrapper_data}, &error);
+                .data.ptr = &wrapper_data}, &error);
         /****************************************************************************/
         ARCHI_ERROR_ASSIGN(error);
 
@@ -356,7 +356,7 @@ archi_context_call(
     /****************************************************************************/
     interface_ptr->eval_fn(context->data, slot, true, params,
             (archi_context_callback_t){.function = archi_context_callback_wrapper,
-            .data = &wrapper_data}, &error);
+            .data.ptr = &wrapper_data}, &error);
     /****************************************************************************/
     ARCHI_ERROR_ASSIGN(error);
 
@@ -473,7 +473,7 @@ struct archi_context_set__callback_data {
 static
 ARCHI_CONTEXT_CALLBACK_FUNC(archi_context_set__callback)
 {
-    struct archi_context_set__callback_data *callback_data = data;
+    struct archi_context_set__callback_data *callback_data = data.ptr;
 
     if (callback_data->weak_ref)
         value.ref_count = NULL;
@@ -554,10 +554,10 @@ archi_context_set_from_get(
     if (ARCHI_CONTEXT_SLOT_EMPTY(src_slot))
     {
         // Process empty source slot
-        /**********************************************************/
+        /*******************************************************************/
         archi_context_set__callback(archi_context_data(src_context),
-                &callback_data, ARCHI_ERROR_PARAM);
-        /**********************************************************/
+                (archi_pointer_t){.ptr = &callback_data}, ARCHI_ERROR_PARAM);
+        /*******************************************************************/
     }
     else
     {
@@ -565,7 +565,7 @@ archi_context_set_from_get(
         struct archi_context_callback_wrapper_data wrapper_data = {
             .callback = {
                 .function = archi_context_set__callback,
-                .data = &callback_data,
+                .data.ptr = &callback_data,
             },
 
             .context_ref_count = src_context->ref_count,
@@ -578,7 +578,7 @@ archi_context_set_from_get(
         /****************************************************************************/
         src_interface_ptr->eval_fn(src_context->data, src_slot, false, NULL,
                 (archi_context_callback_t){.function = archi_context_callback_wrapper,
-                .data = &wrapper_data}, &error);
+                .data.ptr = &wrapper_data}, &error);
         /****************************************************************************/
         ARCHI_ERROR_ASSIGN(error);
 
@@ -662,7 +662,7 @@ archi_context_set_from_call(
     struct archi_context_callback_wrapper_data wrapper_data = {
         .callback = {
             .function = archi_context_set__callback,
-            .data = &callback_data,
+            .data.ptr = &callback_data,
         },
 
         .context_ref_count = src_context->ref_count,
@@ -675,7 +675,7 @@ archi_context_set_from_call(
     /****************************************************************************/
     src_interface_ptr->eval_fn(src_context->data, src_slot, true, src_params,
             (archi_context_callback_t){.function = archi_context_callback_wrapper,
-            .data = &wrapper_data}, &error);
+            .data.ptr = &wrapper_data}, &error);
     /****************************************************************************/
     ARCHI_ERROR_ASSIGN(error);
 

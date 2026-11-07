@@ -40,7 +40,7 @@
  */
 #define ARCHI_CONTEXT_CALLBACK_FUNC(func_name)  void func_name(             \
         archi_rcpointer_t value, /* [in] Pointer to a value/resource. */    \
-        void *data, /* [in,out] Callback function data. */                  \
+        archi_pointer_t data, /* [in,out] Callback function data. */        \
         ARCHI_ERROR_PARAM_DECL) /* [out] Error. */
 
 /**
@@ -53,7 +53,7 @@ typedef ARCHI_CONTEXT_CALLBACK_FUNC((*archi_context_callback_func_t));
  */
 typedef struct archi_context_callback {
     archi_context_callback_func_t function; ///< Callback function.
-    void *data; ///< Callback function data.
+    archi_pointer_t data; ///< Callback function data.
 } archi_context_callback_t;
 
 /**
