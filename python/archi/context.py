@@ -1309,7 +1309,7 @@ class DexgraphNodeContext(ContextWhitelist):
                   'transition_data': _TYPE_DATA}
 
     class ExecuteCallParameters(ParametersWhitelist):
-        PARAMS = {'op_index': _TYPE_SIZE}
+        PARAMS = {}
 
     GETTER_SLOTS = {'name': _TYPE_STRING,
                     'metadata': _TYPE_DATA,

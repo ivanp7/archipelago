@@ -322,26 +322,14 @@ ARCHI_CONTEXT_EVAL_FUNC(archi_context_eval__dexgraph_node)
                 ARCHI_ERROR_SET(ARCHI__EINDEX, "number of slot indices isn't 0");
                 return;
             }
-
-            archi_dexgraph_frame_t frame = {
-                .node = node,
-            };
-
-            // Parse parameters
+            else if (params != NULL)
             {
-                archi_plist_param_t parsed[] = {
-                    {.name = "op_index",
-                        .check = {archi_value_check__attr, (archi_pointer_attr_t[]){ARCHI_POINTER_ATTR__PDATA(1, size_t)}},
-                        .assign = {archi_plist_assign__value, &frame.op_index, sizeof(frame.op_index), NULL}},
-                    {0},
-                };
-
-                if (!archi_plist_parse(&params->n, true, parsed, false, ARCHI_ERROR_PARAM))
-                    return;
+                ARCHI_ERROR_SET(ARCHI__EKEY, "call doesn't accept parameters");
+                return;
             }
 
             // Execute the graph
-            archi_dexgraph_execute(frame, ARCHI_ERROR_PARAM);
+            archi_dexgraph_execute((archi_dexgraph_frame_t){.node = node}, ARCHI_ERROR_PARAM);
         }
         else
             ARCHI_ERROR_SET(ARCHI__EKEY, "unknown slot '%s' encountered", slot.name);

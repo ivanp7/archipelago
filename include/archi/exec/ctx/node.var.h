@@ -50,10 +50,9 @@
  * - "transition.data"              : data of transition function, or the target node
  *
  * Calls:
- * - "execute"  : execute DEG with this node as entry node
+ * - "execute"  : execute graph with this node as entry node
  *      returns: <nothing>
- *      parameters:
- *      - "op_index"    : (size_t) initial operation function index
+ *      parameters: <none>
  *
  * Setter slots:
  * - "name"                         : (char[]) node name
