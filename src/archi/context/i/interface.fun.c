@@ -256,6 +256,16 @@ archi_context_get(
         return;
     }
 
+    {
+        ARCHI_ERROR_VAR(error);
+
+        if (!archi_pointer_valid(callback.data, &error))
+        {
+            ARCHI_ERROR_SET(error.code, "context callback data pointer is invalid: %s", error.message);
+            return;
+        }
+    }
+
     if (slot.name == NULL)
         slot.name = "";
 
@@ -323,6 +333,16 @@ archi_context_call(
     {
         ARCHI_ERROR_SET(ARCHI__ECONSTRAINT, "context is NULL");
         return;
+    }
+
+    {
+        ARCHI_ERROR_VAR(error);
+
+        if ((callback.function != NULL) && !archi_pointer_valid(callback.data, &error))
+        {
+            ARCHI_ERROR_SET(error.code, "context callback data pointer is invalid: %s", error.message);
+            return;
+        }
     }
 
     if (slot.name == NULL)
