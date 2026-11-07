@@ -51,11 +51,6 @@ const archi_aggr_member_type__pointer_t
 PTYPE_dexgraph_transition_func = ARCHI_AGGR_MEMBER_TYPE__POINTER_TO_FUNC(archi_dexgraph_transition_func_t,
         ARCHI_POINTER_FUNC_TAG__DEXGRAPH_TRANSITION);
 
-static
-const archi_aggr_member_type__pointer_t
-PTYPE_dexgraph_node = ARCHI_AGGR_MEMBER_TYPE__POINTER_TO_CDATA(archi_dexgraph_node_t*,
-        ARCHI_POINTER_DATA_TAG__DEXGRAPH_NODE);
-
 /*****************************************************************************/
 
 static
@@ -102,18 +97,4 @@ const archi_aggr_type_t
 archi_aggr_type__dexgraph_node = ARCHI_AGGR_TYPE(
         archi_dexgraph_node_t, ARCHI_POINTER_DATA_TAG__DEXGRAPH_NODE,
         MEMBERS_dexgraph_node);
-
-/*****************************************************************************/
-
-static
-const archi_aggr_member_t
-MEMBERS_dexgraph_frame[] = {
-    ARCHI_AGGR_MEMBER__POINTER(archi_dexgraph_frame_t, node, 1, PTYPE_dexgraph_node),
-    ARCHI_AGGR_MEMBER__VALUE(archi_dexgraph_frame_t, op_index, 1, VTYPE_size),
-};
-
-const archi_aggr_type_t
-archi_aggr_type__dexgraph_frame = ARCHI_AGGR_TYPE(
-        archi_dexgraph_frame_t, 0,
-        MEMBERS_dexgraph_frame);
 

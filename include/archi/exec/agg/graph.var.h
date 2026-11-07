@@ -51,12 +51,5 @@ extern
 const archi_aggr_type_t
 archi_aggr_type__dexgraph_node;
 
-/**
- * @brief Aggregate type description for archi_dexgraph_frame_t.
- */
-extern
-const archi_aggr_type_t
-archi_aggr_type__dexgraph_frame;
-
 #endif // _ARCHI_EXEC_AGG_GRAPH_VAR_H_
 
