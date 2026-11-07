@@ -77,7 +77,7 @@ archi_print_context_slot(
 
         if (slot.num_indices != 0)
         {
-            archi_print(" indices: [%zu]{", slot.num_indices);
+            archi_print(" indices [%zu]: {", slot.num_indices);
 
             archi_print_color(ARCHI_COLOR_BG_WHITE ARCHI_COLOR_FG_BLACK);
             for (size_t i = 0; i < slot.num_indices; i++)
