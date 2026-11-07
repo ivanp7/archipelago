@@ -60,20 +60,24 @@ archi_context_parameters_copy(
     // Increment reference counters of values, copy stack memory
     for (archi_krcvlist_t *node = head; node != NULL; node = (archi_krcvlist_t*)node->n.next)
     {
-        node->value = archi_rcpointer_own(node->value, ARCHI_ERROR_PARAM);
-        if (!node->value.attr) // failed to own
+        archi_rcpointer_t value = ARCHI_KRCVLIST_RCPOINTER(node);
+
+        value = archi_rcpointer_own(value, ARCHI_ERROR_PARAM);
+        if (!value.attr) // failed to own
         {
             // Undo the work
             for (const archi_krcvlist_t *node2 = head; node2 != node; node2 = (archi_krcvlist_t*)node2->n.next)
-                archi_rcpointer_disown(node2->value);
+                archi_reference_count_decrement(node2->ref_count);
 
             archi_krcvlist_free(head, false);
             return NULL;
         }
+
+        ARCHI_KRCVLIST_SET_RCPOINTER(node, value);
     }
 
     if (tail != NULL)
-        tail->n.next = (archi_kvlist_base_t*)base;
+        tail->n.next = (archi_kvlist_t*)base;
 
     return head;
 }
@@ -132,7 +136,7 @@ ARCHI_CONTEXT_EVAL_FUNC(archi_context_eval__plist)
             return;
         }
 
-        ARCHI_CONTEXT_YIELD(node->value);
+        ARCHI_CONTEXT_YIELD(ARCHI_KRCVLIST_RCPOINTER(node));
     }
     else
     {
@@ -200,7 +204,7 @@ ARCHI_CONTEXT_SET_FUNC(archi_context_set__plist)
         }
 
         node->n.next = context->ptr;
-        node->value = value;
+        ARCHI_KRCVLIST_SET_RCPOINTER(node, value);
 
         // Update context pointer and attributes
         context->ptr = node;
@@ -209,8 +213,8 @@ ARCHI_CONTEXT_SET_FUNC(archi_context_set__plist)
     }
     else
     {
-        archi_rcpointer_disown(node->value);
-        node->value = value;
+        archi_reference_count_decrement(node->ref_count);
+        ARCHI_KRCVLIST_SET_RCPOINTER(node, value);
     }
 
     ARCHI_ERROR_RESET();

@@ -30,9 +30,9 @@
 #include <stdlib.h> // for malloc(), free()
 
 
-const archi_kvlist_base_t*
+const archi_kvlist_t*
 archi_kvlist_tail(
-        const archi_kvlist_base_t *head,
+        const archi_kvlist_t *head,
         size_t *out_length)
 {
     if (head == NULL)
@@ -54,9 +54,9 @@ archi_kvlist_tail(
     return head;
 }
 
-const archi_kvlist_base_t*
+const archi_kvlist_t*
 archi_kvlist_nth_node(
-        const archi_kvlist_base_t *head,
+        const archi_kvlist_t *head,
         size_t index)
 {
     while ((head != NULL) && (index > 0))
@@ -68,9 +68,9 @@ archi_kvlist_nth_node(
     return head;
 }
 
-const archi_kvlist_base_t*
+const archi_kvlist_t*
 archi_kvlist_find(
-        const archi_kvlist_base_t *head,
+        const archi_kvlist_t *head,
         const char *key,
         archi_string_comp_func_t comp_fn,
         size_t *out_index)
@@ -117,7 +117,7 @@ archi_kvlist_node_alloc(
     }
 
     *node = (archi_kvlist_t){
-        .n.key = key,
+        .key = key,
     };
 
     return node;
@@ -130,7 +130,7 @@ archi_kvlist_node_free(
     if (node == NULL)
         return;
 
-    free((char*)node->n.key);
+    free((char*)node->key);
     free(node);
 }
 
@@ -148,9 +148,9 @@ archi_kvlist_copy(
 
     archi_kvlist_t *copy_head = NULL, *copy_tail = NULL;
 
-    for (; head != NULL; head = (archi_kvlist_t*)head->n.next)
+    for (; head != NULL; head = head->next)
     {
-        archi_kvlist_t *node = archi_kvlist_node_alloc(head->n.key);
+        archi_kvlist_t *node = archi_kvlist_node_alloc(head->key);
         if (node == NULL)
             goto failure;
 
@@ -158,7 +158,7 @@ archi_kvlist_copy(
 
         if (copy_tail != NULL)
         {
-            copy_tail->n.next = (archi_kvlist_base_t*)node;
+            copy_tail->next = node;
             copy_tail = node;
         }
         else
@@ -183,7 +183,7 @@ archi_kvlist_free(
 {
     while (head != NULL)
     {
-        archi_kvlist_t *next = (archi_kvlist_t*)head->n.next;
+        archi_kvlist_t *next = (archi_kvlist_t*)head->next;
 
         archi_kvlist_node_free(head);
 

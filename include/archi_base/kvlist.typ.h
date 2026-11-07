@@ -30,21 +30,15 @@
 #include "archi_base/pointer.typ.h"
 
 
-struct archi_kvlist_base;
-
-/**
- * @brief List of key-value pairs (base).
- */
-typedef struct archi_kvlist_base {
-    const struct archi_kvlist_base *next; ///< Pointer to the next list node.
-    const char *key; ///< Key.
-} archi_kvlist_base_t;
+struct archi_kvlist;
 
 /**
  * @brief List of key-value pairs.
  */
 typedef struct archi_kvlist {
-    archi_kvlist_base_t n; ///< Node base.
+    const struct archi_kvlist *next; ///< Pointer to the next list node.
+
+    const char *key; ///< Key.
     archi_pointer_t value; ///< Value.
 } archi_kvlist_t;
 

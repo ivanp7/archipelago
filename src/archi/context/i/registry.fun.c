@@ -78,9 +78,9 @@ archi_context_params_concatenate(
 
     // Append the 'dynamic' list to the 'static' list
     archi_krcvlist_t *sparams_tail = (archi_krcvlist_t*)archi_kvlist_tail(
-            (archi_kvlist_base_t*)sparams, NULL);
+            (archi_kvlist_t*)sparams, NULL);
     if (sparams_tail != NULL)
-        sparams_tail->n.next = (archi_kvlist_base_t*)dparams;
+        sparams_tail->n.next = (archi_kvlist_t*)dparams;
 
     // Prepare the parameter list
     params_info.params = (sparams != NULL) ? sparams : dparams;

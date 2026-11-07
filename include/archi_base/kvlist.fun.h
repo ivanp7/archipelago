@@ -40,9 +40,9 @@
  *
  * @return The tail node, or NULL if the list is empty.
  */
-const archi_kvlist_base_t*
+const archi_kvlist_t*
 archi_kvlist_tail(
-        const archi_kvlist_base_t *head, ///< [in] Key-value list head.
+        const archi_kvlist_t *head, ///< [in] Key-value list head.
         size_t *out_length ///< [out] Length of the key-value list.
 );
 
@@ -51,9 +51,9 @@ archi_kvlist_tail(
  *
  * @return The Nth node, or NULL if the index is not less than the list length.
  */
-const archi_kvlist_base_t*
+const archi_kvlist_t*
 archi_kvlist_nth_node(
-        const archi_kvlist_base_t *head, ///< [in] Key-value list head.
+        const archi_kvlist_t *head, ///< [in] Key-value list head.
         size_t index ///< [in] Node index.
 );
 
@@ -67,9 +67,9 @@ archi_kvlist_nth_node(
  *
  * @return The first node with the specified key, or NULL if there is no such node.
  */
-const archi_kvlist_base_t*
+const archi_kvlist_t*
 archi_kvlist_find(
-        const archi_kvlist_base_t *head, ///< [in] Key-value list head.
+        const archi_kvlist_t *head, ///< [in] Key-value list head.
         const char *key, ///< [in] Key to search for.
         archi_string_comp_func_t comp_fn, ///< [in] String comparison function.
         size_t *out_index ///< [out] Index of the node.

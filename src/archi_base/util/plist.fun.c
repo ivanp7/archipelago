@@ -32,7 +32,7 @@
 
 bool
 archi_plist_parse(
-        const archi_kvlist_base_t *params,
+        const archi_kvlist_t *params,
         bool ref_counted,
         archi_plist_param_t parsed[],
         bool ignore_unknown,
@@ -77,15 +77,7 @@ archi_plist_parse(
             {
                 ARCHI_ERROR_VAR(error);
 
-                archi_pointer_t value;
-                {
-                    if (!ref_counted)
-                        value = ((archi_kvlist_t*)params)->value;
-                    else
-                        value = ((archi_krcvlist_t*)params)->value.p;
-                }
-
-                if (!archi_pointer_valid(value, &error))
+                if (!archi_pointer_valid(params->value, &error))
                 {
                     ARCHI_ERROR_SET(error.code, "parameter '%s' has invalid pointer: %s",
                             params->key, error.message);
@@ -96,7 +88,7 @@ archi_plist_parse(
                 {
                     ARCHI_ERROR_VAR_UNSET(&error);
 
-                    if (!parsed[i].check.fn(value, parsed[i].check.data, &error))
+                    if (!parsed[i].check.fn(params->value, parsed[i].check.data, &error))
                     {
                         ARCHI_ERROR_SET(ARCHI__ECONSTRAINT, "parameter '%s' has incorrect value: %s",
                                 params->key, error.message);
@@ -107,11 +99,8 @@ archi_plist_parse(
 
             // Set the parameter value
             parsed[i].value_set = true;
-
-            if (!ref_counted)
-                parsed[i].value = archi_rcpointer(((archi_kvlist_t*)params)->value, NULL);
-            else
-                parsed[i].value = ((archi_krcvlist_t*)params)->value;
+            parsed[i].value = archi_rcpointer(params->value,
+                    ref_counted ? ((archi_krcvlist_t*)params)->ref_count : NULL);
 
             // Proceed to the next parameter
             goto next_parameter;

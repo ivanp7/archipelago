@@ -320,13 +320,13 @@ archi_print_params(
         const archi_kvlist_t *params,
         unsigned indent_level)
 {
-    for (; params != NULL; params = (archi_kvlist_t*)params->n.next)
+    for (; params != NULL; params = params->next)
     {
         archi_print_indent(indent_level);
 
         archi_print("\"");
         archi_print_color(ARCHI_COLOR_BG_CYAN ARCHI_COLOR_FG_BRI_WHITE);
-        archi_print_string(params->n.key);
+        archi_print_string(params->key);
         archi_print_color(ARCHI_COLOR_RESET);
         archi_print("\"");
 
@@ -669,7 +669,8 @@ ARCHI_APP_REGISTRY_OPERATION_FUNC(archi_app_registry_op__create_ptr)
     archi_krcvlist_t params[] = {
         {
             .n.key = "pointee",
-            .value = archi_rcpointer(op_data->pointee, ref_count),
+            .n.value = op_data->pointee,
+            .ref_count = ref_count,
         },
     };
 
@@ -726,12 +727,12 @@ ARCHI_APP_REGISTRY_OPERATION_FUNC(archi_app_registry_op__create_dptr_array)
     archi_krcvlist_t params[] = {
         {
             .n.key = "length",
-            .value = {
+            .n.value = {
                 .cptr = &op_data->length,
                 .attr = ARCHI_POINTER_TYPE__DATA_READONLY |
                     ARCHI_POINTER_ATTR__PDATA(1, size_t),
-                .ref_count = ref_count,
             },
+            .ref_count = ref_count,
         },
     };
 

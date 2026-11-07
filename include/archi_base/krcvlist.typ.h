@@ -20,7 +20,7 @@
 
 /**
  * @file
- * @brief Key-value list type with reference counted values.
+ * @brief Key-value list type with reference counters.
  */
 
 #pragma once
@@ -32,12 +32,26 @@
 
 
 /**
- * @brief List of key-value pairs (with reference counted values).
+ * @brief List of key-value pairs (with reference counters).
  */
 typedef struct archi_krcvlist {
-    archi_kvlist_base_t n; ///< Node base.
-    archi_rcpointer_t value; ///< Value.
+    archi_kvlist_t n; ///< Node base.
+    archi_reference_count_t ref_count; ///< Value.
 } archi_krcvlist_t;
+
+/**
+ * @brief Construct a reference-counted generic pointer literal.
+ */
+#define ARCHI_KRCVLIST_RCPOINTER(node_ptr)  \
+    (archi_rcpointer_t){.p = (node_ptr)->n.value, .ref_count = (node_ptr)->ref_count}
+
+/**
+ * @brief Assign a reference-counted generic pointer to a node.
+ */
+#define ARCHI_KRCVLIST_SET_RCPOINTER(node_ptr, v)   do {    \
+    (node_ptr)->n.value = (v).p;                            \
+    (node_ptr)->ref_count = (v).ref_count;                  \
+} while (0)
 
 #endif // _ARCHI_BASE_KRCVLIST_TYP_H_
 

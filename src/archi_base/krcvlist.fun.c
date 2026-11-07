@@ -20,11 +20,10 @@
 
 /**
  * @file
- * @brief Operations on key-value lists with reference counted values.
+ * @brief Operations on key-value lists with reference counters.
  */
 
 #include "archi_base/krcvlist.fun.h"
-#include "archi_base/rcpointer.fun.h"
 #include "archi_base/pointer.def.h"
 #include "archi_base/ref_count.fun.h"
 #include "archi_base/util/string.fun.h"
@@ -88,11 +87,12 @@ archi_krcvlist_copy(
         if (node == NULL)
             goto failure;
 
-        node->value = head->value;
+        node->n.value = head->n.value;
+        node->ref_count = head->ref_count;
 
         if (copy_tail != NULL)
         {
-            copy_tail->n.next = (archi_kvlist_base_t*)node;
+            copy_tail->n.next = (archi_kvlist_t*)node;
             copy_tail = node;
         }
         else
@@ -126,18 +126,19 @@ archi_krcvlist_copy_kvlist(
 
     archi_krcvlist_t *copy_head = NULL, *copy_tail = NULL;
 
-    for (; head != NULL; head = (archi_kvlist_t*)head->n.next)
+    for (; head != NULL; head = head->next)
     {
-        archi_krcvlist_t *node = archi_krcvlist_node_alloc(head->n.key);
+        archi_krcvlist_t *node = archi_krcvlist_node_alloc(head->key);
         if (node == NULL)
             goto failure;
 
-        node->value = archi_rcpointer(head->value,
-                !ARCHI_POINTER_IS_NULL(head->value) ? ref_count : NULL);
+        node->n.value = head->value;
+        if (!ARCHI_POINTER_IS_NULL(head->value))
+            node->ref_count = ref_count;
 
         if (copy_tail != NULL)
         {
-            copy_tail->n.next = (archi_kvlist_base_t*)node;
+            copy_tail->n.next = (archi_kvlist_t*)node;
             copy_tail = node;
         }
         else
@@ -166,7 +167,7 @@ archi_krcvlist_free(
         archi_krcvlist_t *next = (archi_krcvlist_t*)head->n.next;
         {
             if (decrement_ref_counts)
-                archi_reference_count_decrement(head->value.ref_count);
+                archi_reference_count_decrement(head->ref_count);
 
             archi_krcvlist_node_free(head);
         }

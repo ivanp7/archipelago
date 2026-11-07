@@ -35,7 +35,7 @@
 
 #define ARCHI_AGGR_TYPE_WALK_FUNC(func_name)   bool func_name( \
         archi_aggr_member_t member,                            \
-        void *data,                                                 \
+        void *data,                                            \
         ARCHI_ERROR_PARAM_DECL)
 
 typedef ARCHI_AGGR_TYPE_WALK_FUNC((*archi_aggr_type_walk_func_t));
