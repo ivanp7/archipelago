@@ -20,25 +20,49 @@
 
 /**
  * @file
- * @brief Signal management context base.
+ * @brief The manager description types.
  */
 
 #pragma once
-#ifndef _SRC_ARCHI_SIGNAL_I_MANAGEMENT_TYP_H_
-#define _SRC_ARCHI_SIGNAL_I_MANAGEMENT_TYP_H_
+#ifndef _ARCHI_BASE_MANAGER_TYP_H_
+#define _ARCHI_BASE_MANAGER_TYP_H_
 
-#include "archi/signal/i/signal.typ.h"
-#include "archi/signal/i/handler.typ.h"
+/**
+ * @brief Signature of a manager pointer getter function.
+ *
+ * This function is intended for obtaining the pointer to a manager.
+ */
+#define ARCHI_MANAGER_PTR_GET_FUNC(func_name)   void* func_name(void)
 
-#include <threads.h> // for mtx_t
+/**
+ * @brief Manager pointer getter function type.
+ */
+typedef ARCHI_MANAGER_PTR_GET_FUNC((*archi_manager_ptr_get_func_t));
 
+/**
+ * @brief Signature of a manager pointer initialization function.
+ *
+ * This function is intended for initializing the pointer to a manager in loaded shared libraries.
+ */
+#define ARCHI_MANAGER_PTR_INIT_FUNC(func_name)  void func_name( \
+        void *manager) /* [in] Pointer to manager. */
 
-struct archi_signal_management_context_base {
-    archi_signal_flags_t *flags;
+/**
+ * @brief Manager setter function type.
+ *
+ * Shared libraries loaded at runtime can use a symbol of this type
+ * (typically obtained via dlsym() or a similar mechanism) to initialize
+ * their own manager pointer with the pointer provided by the host application.
+ */
+typedef ARCHI_MANAGER_PTR_INIT_FUNC((*archi_manager_ptr_init_func_t));
 
-    archi_signal_handler_t signal_handler;
-    mtx_t *signal_handler_lock;
-};
+/**
+ * @brief Manager initialization specification.
+ */
+typedef struct archi_manager_ptr_init_spec {
+    const char *init_fn_symbol; ///< Symbol name of the manager pointer initialization function.
+    archi_manager_ptr_get_func_t get_fn; ///< Manager pointer getter function.
+} archi_manager_ptr_init_spec_t;
 
-#endif // _SRC_ARCHI_SIGNAL_I_MANAGEMENT_TYP_H_
+#endif // _ARCHI_BASE_MANAGER_TYP_H_
 

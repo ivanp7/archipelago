@@ -20,33 +20,40 @@
 
 /**
  * @file
- * @brief Functions for initialization of library global object pointers.
+ * @brief The environment manager operations.
  */
 
 #pragma once
-#ifndef _ARCHI_LIBRARY_I_GLOBAL_FUN_H_
-#define _ARCHI_LIBRARY_I_GLOBAL_FUN_H_
+#ifndef _ARCHI_APP_MANAGER_ENV_FUN_H_
+#define _ARCHI_APP_MANAGER_ENV_FUN_H_
 
-#include "archi/library/i/handle.typ.h"
-#include "archi_base/global.typ.h"
+#include "archi_base/manager.typ.h"
 
 #include <stdbool.h>
 
 
 /**
- * @brief Synchronize global object pointer of a loaded library with the host application.
+ * @brief Retrieve the environment manager.
  *
- * This function attempts to fetch the exported symbol of the global object setter in the library,
- * obtain the global object pointer using the provided function, and pass it to the setter.
- * If the symbol is not present, the function does nothing.
+ * @return Pointer to the environment manager.
+ */
+ARCHI_MANAGER_PTR_GET_FUNC(archi_app_manager_ptr_get__env);
+
+/*****************************************************************************/
+
+/**
+ * @brief Initialize the environment manager.
  *
- * @return True if the setter was called, otherwise false.
+ * @return True on success, false on failure.
  */
 bool
-archi_library_initialize_global(
-        archi_library_handle_t handle, ///< [in] Shared library handle.
-        archi_global_init_spec_t init_spec ///< [in] Global object initialization specification.
-);
+archi_app_manager_initialize__env(void);
 
-#endif // _ARCHI_LIBRARY_I_GLOBAL_FUN_H_
+/**
+ * @brief Finalize the environment manager.
+ */
+void
+archi_app_manager_finalize__env(void);
+
+#endif // _ARCHI_APP_MANAGER_ENV_FUN_H_
 

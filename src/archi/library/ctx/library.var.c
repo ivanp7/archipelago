@@ -25,10 +25,10 @@
 
 #include "archi/library/ctx/library.var.h"
 #include "archi/library/i/library.fun.h"
-#include "archi/library/i/global.fun.h"
+#include "archi/library/i/init.fun.h"
 #include "archi/library/i/tag.def.h"
 #include "archi/context/i/interface.def.h"
-#include "archi_base/global.var.h"
+#include "archi_base/manager.var.h"
 #include "archi_base/pointer.fun.h"
 #include "archi_base/pointer.def.h"
 #include "archi_base/util/plist.fun.h"
@@ -90,8 +90,8 @@ ARCHI_CONTEXT_INIT_FUNC(archi_context_init__library)
     };
 
     // Initialize static context pointers in the loaded library
-    for (size_t i = 0; archi_global_init_specs[i].get_fn != NULL; i++)
-        archi_library_initialize_global(library, archi_global_init_specs[i]);
+    for (size_t i = 0; archi_manager_ptr_init_specs[i].get_fn != NULL; i++)
+        archi_library_initialize_manager_ptr(library, archi_manager_ptr_init_specs[i]);
 
     ARCHI_ERROR_RESET();
     return context_data;

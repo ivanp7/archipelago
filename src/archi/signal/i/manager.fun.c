@@ -20,91 +20,91 @@
 
 /**
  * @file
- * @brief Signal management operations.
+ * @brief The signal manager operations.
  */
 
-#include "archi/signal/i/management.fun.h"
-#include "management.typ.h"
+#include "archi/signal/i/manager.fun.h"
+#include "manager.typ.h"
 
 
 static
-struct archi_signal_management_context_base *archi_signal_management;
+struct archi_signal_manager_base *archi_signal_manager;
 
-ARCHI_GLOBAL_SET_FUNC(archi_global_context_set__signal_management)
+ARCHI_MANAGER_PTR_GET_FUNC(archi_manager_ptr_get__signal)
 {
-    if (archi_signal_management != NULL)
-        return;
-
-    archi_signal_management = context;
+    return archi_signal_manager;
 }
 
-ARCHI_GLOBAL_GET_FUNC(archi_global_context__signal_management)
+ARCHI_MANAGER_PTR_INIT_FUNC(archi_manager_ptr_init__signal)
 {
-    return archi_signal_management;
+    if (archi_signal_manager != NULL)
+        return;
+
+    archi_signal_manager = manager;
 }
 
 archi_signal_flags_t*
-archi_signal_management_flags(void)
+archi_signal_manager_flags(void)
 {
-    if (archi_signal_management == NULL)
+    if (archi_signal_manager == NULL)
         return NULL;
 
-    return archi_signal_management->flags;
+    return archi_signal_manager->flags;
 }
 
 static
 bool
-archi_signal_management_handler_lock(void)
+archi_signal_manager_handler_lock(void)
 {
-    if (archi_signal_management->signal_handler_lock == NULL)
+    if (archi_signal_manager->signal_handler_lock == NULL)
         return false;
 
-    return thrd_success == mtx_lock(archi_signal_management->signal_handler_lock);
+    return thrd_success == mtx_lock(archi_signal_manager->signal_handler_lock);
 }
 
 static
 void
-archi_signal_management_handler_unlock(void)
+archi_signal_manager_handler_unlock(void)
 {
-    if (archi_signal_management->signal_handler_lock == NULL)
+    if (archi_signal_manager->signal_handler_lock == NULL)
         return;
 
-    mtx_unlock(archi_signal_management->signal_handler_lock);
+    mtx_unlock(archi_signal_manager->signal_handler_lock);
 }
 
 archi_signal_handler_t
-archi_signal_management_handler(void)
+archi_signal_manager_handler(void)
 {
-    if (archi_signal_management == NULL)
+    if (archi_signal_manager == NULL)
         return (archi_signal_handler_t){0};
 
     archi_signal_handler_t signal_handler;
     {
-        if (!archi_signal_management_handler_lock())
+        if (!archi_signal_manager_handler_lock())
             return (archi_signal_handler_t){0};
 
-        signal_handler = archi_signal_management->signal_handler;
+        signal_handler = archi_signal_manager->signal_handler;
 
-        archi_signal_management_handler_unlock();
+        archi_signal_manager_handler_unlock();
     }
 
     return signal_handler;
 }
 
 void
-archi_signal_management_handler_set(
+archi_signal_manager_handler_set(
         archi_signal_handler_t signal_handler)
 {
-    if (archi_signal_management == NULL)
+    if (archi_signal_manager == NULL)
         return;
 
     {
-        if (!archi_signal_management_handler_lock())
+        if (!archi_signal_manager_handler_lock())
             return;
 
-        archi_signal_management->signal_handler = signal_handler;
+        archi_signal_manager->signal_handler = signal_handler;
 
-        archi_signal_management_handler_unlock();
+        archi_signal_manager_handler_unlock();
     }
 }
 

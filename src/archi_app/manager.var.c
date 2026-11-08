@@ -20,40 +20,20 @@
 
 /**
  * @file
- * @brief Operations on the global environment context.
+ * @brief The array of descriptions of built-in managers.
  */
 
-#pragma once
-#ifndef _ARCHI_ENV_I_CONTEXT_FUN_H_
-#define _ARCHI_ENV_I_CONTEXT_FUN_H_
+#include "archi_base/manager.var.h"
+#include "archi_app/manager/log.fun.h"
+#include "archi_app/manager/signal.fun.h"
+#include "archi_app/manager/env.fun.h"
 
-#include "archi_base/global.typ.h"
 
-
-/**
- * @brief Initialize the environment context pointer.
- *
- * @pre
- *      context != NULL
- *
- * @post
- *      Environment API is ready to be used.
- *
- * @note Subsequent invocations have no effect.
- *
- * @param[in] context
- *      Environment context.
- */
-ARCHI_GLOBAL_SET_FUNC(archi_global_context_set__env);
-
-/**
- * @brief Retrieve the environment context pointer.
- *
- * If the environment context pointer hasn't been initialized yet, the function returns NULL.
- *
- * @return Pointer to the environment context.
- */
-ARCHI_GLOBAL_GET_FUNC(archi_global_context__env);
-
-#endif // _ARCHI_ENV_I_CONTEXT_FUN_H_
+const archi_manager_ptr_init_spec_t
+archi_manager_ptr_init_specs[] = {
+    {"archi_manager_ptr_init__log", archi_app_manager_ptr_get__log},
+    {"archi_manager_ptr_init__signal", archi_app_manager_ptr_get__signal},
+    {"archi_manager_ptr_init__env", archi_app_manager_ptr_get__env},
+    {0},
+};
 

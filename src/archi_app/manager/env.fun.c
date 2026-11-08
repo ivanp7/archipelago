@@ -20,40 +20,66 @@
 
 /**
  * @file
- * @brief Operations on the global environment context.
+ * @brief The environment manager operations.
  */
 
-#pragma once
-#ifndef _ARCHI_APP_ENVIRONMENT_FUN_H_
-#define _ARCHI_APP_ENVIRONMENT_FUN_H_
+#include "archi_app/manager/env.fun.h"
+#include "../../archi/env/i/manager.typ.h" // for struct archi_env_manager
 
-#include "archi_base/global.typ.h"
-
-#include <stdbool.h>
+#include <stdlib.h> // for malloc(), free()
 
 
-/**
- * @brief Retrieve the global environment context.
- *
- * @return Pointer to the global environment context.
- */
-ARCHI_GLOBAL_GET_FUNC(archi_app_env_global_context);
+static
+struct archi_env_manager archi_manager__env;
 
-/*****************************************************************************/
+ARCHI_MANAGER_PTR_GET_FUNC(archi_app_manager_ptr_get__env)
+{
+    return &archi_manager__env;
+}
 
-/**
- * @brief Initialize the global environment context.
- *
- * @return True on success, false on failure.
- */
 bool
-archi_app_env_initialize(void);
+archi_app_manager_initialize__env(void)
+{
+    if (archi_manager__env.initialized)
+        return false;
 
-/**
- * @brief Finalize the global environment context.
- */
+#ifndef __STDC_NO_THREADS__
+    archi_manager__env.getenv_lock = malloc(sizeof(*archi_manager__env.getenv_lock));
+    if (archi_manager__env.getenv_lock == NULL)
+        goto failure_alloc_lock;
+
+    {
+        int ret = mtx_init(archi_manager__env.getenv_lock, mtx_plain);
+        if (ret != thrd_success)
+            goto failure_init_lock;
+    }
+#endif
+
+    archi_manager__env.initialized = true;
+    return true;
+
+#ifndef __STDC_NO_THREADS__
+failure_init_lock:
+    free(archi_manager__env.getenv_lock);
+
+failure_alloc_lock:
+    archi_manager__env = (struct archi_env_manager){0};
+
+    return false;
+#endif
+}
+
 void
-archi_app_env_finalize(void);
+archi_app_manager_finalize__env(void)
+{
+    if (!archi_manager__env.initialized)
+        return;
 
-#endif // _ARCHI_APP_ENVIRONMENT_FUN_H_
+#ifndef __STDC_NO_THREADS__
+    mtx_destroy(archi_manager__env.getenv_lock);
+    free(archi_manager__env.getenv_lock);
+#endif
+
+    archi_manager__env = (struct archi_env_manager){0};
+}
 

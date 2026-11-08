@@ -20,39 +20,39 @@
 
 /**
  * @file
- * @brief Operations on the global log context.
+ * @brief The logging manager operations.
  */
 
-#include "archi_app/logging.fun.h"
+#include "archi_app/manager/log.fun.h"
 #include "archi_log/verbosity.def.h"
-#include "../archi_log/context.typ.h" // for struct archi_log_context
+#include "../../archi_log/manager.typ.h" // for struct archi_log_manager
 
 #include <stdlib.h> // for malloc(), free()
 
 
 static
-struct archi_log_context archi_logger;
+struct archi_log_manager archi_manager__log;
 
-ARCHI_GLOBAL_GET_FUNC(archi_app_log_global_context)
+ARCHI_MANAGER_PTR_GET_FUNC(archi_app_manager_ptr_get__log)
 {
-    return &archi_logger;
+    return &archi_manager__log;
 }
 
 bool
-archi_app_log_initialize(
+archi_app_manager_initialize__log(
         FILE *stream,
         int level,
         int indentation,
         bool colorful)
 {
-    if (archi_logger.stream != NULL)
+    if (archi_manager__log.stream != NULL)
         return false;
 
     // Set logging stream
-    archi_logger.stream = (stream != NULL) ? stream : stderr;
+    archi_manager__log.stream = (stream != NULL) ? stream : stderr;
 
     // Store logging start time
-    timespec_get(&archi_logger.start_time, TIME_UTC);
+    timespec_get(&archi_manager__log.start_time, TIME_UTC);
 
     // Set logging verbosity
     if (level < 0)
@@ -60,25 +60,25 @@ archi_app_log_initialize(
     else if (level > ARCHI_LOG_VERBOSITY_MAX)
         level = ARCHI_LOG_VERBOSITY_MAX;
 
-    archi_logger.verbosity_level = level;
+    archi_manager__log.verbosity_level = level;
 
     // Set indentation width
     if (indentation < 0)
         indentation = 0;
 
-    archi_logger.indentation_width = indentation;
+    archi_manager__log.indentation_width = indentation;
 
     // Set logging color use flag
-    archi_logger.colorful = colorful;
+    archi_manager__log.colorful = colorful;
 
 #ifndef __STDC_NO_THREADS__
     // Allocate and initialize logging mutex
-    archi_logger.lock = malloc(sizeof(*archi_logger.lock));
-    if (archi_logger.lock == NULL)
+    archi_manager__log.lock = malloc(sizeof(*archi_manager__log.lock));
+    if (archi_manager__log.lock == NULL)
         goto failure_alloc_lock;
 
     {
-        int ret = mtx_init(archi_logger.lock, mtx_recursive);
+        int ret = mtx_init(archi_manager__log.lock, mtx_recursive);
         if (ret != thrd_success)
             goto failure_init_lock;
     }
@@ -88,26 +88,26 @@ archi_app_log_initialize(
 
 #ifndef __STDC_NO_THREADS__
 failure_init_lock:
-    free(archi_logger.lock);
+    free(archi_manager__log.lock);
 
 failure_alloc_lock:
-    archi_logger = (struct archi_log_context){0};
+    archi_manager__log = (struct archi_log_manager){0};
 
     return false;
 #endif
 }
 
 void
-archi_app_log_finalize(void)
+archi_app_manager_finalize__log(void)
 {
-    if (archi_logger.stream == NULL)
+    if (archi_manager__log.stream == NULL)
         return;
 
 #ifndef __STDC_NO_THREADS__
-    mtx_destroy(archi_logger.lock);
-    free(archi_logger.lock);
+    mtx_destroy(archi_manager__log.lock);
+    free(archi_manager__log.lock);
 #endif
 
-    archi_logger = (struct archi_log_context){0};
+    archi_manager__log = (struct archi_log_manager){0};
 }
 

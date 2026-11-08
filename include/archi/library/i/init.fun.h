@@ -20,49 +20,33 @@
 
 /**
  * @file
- * @brief Types for global objects.
+ * @brief Functions for initialization of library manager pointers.
  */
 
 #pragma once
-#ifndef _ARCHI_BASE_GLOBAL_TYP_H_
-#define _ARCHI_BASE_GLOBAL_TYP_H_
+#ifndef _ARCHI_LIBRARY_I_INIT_FUN_H_
+#define _ARCHI_LIBRARY_I_INIT_FUN_H_
+
+#include "archi/library/i/handle.typ.h"
+#include "archi_base/manager.typ.h"
+
+#include <stdbool.h>
+
 
 /**
- * @brief Declare/define global object getter function.
+ * @brief Synchronize a manager pointer of a loaded library with the host application.
  *
- * This function is intended for obtaining pointers to global objects.
- */
-#define ARCHI_GLOBAL_GET_FUNC(func_name)    void* func_name(void)
-
-/**
- * @brief Global object getter function type.
- */
-typedef ARCHI_GLOBAL_GET_FUNC((*archi_global_get_func_t));
-
-/**
- * @brief Declare/define global object setter function.
+ * This function attempts to fetch the exported symbol of the manager pointer setter in the library,
+ * obtain the manager pointer using the provided function, and pass it to the setter.
+ * If the symbol is not present, the function does nothing.
  *
- * This function is intended for initializing global object pointers in loaded shared libraries.
+ * @return True if the setter was called, otherwise false.
  */
-#define ARCHI_GLOBAL_SET_FUNC(func_name)    void func_name( \
-        void *context) /* [in] Global object. */
+bool
+archi_library_initialize_manager_ptr(
+        archi_library_handle_t handle, ///< [in] Shared library handle.
+        archi_manager_ptr_init_spec_t init_spec ///< [in] Manager pointer initialization specification.
+);
 
-/**
- * @brief Global object setter function type.
- *
- * Shared libraries loaded at runtime can use a symbol of this type
- * (typically obtained via dlsym() or a similar mechanism) to initialize
- * their own global object pointer with the pointer provided by the host application.
- */
-typedef ARCHI_GLOBAL_SET_FUNC((*archi_global_set_func_t));
-
-/**
- * @brief Global object initialization specification.
- */
-typedef struct archi_global_init_spec {
-    archi_global_get_func_t get_fn; ///< Global object getter function.
-    const char *set_fn_symbol; ///< Symbol name of global object setter function.
-} archi_global_init_spec_t;
-
-#endif // _ARCHI_BASE_GLOBAL_TYP_H_
+#endif // _ARCHI_LIBRARY_I_INIT_FUN_H_
 

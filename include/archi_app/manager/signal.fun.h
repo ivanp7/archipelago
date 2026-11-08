@@ -20,28 +20,28 @@
 
 /**
  * @file
- * @brief Signal management operations.
+ * @brief The signal manager operations.
  */
 
 #pragma once
-#ifndef _ARCHI_APP_SIGNAL_MANAGEMENT_FUN_H_
-#define _ARCHI_APP_SIGNAL_MANAGEMENT_FUN_H_
+#ifndef _ARCHI_APP_MANAGER_SIGNAL_FUN_H_
+#define _ARCHI_APP_MANAGER_SIGNAL_FUN_H_
 
 #include "archi/signal/i/signal.typ.h"
 #include "archi/signal/i/handler.typ.h"
-#include "archi_base/global.typ.h"
+#include "archi_base/manager.typ.h"
 #include "archi_base/error.typ.h"
 
 
 /**
- * @brief Retrieve the signal management context.
+ * @brief Retrieve the signal manager.
  *
- * @return Pointer to the signal management context.
+ * @return Pointer to the signal manager.
  */
-ARCHI_GLOBAL_GET_FUNC(archi_app_signal_management_global_context);
+ARCHI_MANAGER_PTR_GET_FUNC(archi_app_manager_ptr_get__signal);
 
 /**
- * @brief Initialize and start the signal management thread.
+ * @brief Initialize the signal manager.
  *
  * This function creates and starts a dedicated signal management thread
  * that monitors and handles POSIX signals. The thread runs asynchronously
@@ -55,7 +55,7 @@ ARCHI_GLOBAL_GET_FUNC(archi_app_signal_management_global_context);
  *
  * Once started:
  *   - The set of watched signals is fixed (signals->f_* flags).
- *   - The signal handler may be changed later, via archi_signal_management_set_handler().
+ *   - The signal handler may be changed later, via archi_signal_manager_handler_set().
  *
  * @pre
  *   - signals != NULL
@@ -67,18 +67,18 @@ ARCHI_GLOBAL_GET_FUNC(archi_app_signal_management_global_context);
  *   - The provided signal handler (if any) will be invoked for the watched signals.
  *
  * @note
- *   - The signal management context and associated thread must be properly
- *     stopped using archi_signal_management_stop().
+ *   - The signal manager and associated thread must be properly
+ *     stopped using archi_app_manager_finalalize__signal().
  */
 void
-archi_app_signal_management_start(
+archi_app_manager_initialize__signal(
         archi_signal_set_const_t signals, ///< [in] Signals to watch.
         archi_signal_handler_t signal_handler, ///< [in] Signal handler.
         ARCHI_ERROR_PARAM_DECL ///< [out] Error.
 );
 
 /**
- * @brief Stop the signal management thread and clean up.
+ * @brief Finalize the signal manager.
  *
  * This function terminates the dedicated signal management thread,
  * unblocks all signals that were watched, and frees all
@@ -98,7 +98,7 @@ archi_app_signal_management_start(
  *   - The signal flags structure is invalid after this call.
  */
 void
-archi_app_signal_management_stop(void);
+archi_app_manager_finalalize__signal(void);
 
-#endif // _ARCHI_APP_SIGNAL_MANAGEMENT_FUN_H_
+#endif // _ARCHI_APP_MANAGER_SIGNAL_FUN_H_
 

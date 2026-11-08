@@ -20,26 +20,40 @@
 
 /**
  * @file
- * @brief The environment context type.
+ * @brief The environment manager operations.
  */
 
 #pragma once
-#ifndef _SRC_ARCHI_ENV_I_CONTEXT_TYP_H_
-#define _SRC_ARCHI_ENV_I_CONTEXT_TYP_H_
+#ifndef _ARCHI_ENV_I_MANAGER_FUN_H_
+#define _ARCHI_ENV_I_MANAGER_FUN_H_
 
-#ifndef __STDC_NO_THREADS__
-#  include <threads.h> // for mtx_t
-#endif
-#include <stdbool.h>
+#include "archi_base/manager.typ.h"
 
 
-struct archi_env_context {
-#ifndef __STDC_NO_THREADS__
-    mtx_t *getenv_lock; ///< getenv() protection mutex.
-#endif
+/**
+ * @brief Retrieve the environment manager pointer.
+ *
+ * If the environment manager pointer hasn't been initialized yet, the function returns NULL.
+ *
+ * @return Pointer to the environment manager.
+ */
+ARCHI_MANAGER_PTR_GET_FUNC(archi_manager_ptr_get__env);
 
-    bool initialized; ///< Whether the context was initialized.
-};
+/**
+ * @brief Initialize the environment manager pointer.
+ *
+ * @pre
+ *      manager != NULL
+ *
+ * @post
+ *      Environment API is ready to be used.
+ *
+ * @note Subsequent invocations have no effect.
+ *
+ * @param[in] manager
+ *      Environment manager.
+ */
+ARCHI_MANAGER_PTR_INIT_FUNC(archi_manager_ptr_init__env);
 
-#endif // _SRC_ARCHI_ENV_I_CONTEXT_TYP_H_
+#endif // _ARCHI_ENV_I_MANAGER_FUN_H_
 

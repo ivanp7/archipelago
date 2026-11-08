@@ -20,66 +20,26 @@
 
 /**
  * @file
- * @brief Operations on the global environment context.
+ * @brief The environment manager type.
  */
 
-#include "archi_app/environment.fun.h"
-#include "../archi/env/i/context.typ.h" // for struct archi_env_context
-
-#include <stdlib.h> // for malloc(), free()
-
-
-static
-struct archi_env_context archi_environment;
-
-ARCHI_GLOBAL_GET_FUNC(archi_app_env_global_context)
-{
-    return &archi_environment;
-}
-
-bool
-archi_app_env_initialize(void)
-{
-    if (archi_environment.initialized)
-        return false;
+#pragma once
+#ifndef _SRC_ARCHI_ENV_I_MANAGER_TYP_H_
+#define _SRC_ARCHI_ENV_I_MANAGER_TYP_H_
 
 #ifndef __STDC_NO_THREADS__
-    archi_environment.getenv_lock = malloc(sizeof(*archi_environment.getenv_lock));
-    if (archi_environment.getenv_lock == NULL)
-        goto failure_alloc_lock;
-
-    {
-        int ret = mtx_init(archi_environment.getenv_lock, mtx_plain);
-        if (ret != thrd_success)
-            goto failure_init_lock;
-    }
+#  include <threads.h> // for mtx_t
 #endif
+#include <stdbool.h>
 
-    archi_environment.initialized = true;
-    return true;
 
+struct archi_env_manager {
 #ifndef __STDC_NO_THREADS__
-failure_init_lock:
-    free(archi_environment.getenv_lock);
-
-failure_alloc_lock:
-    archi_environment = (struct archi_env_context){0};
-
-    return false;
-#endif
-}
-
-void
-archi_app_env_finalize(void)
-{
-    if (!archi_environment.initialized)
-        return;
-
-#ifndef __STDC_NO_THREADS__
-    mtx_destroy(archi_environment.getenv_lock);
-    free(archi_environment.getenv_lock);
+    mtx_t *getenv_lock; ///< getenv() protection mutex.
 #endif
 
-    archi_environment = (struct archi_env_context){0};
-}
+    bool initialized; ///< Whether the manager was initialized.
+};
+
+#endif // _SRC_ARCHI_ENV_I_MANAGER_TYP_H_
 

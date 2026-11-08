@@ -23,11 +23,11 @@
  * @brief Implementation of the logging module.
  */
 
-#include "archi_log/context.fun.h"
+#include "archi_log/manager.fun.h"
 #include "archi_log/print.fun.h"
 #include "archi_log/verbosity.def.h"
 #include "archi_log/color.def.h"
-#include "context.typ.h" // for struct archi_log_context
+#include "manager.typ.h" // for struct archi_log_manager
 
 #include <time.h> // for struct timespec, timespec_get()
 #include <stdio.h> // for fprintf(), vfprintf(), stderr
@@ -36,19 +36,19 @@
 
 
 static
-struct archi_log_context *archi_logger;
+struct archi_log_manager *archi_log_manager;
 
-ARCHI_GLOBAL_SET_FUNC(archi_global_context_set__log)
+ARCHI_MANAGER_PTR_GET_FUNC(archi_manager_ptr_get__log)
 {
-    if (archi_logger != NULL)
-        return;
-
-    archi_logger = context;
+    return archi_log_manager;
 }
 
-ARCHI_GLOBAL_GET_FUNC(archi_global_context__log)
+ARCHI_MANAGER_PTR_INIT_FUNC(archi_manager_ptr_init__log)
 {
-    return archi_logger;
+    if (archi_log_manager != NULL)
+        return;
+
+    archi_log_manager = manager;
 }
 
 /*****************************************************************************/
@@ -57,14 +57,14 @@ void
 archi_log_elapsed_time(
         struct timespec *ts)
 {
-    if (archi_logger == NULL)
+    if (archi_log_manager == NULL)
         return;
-    else if (archi_logger->stream == NULL)
+    else if (archi_log_manager->stream == NULL)
         return;
     else if (ts == NULL)
         return;
 
-    struct timespec start_time = archi_logger->start_time;
+    struct timespec start_time = archi_log_manager->start_time;
 
     struct timespec current_time;
     timespec_get(&current_time, TIME_UTC);
@@ -86,28 +86,28 @@ archi_log_elapsed_time(
 int
 archi_log_verbosity(void)
 {
-    if (archi_logger == NULL)
+    if (archi_log_manager == NULL)
         return ARCHI_LOG_VERBOSITY__QUIET;
 
-    return archi_logger->verbosity_level;
+    return archi_log_manager->verbosity_level;
 }
 
 int
 archi_log_indentation(void)
 {
-    if (archi_logger == NULL)
+    if (archi_log_manager == NULL)
         return 0;
 
-    return archi_logger->indentation_width;
+    return archi_log_manager->indentation_width;
 }
 
 bool
 archi_log_colorful(void)
 {
-    if (archi_logger == NULL)
+    if (archi_log_manager == NULL)
         return false;
 
-    return archi_logger->colorful;
+    return archi_log_manager->colorful;
 }
 
 /*****************************************************************************/
@@ -116,18 +116,18 @@ bool
 archi_print_lock(
         int verbosity)
 {
-    if (archi_logger == NULL)
+    if (archi_log_manager == NULL)
         return false;
-    else if (archi_logger->stream == NULL)
+    else if (archi_log_manager->stream == NULL)
         return false;
 
     if (archi_log_verbosity() < verbosity)
         return false;
 
 #ifndef __STDC_NO_THREADS__
-    if (archi_logger->lock != NULL)
+    if (archi_log_manager->lock != NULL)
     {
-        int ret = mtx_lock(archi_logger->lock);
+        int ret = mtx_lock(archi_log_manager->lock);
         if (ret != thrd_success)
             return false;
     }
@@ -139,14 +139,14 @@ archi_print_lock(
 void
 archi_print_unlock(void)
 {
-    if (archi_logger == NULL)
+    if (archi_log_manager == NULL)
         return;
-    else if (archi_logger->stream == NULL)
+    else if (archi_log_manager->stream == NULL)
         return;
 
 #ifndef __STDC_NO_THREADS__
-    if (archi_logger->lock != NULL)
-        mtx_unlock(archi_logger->lock);
+    if (archi_log_manager->lock != NULL)
+        mtx_unlock(archi_log_manager->lock);
 #endif
 }
 
@@ -157,9 +157,9 @@ archi_print(
         const char *format,
         ...)
 {
-    if (archi_logger == NULL)
+    if (archi_log_manager == NULL)
         return 0;
-    else if (archi_logger->stream == NULL)
+    else if (archi_log_manager->stream == NULL)
         return 0;
     else if (format == NULL)
         return 0;
@@ -169,7 +169,7 @@ archi_print(
         va_list args;
         va_start(args, format);
 
-        printed = vfprintf(archi_logger->stream, format, args);
+        printed = vfprintf(archi_log_manager->stream, format, args);
 
         va_end(args);
     }
@@ -211,9 +211,9 @@ archi_print_hex_dump(
         bool absolute,
         unsigned indent_level)
 {
-    if (archi_logger == NULL)
+    if (archi_log_manager == NULL)
         return;
-    else if (archi_logger->stream == NULL)
+    else if (archi_log_manager->stream == NULL)
         return;
     else if ((memory == NULL) || (length == 0))
         return;
@@ -303,24 +303,24 @@ archi_log(
     archi_log_elapsed_time(&ts);
 
 #ifndef __STDC_NO_THREADS__
-    if (archi_logger->lock != NULL)
+    if (archi_log_manager->lock != NULL)
     {
-        int ret = mtx_lock(archi_logger->lock);
+        int ret = mtx_lock(archi_log_manager->lock);
         if (ret != thrd_success)
             return;
     }
 #endif
 
-    if (archi_logger->colorful)
-        fprintf(archi_logger->stream, "%s", ARCHI_COLOR_RESET);
+    if (archi_log_manager->colorful)
+        fprintf(archi_log_manager->stream, "%s", ARCHI_COLOR_RESET);
 
-    fprintf(archi_logger->stream, "\r");
+    fprintf(archi_log_manager->stream, "\r");
 
-    if (archi_logger->colorful)
-        fprintf(archi_logger->stream, "%s", message_color);
+    if (archi_log_manager->colorful)
+        fprintf(archi_log_manager->stream, "%s", message_color);
 
     // Set the color, print date/time and message type character
-    fprintf(archi_logger->stream, " %li:%02li:%02li.%03li,%03li [%s] ",
+    fprintf(archi_log_manager->stream, " %li:%02li:%02li.%03li,%03li [%s] ",
             (long)ts.tv_sec / 60 / 60,      // hours
             (long)ts.tv_sec / 60 % 60,      // minutes
             (long)ts.tv_sec % 60,           // seconds
@@ -330,21 +330,21 @@ archi_log(
 
     // Print message origin name
     if (origin != NULL)
-        fprintf(archi_logger->stream, "(%s) ", origin);
+        fprintf(archi_log_manager->stream, "(%s) ", origin);
 
     // Print the message
     if (format != NULL)
-        vfprintf(archi_logger->stream, format, args);
+        vfprintf(archi_log_manager->stream, format, args);
 
     // Finally, reset the color
-    if (archi_logger->colorful)
-        fprintf(archi_logger->stream, "%s", ARCHI_COLOR_RESET);
+    if (archi_log_manager->colorful)
+        fprintf(archi_log_manager->stream, "%s", ARCHI_COLOR_RESET);
 
-    fprintf(archi_logger->stream, "\n");
+    fprintf(archi_log_manager->stream, "\n");
 
 #ifndef __STDC_NO_THREADS__
-    if (archi_logger->lock != NULL)
-        mtx_unlock(archi_logger->lock);
+    if (archi_log_manager->lock != NULL)
+        mtx_unlock(archi_log_manager->lock);
 #endif
 }
 

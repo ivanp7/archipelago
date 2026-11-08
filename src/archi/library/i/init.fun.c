@@ -20,35 +20,37 @@
 
 /**
  * @file
- * @brief Functions for initialization of library global object pointers.
+ * @brief Functions for initialization of library manager pointers.
  */
 
-#include "archi/library/i/global.fun.h"
+#include "archi/library/i/init.fun.h"
 #include "archi/library/i/library.fun.h"
 
 #include <stddef.h> // for NULL
 
 
 bool
-archi_library_initialize_global(
+archi_library_initialize_manager_ptr(
         archi_library_handle_t handle,
-        archi_global_init_spec_t init_spec)
+        archi_manager_ptr_init_spec_t init_spec)
 {
     if (handle == NULL)
         return false;
-    else if ((init_spec.get_fn == NULL) || (init_spec.set_fn_symbol == NULL))
+    else if (init_spec.init_fn_symbol == NULL)
+        return false;
+    else if (init_spec.get_fn == NULL)
         return false;
 
     union { // type punning valid on POSIX systems
-        archi_global_set_func_t context_setter_fn;
+        archi_manager_ptr_init_func_t init_fn;
         void *symbol;
-    } library = {.symbol = archi_library_get_symbol(handle, init_spec.set_fn_symbol)};
+    } library = {.symbol = archi_library_get_symbol(handle, init_spec.init_fn_symbol)};
 
     if (library.symbol == NULL)
         return false;
 
-    void *context = init_spec.get_fn();
-    library.context_setter_fn(context);
+    void *manager = init_spec.get_fn();
+    library.init_fn(manager);
 
     return true;
 }

@@ -36,13 +36,13 @@ BUILD_DIR = "build"
 # modules to build {{{
 
 MODULES = [
-        ### Logging ###
-
-        "archi_log",
-
         ### Base ###
 
         "archi_base",
+
+        ### Logging ###
+
+        "archi_log",
 
         ### Built-in modules ###
 

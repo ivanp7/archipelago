@@ -20,14 +20,14 @@
 
 /**
  * @file
- * @brief Operations on the global logging context.
+ * @brief The logging manager operations.
  */
 
 #pragma once
-#ifndef _ARCHI_LOG_CONTEXT_FUN_H_
-#define _ARCHI_LOG_CONTEXT_FUN_H_
+#ifndef _ARCHI_LOG_MANAGER_FUN_H_
+#define _ARCHI_LOG_MANAGER_FUN_H_
 
-#include "archi_base/global.typ.h"
+#include "archi_base/manager.typ.h"
 
 #include <stdbool.h>
 
@@ -35,29 +35,29 @@
 struct timespec;
 
 /**
- * @brief Initialize the logging context pointer.
+ * @brief Retrieve the logging manager pointer.
+ *
+ * If the logging manager pointer hasn't been initialized yet, the function returns NULL.
+ *
+ * @return Pointer to the logging manager.
+ */
+ARCHI_MANAGER_PTR_GET_FUNC(archi_manager_ptr_get__log);
+
+/**
+ * @brief Initialize the logging manager pointer.
  *
  * @pre
- *      context != NULL
+ *      manager != NULL
  *
  * @post
  *      Logging API is ready to be used.
  *
  * @note Subsequent invocations have no effect.
  *
- * @param[in] context
- *      Logging context.
+ * @param[in] manager
+ *      Logging manager.
  */
-ARCHI_GLOBAL_SET_FUNC(archi_global_context_set__log);
-
-/**
- * @brief Retrieve the logging context pointer.
- *
- * If the logging context pointer hasn't been initialized yet, the function returns NULL.
- *
- * @return Pointer to the log context.
- */
-ARCHI_GLOBAL_GET_FUNC(archi_global_context__log);
+ARCHI_MANAGER_PTR_INIT_FUNC(archi_manager_ptr_init__log);
 
 /*****************************************************************************/
 
@@ -102,7 +102,7 @@ archi_log_indentation(void);
 /**
  * @brief Determine whether colored output is enabled for log messages.
  *
- * Checks the logger context to see if log messages
+ * Checks the logger manager to see if log messages
  * should include ANSI color codes to produce
  * colored output on supported terminals.
  * If the logger is not initialized, this function returns false.
@@ -113,5 +113,5 @@ archi_log_indentation(void);
 bool
 archi_log_colorful(void);
 
-#endif // _ARCHI_LOG_CONTEXT_FUN_H_
+#endif // _ARCHI_LOG_MANAGER_FUN_H_
 

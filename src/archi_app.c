@@ -44,23 +44,23 @@
 #include "archi/library/ctx/library.var.h"
 
 // Signal management
-#include "archi_app/signal_management.fun.h"
-#include "archi/signal/i/management.fun.h"
+#include "archi_app/manager/signal.fun.h"
+#include "archi/signal/i/manager.fun.h"
 #include "archi/signal/i/signal.fun.h"
 #include "archi/signal/i/tag.def.h"
 #include "archi/signal/sig/hashmap.fun.h"
 #include "archi/signal/sig-ctx/hashmap_data.var.h"
 
 // Environment
-#include "archi_app/environment.fun.h"
-#include "archi/env/i/context.fun.h"
+#include "archi_app/manager/env.fun.h"
+#include "archi/env/i/manager.fun.h"
 
 // Error handling
 #include "archi_base/error.fun.h"
 
 // Logging
-#include "archi_app/logging.fun.h"
-#include "archi_log/context.fun.h"
+#include "archi_app/manager/log.fun.h"
+#include "archi_log/manager.fun.h"
 #include "archi_log/print.fun.h"
 #include "archi_log/verbosity.def.h"
 #include "archi_log/color.def.h"
@@ -232,16 +232,16 @@ main(
     // Early initialization phase //
     ////////////////////////////////
 
-    // Initialize logging
+    // Initialize the logging manager
     {
-        if (!archi_app_log_initialize(NULL, archi_process.args.verbosity_level,
+        if (!archi_app_manager_initialize__log(NULL, archi_process.args.verbosity_level,
                     archi_process.args.indentation_width, !archi_process.args.no_color))
         {
             fprintf(stderr, "Error: couldn't initialize logging.\n");
             return EXIT_FAILURE;
         }
 
-        archi_global_context_set__log(archi_app_log_global_context());
+        archi_manager_ptr_init__log(archi_app_manager_ptr_get__log());
     }
 
     // Install exit functions
@@ -249,7 +249,7 @@ main(
         if (atexit(exit_clean) != 0)
         {
             archi_log_error(__func__, "Error: atexit(exit_clean) failed.");
-            archi_app_log_finalize();
+            archi_app_manager_finalize__log();
             return EXIT_FAILURE;
         }
 
@@ -265,17 +265,17 @@ main(
     if (archi_process.args.num_inputs == 0)
         return EXIT_SUCCESS;
 
-    // Initialize environment global state
+    // Initialize the environment manager
     {
-        archi_log_info(__func__, "Initializing global state for the environment...");
+        archi_log_info(__func__, "Initializing the environment manager...");
 
-        if (!archi_app_env_initialize())
+        if (!archi_app_manager_initialize__env())
         {
-            archi_log_error(__func__, "Error: couldn't initialize global state for the environment.");
+            archi_log_error(__func__, "Error: couldn't initialize the environment manager.");
             exit(EXIT_FAILURE);
         }
 
-        archi_global_context_set__env(archi_app_env_global_context());
+        archi_manager_ptr_init__env(archi_app_manager_ptr_get__env());
     }
 
     //////////////////////////
@@ -513,16 +513,16 @@ exit_clean(void) // is called on exit() or if main() returns
     finalize_signal_management();
     finalize_contexts();
 
-    if (archi_global_context__env() != NULL)
+    if (archi_manager_ptr_get__env() != NULL)
     {
-        archi_log_info(__func__, "Finalizing global state for the environment...");
+        archi_log_info(__func__, "Finalizing the environment manager...");
 
-        archi_app_env_finalize();
+        archi_app_manager_finalize__env();
     }
 
     archi_log_notice(__func__, "The application has exited normally.");
 
-    archi_app_log_finalize();
+    archi_app_manager_finalize__log();
 }
 
 void
@@ -936,14 +936,14 @@ initialize_signal_management(void)
     archi_process.signal.handler.data = archi_context_data(archi_process.signal.handler_data).ptr;
 
     INIT_ERROR();
-    archi_app_signal_management_start(archi_process.signal.watch_set, archi_process.signal.handler,
+    archi_app_manager_initialize__signal(archi_process.signal.watch_set, archi_process.signal.handler,
                 &archi_process.error);
     print_error();
 
     if (archi_process.error.code != 0)
         exit(EXIT_FAILURE);
 
-    archi_global_context_set__signal_management(archi_app_signal_management_global_context());
+    archi_manager_ptr_init__signal(archi_app_manager_ptr_get__signal());
 }
 
 void
@@ -954,7 +954,7 @@ finalize_signal_management(void)
 
     archi_log_info(__func__, "Stopping the signal management thread...");
 
-    archi_app_signal_management_stop();
+    archi_app_manager_finalalize__signal();
 
     if (archi_process.signal.handler_data != NULL)
     {

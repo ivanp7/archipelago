@@ -20,13 +20,13 @@
 
 /**
  * @file
- * @brief Signal management operations.
+ * @brief The signal manager operations.
  */
 
-#include "archi_app/signal_management.fun.h"
+#include "archi_app/manager/signal.fun.h"
 #include "archi/signal/i/signal.fun.h"
-#include "archi/signal/i/management.fun.h"
-#include "../archi/signal/i/management.typ.h" // for struct archi_signal_management_context_base
+#include "archi/signal/i/manager.fun.h"
+#include "../../archi/signal/i/manager.typ.h" // for struct archi_signal_manager_base
 
 #include <stdlib.h> // for malloc(), free()
 #include <threads.h> // for mtx_*
@@ -36,25 +36,25 @@
 
 
 static
-struct archi_signal_management_context
+struct archi_signal_manager
 {
-    struct archi_signal_management_context_base base; // Flags and signal handler.
+    struct archi_signal_manager_base base; // Flags and signal handler.
 
     pthread_t thread;
     sigset_t set;
 
     bool thread_running;
     archi_signal_flag_t terminate;
-} archi_signal_management;
+} archi_app_manager__signal;
 
-ARCHI_GLOBAL_GET_FUNC(archi_app_signal_management_global_context)
+ARCHI_MANAGER_PTR_GET_FUNC(archi_app_manager_ptr_get__signal)
 {
-    return &archi_signal_management;
+    return &archi_app_manager__signal;
 }
 
 static
 void*
-archi_app_signal_management_thread(
+archi_app_manager_thread__signal(
         void *arg)
 {
     (void) arg;
@@ -62,22 +62,22 @@ archi_app_signal_management_thread(
     siginfo_t siginfo;
     struct timespec interval = {.tv_sec = 0, .tv_nsec = 1000000}; // 1 ms
 
-    while (!ARCHI_SIGNAL_FLAG_IS_SET(archi_signal_management.terminate))
+    while (!ARCHI_SIGNAL_FLAG_IS_SET(archi_app_manager__signal.terminate))
     {
         // Wait for a signal up to the specified time interval
-        int signal = sigtimedwait(&archi_signal_management.set, &siginfo, &interval);
+        int signal = sigtimedwait(&archi_app_manager__signal.set, &siginfo, &interval);
         if (signal <= 0) // no signal received during the time interval
             continue;
 
         bool set_flag = true;
         {
             // Thread-safely extract the current signal handler
-            archi_signal_handler_t signal_handler = archi_signal_management_handler();
+            archi_signal_handler_t signal_handler = archi_signal_manager_handler();
 
             // Don't set the signal flag only if the signal handler function returns false
             if ((signal_handler.function != NULL) &&
                     !signal_handler.function(signal, &siginfo,
-                        archi_signal_management.base.flags, signal_handler.data))
+                        archi_app_manager__signal.base.flags, signal_handler.data))
                 set_flag = false;
         }
 
@@ -87,7 +87,7 @@ archi_app_signal_management_thread(
             switch (signal)
             {
 #define CASE_SIGNAL(signo)  case signo: \
-                ARCHI_SIGNAL_FLAG_SET(archi_signal_management.base.flags->signal[ARCHI__##signo]); break
+                ARCHI_SIGNAL_FLAG_SET(archi_app_manager__signal.base.flags->signal[ARCHI__##signo]); break
 
                 CASE_SIGNAL(SIGINT);
                 CASE_SIGNAL(SIGQUIT);
@@ -119,7 +119,7 @@ archi_app_signal_management_thread(
 
                 default:
                     if ((signal >= SIGRTMIN) && (signal <= SIGRTMAX))
-                        ARCHI_SIGNAL_FLAG_SET(archi_signal_management.base.flags->rt_signal[signal - SIGRTMIN]);
+                        ARCHI_SIGNAL_FLAG_SET(archi_app_manager__signal.base.flags->rt_signal[signal - SIGRTMIN]);
             }
         }
     }
@@ -128,12 +128,12 @@ archi_app_signal_management_thread(
 }
 
 void
-archi_app_signal_management_start(
+archi_app_manager_initialize__signal(
         archi_signal_set_const_t signals,
         archi_signal_handler_t signal_handler,
         ARCHI_ERROR_PARAM_DECL)
 {
-    if (archi_signal_management.thread_running)
+    if (archi_app_manager__signal.thread_running)
     {
         ARCHI_ERROR_SET(ARCHI__ECONSTRAINT, "signal management thread is already running");
         return;
@@ -145,17 +145,17 @@ archi_app_signal_management_start(
     }
 
     // Allocate signal flags
-    archi_signal_management.base.flags = archi_signal_flags_alloc();
-    if (archi_signal_management.base.flags == NULL)
+    archi_app_manager__signal.base.flags = archi_signal_flags_alloc();
+    if (archi_app_manager__signal.base.flags == NULL)
     {
         ARCHI_ERROR_SET(ARCHI__EMEMORY, "couldn't allocate signal flags structure");
         goto failure_alloc_flags;
     }
 
     // Allocate signal handler protection mutex
-    archi_signal_management.base.signal_handler_lock = malloc(
-            sizeof(*archi_signal_management.base.signal_handler_lock));
-    if (archi_signal_management.base.signal_handler_lock == NULL)
+    archi_app_manager__signal.base.signal_handler_lock = malloc(
+            sizeof(*archi_app_manager__signal.base.signal_handler_lock));
+    if (archi_app_manager__signal.base.signal_handler_lock == NULL)
     {
         ARCHI_ERROR_SET(ARCHI__EMEMORY, "couldn't allocate signal handler mutex");
         goto failure_alloc_lock;
@@ -163,7 +163,7 @@ archi_app_signal_management_start(
 
     // Initialize signal handler protection mutex
     {
-        int ret = mtx_init(archi_signal_management.base.signal_handler_lock, mtx_plain);
+        int ret = mtx_init(archi_app_manager__signal.base.signal_handler_lock, mtx_plain);
         if (ret != thrd_success)
         {
             ARCHI_ERROR_SET(ARCHI__ESYSTEM, "couldn't initialize signal handler lock");
@@ -172,18 +172,18 @@ archi_app_signal_management_start(
     }
 
     // Set initial signal handler
-    archi_signal_management.base.signal_handler = signal_handler;
+    archi_app_manager__signal.base.signal_handler = signal_handler;
 
     // Initialize the thread termination flag
-    ARCHI_SIGNAL_FLAG_INIT(archi_signal_management.terminate);
+    ARCHI_SIGNAL_FLAG_INIT(archi_app_manager__signal.terminate);
 
     // Initialize set of signals to block
-    sigemptyset(&archi_signal_management.set);
+    sigemptyset(&archi_app_manager__signal.set);
 
     {
 #define ADD_SIGNAL(signo) do {                                      \
         if (archi_signal_set_contains(signals, ARCHI__##signo)) {   \
-            sigaddset(&archi_signal_management.set, signo); } } while (0)
+            sigaddset(&archi_app_manager__signal.set, signo); } } while (0)
 
         ADD_SIGNAL(SIGINT);
         ADD_SIGNAL(SIGQUIT);
@@ -216,68 +216,68 @@ archi_app_signal_management_start(
         for (int i = 0; i < ARCHI_SIGNAL_NUMBER_REALTIME; i++)
         {
             if (archi_signal_set_contains(signals, ARCHI__SIGRTMIN+i))
-                sigaddset(&archi_signal_management.set, SIGRTMIN+i);
+                sigaddset(&archi_app_manager__signal.set, SIGRTMIN+i);
         }
     }
 
     // Block the specified signals
-    if (pthread_sigmask(SIG_BLOCK, &archi_signal_management.set, (sigset_t*)NULL) != 0)
+    if (pthread_sigmask(SIG_BLOCK, &archi_app_manager__signal.set, (sigset_t*)NULL) != 0)
     {
         ARCHI_ERROR_SET(ARCHI__ESYSTEM, "can't block signals");
         goto failure_sigmask;
     }
 
     // Create the signal management thread
-    if (pthread_create(&archi_signal_management.thread, NULL,
-                archi_app_signal_management_thread, NULL) != 0)
+    if (pthread_create(&archi_app_manager__signal.thread, NULL,
+                archi_app_manager_thread__signal, NULL) != 0)
     {
         ARCHI_ERROR_SET(ARCHI__ESYSTEM, "couldn't start signal management thread");
         goto failure_thread;
     }
 
-    archi_signal_management.thread_running = true;
+    archi_app_manager__signal.thread_running = true;
 
     ARCHI_ERROR_RESET();
     return;
 
     // Undo the progress in case of failure
 failure_thread:
-    pthread_sigmask(SIG_UNBLOCK, &archi_signal_management.set, (sigset_t*)NULL);
+    pthread_sigmask(SIG_UNBLOCK, &archi_app_manager__signal.set, (sigset_t*)NULL);
 
 failure_sigmask:
-    mtx_destroy(archi_signal_management.base.signal_handler_lock);
+    mtx_destroy(archi_app_manager__signal.base.signal_handler_lock);
 
 failure_init_lock:
-    free(archi_signal_management.base.signal_handler_lock);
+    free(archi_app_manager__signal.base.signal_handler_lock);
 
 failure_alloc_lock:
-    free(archi_signal_management.base.flags);
+    free(archi_app_manager__signal.base.flags);
 
 failure_alloc_flags:
-    archi_signal_management = (struct archi_signal_management_context){0};
+    archi_app_manager__signal = (struct archi_signal_manager){0};
 }
 
 void
-archi_app_signal_management_stop(void)
+archi_app_manager_finalalize__signal(void)
 {
-    if (!archi_signal_management.thread_running)
+    if (!archi_app_manager__signal.thread_running)
         return;
 
     // Set the thread termination flag and wait for it to terminate
-    ARCHI_SIGNAL_FLAG_SET(archi_signal_management.terminate);
-    pthread_join(archi_signal_management.thread, (void**)NULL);
+    ARCHI_SIGNAL_FLAG_SET(archi_app_manager__signal.terminate);
+    pthread_join(archi_app_manager__signal.thread, (void**)NULL);
 
     // Unlock the specified signals
-    pthread_sigmask(SIG_UNBLOCK, &archi_signal_management.set, (sigset_t*)NULL);
+    pthread_sigmask(SIG_UNBLOCK, &archi_app_manager__signal.set, (sigset_t*)NULL);
 
     // Destroy and deallocate the signal handler protection mutex
-    mtx_destroy(archi_signal_management.base.signal_handler_lock);
-    free(archi_signal_management.base.signal_handler_lock);
+    mtx_destroy(archi_app_manager__signal.base.signal_handler_lock);
+    free(archi_app_manager__signal.base.signal_handler_lock);
 
     // Deallocate signal flags
-    free(archi_signal_management.base.flags);
+    free(archi_app_manager__signal.base.flags);
 
     // Clean the context state
-    archi_signal_management = (struct archi_signal_management_context){0};
+    archi_app_manager__signal = (struct archi_signal_manager){0};
 }
 

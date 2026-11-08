@@ -23,28 +23,28 @@
  * @brief Implementation of environment interface.
  */
 
-#include "archi/env/i/context.fun.h"
+#include "archi/env/i/manager.fun.h"
 #include "archi/env/i/variable.fun.h"
 #include "archi_base/util/string.fun.h"
-#include "context.typ.h" // for struct archi_env_context
+#include "manager.typ.h" // for struct archi_env_manager
 
 #include <stdlib.h> // for getenv()
 
 
 static
-struct archi_env_context *archi_environment;
+struct archi_env_manager *archi_env_manager;
 
-ARCHI_GLOBAL_SET_FUNC(archi_global_context_set__env)
+ARCHI_MANAGER_PTR_GET_FUNC(archi_manager_ptr_get__env)
 {
-    if (archi_environment != NULL)
-        return;
-
-    archi_environment = context;
+    return archi_env_manager;
 }
 
-ARCHI_GLOBAL_GET_FUNC(archi_global_context__env)
+ARCHI_MANAGER_PTR_INIT_FUNC(archi_manager_ptr_init__env)
 {
-    return archi_environment;
+    if (archi_env_manager != NULL)
+        return;
+
+    archi_env_manager = manager;
 }
 
 char*
@@ -61,9 +61,9 @@ archi_env_get(
     char *value = NULL;
 
 #ifndef __STDC_NO_THREADS__
-    if ((archi_environment != NULL) && (archi_environment->getenv_lock != NULL))
+    if ((archi_env_manager != NULL) && (archi_env_manager->getenv_lock != NULL))
     {
-        int ret = mtx_lock(archi_environment->getenv_lock);
+        int ret = mtx_lock(archi_env_manager->getenv_lock);
         if (ret != thrd_success)
         {
             ARCHI_ERROR_SET(ARCHI__ESYSTEM, "couldn't lock getenv() mutex");
@@ -90,8 +90,8 @@ archi_env_get(
 
 finish:
 #ifndef __STDC_NO_THREADS__
-    if ((archi_environment != NULL) && (archi_environment->getenv_lock != NULL))
-        mtx_unlock(archi_environment->getenv_lock);
+    if ((archi_env_manager != NULL) && (archi_env_manager->getenv_lock != NULL))
+        mtx_unlock(archi_env_manager->getenv_lock);
 #endif
 
     return value;

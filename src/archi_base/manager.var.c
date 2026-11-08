@@ -20,17 +20,17 @@
 
 /**
  * @file
- * @brief Weak definition of the array of descriptions of built-in global objects.
+ * @brief The weak definition of the array of descriptions of built-in managers.
  */
 
-#include "archi_base/global.var.h"
+#include "archi_base/manager.var.h"
 
 
 #if defined(__GNUC__)
 
 __attribute__((weak))
-const archi_global_init_spec_t
-archi_global_init_specs[] = {
+const archi_manager_ptr_init_spec_t
+archi_manager_ptr_init_specs[] = {
     {0},
 };
 

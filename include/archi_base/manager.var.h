@@ -20,64 +20,22 @@
 
 /**
  * @file
- * @brief Operations on the global logging context.
+ * @brief The array of descriptions of built-in managers.
  */
 
 #pragma once
-#ifndef _ARCHI_APP_LOGGING_FUN_H_
-#define _ARCHI_APP_LOGGING_FUN_H_
+#ifndef _ARCHI_BASE_MANAGER_VAR_H_
+#define _ARCHI_BASE_MANAGER_VAR_H_
 
-#include "archi_base/global.typ.h"
-
-#include <stdio.h> // for FILE
-#include <stdbool.h>
+#include "archi_base/manager.typ.h"
 
 
 /**
- * @brief Retrieve the global log context.
- *
- * @return Pointer to the global log context.
+ * @brief NULL-terminated array of manager pointer initialization specifications.
  */
-ARCHI_GLOBAL_GET_FUNC(archi_app_log_global_context);
+extern
+const archi_manager_ptr_init_spec_t
+archi_manager_ptr_init_specs[];
 
-/*****************************************************************************/
-
-/**
- * @brief Initialize the global log context.
- *
- * This function sets the current UTC time as the log start time.
- *
- * @param[in] stream
- *     Valid stream used to print messages to. If NULL, the default stream (stderr) is used instead.
- *
- * @param[in] level
- *     Desired verbosity level. Values < 0 become 0; values >
- *     ARCHI_LOG_VERBOSITY_MAX become ARCHI_LOG_VERBOSITY_MAX.
- *
- * @param[in] indentation
- *     Desired intentation width. Values < 0 become 0.
- *
- * @param[in] colorful
- *     True to allow use of color in log messages, false to force monochrome output.
- *
- * The provided @p level is clamped into the valid
- * range [0, ARCHI_LOG_VERBOSITY_MAX] before being stored.
- *
- * @return True on success, false on failure.
- */
-bool
-archi_app_log_initialize(
-        FILE *stream,
-        int level,
-        int indentation,
-        bool colorful
-);
-
-/**
- * @brief Finalize the global log context.
- */
-void
-archi_app_log_finalize(void);
-
-#endif // _ARCHI_APP_LOGGING_FUN_H_
+#endif // _ARCHI_BASE_MANAGER_VAR_H_
 

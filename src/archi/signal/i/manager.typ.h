@@ -20,31 +20,25 @@
 
 /**
  * @file
- * @brief The logger context type.
+ * @brief Signal manager base type.
  */
 
 #pragma once
-#ifndef _SRC_ARCHI_LOG_CONTEXT_TYP_H_
-#define _SRC_ARCHI_LOG_CONTEXT_TYP_H_
+#ifndef _SRC_ARCHI_SIGNAL_I_MANAGER_TYP_H_
+#define _SRC_ARCHI_SIGNAL_I_MANAGER_TYP_H_
 
-#include <stdio.h> // for FILE
-#include <time.h> // for struct timespec
-#include <stdbool.h>
-#ifndef __STDC_NO_THREADS__
-#  include <threads.h> // for mtx_t
-#endif
+#include "archi/signal/i/signal.typ.h"
+#include "archi/signal/i/handler.typ.h"
+
+#include <threads.h> // for mtx_t
 
 
-struct archi_log_context {
-    FILE *stream; ///< Stream to print messages to.
-    struct timespec start_time; ///< Application start time.
-    int verbosity_level;        ///< Log verbosity level.
-    int indentation_width;      ///< Log indentation width.
-    bool colorful;              ///< Whether color is used in log messages.
-#ifndef __STDC_NO_THREADS__
-    mtx_t *lock; ///< Mutex for message printing atomicity.
-#endif
+struct archi_signal_manager_base {
+    archi_signal_flags_t *flags;
+
+    archi_signal_handler_t signal_handler;
+    mtx_t *signal_handler_lock;
 };
 
-#endif // _SRC_ARCHI_LOG_CONTEXT_TYP_H_
+#endif // _SRC_ARCHI_SIGNAL_I_MANAGER_TYP_H_
 

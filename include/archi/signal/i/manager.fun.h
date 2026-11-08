@@ -20,42 +20,42 @@
 
 /**
  * @file
- * @brief Signal management operations.
+ * @brief The signal manager operations.
  */
 
 #pragma once
-#ifndef _ARCHI_SIGNAL_I_MANAGEMENT_FUN_H_
-#define _ARCHI_SIGNAL_I_MANAGEMENT_FUN_H_
+#ifndef _ARCHI_SIGNAL_I_MANAGER_FUN_H_
+#define _ARCHI_SIGNAL_I_MANAGER_FUN_H_
 
 #include "archi/signal/i/signal.typ.h"
 #include "archi/signal/i/handler.typ.h"
-#include "archi_base/global.typ.h"
+#include "archi_base/manager.typ.h"
 
 
 /**
- * @brief Initialize the signal management context pointer.
+ * @brief Retrieve the signal manager pointer.
+ *
+ * If the signal manager pointer hasn't been initialized yet, the function returns NULL.
+ *
+ * @return Pointer to the signal manager.
+ */
+ARCHI_MANAGER_PTR_GET_FUNC(archi_manager_ptr_get__signal);
+
+/**
+ * @brief Initialize the signal manager pointer.
  *
  * @pre
- *      context != NULL
+ *      manager != NULL
  *
  * @post
  *      Signal management API is ready to be used.
  *
  * @note Subsequent invocations have no effect.
  *
- * @param[in] context
- *      Signal management context.
+ * @param[in] manager
+ *      Signal manager.
  */
-ARCHI_GLOBAL_SET_FUNC(archi_global_context_set__signal_management);
-
-/**
- * @brief Retrieve the signal management context pointer.
- *
- * If the signal management context pointer hasn't been initialized yet, the function returns NULL.
- *
- * @return Pointer to the signal management context.
- */
-ARCHI_GLOBAL_GET_FUNC(archi_global_context__signal_management);
+ARCHI_MANAGER_PTR_INIT_FUNC(archi_manager_ptr_init__signal);
 
 /**
  * @brief Retrieve the set of signal flags.
@@ -71,12 +71,12 @@ ARCHI_GLOBAL_GET_FUNC(archi_global_context__signal_management);
  *   if the signal management thread is running; otherwise NULL.
  */
 archi_signal_flags_t*
-archi_signal_management_flags(void);
+archi_signal_manager_flags(void);
 
 /**
  * @brief Get the currently installed signal handler.
  *
- * Retrieves the archi_signal_handler_t stored in the context.
+ * Retrieves the archi_signal_handler_t stored in the manager.
  *
  * @note
  *   May be called from any thread. Internally protected by a mutex.
@@ -86,7 +86,7 @@ archi_signal_management_flags(void);
  *   otherwise returns a zero‑initialized handler.
  */
 archi_signal_handler_t
-archi_signal_management_handler(void);
+archi_signal_manager_handler(void);
 
 /**
  * @brief Install, replace, or uninstall the signal handler.
@@ -102,9 +102,9 @@ archi_signal_management_handler(void);
  *   the current handler is uninstalled without replacement.
  */
 void
-archi_signal_management_handler_set(
+archi_signal_manager_handler_set(
         archi_signal_handler_t signal_handler
 );
 
-#endif // _ARCHI_SIGNAL_I_MANAGEMENT_FUN_H_
+#endif // _ARCHI_SIGNAL_I_MANAGER_FUN_H_
 

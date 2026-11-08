@@ -20,22 +20,31 @@
 
 /**
  * @file
- * @brief Array of descriptions of built-in global objects.
+ * @brief The logger manager type.
  */
 
 #pragma once
-#ifndef _ARCHI_BASE_GLOBAL_VAR_H_
-#define _ARCHI_BASE_GLOBAL_VAR_H_
+#ifndef _SRC_ARCHI_LOG_MANAGER_TYP_H_
+#define _SRC_ARCHI_LOG_MANAGER_TYP_H_
 
-#include "archi_base/global.typ.h"
+#include <stdio.h> // for FILE
+#include <time.h> // for struct timespec
+#include <stdbool.h>
+#ifndef __STDC_NO_THREADS__
+#  include <threads.h> // for mtx_t
+#endif
 
 
-/**
- * @brief NULL-terminated array of global object initialization specifications.
- */
-extern
-const archi_global_init_spec_t
-archi_global_init_specs[];
+struct archi_log_manager {
+    FILE *stream; ///< Stream to print messages to.
+    struct timespec start_time; ///< Application start time.
+    int verbosity_level;        ///< Log verbosity level.
+    int indentation_width;      ///< Log indentation width.
+    bool colorful;              ///< Whether color is used in log messages.
+#ifndef __STDC_NO_THREADS__
+    mtx_t *lock; ///< Mutex for message printing operation atomicity.
+#endif
+};
 
-#endif // _ARCHI_BASE_GLOBAL_VAR_H_
+#endif // _SRC_ARCHI_LOG_MANAGER_TYP_H_
 
