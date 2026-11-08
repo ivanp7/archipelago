@@ -339,11 +339,11 @@ archi_print_params(
 
 #define OPERATION_PREAMBLE(data_type, data_tag)                                                         \
     (void) ref_count;                                                                                   \
-    if (!archi_pointer_attr_compatible(data.attr, archi_pointer_attr__cdata((data_tag)))) {             \
-        ARCHI_ERROR_SET(ARCHI__ECONSTRAINT,                                                             \
-                "registry operation data has incorrect type, want tag = %#llx",                         \
-                (unsigned long long)(data_tag)); return; }                                              \
-    else if (data.ptr == NULL) {                                                                        \
+    { archi_error_t error;                                                                              \
+        if (!archi_pointer_attr_compatible(data.attr, archi_pointer_attr__cdata((data_tag)), &error)) { \
+            ARCHI_ERROR_SET(error.code,                                                                 \
+                "registry operation data has incorrect type: %s", error.message); return; } }           \
+    if (data.ptr == NULL) {                                                                             \
         ARCHI_ERROR_SET(ARCHI__ECONSTRAINT, "registry operation data pointer is NULL"); return; }       \
     const data_type *op_data = data.ptr;
 

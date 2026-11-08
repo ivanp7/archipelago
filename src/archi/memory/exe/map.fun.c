@@ -34,11 +34,15 @@
 
 ARCHI_DEXGRAPH_OPERATION_FUNC(archi_dexgraph_op__memory_map_unmap_wrapper)
 {
-    if (!archi_pointer_attr_compatible(data.attr,
-                archi_pointer_attr__cdata(ARCHI_POINTER_DATA_TAG__DEXGRAPH_OP_DATA__MEMORY_MAP_UNMAP_WRAPPER)))
     {
-        ARCHI_ERROR_SET(ARCHI__ECONSTRAINT, "operation function data has incorrect type");
-        return;
+        archi_error_t error;
+        if (!archi_pointer_attr_compatible(data.attr,
+                    archi_pointer_attr__cdata(ARCHI_POINTER_DATA_TAG__DEXGRAPH_OP_DATA__MEMORY_MAP_UNMAP_WRAPPER),
+                    &error))
+        {
+            ARCHI_ERROR_SET(error.code, "operation data has incorrect type: %s", error.message);
+            return;
+        }
     }
 
     const archi_dexgraph_op_data__memory_map_unmap_wrapper_t *wrapper = data.cptr;

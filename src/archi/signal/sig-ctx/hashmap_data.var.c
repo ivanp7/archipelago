@@ -176,7 +176,7 @@ ARCHI_CONTEXT_SET_FUNC(archi_context_set__signal_handler_data__hashmap)
         return;
     }
     else if (!archi_pointer_attr_compatible(value.attr,
-                ARCHI_POINTER_ATTR__PDATA(value.ptr != NULL, archi_signal_handler_t)))
+                ARCHI_POINTER_ATTR__PDATA(value.ptr != NULL, archi_signal_handler_t), NULL))
     {
         ARCHI_ERROR_SET(ARCHI__ECONSTRAINT, "assigned value is not a signal handler");
         return;

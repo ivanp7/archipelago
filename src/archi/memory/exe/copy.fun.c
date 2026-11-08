@@ -33,11 +33,15 @@
 
 ARCHI_DEXGRAPH_OPERATION_FUNC(archi_dexgraph_op__memory_copy)
 {
-    if (!archi_pointer_attr_compatible(data.attr,
-                archi_pointer_attr__cdata(ARCHI_POINTER_DATA_TAG__DEXGRAPH_OP_DATA__MEMORY_COPY)))
     {
-        ARCHI_ERROR_SET(ARCHI__ECONSTRAINT, "operation function data has incorrect type");
-        return;
+        archi_error_t error;
+        if (!archi_pointer_attr_compatible(data.attr,
+                    archi_pointer_attr__cdata(ARCHI_POINTER_DATA_TAG__DEXGRAPH_OP_DATA__MEMORY_COPY),
+                    &error))
+        {
+            ARCHI_ERROR_SET(error.code, "operation data has incorrect type: %s", error.message);
+            return;
+        }
     }
 
     const archi_dexgraph_op_data__memory_copy_t *copy = data.cptr;

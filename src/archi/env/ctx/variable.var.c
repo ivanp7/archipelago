@@ -154,7 +154,7 @@ ARCHI_CONTEXT_SET_FUNC(archi_context_set__env_variable)
             return;
         }
         else if (!archi_pointer_attr_compatible(value.attr,
-                    ARCHI_POINTER_ATTR__PDATA(0, char)))
+                    ARCHI_POINTER_ATTR__PDATA(0, char), NULL))
         {
             ARCHI_ERROR_SET(ARCHI__ECONSTRAINT, "assigned value is not a string");
             return;

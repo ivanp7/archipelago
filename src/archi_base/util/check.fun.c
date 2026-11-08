@@ -38,7 +38,7 @@ ARCHI_VALUE_CHECK_FUNC(archi_value_check__attr)
     archi_pointer_attr_t attr = *(archi_pointer_attr_t*)data;
 
     ARCHI_ERROR_RESET();
-    return archi_pointer_attr_compatible(value.attr, attr);
+    return archi_pointer_attr_compatible(value.attr, attr, NULL);
 }
 
 ARCHI_VALUE_CHECK_FUNC(archi_value_check__attrs)
@@ -55,7 +55,7 @@ ARCHI_VALUE_CHECK_FUNC(archi_value_check__attrs)
     ARCHI_ERROR_RESET();
 
     for (size_t i = 1; attr[i] != terminator; i++)
-        if (archi_pointer_attr_compatible(value.attr, attr[i]))
+        if (archi_pointer_attr_compatible(value.attr, attr[i], NULL))
             return true;
 
     return false;

@@ -186,9 +186,9 @@ archi_aggr_allocate(
         return NULL;
     }
     else if (!archi_pointer_attr_compatible(interface.attr,
-                archi_pointer_attr__cdata(ARCHI_POINTER_DATA_TAG__AGGR_INTERFACE)))
+                archi_pointer_attr__cdata(ARCHI_POINTER_DATA_TAG__AGGR_INTERFACE), &error))
     {
-        ARCHI_ERROR_SET(ARCHI__ECONSTRAINT, "aggregate type interface pointer attributes are incorrect");
+        ARCHI_ERROR_SET(error.code, "aggregate type interface pointer attributes are incorrect: %s", error.message);
         return NULL;
     }
     else if (interface.cptr == NULL)
@@ -232,9 +232,9 @@ archi_aggr_allocate(
         return NULL;
     }
     else if (!archi_pointer_attr_compatible(metadata.attr,
-                archi_pointer_attr__cdata(interface_ptr->metadata_tag)))
+                archi_pointer_attr__cdata(interface_ptr->metadata_tag), &error))
     {
-        ARCHI_ERROR_SET(ARCHI__ECONSTRAINT, "aggregate type metadata attributes are incorrect");
+        ARCHI_ERROR_SET(error.code, "aggregate type metadata attributes are incorrect: %s", error.message);
         return NULL;
     }
     else if (ARCHI_POINTER_TO_STACK(metadata.attr))

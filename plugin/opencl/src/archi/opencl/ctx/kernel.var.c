@@ -342,7 +342,7 @@ ARCHI_CONTEXT_SET_FUNC(archi_context_set__opencl_kernel)
             return;
         }
         else if (!archi_pointer_attr_compatible(value.attr,
-                    ARCHI_POINTER_ATTR__PDATA(1, size_t)))
+                    ARCHI_POINTER_ATTR__PDATA(1, size_t), NULL))
         {
             ARCHI_ERROR_SET(ARCHI__ECONSTRAINT, "assigned value is not a size");
             return;
@@ -409,7 +409,7 @@ ARCHI_CONTEXT_SET_FUNC(archi_context_set__opencl_kernel)
             return;
         }
         else if (!archi_pointer_attr_compatible(value.attr,
-                    archi_pointer_attr__cdata(ARCHI_POINTER_DATA_TAG__OPENCL_MEM_OBJECT)))
+                    archi_pointer_attr__cdata(ARCHI_POINTER_DATA_TAG__OPENCL_MEM_OBJECT), NULL))
         {
             ARCHI_ERROR_SET(ARCHI__ECONSTRAINT, "assigned value is not a memory object");
             return;
@@ -441,7 +441,7 @@ ARCHI_CONTEXT_SET_FUNC(archi_context_set__opencl_kernel)
             return;
         }
         else if (!archi_pointer_attr_compatible(value.attr,
-                    archi_pointer_attr__cdata(0)))
+                    archi_pointer_attr__cdata(0), NULL))
         {
             ARCHI_ERROR_SET(ARCHI__ECONSTRAINT, "assigned value is not data");
             return;

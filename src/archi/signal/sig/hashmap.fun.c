@@ -46,7 +46,7 @@ ARCHI_HASHMAP_TRAV_KV_FUNC(archi_hashmap_traverse__signal_handler)
     (void) index;
 
     if (!archi_pointer_attr_compatible(value.attr,
-                ARCHI_POINTER_ATTR__PDATA(1, archi_signal_handler_t)))
+                ARCHI_POINTER_ATTR__PDATA(1, archi_signal_handler_t), NULL))
         return (archi_hashmap_trav_action_t){0};
 
     struct archi_hashmap_traverse_data__signal_handler *traverse_data = data;

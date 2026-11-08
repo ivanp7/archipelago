@@ -36,11 +36,15 @@
 
 ARCHI_DEXGRAPH_OPERATION_FUNC(archi_dexgraph_op__sdl2_texture_copy)
 {
-    if (!archi_pointer_attr_compatible(data.attr,
-                archi_pointer_attr__cdata(ARCHI_POINTER_DATA_TAG__DEXGRAPH_OP_DATA__SDL2_TEXTURE_COPY)))
     {
-        ARCHI_ERROR_SET(ARCHI__ECONSTRAINT, "operation function data has incorrect type");
-        return;
+        archi_error_t error;
+        if (!archi_pointer_attr_compatible(data.attr,
+                    archi_pointer_attr__cdata(ARCHI_POINTER_DATA_TAG__DEXGRAPH_OP_DATA__SDL2_TEXTURE_COPY),
+                    &error))
+        {
+            ARCHI_ERROR_SET(error.code, "operation data has incorrect type: %s", error.message);
+            return;
+        }
     }
 
     const archi_dexgraph_op_data__sdl2_texture_copy_t *copy_params = data.cptr;
@@ -137,11 +141,15 @@ ARCHI_DEXGRAPH_OPERATION_FUNC(archi_dexgraph_op__sdl2_texture_copy)
 
 ARCHI_DEXGRAPH_OPERATION_FUNC(archi_dexgraph_op__sdl2_render_clear)
 {
-    if (!archi_pointer_attr_compatible(data.attr,
-                archi_pointer_attr__cdata(ARCHI_POINTER_DATA_TAG__SDL2_RENDERER)))
     {
-        ARCHI_ERROR_SET(ARCHI__ECONSTRAINT, "operation function data has incorrect type");
-        return;
+        archi_error_t error;
+        if (!archi_pointer_attr_compatible(data.attr,
+                    archi_pointer_attr__cdata(ARCHI_POINTER_DATA_TAG__SDL2_RENDERER),
+                    &error))
+        {
+            ARCHI_ERROR_SET(error.code, "operation data has incorrect type: %s", error.message);
+            return;
+        }
     }
 
     SDL_Renderer *renderer = data.ptr;
@@ -159,11 +167,15 @@ ARCHI_DEXGRAPH_OPERATION_FUNC(archi_dexgraph_op__sdl2_render_clear)
 
 ARCHI_DEXGRAPH_OPERATION_FUNC(archi_dexgraph_op__sdl2_render_copy)
 {
-    if (!archi_pointer_attr_compatible(data.attr,
-                archi_pointer_attr__cdata(ARCHI_POINTER_DATA_TAG__DEXGRAPH_OP_DATA__SDL2_RENDER_COPY)))
     {
-        ARCHI_ERROR_SET(ARCHI__ECONSTRAINT, "operation function data has incorrect type");
-        return;
+        archi_error_t error;
+        if (!archi_pointer_attr_compatible(data.attr,
+                    archi_pointer_attr__cdata(ARCHI_POINTER_DATA_TAG__DEXGRAPH_OP_DATA__SDL2_RENDER_COPY),
+                    &error))
+        {
+            ARCHI_ERROR_SET(error.code, "operation data has incorrect type: %s", error.message);
+            return;
+        }
     }
 
     const archi_dexgraph_op_data__sdl2_render_copy_t *copy_params = data.cptr;
@@ -197,11 +209,15 @@ ARCHI_DEXGRAPH_OPERATION_FUNC(archi_dexgraph_op__sdl2_render_copy)
 
 ARCHI_DEXGRAPH_OPERATION_FUNC(archi_dexgraph_op__sdl2_render_present)
 {
-    if (!archi_pointer_attr_compatible(data.attr,
-                archi_pointer_attr__cdata(ARCHI_POINTER_DATA_TAG__SDL2_RENDERER)))
     {
-        ARCHI_ERROR_SET(ARCHI__ECONSTRAINT, "operation function data has incorrect type");
-        return;
+        archi_error_t error;
+        if (!archi_pointer_attr_compatible(data.attr,
+                    archi_pointer_attr__cdata(ARCHI_POINTER_DATA_TAG__SDL2_RENDERER),
+                    &error))
+        {
+            ARCHI_ERROR_SET(error.code, "operation data has incorrect type: %s", error.message);
+            return;
+        }
     }
 
     SDL_Renderer *renderer = data.ptr;

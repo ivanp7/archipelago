@@ -582,9 +582,9 @@ ARCHI_AGGR_SET_FUNC(archi_aggr_set__generic)
                     }
                 }
 
-                if (!archi_pointer_attr_compatible(value.attr, attr))
+                if (!archi_pointer_attr_compatible(value.attr, attr, &error))
                 {
-                    ARCHI_ERROR_SET(ARCHI__ECONSTRAINT, "assigned value is not compatible with the specified submember");
+                    ARCHI_ERROR_SET(error.code, "assigned value is not compatible with the specified submember: %s", error.message);
                     return;
                 }
                 else if (value.ptr == NULL)
@@ -648,9 +648,9 @@ ARCHI_AGGR_SET_FUNC(archi_aggr_set__generic)
                 }
 
                 if ((pointer_type->pointee_kind != ARCHI_POINTEE__UNSPEC) &&
-                        !archi_pointer_attr_compatible(value.attr, attr))
+                        !archi_pointer_attr_compatible(value.attr, attr, &error))
                 {
-                    ARCHI_ERROR_SET(ARCHI__ECONSTRAINT, "assigned value is not compatible with the specified submember");
+                    ARCHI_ERROR_SET(error.code, "assigned value is not compatible with the specified submember: %s", error.message);
                     return;
                 }
 

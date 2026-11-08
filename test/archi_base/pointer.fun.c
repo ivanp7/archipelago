@@ -235,99 +235,99 @@ TEST(archi_pointer_attr_compatible)
     // Attributes compatibility
     ASSERT_TRUE(archi_pointer_attr_compatible(
                 archi_pointer_attr__pdata(256, 16, 8, NULL),
-                archi_pointer_attr__pdata(256, 16, 8, NULL)));
+                archi_pointer_attr__pdata(256, 16, 8, NULL), NULL));
     ASSERT_TRUE(archi_pointer_attr_compatible(
                 archi_pointer_attr__pdata(256, 16, 8, NULL),
-                archi_pointer_attr__pdata(128, 16, 8, NULL)));
+                archi_pointer_attr__pdata(128, 16, 8, NULL), NULL));
     ASSERT_FALSE(archi_pointer_attr_compatible(
                 archi_pointer_attr__pdata(128, 16, 8, NULL),
-                archi_pointer_attr__pdata(256, 16, 8, NULL)));
+                archi_pointer_attr__pdata(256, 16, 8, NULL), NULL));
     ASSERT_FALSE(archi_pointer_attr_compatible(
                 archi_pointer_attr__pdata(256, 16, 4, NULL),
-                archi_pointer_attr__pdata(256, 16, 8, NULL)));
+                archi_pointer_attr__pdata(256, 16, 8, NULL), NULL));
     ASSERT_FALSE(archi_pointer_attr_compatible(
                 archi_pointer_attr__pdata(256, 16, 8, NULL),
-                archi_pointer_attr__pdata(256, 16, 4, NULL)));
+                archi_pointer_attr__pdata(256, 16, 4, NULL), NULL));
     ASSERT_FALSE(archi_pointer_attr_compatible(
                 archi_pointer_attr__pdata(256, 8, 8, NULL),
-                archi_pointer_attr__pdata(256, 16, 8, NULL)));
+                archi_pointer_attr__pdata(256, 16, 8, NULL), NULL));
     ASSERT_FALSE(archi_pointer_attr_compatible(
                 archi_pointer_attr__pdata(256, 16, 8, NULL),
-                archi_pointer_attr__pdata(256, 8, 8, NULL)));
+                archi_pointer_attr__pdata(256, 8, 8, NULL), NULL));
 
     ASSERT_TRUE(archi_pointer_attr_compatible(
                 archi_pointer_attr__cdata(1),
-                archi_pointer_attr__cdata(1)));
+                archi_pointer_attr__cdata(1), NULL));
     ASSERT_FALSE(archi_pointer_attr_compatible(
                 archi_pointer_attr__cdata(1),
-                archi_pointer_attr__cdata(2)));
+                archi_pointer_attr__cdata(2), NULL));
     ASSERT_TRUE(archi_pointer_attr_compatible(
                 archi_pointer_attr__cdata(0),
-                archi_pointer_attr__cdata(1)));
+                archi_pointer_attr__cdata(1), NULL));
     ASSERT_TRUE(archi_pointer_attr_compatible(
                 archi_pointer_attr__cdata(1),
-                archi_pointer_attr__cdata(0)));
+                archi_pointer_attr__cdata(0), NULL));
     ASSERT_TRUE(archi_pointer_attr_compatible(
                 archi_pointer_attr__cdata(0),
-                archi_pointer_attr__cdata(0)));
+                archi_pointer_attr__cdata(0), NULL));
     ASSERT_TRUE(archi_pointer_attr_compatible(
                 archi_pointer_attr__cdata(0x10D),
-                archi_pointer_attr__cdata(0xD)));
+                archi_pointer_attr__cdata(0xD), NULL));
     ASSERT_FALSE(archi_pointer_attr_compatible(
                 archi_pointer_attr__cdata(0x7D),
-                archi_pointer_attr__cdata(0xD)));
+                archi_pointer_attr__cdata(0xD), NULL));
     ASSERT_FALSE(archi_pointer_attr_compatible(
                 archi_pointer_attr__cdata(0xC),
-                archi_pointer_attr__cdata(0xD)));
+                archi_pointer_attr__cdata(0xD), NULL));
     ASSERT_TRUE(archi_pointer_attr_compatible(
                 archi_pointer_attr__cdata(0x43FFFFFFFFFFFFF),
-                archi_pointer_attr__cdata(0x3FFFFFFFFFFFFF)));
+                archi_pointer_attr__cdata(0x3FFFFFFFFFFFFF), NULL));
     ASSERT_FALSE(archi_pointer_attr_compatible(
                 archi_pointer_attr__cdata(0x63FFFFFFFFFFFFF),
-                archi_pointer_attr__cdata(0x3FFFFFFFFFFFFF)));
+                archi_pointer_attr__cdata(0x3FFFFFFFFFFFFF), NULL));
     ASSERT_FALSE(archi_pointer_attr_compatible(
                 archi_pointer_attr__cdata(0x47FFFFFFFFFFFFF),
-                archi_pointer_attr__cdata(0x7FFFFFFFFFFFFF)));
+                archi_pointer_attr__cdata(0x7FFFFFFFFFFFFF), NULL));
 
     ASSERT_TRUE(archi_pointer_attr_compatible(
                 archi_pointer_attr__func(1),
-                archi_pointer_attr__func(1)));
+                archi_pointer_attr__func(1), NULL));
     ASSERT_FALSE(archi_pointer_attr_compatible(
                 archi_pointer_attr__func(1),
-                archi_pointer_attr__func(2)));
+                archi_pointer_attr__func(2), NULL));
     ASSERT_TRUE(archi_pointer_attr_compatible(
                 archi_pointer_attr__func(0),
-                archi_pointer_attr__func(1)));
+                archi_pointer_attr__func(1), NULL));
     ASSERT_TRUE(archi_pointer_attr_compatible(
                 archi_pointer_attr__func(1),
-                archi_pointer_attr__func(0)));
+                archi_pointer_attr__func(0), NULL));
     ASSERT_TRUE(archi_pointer_attr_compatible(
                 archi_pointer_attr__func(0),
-                archi_pointer_attr__func(0)));
+                archi_pointer_attr__func(0), NULL));
 
     ASSERT_TRUE(archi_pointer_attr_compatible(
                 archi_pointer_attr__pdata(256, 16, 8, NULL),
-                archi_pointer_attr__cdata(0)));
+                archi_pointer_attr__cdata(0), NULL));
     ASSERT_TRUE(archi_pointer_attr_compatible(
                 archi_pointer_attr__cdata(0),
-                archi_pointer_attr__pdata(256, 16, 8, NULL)));
+                archi_pointer_attr__pdata(256, 16, 8, NULL), NULL));
     ASSERT_FALSE(archi_pointer_attr_compatible(
                 archi_pointer_attr__pdata(256, 16, 8, NULL),
-                archi_pointer_attr__cdata(1)));
+                archi_pointer_attr__cdata(1), NULL));
     ASSERT_FALSE(archi_pointer_attr_compatible(
                 archi_pointer_attr__cdata(1),
-                archi_pointer_attr__pdata(256, 16, 8, NULL)));
+                archi_pointer_attr__pdata(256, 16, 8, NULL), NULL));
     ASSERT_FALSE(archi_pointer_attr_compatible(
                 archi_pointer_attr__pdata(256, 16, 8, NULL),
-                archi_pointer_attr__func(0)));
+                archi_pointer_attr__func(0), NULL));
     ASSERT_FALSE(archi_pointer_attr_compatible(
                 archi_pointer_attr__func(0),
-                archi_pointer_attr__pdata(256, 16, 8, NULL)));
+                archi_pointer_attr__pdata(256, 16, 8, NULL), NULL));
     ASSERT_FALSE(archi_pointer_attr_compatible(
                 archi_pointer_attr__cdata(0),
-                archi_pointer_attr__func(0)));
+                archi_pointer_attr__func(0), NULL));
     ASSERT_FALSE(archi_pointer_attr_compatible(
                 archi_pointer_attr__func(0),
-                archi_pointer_attr__cdata(0)));
+                archi_pointer_attr__cdata(0), NULL));
 }
 

@@ -100,11 +100,15 @@ ARCHI_HASHMAP_TRAV_KV_FUNC(archi_dexgraph_op__hashmap_print_traverse)
 
 ARCHI_DEXGRAPH_OPERATION_FUNC(archi_dexgraph_op__hashmap_print)
 {
-    if (!archi_pointer_attr_compatible(data.attr,
-                archi_pointer_attr__cdata(ARCHI_POINTER_DATA_TAG__HASHMAP)))
     {
-        ARCHI_ERROR_SET(ARCHI__ECONSTRAINT, "operation function data has incorrect type");
-        return;
+        archi_error_t error;
+        if (!archi_pointer_attr_compatible(data.attr,
+                    archi_pointer_attr__cdata(ARCHI_POINTER_DATA_TAG__HASHMAP),
+                    &error))
+        {
+            ARCHI_ERROR_SET(error.code, "operation data has incorrect type: %s", error.message);
+            return;
+        }
     }
 
     archi_hashmap_t hashmap = data.ptr;

@@ -39,19 +39,21 @@ archi_error_code_string(
 
 #define CASE(name)  case ARCHI__##name: return #name
 
+        CASE(EUNSPECIFIED);
+        CASE(ENOTIMPL);
+
         CASE(EFAILURE);
 
         CASE(ECONSTRAINT);
         CASE(ECONTRACT);
-        CASE(ENOTIMPL);
+
+        CASE(EATTRIBUTES);
 
         CASE(EKEY);
         CASE(EINDEX);
 
         CASE(EMEMORY);
         CASE(ESYSTEM);
-
-        CASE(EUNSPECIFIED);
 
 #undef CASE
 

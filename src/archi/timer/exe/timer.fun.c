@@ -33,11 +33,15 @@
 
 ARCHI_DEXGRAPH_OPERATION_FUNC(archi_dexgraph_op__timer_reset)
 {
-    if (!archi_pointer_attr_compatible(data.attr,
-                archi_pointer_attr__cdata(ARCHI_POINTER_DATA_TAG__TIMER)))
     {
-        ARCHI_ERROR_SET(ARCHI__ECONSTRAINT, "operation function data has incorrect type");
-        return;
+        archi_error_t error;
+        if (!archi_pointer_attr_compatible(data.attr,
+                    archi_pointer_attr__cdata(ARCHI_POINTER_DATA_TAG__TIMER),
+                    &error))
+        {
+            ARCHI_ERROR_SET(error.code, "operation data has incorrect type: %s", error.message);
+            return;
+        }
     }
 
     archi_timer_t timer = data.ptr;
@@ -55,11 +59,15 @@ ARCHI_DEXGRAPH_OPERATION_FUNC(archi_dexgraph_op__timer_reset)
 
 ARCHI_DEXGRAPH_OPERATION_FUNC(archi_dexgraph_op__timer_start)
 {
-    if (!archi_pointer_attr_compatible(data.attr,
-                archi_pointer_attr__cdata(ARCHI_POINTER_DATA_TAG__TIMER)))
     {
-        ARCHI_ERROR_SET(ARCHI__ECONSTRAINT, "operation function data has incorrect type");
-        return;
+        archi_error_t error;
+        if (!archi_pointer_attr_compatible(data.attr,
+                    archi_pointer_attr__cdata(ARCHI_POINTER_DATA_TAG__TIMER),
+                    &error))
+        {
+            ARCHI_ERROR_SET(error.code, "operation data has incorrect type: %s", error.message);
+            return;
+        }
     }
 
     archi_timer_t timer = data.ptr;
@@ -77,11 +85,15 @@ ARCHI_DEXGRAPH_OPERATION_FUNC(archi_dexgraph_op__timer_start)
 
 ARCHI_DEXGRAPH_OPERATION_FUNC(archi_dexgraph_op__timer_stop)
 {
-    if (!archi_pointer_attr_compatible(data.attr,
-                archi_pointer_attr__cdata(ARCHI_POINTER_DATA_TAG__TIMER)))
     {
-        ARCHI_ERROR_SET(ARCHI__ECONSTRAINT, "operation function data has incorrect type");
-        return;
+        archi_error_t error;
+        if (!archi_pointer_attr_compatible(data.attr,
+                    archi_pointer_attr__cdata(ARCHI_POINTER_DATA_TAG__TIMER),
+                    &error))
+        {
+            ARCHI_ERROR_SET(error.code, "operation data has incorrect type: %s", error.message);
+            return;
+        }
     }
 
     archi_timer_t timer = data.ptr;
@@ -99,11 +111,15 @@ ARCHI_DEXGRAPH_OPERATION_FUNC(archi_dexgraph_op__timer_stop)
 
 ARCHI_DEXGRAPH_OPERATION_FUNC(archi_dexgraph_op__timer_report)
 {
-    if (!archi_pointer_attr_compatible(data.attr,
-                archi_pointer_attr__cdata(ARCHI_POINTER_DATA_TAG__TIMER)))
     {
-        ARCHI_ERROR_SET(ARCHI__ECONSTRAINT, "operation function data has incorrect type");
-        return;
+        archi_error_t error;
+        if (!archi_pointer_attr_compatible(data.attr,
+                    archi_pointer_attr__cdata(ARCHI_POINTER_DATA_TAG__TIMER),
+                    &error))
+        {
+            ARCHI_ERROR_SET(error.code, "operation data has incorrect type: %s", error.message);
+            return;
+        }
     }
 
     archi_timer_t timer = data.ptr;

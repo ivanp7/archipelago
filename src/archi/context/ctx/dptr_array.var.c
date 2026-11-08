@@ -284,7 +284,7 @@ ARCHI_CONTEXT_SET_FUNC(archi_context_set__dptr_array)
             return;
         }
         else if (!archi_pointer_attr_compatible(value.attr,
-                    ARCHI_POINTER_ATTR__PDATA(1, size_t)))
+                    ARCHI_POINTER_ATTR__PDATA(1, size_t), NULL))
         {
             ARCHI_ERROR_SET(ARCHI__ECONSTRAINT, "assigned value is not a size_t");
             return;

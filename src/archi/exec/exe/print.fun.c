@@ -36,10 +36,12 @@
 
 ARCHI_DEXGRAPH_OPERATION_FUNC(archi_dexgraph_op__print_string)
 {
+    archi_error_t error;
     if (!archi_pointer_attr_compatible(data.attr,
-                archi_pointer_attr__cdata(ARCHI_POINTER_DATA_TAG__DEXGRAPH_OP_DATA__PRINT_STRING)))
+                archi_pointer_attr__cdata(ARCHI_POINTER_DATA_TAG__DEXGRAPH_OP_DATA__PRINT_STRING),
+                &error))
     {
-        ARCHI_ERROR_SET(ARCHI__ECONSTRAINT, "operation function data has incorrect type");
+        ARCHI_ERROR_SET(error.code, "operation data has incorrect type: %s", error.message);
         return;
     }
 
@@ -81,17 +83,17 @@ ARCHI_DEXGRAPH_OPERATION_FUNC(archi_dexgraph_op__print_string)
 
         switch (conversion_specifier)
         {
-#define CHECK_TYPE(type) do {                                                                       \
-            if (!archi_pointer_attr_compatible(token.argument.attr,                                 \
-                        ARCHI_POINTER_ATTR__PDATA(1, type))) {                                      \
-                ARCHI_ERROR_SET(ARCHI__ECONSTRAINT, "printf argument attributes are incorrect");    \
-                return; }                                                                           \
-            else if (token.argument.ptr == NULL) {                                                  \
-                ARCHI_ERROR_SET(ARCHI__ECONSTRAINT, "printf argument pointer is NULL");             \
-                return; }                                                                           \
-            else if (!archi_pointer_valid(token.argument, NULL)) {                                  \
-                ARCHI_ERROR_SET(ARCHI__ECONSTRAINT, "printf argument pointer is invalid");          \
-                return; }                                                                           \
+#define CHECK_TYPE(type) do {                                                                               \
+            if (!archi_pointer_attr_compatible(token.argument.attr,                                         \
+                        ARCHI_POINTER_ATTR__PDATA(1, type), &error)) {                                      \
+                ARCHI_ERROR_SET(error.code, "printf argument attributes are incorrect: %s", error.message); \
+                return; }                                                                                   \
+            else if (token.argument.ptr == NULL) {                                                          \
+                ARCHI_ERROR_SET(ARCHI__ECONSTRAINT, "printf argument pointer is NULL");                     \
+                return; }                                                                                   \
+            else if (!archi_pointer_valid(token.argument, &error)) {                                        \
+                ARCHI_ERROR_SET(error.code, "printf argument pointer is invalid: %s", error.message);       \
+                return; }                                                                                   \
         } while (0)
 
             case '%':

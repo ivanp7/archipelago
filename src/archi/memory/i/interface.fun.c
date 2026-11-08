@@ -198,9 +198,9 @@ archi_memory_allocate(
         return NULL;
     }
     else if (!archi_pointer_attr_compatible(interface.attr,
-                archi_pointer_attr__cdata(ARCHI_POINTER_DATA_TAG__MEMORY_INTERFACE)))
+                archi_pointer_attr__cdata(ARCHI_POINTER_DATA_TAG__MEMORY_INTERFACE), &error))
     {
-        ARCHI_ERROR_SET(ARCHI__ECONSTRAINT, "memory interface pointer attributes are incorrect");
+        ARCHI_ERROR_SET(error.code, "memory interface pointer attributes are incorrect: %s", error.message);
         return NULL;
     }
     else if (interface.cptr == NULL)
@@ -239,9 +239,9 @@ archi_memory_allocate(
         return NULL;
     }
     else if (!archi_pointer_attr_compatible(alloc_data.attr,
-                archi_pointer_attr__cdata(interface_ptr->alloc_data_tag)))
+                archi_pointer_attr__cdata(interface_ptr->alloc_data_tag), &error))
     {
-        ARCHI_ERROR_SET(ARCHI__ECONSTRAINT, "memory allocation data attributes are incorrect");
+        ARCHI_ERROR_SET(error.code, "memory allocation data attributes are incorrect: %s", error.message);
         return NULL;
     }
 
@@ -453,9 +453,9 @@ archi_memory_map(
         return NULL;
     }
     else if (!archi_pointer_attr_compatible(map_data.attr,
-                archi_pointer_attr__cdata(interface_ptr->map_data_tag)))
+                archi_pointer_attr__cdata(interface_ptr->map_data_tag), &error))
     {
-        ARCHI_ERROR_SET(ARCHI__ECONSTRAINT, "memory mapping data attributes are incorrect");
+        ARCHI_ERROR_SET(error.code, "memory mapping data attributes are incorrect: %s", error.message);
         return NULL;
     }
 

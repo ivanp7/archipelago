@@ -270,33 +270,42 @@ archi_pointer_attr_unpk__func(
 bool
 archi_pointer_attr_compatible(
         archi_pointer_attr_t attr,
-        archi_pointer_attr_t sample)
+        archi_pointer_attr_t sample,
+        ARCHI_ERROR_PARAM_DECL)
 {
     archi_pointer_attr_t attr_tag, sample_tag;
+    bool attr_is_function = ARCHI_POINTER_TO_FUNCTION(attr),
+         sample_is_function = ARCHI_POINTER_TO_FUNCTION(sample);
 
-    if (!ARCHI_POINTER_TO_FUNCTION(attr) && !ARCHI_POINTER_TO_FUNCTION(sample)) // both are data types
+    if (!attr_is_function && !sample_is_function)
     {
-        if ((attr & ~ARCHI_POINTER_ATTR_MASK__TYPE) == (sample & ~ARCHI_POINTER_ATTR_MASK__TYPE)) // quick check if attributes are the same
-            return true;
+         // quick check if attributes are the same (ignoring memory type)
+        if ((attr & ~ARCHI_POINTER_ATTR_MASK__TYPE) == (sample & ~ARCHI_POINTER_ATTR_MASK__TYPE))
+            goto compatible;
 
-        bool attr_complex = archi_pointer_attr_unpk__cdata(attr, &attr_tag, NULL);
-        bool sample_complex = archi_pointer_attr_unpk__cdata(sample, &sample_tag, NULL);
+        bool attr_is_complex = archi_pointer_attr_unpk__cdata(attr, &attr_tag, NULL);
+        bool sample_is_complex = archi_pointer_attr_unpk__cdata(sample, &sample_tag, NULL);
 
-        if ((attr_complex && !attr_tag) || (sample_complex && !sample_tag)) // wildcard
-            return true; // wildcard is compatible with any data type, primitive or complex
+        if ((attr_is_complex && !attr_tag) || (sample_is_complex && !sample_tag)) // wildcard
+            goto compatible; // wildcard is compatible with any data type, primitive or complex
 
-        if (attr_complex && sample_complex) // both are complex data types
+        if (attr_is_complex && sample_is_complex)
         {
             if (!attr_tag || !sample_tag) // wildcard
-                return true;
+                goto compatible;
 
             int mask_width = bitwidth_of(sample_tag) + ARCHI_POINTER_ATTR_BITWIDTH__DATA_TAG_SEPARATOR;
             if (mask_width > (int)ARCHI_POINTER_ATTR_BITWIDTH__DATA_TAG)
                 mask_width = ARCHI_POINTER_ATTR_BITWIDTH__DATA_TAG;
 
-            return ((attr_tag ^ sample_tag) & MASK(mask_width)) == 0;
+            if (((attr_tag ^ sample_tag) & MASK(mask_width)) != 0)
+            {
+                ARCHI_ERROR_SET(ARCHI__EATTRIBUTES, "data tag is incorrect (have = %#llx, need = %#llx)",
+                        (unsigned long long)attr_tag, (unsigned long long)sample_tag);
+                return false;
+            }
         }
-        else if (!attr_complex && !sample_complex) // both are primitive data types
+        else if (!attr_is_complex && !sample_is_complex)
         {
             size_t attr_length, attr_stride, attr_alignment;
             size_t sample_length, sample_stride, sample_alignment;
@@ -304,25 +313,63 @@ archi_pointer_attr_compatible(
             archi_pointer_attr_unpk__pdata(attr, &attr_length, &attr_stride, &attr_alignment, NULL);
             archi_pointer_attr_unpk__pdata(sample, &sample_length, &sample_stride, &sample_alignment, NULL);
 
-            return (attr_stride == sample_stride) &&
-                (attr_alignment == sample_alignment) &&
-                (attr_length >= sample_length);
+            if (attr_stride != sample_stride)
+            {
+                ARCHI_ERROR_SET(ARCHI__EATTRIBUTES, "data stride is incorrect (have = %zu, need = %zu)",
+                        attr_stride, sample_stride);
+                return false;
+            }
+            else if (attr_alignment != sample_alignment)
+            {
+                ARCHI_ERROR_SET(ARCHI__EATTRIBUTES, "data alignment is incorrect (have = %zu, need = %zu)",
+                        attr_alignment, sample_alignment);
+                return false;
+            }
+            else if (attr_length < sample_length)
+            {
+                ARCHI_ERROR_SET(ARCHI__EATTRIBUTES, "data length is too short (have = %zu, need = %zu)",
+                        attr_length, sample_length);
+                return false;
+            }
         }
         else // one type is complex, another is primitive
+        {
+            if (!attr_is_complex)
+                ARCHI_ERROR_SET(ARCHI__EATTRIBUTES, "data type is not complex");
+            else
+                ARCHI_ERROR_SET(ARCHI__EATTRIBUTES, "data type is not primitive");
+
             return false;
+        }
     }
-    else if (ARCHI_POINTER_TO_FUNCTION(attr) && ARCHI_POINTER_TO_FUNCTION(sample)) // both are function types
+    else if (attr_is_function && sample_is_function)
     {
         archi_pointer_attr_unpk__func(attr, &attr_tag, NULL);
         archi_pointer_attr_unpk__func(sample, &sample_tag, NULL);
 
         if (!attr_tag || !sample_tag) // wildcard
-            return true;
+            goto compatible;
 
-        return attr_tag == sample_tag;
+        if (attr_tag != sample_tag)
+        {
+            ARCHI_ERROR_SET(ARCHI__EATTRIBUTES, "function tag is incorrect (have = %#llx, need = %#llx)",
+                    (unsigned long long)attr_tag, (unsigned long long)sample_tag);
+            return false;
+        }
     }
     else // one type is data, another is function
+    {
+        if (!attr_is_function)
+            ARCHI_ERROR_SET(ARCHI__EATTRIBUTES, "value is not a function");
+        else
+            ARCHI_ERROR_SET(ARCHI__EATTRIBUTES, "value is not data");
+
         return false;
+    }
+
+compatible:
+    ARCHI_ERROR_RESET();
+    return true;
 }
 
 /*****************************************************************************/

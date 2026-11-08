@@ -398,7 +398,7 @@ ARCHI_CONTEXT_SET_FUNC(archi_context_set__dexgraph_node)
             return;
         }
         else if (!archi_pointer_attr_compatible(value.attr,
-                    archi_pointer_attr__func(ARCHI_POINTER_FUNC_TAG__DEXGRAPH_OPERATION)))
+                    archi_pointer_attr__func(ARCHI_POINTER_FUNC_TAG__DEXGRAPH_OPERATION), NULL))
         {
             ARCHI_ERROR_SET(ARCHI__ECONSTRAINT, "assigned value is not a DEG operation function");
             return;
@@ -461,7 +461,7 @@ ARCHI_CONTEXT_SET_FUNC(archi_context_set__dexgraph_node)
             return;
         }
         else if (!archi_pointer_attr_compatible(value.attr,
-                    archi_pointer_attr__func(ARCHI_POINTER_FUNC_TAG__DEXGRAPH_TRANSITION)))
+                    archi_pointer_attr__func(ARCHI_POINTER_FUNC_TAG__DEXGRAPH_TRANSITION), NULL))
         {
             ARCHI_ERROR_SET(ARCHI__ECONSTRAINT, "assigned value is not a DEG transition function");
             return;

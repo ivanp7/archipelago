@@ -29,19 +29,24 @@
 
 ARCHI_CONTEXT_CALLBACK_FUNC(archi_context_callback__getter)
 {
-    if (!archi_pointer_attr_compatible(data.attr,
-                ARCHI_POINTER_ATTR__PDATA(1, archi_rcpointer_t*)))
     {
-        ARCHI_ERROR_SET(ARCHI__ECONSTRAINT, "callback data attributes are incorrect");
-        return;
+        archi_error_t error;
+        if (!archi_pointer_attr_compatible(data.attr,
+                    ARCHI_POINTER_ATTR__PDATA(1, archi_rcpointer_t*), &error))
+        {
+            ARCHI_ERROR_SET(error.code, "callback data attributes are incorrect: %s", error.message);
+            return;
+        }
     }
-    else if (data.ptr == NULL)
+
+    archi_rcpointer_t *output = data.ptr;
+
+    if (output == NULL)
     {
         ARCHI_ERROR_SET(ARCHI__ECONSTRAINT, "callback data is NULL");
         return;
     }
 
-    archi_rcpointer_t *output = data.ptr;
     *output = value;
 
     ARCHI_ERROR_RESET();

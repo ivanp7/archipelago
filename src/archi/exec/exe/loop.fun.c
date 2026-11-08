@@ -30,11 +30,15 @@
 
 ARCHI_DEXGRAPH_CONDITION_FUNC(archi_dexgraph_condition__loop_times)
 {
-    if (!archi_pointer_attr_compatible(data.attr,
-                ARCHI_POINTER_ATTR__PDATA(2, size_t)))
     {
-        ARCHI_ERROR_SET(ARCHI__ECONSTRAINT, "transition function data has incorrect type");
-        return NULL;
+        archi_error_t error;
+        if (!archi_pointer_attr_compatible(data.attr,
+                    ARCHI_POINTER_ATTR__PDATA(2, size_t),
+                    &error))
+        {
+            ARCHI_ERROR_SET(error.code, "condition data has incorrect type: %s", error.message);
+            return false;
+        }
     }
 
     archi_dexgraph_condition_data__loop_times_t *loop = data.ptr;

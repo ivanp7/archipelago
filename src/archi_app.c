@@ -371,12 +371,15 @@ exec_file(
 
         num_operation_lists++;
 
-        if (!archi_pointer_attr_compatible(contents->value.attr,
-                    archi_pointer_attr__cdata(ARCHI_POINTER_DATA_TAG__KVLIST)))
         {
-            archi_log_warning(__func__, "Pointer to operation list #%zu has incorrect attributes, ignoring...",
-                    num_operation_lists - 1);
-            continue;
+            archi_error_t error;
+            if (!archi_pointer_attr_compatible(contents->value.attr,
+                        archi_pointer_attr__cdata(ARCHI_POINTER_DATA_TAG__KVLIST), &error))
+            {
+                archi_log_warning(__func__, "Pointer to operation list #%zu has incorrect attributes (%s), ignoring...",
+                        num_operation_lists - 1, error.message);
+                continue;
+            }
         }
 
         archi_log_info(__func__, "   * [file #%zu] executing operation list #%zu...",
@@ -827,12 +830,15 @@ prepare_signal_watch_set(void)
 
             num_signal_sets++;
 
-            if (!archi_pointer_attr_compatible(contents->value.attr,
-                        archi_pointer_attr__cdata(ARCHI_POINTER_DATA_TAG__SIGNAL_SET)))
             {
-                archi_log_warning(__func__, "Pointer to signal watch set #%zu has incorrect attributes, ignoring...",
-                        num_signal_sets - 1);
-                continue;
+                archi_error_t error;
+                if (!archi_pointer_attr_compatible(contents->value.attr,
+                            archi_pointer_attr__cdata(ARCHI_POINTER_DATA_TAG__SIGNAL_SET), &error))
+                {
+                    archi_log_warning(__func__, "Pointer to signal watch set #%zu has incorrect attributes (%s), ignoring...",
+                            num_signal_sets - 1, error.message);
+                    continue;
+                }
             }
 
             archi_signal_set_const_t signal_watch_set = contents->value.cptr;

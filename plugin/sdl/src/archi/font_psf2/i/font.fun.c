@@ -52,13 +52,16 @@ archi_font_psf2_load(
         ARCHI_ERROR_PARAM_DECL)
 {
     // Check input pointer
-    if (!archi_pointer_attr_compatible(font_data.attr,
-                ARCHI_POINTER_ATTR__PDATA(sizeof(archi_font_psf2_header_t), char)))
     {
-        ARCHI_ERROR_SET(ARCHI__ECONSTRAINT, "font data pointer has incorrect attributes");
-        return NULL;
+        archi_error_t error;
+        if (!archi_pointer_attr_compatible(font_data.attr,
+                    ARCHI_POINTER_ATTR__PDATA(sizeof(archi_font_psf2_header_t), char), &error))
+        {
+            ARCHI_ERROR_SET(error.code, "font data pointer has incorrect attributes: %s", error.message);
+            return NULL;
+        }
     }
-    else if (font_data.cptr == NULL)
+    if (font_data.cptr == NULL)
     {
         ARCHI_ERROR_SET(ARCHI__ECONSTRAINT, "font data pointer is NULL");
         return NULL;

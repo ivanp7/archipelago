@@ -33,10 +33,12 @@
 
 ARCHI_DEXGRAPH_OPERATION_FUNC(archi_dexgraph_op__thread_group_dispatch)
 {
+    archi_error_t error;
     if (!archi_pointer_attr_compatible(data.attr,
-                archi_pointer_attr__cdata(ARCHI_POINTER_DATA_TAG__DEXGRAPH_OP_DATA__THREAD_GROUP_DISPATCH)))
+                archi_pointer_attr__cdata(ARCHI_POINTER_DATA_TAG__DEXGRAPH_OP_DATA__THREAD_GROUP_DISPATCH),
+                &error))
     {
-        ARCHI_ERROR_SET(ARCHI__ECONSTRAINT, "operation function data has incorrect type");
+        ARCHI_ERROR_SET(error.code, "operation data has incorrect type: %s", error.message);
         return;
     }
 
@@ -49,8 +51,6 @@ ARCHI_DEXGRAPH_OPERATION_FUNC(archi_dexgraph_op__thread_group_dispatch)
     }
 
     // Dispatch the work to the thread group
-    archi_error_t error;
-
     for (;;)
     {
         // Make an attempt
@@ -70,11 +70,15 @@ ARCHI_DEXGRAPH_OPERATION_FUNC(archi_dexgraph_op__thread_group_dispatch)
 
 ARCHI_DEXGRAPH_OPERATION_FUNC(archi_dexgraph_op__thread_group_wait)
 {
-    if (!archi_pointer_attr_compatible(data.attr,
-                archi_pointer_attr__cdata(ARCHI_POINTER_DATA_TAG__THREAD_GROUP)))
     {
-        ARCHI_ERROR_SET(ARCHI__ECONSTRAINT, "operation function data has incorrect type");
-        return;
+        archi_error_t error;
+        if (!archi_pointer_attr_compatible(data.attr,
+                    archi_pointer_attr__cdata(ARCHI_POINTER_DATA_TAG__THREAD_GROUP),
+                    &error))
+        {
+            ARCHI_ERROR_SET(error.code, "operation data has incorrect type: %s", error.message);
+            return;
+        }
     }
 
     archi_thread_group_t thread_group = data.ptr;

@@ -43,7 +43,7 @@ archi_dexgraph_transition_target(
     else
     {
         if (!archi_pointer_attr_compatible(transition.data.attr,
-                    archi_pointer_attr__cdata(ARCHI_POINTER_DATA_TAG__DEXGRAPH_NODE)))
+                    archi_pointer_attr__cdata(ARCHI_POINTER_DATA_TAG__DEXGRAPH_NODE), NULL))
         {
             ARCHI_ERROR_SET(ARCHI__ECONSTRAINT, "transition data is not a node");
             return NULL;

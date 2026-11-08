@@ -443,7 +443,7 @@ ARCHI_CONTEXT_SET_FUNC(archi_context_set__file)
             return;
         }
         else if (!archi_pointer_attr_compatible(value.attr,
-                    ARCHI_POINTER_ATTR__PDATA(1, long long)))
+                    ARCHI_POINTER_ATTR__PDATA(1, long long), NULL))
         {
             ARCHI_ERROR_SET(ARCHI__ECONSTRAINT, "assigned value is not a long long");
             return;
@@ -463,7 +463,7 @@ ARCHI_CONTEXT_SET_FUNC(archi_context_set__file)
             return;
         }
         else if (!archi_pointer_attr_compatible(value.attr,
-                    ARCHI_POINTER_ATTR__PDATA(1, long long)))
+                    ARCHI_POINTER_ATTR__PDATA(1, long long), NULL))
         {
             ARCHI_ERROR_SET(ARCHI__ECONSTRAINT, "assigned value is not a long long");
             return;
@@ -483,7 +483,7 @@ ARCHI_CONTEXT_SET_FUNC(archi_context_set__file)
             return;
         }
         else if (!archi_pointer_attr_compatible(value.attr,
-                    ARCHI_POINTER_ATTR__PDATA(1, long long)))
+                    ARCHI_POINTER_ATTR__PDATA(1, long long), NULL))
         {
             ARCHI_ERROR_SET(ARCHI__ECONSTRAINT, "assigned value is not a long long");
             return;

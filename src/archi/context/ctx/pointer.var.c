@@ -276,7 +276,7 @@ ARCHI_CONTEXT_SET_FUNC(archi_context_set__dpointer)
             return;
         }
         else if (!archi_pointer_attr_compatible(value.attr,
-                    ARCHI_POINTER_ATTR__PDATA(1, char)))
+                    ARCHI_POINTER_ATTR__PDATA(1, char), NULL))
         {
             ARCHI_ERROR_SET(ARCHI__ECONSTRAINT, "assigned value is not a boolean");
             return;
@@ -904,7 +904,7 @@ ARCHI_CONTEXT_SET_FUNC(archi_context_set__pdpointer)
             return;
         }
         else if (!archi_pointer_attr_compatible(value.attr,
-                    ARCHI_POINTER_ATTR__PDATA(1, char)))
+                    ARCHI_POINTER_ATTR__PDATA(1, char), NULL))
         {
             ARCHI_ERROR_SET(ARCHI__ECONSTRAINT, "assigned value is not a boolean");
             return;
@@ -924,7 +924,7 @@ ARCHI_CONTEXT_SET_FUNC(archi_context_set__pdpointer)
             return;
         }
         else if (!archi_pointer_attr_compatible(value.attr,
-                    ARCHI_POINTER_ATTR__PDATA(1, size_t)))
+                    ARCHI_POINTER_ATTR__PDATA(1, size_t), NULL))
         {
             ARCHI_ERROR_SET(ARCHI__ECONSTRAINT, "assigned value is not a size_t");
             return;
@@ -950,7 +950,7 @@ ARCHI_CONTEXT_SET_FUNC(archi_context_set__pdpointer)
             return;
         }
         else if (!archi_pointer_attr_compatible(value.attr,
-                    ARCHI_POINTER_ATTR__PDATA(1, size_t)))
+                    ARCHI_POINTER_ATTR__PDATA(1, size_t), NULL))
         {
             ARCHI_ERROR_SET(ARCHI__ECONSTRAINT, "assigned value is not a size_t");
             return;
@@ -994,7 +994,7 @@ ARCHI_CONTEXT_SET_FUNC(archi_context_set__pdpointer)
             return;
         }
         else if (!archi_pointer_attr_compatible(value.attr,
-                    ARCHI_POINTER_ATTR__PDATA(1, size_t)))
+                    ARCHI_POINTER_ATTR__PDATA(1, size_t), NULL))
         {
             ARCHI_ERROR_SET(ARCHI__ECONSTRAINT, "assigned value is not a size_t");
             return;
@@ -1228,7 +1228,7 @@ ARCHI_CONTEXT_SET_FUNC(archi_context_set__cdpointer)
             return;
         }
         else if (!archi_pointer_attr_compatible(value.attr,
-                    ARCHI_POINTER_ATTR__PDATA(1, char)))
+                    ARCHI_POINTER_ATTR__PDATA(1, char), NULL))
         {
             ARCHI_ERROR_SET(ARCHI__ECONSTRAINT, "assigned value is not a boolean");
             return;
@@ -1248,7 +1248,7 @@ ARCHI_CONTEXT_SET_FUNC(archi_context_set__cdpointer)
             return;
         }
         else if (!archi_pointer_attr_compatible(value.attr,
-                    ARCHI_POINTER_ATTR__PDATA(1, archi_pointer_attr_t)))
+                    ARCHI_POINTER_ATTR__PDATA(1, archi_pointer_attr_t), NULL))
         {
             ARCHI_ERROR_SET(ARCHI__ECONSTRAINT, "assigned value is not pointer attributes");
             return;
@@ -1418,7 +1418,7 @@ ARCHI_CONTEXT_SET_FUNC(archi_context_set__fpointer)
             return;
         }
         else if (!archi_pointer_attr_compatible(value.attr,
-                    ARCHI_POINTER_ATTR__PDATA(1, archi_pointer_attr_t)))
+                    ARCHI_POINTER_ATTR__PDATA(1, archi_pointer_attr_t), NULL))
         {
             ARCHI_ERROR_SET(ARCHI__ECONSTRAINT, "assigned value is not pointer attributes");
             return;

@@ -55,11 +55,15 @@ archi_dexgraph_transition_data__signal_detect_alloc(
 
 ARCHI_DEXGRAPH_TRANSITION_FUNC(archi_dexgraph_transition__signal_detect)
 {
-    if (!archi_pointer_attr_compatible(data.attr,
-                archi_pointer_attr__cdata(ARCHI_POINTER_DATA_TAG__DEXGRAPH_TRANSITION_DATA__SIGNAL_DETECT)))
     {
-        ARCHI_ERROR_SET(ARCHI__ECONSTRAINT, "transition function data has incorrect type");
-        return NULL;
+        archi_error_t error;
+        if (!archi_pointer_attr_compatible(data.attr,
+                    archi_pointer_attr__cdata(ARCHI_POINTER_DATA_TAG__DEXGRAPH_TRANSITION_DATA__SIGNAL_DETECT),
+                    &error))
+        {
+            ARCHI_ERROR_SET(error.code, "transition data has incorrect type: %s", error.message);
+            return NULL;
+        }
     }
 
     const archi_dexgraph_transition_data__signal_detect_t *detect = data.cptr;

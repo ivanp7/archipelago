@@ -45,19 +45,21 @@ typedef int archi_error_code_t;
 
 /*****************************************************************************/
 
+#define ARCHI__EUNSPECIFIED ((archi_error_code_t)INT_MIN)   ///< Error code has not been set.
+#define ARCHI__ENOTIMPL     (ARCHI__EUNSPECIFIED + 1)       ///< Feature or function is not implemented.
+
 #define ARCHI__EFAILURE     ((archi_error_code_t)-1)        ///< Generic/unknown failure.
 
 #define ARCHI__ECONSTRAINT  ((archi_error_code_t)-2)        ///< Constraint violated.
 #define ARCHI__ECONTRACT    ((archi_error_code_t)-3)        ///< Contract violated.
-#define ARCHI__ENOTIMPL     ((archi_error_code_t)-4)        ///< Feature or function is not implemented.
+
+#define ARCHI__EATTRIBUTES  ((archi_error_code_t)-4)        ///< Encountered value of incompatible attributes.
 
 #define ARCHI__EKEY         ((archi_error_code_t)-8)        ///< Invalid key encountered.
 #define ARCHI__EINDEX       ((archi_error_code_t)-9)        ///< Index out of bounds.
 
 #define ARCHI__EMEMORY      ((archi_error_code_t)-16)       ///< Memory allocation failure.
 #define ARCHI__ESYSTEM      ((archi_error_code_t)-17)       ///< System resource/operation failure.
-
-#define ARCHI__EUNSPECIFIED ((archi_error_code_t)INT_MIN)   ///< Error code has not been explicitly set.
 
 /*****************************************************************************/
 

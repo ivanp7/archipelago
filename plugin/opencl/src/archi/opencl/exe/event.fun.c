@@ -34,13 +34,17 @@
 
 ARCHI_DEXGRAPH_OPERATION_FUNC(archi_dexgraph_op__opencl_event_wait)
 {
-    if (!archi_pointer_attr_compatible(data.attr,
-                archi_pointer_attr__cdata(ARCHI_POINTER_DATA_TAG__OPENCL_EVENT_ARRAY)))
     {
-        ARCHI_ERROR_SET(ARCHI__ECONSTRAINT, "operation function data has incorrect type");
-        return;
+        archi_error_t error;
+        if (!archi_pointer_attr_compatible(data.attr,
+                    archi_pointer_attr__cdata(ARCHI_POINTER_DATA_TAG__OPENCL_EVENT_ARRAY),
+                    &error))
+        {
+            ARCHI_ERROR_SET(error.code, "operation data has incorrect type: %s", error.message);
+            return;
+        }
     }
-    else if (data.ptr == NULL)
+    if (data.ptr == NULL)
     {
         ARCHI_ERROR_SET(ARCHI__ECONSTRAINT, "OpenCL event wait operation parameters is NULL");
         return;
@@ -56,11 +60,15 @@ ARCHI_DEXGRAPH_OPERATION_FUNC(archi_dexgraph_op__opencl_event_wait)
 
 ARCHI_DEXGRAPH_OPERATION_FUNC(archi_dexgraph_op__opencl_event_profile)
 {
-    if (!archi_pointer_attr_compatible(data.attr,
-                archi_pointer_attr__cdata(ARCHI_POINTER_DATA_TAG__DEXGRAPH_OP_DATA__OPENCL_EVENT_PROFILE)))
     {
-        ARCHI_ERROR_SET(ARCHI__ECONSTRAINT, "operation function data has incorrect type");
-        return;
+        archi_error_t error;
+        if (!archi_pointer_attr_compatible(data.attr,
+                    archi_pointer_attr__cdata(ARCHI_POINTER_DATA_TAG__DEXGRAPH_OP_DATA__OPENCL_EVENT_PROFILE),
+                    &error))
+        {
+            ARCHI_ERROR_SET(error.code, "operation data has incorrect type: %s", error.message);
+            return;
+        }
     }
 
     archi_dexgraph_op_data__opencl_event_profile_t *profiling_data = data.ptr;

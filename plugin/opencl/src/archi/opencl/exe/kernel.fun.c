@@ -33,11 +33,15 @@
 
 ARCHI_DEXGRAPH_OPERATION_FUNC(archi_dexgraph_op__opencl_kernel_set_arg_value)
 {
-    if (!archi_pointer_attr_compatible(data.attr,
-                archi_pointer_attr__cdata(ARCHI_POINTER_DATA_TAG__DEXGRAPH_OP_DATA__OPENCL_KERNEL_SET_ARGUMENT)))
     {
-        ARCHI_ERROR_SET(ARCHI__ECONSTRAINT, "operation function data has incorrect type");
-        return;
+        archi_error_t error;
+        if (!archi_pointer_attr_compatible(data.attr,
+                    archi_pointer_attr__cdata(ARCHI_POINTER_DATA_TAG__DEXGRAPH_OP_DATA__OPENCL_KERNEL_SET_ARGUMENT),
+                    &error))
+        {
+            ARCHI_ERROR_SET(error.code, "operation data has incorrect type: %s", error.message);
+            return;
+        }
     }
 
     const archi_dexgraph_op_data__opencl_kernel_set_argument_t *setarg_data = data.cptr;
@@ -75,10 +79,12 @@ ARCHI_DEXGRAPH_OPERATION_FUNC(archi_dexgraph_op__opencl_kernel_set_arg_value)
 
 ARCHI_DEXGRAPH_OPERATION_FUNC(archi_dexgraph_op__opencl_kernel_set_arg_svmptr)
 {
+    archi_error_t error;
     if (!archi_pointer_attr_compatible(data.attr,
-                archi_pointer_attr__cdata(ARCHI_POINTER_DATA_TAG__DEXGRAPH_OP_DATA__OPENCL_KERNEL_SET_ARGUMENT)))
+                archi_pointer_attr__cdata(ARCHI_POINTER_DATA_TAG__DEXGRAPH_OP_DATA__OPENCL_KERNEL_SET_ARGUMENT),
+                &error))
     {
-        ARCHI_ERROR_SET(ARCHI__ECONSTRAINT, "operation function data has incorrect type");
+        ARCHI_ERROR_SET(error.code, "operation data has incorrect type: %s", error.message);
         return;
     }
 
@@ -95,9 +101,9 @@ ARCHI_DEXGRAPH_OPERATION_FUNC(archi_dexgraph_op__opencl_kernel_set_arg_svmptr)
         return;
     }
     else if (!archi_pointer_attr_compatible(setarg_data->value.attr,
-                archi_pointer_attr__cdata(ARCHI_POINTER_DATA_TAG__OPENCL_SVM)))
+                archi_pointer_attr__cdata(ARCHI_POINTER_DATA_TAG__OPENCL_SVM), &error))
     {
-        ARCHI_ERROR_SET(ARCHI__ECONSTRAINT, "OpenCL kernel argument is not an SVM pointer");
+        ARCHI_ERROR_SET(error.code, "OpenCL kernel argument is not an SVM pointer: %s", error.message);
         return;
     }
 
@@ -115,11 +121,15 @@ ARCHI_DEXGRAPH_OPERATION_FUNC(archi_dexgraph_op__opencl_kernel_set_arg_svmptr)
 
 ARCHI_DEXGRAPH_OPERATION_FUNC(archi_dexgraph_op__opencl_kernel_enqueue)
 {
-    if (!archi_pointer_attr_compatible(data.attr,
-                archi_pointer_attr__cdata(ARCHI_POINTER_DATA_TAG__DEXGRAPH_OP_DATA__OPENCL_KERNEL_ENQUEUE)))
     {
-        ARCHI_ERROR_SET(ARCHI__ECONSTRAINT, "operation function data has incorrect type");
-        return;
+        archi_error_t error;
+        if (!archi_pointer_attr_compatible(data.attr,
+                    archi_pointer_attr__cdata(ARCHI_POINTER_DATA_TAG__DEXGRAPH_OP_DATA__OPENCL_KERNEL_ENQUEUE),
+                    &error))
+        {
+            ARCHI_ERROR_SET(error.code, "operation data has incorrect type: %s", error.message);
+            return;
+        }
     }
 
     const archi_dexgraph_op_data__opencl_kernel_enqueue_t *enqueue_data = data.cptr;

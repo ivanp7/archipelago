@@ -31,10 +31,12 @@
 
 ARCHI_DEXGRAPH_TRANSITION_FUNC(archi_dexgraph_transition__branch)
 {
+    archi_error_t error;
     if (!archi_pointer_attr_compatible(data.attr,
-                archi_pointer_attr__cdata(ARCHI_POINTER_DATA_TAG__DEXGRAPH_TRANSITION_DATA__BRANCH)))
+                archi_pointer_attr__cdata(ARCHI_POINTER_DATA_TAG__DEXGRAPH_TRANSITION_DATA__BRANCH),
+                &error))
     {
-        ARCHI_ERROR_SET(ARCHI__ECONSTRAINT, "transition function data has incorrect type");
+        ARCHI_ERROR_SET(error.code, "transition data has incorrect type: %s", error.message);
         return NULL;
     }
 
@@ -51,9 +53,7 @@ ARCHI_DEXGRAPH_TRANSITION_FUNC(archi_dexgraph_transition__branch)
         return NULL;
     }
 
-    archi_error_t error;
     ARCHI_ERROR_VAR_UNSET(&error);
-
     /******************************************************/
     bool condition = branch->function(branch->data, &error);
     /******************************************************/

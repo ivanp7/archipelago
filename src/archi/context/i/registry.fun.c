@@ -66,10 +66,10 @@ archi_context_params_concatenate(
 
         archi_rcpointer_t dparams_ptr = archi_context_data(dparams_context);
         if (!archi_pointer_attr_compatible(dparams_ptr.attr,
-                    archi_pointer_attr__cdata(ARCHI_POINTER_DATA_TAG__KRCVLIST)))
+                    archi_pointer_attr__cdata(ARCHI_POINTER_DATA_TAG__KRCVLIST), &error))
         {
-            ARCHI_ERROR_SET(ARCHI__ECONSTRAINT, "parameter list context (key = '%s') is not a reference-counted key-value list",
-                    dparams_key);
+            ARCHI_ERROR_SET(error.code, "parameter list context (key = '%s') is not a reference-counted key-value list: %s",
+                    dparams_key, error.message);
             return params_info;
         }
 
@@ -128,11 +128,16 @@ archi_context_registry_get(
 
     if (!context.attr)
         return NULL;
-    else if (!archi_pointer_attr_compatible(context.attr,
-                archi_pointer_attr__cdata(ARCHI_POINTER_DATA_TAG__CONTEXT)))
+
     {
-        ARCHI_ERROR_SET(ARCHI__ECONSTRAINT, "object (key = '%s') stored in context registry is not a context", key);
-        return NULL;
+        archi_error_t error;
+        if (!archi_pointer_attr_compatible(context.attr,
+                    archi_pointer_attr__cdata(ARCHI_POINTER_DATA_TAG__CONTEXT), &error))
+        {
+            ARCHI_ERROR_SET(error.code, "object (key = '%s') stored in context registry is not a context: %s",
+                    key, error.message);
+            return NULL;
+        }
     }
 
     return context.ptr;

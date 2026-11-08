@@ -31,15 +31,16 @@ archi_opencl_program_src_from_kvlist(
             ARCHI_ERROR_SET(ARCHI__ECONSTRAINT, "source name is NULL");
             return (archi_opencl_program_src_t){0};
         }
-        else if (!archi_pointer_attr_compatible(node->value.attr,
-                    ARCHI_POINTER_ATTR__PDATA(1, char)))
-        {
-            ARCHI_ERROR_SET(ARCHI__ECONSTRAINT, "source contents is not an array of bytes");
-            return (archi_opencl_program_src_t){0};
-        }
 
         archi_error_t error;
-        if (!archi_pointer_valid(node->value, &error))
+
+        if (!archi_pointer_attr_compatible(node->value.attr,
+                    ARCHI_POINTER_ATTR__PDATA(1, char), &error))
+        {
+            ARCHI_ERROR_SET(error.code, "source contents is not an array of bytes: %s", error.message);
+            return (archi_opencl_program_src_t){0};
+        }
+        else if (!archi_pointer_valid(node->value, &error))
         {
             ARCHI_ERROR_SET(error.code, "source contents pointer is invalid: %s", error.message);
             return (archi_opencl_program_src_t){0};

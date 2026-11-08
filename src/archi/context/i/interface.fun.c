@@ -104,9 +104,9 @@ archi_context_initialize(
     }
 
     if (!archi_pointer_attr_compatible(interface.attr,
-                archi_pointer_attr__cdata(ARCHI_POINTER_DATA_TAG__CONTEXT_INTERFACE)))
+                archi_pointer_attr__cdata(ARCHI_POINTER_DATA_TAG__CONTEXT_INTERFACE), &error))
     {
-        ARCHI_ERROR_SET(ARCHI__ECONSTRAINT, "context interface pointer attributes are incorrect");
+        ARCHI_ERROR_SET(error.code, "context interface pointer attributes are incorrect: %s", error.message);
         return NULL;
     }
     else if (interface.cptr == NULL)

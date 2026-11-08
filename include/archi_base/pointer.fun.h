@@ -88,7 +88,7 @@ archi_pointer_attr__func(
 /**
  * @brief Unpack pointer attributes.
  *
- * This function never fails, because there are no forbidden attributes values.
+ * This function never fails, because attributes are always valid -- there are forbidden representations.
  */
 void
 archi_pointer_attr_unpk(
@@ -152,8 +152,9 @@ archi_pointer_attr_unpk__func(
  */
 bool
 archi_pointer_attr_compatible(
-        archi_pointer_attr_t attr, ///< [in] Pointer attributes.
-        archi_pointer_attr_t sample ///< [in] Sample attributes.
+        archi_pointer_attr_t attr,   ///< [in] Pointer attributes.
+        archi_pointer_attr_t sample, ///< [in] Sample attributes.
+        ARCHI_ERROR_PARAM_DECL ///< [out] Error.
 );
 
 /*****************************************************************************/
