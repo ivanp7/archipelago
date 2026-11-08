@@ -25,6 +25,7 @@
 
 #include "archi/signal/agg/signal.var.h"
 #include "archi/signal/exe/signal.typ.h"
+#include "archi/signal/exe/tag.def.h"
 #include "archi/signal/i/signal.typ.h"
 #include "archi/signal/i/handler.typ.h"
 #include "archi/signal/i/tag.def.h"
@@ -100,6 +101,7 @@ MEMBERS_dexgraph_transition_data__signal_detect[] = {
 
 const archi_aggr_type_t
 archi_aggr_type__dexgraph_transition_data__signal_detect = ARCHI_AGGR_TYPE(
-        archi_dexgraph_transition_data__signal_detect_t, 0,
+        archi_dexgraph_transition_data__signal_detect_t,
+        ARCHI_POINTER_DATA_TAG__DEXGRAPH_TRANSITION_DATA__SIGNAL_DETECT,
         MEMBERS_dexgraph_transition_data__signal_detect);
 

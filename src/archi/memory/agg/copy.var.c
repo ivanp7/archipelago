@@ -25,6 +25,7 @@
 
 #include "archi/memory/agg/copy.var.h"
 #include "archi/memory/exe/copy.typ.h"
+#include "archi/memory/exe/tag.def.h"
 
 
 static
@@ -52,6 +53,7 @@ MEMBERS_dexgraph_op_data__memory_copy[] = {
 
 const archi_aggr_type_t
 archi_aggr_type__dexgraph_op_data__memory_copy = ARCHI_AGGR_TYPE(
-        archi_dexgraph_op_data__memory_copy_t, 0,
+        archi_dexgraph_op_data__memory_copy_t,
+        ARCHI_POINTER_DATA_TAG__DEXGRAPH_OP_DATA__MEMORY_COPY,
         MEMBERS_dexgraph_op_data__memory_copy);
 

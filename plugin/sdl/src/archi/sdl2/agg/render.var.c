@@ -25,6 +25,7 @@
 
 #include "archi/sdl2/agg/render.var.h"
 #include "archi/sdl2/exe/render.typ.h"
+#include "archi/sdl2/exe/tag.def.h"
 #include "archi/sdl2/i/tag.def.h"
 
 
@@ -81,7 +82,8 @@ MEMBERS_dexgraph_op_data__sdl2_texture_copy[] = {
 
 const archi_aggr_type_t
 archi_aggr_type__dexgraph_op_data__sdl2_texture_copy = ARCHI_AGGR_TYPE(
-        archi_dexgraph_op_data__sdl2_texture_copy_t, 0,
+        archi_dexgraph_op_data__sdl2_texture_copy_t,
+        ARCHI_POINTER_DATA_TAG__DEXGRAPH_OP_DATA__SDL2_TEXTURE_COPY,
         MEMBERS_dexgraph_op_data__sdl2_texture_copy);
 
 /*****************************************************************************/
@@ -101,6 +103,7 @@ MEMBERS_dexgraph_op_data__sdl2_render_copy[] = {
 
 const archi_aggr_type_t
 archi_aggr_type__dexgraph_op_data__sdl2_render_copy = ARCHI_AGGR_TYPE(
-        archi_dexgraph_op_data__sdl2_render_copy_t, 0,
+        archi_dexgraph_op_data__sdl2_render_copy_t,
+        ARCHI_POINTER_DATA_TAG__DEXGRAPH_OP_DATA__SDL2_RENDER_COPY,
         MEMBERS_dexgraph_op_data__sdl2_render_copy);
 

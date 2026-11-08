@@ -25,6 +25,7 @@
 
 #include "archi/exec/exe/print.fun.h"
 #include "archi/exec/exe/print.typ.h"
+#include "archi/exec/exe/tag.def.h"
 #include "archi_base/pointer.fun.h"
 #include "archi_base/pointer.def.h"
 
@@ -35,13 +36,20 @@
 
 ARCHI_DEXGRAPH_OPERATION_FUNC(archi_dexgraph_op__print_string)
 {
-    if (data == NULL)
+    if (!archi_pointer_attr_compatible(data.attr,
+                archi_pointer_attr__cdata(ARCHI_POINTER_DATA_TAG__DEXGRAPH_OP_DATA__PRINT_STRING)))
+    {
+        ARCHI_ERROR_SET(ARCHI__ECONSTRAINT, "operation function data has incorrect type");
+        return;
+    }
+
+    const archi_dexgraph_op_data__print_string_t *print_data = data.cptr;
+
+    if (print_data == NULL)
     {
         ARCHI_ERROR_RESET();
         return;
     }
-
-    const archi_dexgraph_op_data__print_string_t *print_data = data;
 
     for (size_t i = 0; i < print_data->num_tokens; i++)
     {

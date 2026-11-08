@@ -25,11 +25,20 @@
 
 #include "archi/exec/exe/branch.fun.h"
 #include "archi/exec/exe/branch.typ.h"
+#include "archi/exec/exe/tag.def.h"
+#include "archi_base/pointer.fun.h"
 
 
 ARCHI_DEXGRAPH_TRANSITION_FUNC(archi_dexgraph_transition__branch)
 {
-    const archi_dexgraph_transition_data__branch_t *branch = data;
+    if (!archi_pointer_attr_compatible(data.attr,
+                archi_pointer_attr__cdata(ARCHI_POINTER_DATA_TAG__DEXGRAPH_TRANSITION_DATA__BRANCH)))
+    {
+        ARCHI_ERROR_SET(ARCHI__ECONSTRAINT, "transition function data has incorrect type");
+        return NULL;
+    }
+
+    const archi_dexgraph_transition_data__branch_t *branch = data.cptr;
 
     if (branch == NULL)
     {

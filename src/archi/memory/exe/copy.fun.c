@@ -25,13 +25,22 @@
 
 #include "archi/memory/exe/copy.fun.h"
 #include "archi/memory/exe/copy.typ.h"
+#include "archi/memory/exe/tag.def.h"
+#include "archi_base/pointer.fun.h"
 
 #include <string.h> // for memmove()
 
 
 ARCHI_DEXGRAPH_OPERATION_FUNC(archi_dexgraph_op__memory_copy)
 {
-    const archi_dexgraph_op_data__memory_copy_t *copy = data;
+    if (!archi_pointer_attr_compatible(data.attr,
+                archi_pointer_attr__cdata(ARCHI_POINTER_DATA_TAG__DEXGRAPH_OP_DATA__MEMORY_COPY)))
+    {
+        ARCHI_ERROR_SET(ARCHI__ECONSTRAINT, "operation function data has incorrect type");
+        return;
+    }
+
+    const archi_dexgraph_op_data__memory_copy_t *copy = data.cptr;
 
     if (copy == NULL)
     {

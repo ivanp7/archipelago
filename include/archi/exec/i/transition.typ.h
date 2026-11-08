@@ -27,6 +27,7 @@
 #ifndef _ARCHI_EXEC_I_TRANSITION_TYP_H_
 #define _ARCHI_EXEC_I_TRANSITION_TYP_H_
 
+#include "archi_base/pointer.typ.h"
 #include "archi_base/error.typ.h"
 
 
@@ -37,9 +38,9 @@ struct archi_dexgraph_node;
  *
  * @return The successor node, or NULL.
  */
-#define ARCHI_DEXGRAPH_TRANSITION_FUNC(func_name)           \
-    const struct archi_dexgraph_node* func_name(            \
-        void *data, /* [in] Transition function data. */    \
+#define ARCHI_DEXGRAPH_TRANSITION_FUNC(func_name)                   \
+    const struct archi_dexgraph_node* func_name(                    \
+        archi_pointer_t data, /* [in] Transition function data. */  \
         ARCHI_ERROR_PARAM_DECL) /* [out] Error. */
 
 /**
@@ -52,7 +53,7 @@ typedef ARCHI_DEXGRAPH_TRANSITION_FUNC((*archi_dexgraph_transition_func_t));
  */
 typedef struct archi_dexgraph_transition {
     archi_dexgraph_transition_func_t function; ///< Transition function.
-    void *data; ///< Transition function data.
+    archi_pointer_t data; ///< Transition function data.
 } archi_dexgraph_transition_t;
 
 #endif // _ARCHI_EXEC_I_TRANSITION_TYP_H_

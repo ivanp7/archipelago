@@ -26,8 +26,8 @@
 #include "archi/memory/agg/map.var.h"
 #include "archi/exec/agg/graph.var.h"
 #include "archi/memory/exe/map.typ.h"
+#include "archi/memory/exe/tag.def.h"
 #include "archi/memory/i/tag.def.h"
-#include "archi/exec/i/tag.def.h"
 
 
 static
@@ -63,6 +63,7 @@ MEMBERS_dexgraph_op_data__memory_map_unmap_wrapper[] = {
 
 const archi_aggr_type_t
 archi_aggr_type__dexgraph_op_data__memory_map_unmap_wrapper = ARCHI_AGGR_TYPE(
-        archi_dexgraph_op_data__memory_map_unmap_wrapper_t, 0,
+        archi_dexgraph_op_data__memory_map_unmap_wrapper_t,
+        ARCHI_POINTER_DATA_TAG__DEXGRAPH_OP_DATA__MEMORY_MAP_UNMAP_WRAPPER,
         MEMBERS_dexgraph_op_data__memory_map_unmap_wrapper);
 

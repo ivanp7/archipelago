@@ -40,7 +40,7 @@ archi_dexgraph_node_alloc(
         return NULL;
 
     node->name = NULL;
-    node->metadata = NULL;
+    node->metadata = (archi_pointer_t){0};
     node->transition = (archi_dexgraph_transition_t){0};
     {
         size_t *sequence_length_ptr = (size_t*)&node->sequence_length;

@@ -40,8 +40,17 @@ MEMBERS_dexgraph_condition_data__loop_times[] = {
     ARCHI_AGGR_MEMBER__VALUE(archi_dexgraph_condition_data__loop_times_t, iteration, 1, VTYPE_size),
 };
 
+#ifdef __GNUC__
+#  pragma GCC diagnostic push
+#  pragma GCC diagnostic ignored "-Wmissing-braces"
+#endif
+
 const archi_aggr_type_t
 archi_aggr_type__dexgraph_condition_data__loop_times = ARCHI_AGGR_TYPE(
         archi_dexgraph_condition_data__loop_times_t, 0,
         MEMBERS_dexgraph_condition_data__loop_times);
+
+#ifdef __GNUC__
+#  pragma GCC diagnostic pop
+#endif
 

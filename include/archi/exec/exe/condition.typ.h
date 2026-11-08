@@ -27,6 +27,7 @@
 #ifndef _ARCHI_EXEC_EXE_CONDITION_TYP_H_
 #define _ARCHI_EXEC_EXE_CONDITION_TYP_H_
 
+#include "archi_base/pointer.typ.h"
 #include "archi_base/error.typ.h"
 
 #include <stdbool.h>
@@ -38,7 +39,7 @@
  * @return The successor node, or NULL.
  */
 #define ARCHI_DEXGRAPH_CONDITION_FUNC(func_name)    bool func_name( \
-        void *data, /* [in] Condition function data. */             \
+        archi_pointer_t data, /* [in] Condition function data. */   \
         ARCHI_ERROR_PARAM_DECL) /* [out] Error. */
 
 /**

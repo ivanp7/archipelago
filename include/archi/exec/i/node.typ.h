@@ -38,7 +38,7 @@
  */
 typedef struct archi_dexgraph_node {
     const char *name; ///< Node name.
-    void *metadata; ///< Node metadata.
+    archi_pointer_t metadata; ///< Node metadata.
 
     archi_dexgraph_transition_t transition; ///< Node transition.
 

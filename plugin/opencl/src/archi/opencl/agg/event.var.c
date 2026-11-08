@@ -25,6 +25,7 @@
 
 #include "archi/opencl/agg/event.var.h"
 #include "archi/opencl/exe/event.typ.h"
+#include "archi/opencl/exe/tag.def.h"
 #include "archi/opencl/i/event.typ.h"
 #include "archi/opencl/i/tag.def.h"
 #include "archi/timer/i/tag.def.h"
@@ -36,7 +37,7 @@ VTYPE_size = ARCHI_AGGR_MEMBER_TYPE__VALUE(size_t, 0);
 
 static
 const archi_aggr_member_type__value_t
-VTYPE_uint = ARCHI_AGGR_MEMBER_TYPE__VALUE(cl_uint, 0);
+VTYPE_profiling_info = ARCHI_AGGR_MEMBER_TYPE__VALUE(cl_profiling_info, 0);
 
 static
 const archi_aggr_member_type__pointer_t
@@ -67,7 +68,7 @@ MEMBERS_opencl_event_array[] = {
 
 const archi_aggr_type_t
 archi_aggr_type__opencl_event_array = ARCHI_AGGR_TYPE(
-        archi_opencl_event_array_t, 0,
+        archi_opencl_event_array_t, ARCHI_POINTER_DATA_TAG__OPENCL_EVENT_ARRAY,
         MEMBERS_opencl_event_array);
 
 /*****************************************************************************/
@@ -81,7 +82,7 @@ MEMBERS_opencl_event_ptr_array[] = {
 
 const archi_aggr_type_t
 archi_aggr_type__opencl_event_ptr_array = ARCHI_AGGR_TYPE(
-        archi_opencl_event_ptr_array_t, 0,
+        archi_opencl_event_ptr_array_t, ARCHI_POINTER_DATA_TAG__OPENCL_EVENT_PTR_ARRAY,
         MEMBERS_opencl_event_ptr_array);
 
 /*****************************************************************************/
@@ -91,12 +92,13 @@ const archi_aggr_member_t
 MEMBERS_dexgraph_op_data__opencl_event_profile[] = {
     ARCHI_AGGR_MEMBER__POINTER(archi_dexgraph_op_data__opencl_event_profile_t, event, 1, PTYPE_event),
     ARCHI_AGGR_MEMBER__POINTER(archi_dexgraph_op_data__opencl_event_profile_t, timer, 1, PTYPE_timer),
-    ARCHI_AGGR_MEMBER__VALUE(archi_dexgraph_op_data__opencl_event_profile_t, from_time, 1, VTYPE_uint),
-    ARCHI_AGGR_MEMBER__VALUE(archi_dexgraph_op_data__opencl_event_profile_t, to_time, 1, VTYPE_uint),
+    ARCHI_AGGR_MEMBER__VALUE(archi_dexgraph_op_data__opencl_event_profile_t, from_time, 1, VTYPE_profiling_info),
+    ARCHI_AGGR_MEMBER__VALUE(archi_dexgraph_op_data__opencl_event_profile_t, to_time, 1, VTYPE_profiling_info),
 };
 
 const archi_aggr_type_t
 archi_aggr_type__dexgraph_op_data__opencl_event_profile = ARCHI_AGGR_TYPE(
-        archi_dexgraph_op_data__opencl_event_profile_t, 0,
+        archi_dexgraph_op_data__opencl_event_profile_t,
+        ARCHI_POINTER_DATA_TAG__DEXGRAPH_OP_DATA__OPENCL_EVENT_PROFILE,
         MEMBERS_dexgraph_op_data__opencl_event_profile);
 

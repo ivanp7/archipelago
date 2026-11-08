@@ -25,19 +25,35 @@
 
 #include "archi/exec/exe/graph.fun.h"
 #include "archi/exec/i/frame.fun.h"
+#include "archi/exec/i/tag.def.h"
+#include "archi_base/pointer.fun.h"
 
 
 ARCHI_DEXGRAPH_OPERATION_FUNC(archi_dexgraph_op__execute)
 {
-    archi_dexgraph_frame_t frame = {.node = data};
+    if (!archi_pointer_attr_compatible(data.attr,
+                archi_pointer_attr__cdata(ARCHI_POINTER_DATA_TAG__DEXGRAPH_NODE)))
+    {
+        ARCHI_ERROR_SET(ARCHI__ECONSTRAINT, "operation function data has incorrect type");
+        return;
+    }
+
+    archi_dexgraph_frame_t frame = {.node = data.cptr};
     archi_dexgraph_execute(frame, ARCHI_ERROR_PARAM);
 }
 
 ARCHI_DEXGRAPH_TRANSITION_FUNC(archi_dexgraph_transition__execute_node)
 {
+    if (!archi_pointer_attr_compatible(data.attr,
+                archi_pointer_attr__cdata(ARCHI_POINTER_DATA_TAG__DEXGRAPH_NODE)))
+    {
+        ARCHI_ERROR_SET(ARCHI__ECONSTRAINT, "transition function data has incorrect type");
+        return NULL;
+    }
+
     archi_error_t error;
 
-    archi_dexgraph_frame_t frame = {.node = data};
+    archi_dexgraph_frame_t frame = {.node = data.cptr};
     const struct archi_dexgraph_node *target =
         archi_dexgraph_execute_node(frame, &error).node;
 

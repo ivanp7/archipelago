@@ -100,13 +100,22 @@ ARCHI_HASHMAP_TRAV_KV_FUNC(archi_dexgraph_op__hashmap_print_traverse)
 
 ARCHI_DEXGRAPH_OPERATION_FUNC(archi_dexgraph_op__hashmap_print)
 {
-    if (data == NULL)
+    if (!archi_pointer_attr_compatible(data.attr,
+                archi_pointer_attr__cdata(ARCHI_POINTER_DATA_TAG__HASHMAP)))
+    {
+        ARCHI_ERROR_SET(ARCHI__ECONSTRAINT, "operation function data has incorrect type");
+        return;
+    }
+
+    archi_hashmap_t hashmap = data.ptr;
+
+    if (hashmap == NULL)
     {
         ARCHI_ERROR_SET(ARCHI__ECONSTRAINT, "hashmap is NULL");
         return;
     }
 
-    archi_hashmap_traverse(data, true, archi_dexgraph_op__hashmap_print_traverse, NULL,
+    archi_hashmap_traverse(hashmap, true, archi_dexgraph_op__hashmap_print_traverse, NULL,
             ARCHI_ERROR_PARAM);
 }
 

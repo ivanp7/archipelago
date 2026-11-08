@@ -25,6 +25,7 @@
 
 #include "archi/thread/agg/thread_group.var.h"
 #include "archi/thread/exe/thread_group.typ.h"
+#include "archi/thread/exe/tag.def.h"
 #include "archi/thread/i/tag.def.h"
 
 
@@ -110,6 +111,7 @@ MEMBERS_dexgraph_op_data__thread_group_dispatch[] = {
 
 const archi_aggr_type_t
 archi_aggr_type__dexgraph_op_data__thread_group_dispatch = ARCHI_AGGR_TYPE(
-        archi_dexgraph_op_data__thread_group_dispatch_t, 0,
+        archi_dexgraph_op_data__thread_group_dispatch_t,
+        ARCHI_POINTER_DATA_TAG__DEXGRAPH_OP_DATA__THREAD_GROUP_DISPATCH,
         MEMBERS_dexgraph_op_data__thread_group_dispatch);
 

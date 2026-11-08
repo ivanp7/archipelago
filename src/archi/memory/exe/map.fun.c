@@ -25,14 +25,23 @@
 
 #include "archi/memory/exe/map.fun.h"
 #include "archi/memory/exe/map.typ.h"
+#include "archi/memory/exe/tag.def.h"
 #include "archi/memory/i/interface.fun.h"
+#include "archi_base/pointer.fun.h"
 
 #include <string.h> // for memcpy(), memmove()
 
 
 ARCHI_DEXGRAPH_OPERATION_FUNC(archi_dexgraph_op__memory_map_unmap_wrapper)
 {
-    const archi_dexgraph_op_data__memory_map_unmap_wrapper_t *wrapper = data;
+    if (!archi_pointer_attr_compatible(data.attr,
+                archi_pointer_attr__cdata(ARCHI_POINTER_DATA_TAG__DEXGRAPH_OP_DATA__MEMORY_MAP_UNMAP_WRAPPER)))
+    {
+        ARCHI_ERROR_SET(ARCHI__ECONSTRAINT, "operation function data has incorrect type");
+        return;
+    }
+
+    const archi_dexgraph_op_data__memory_map_unmap_wrapper_t *wrapper = data.cptr;
 
     if (wrapper == NULL)
     {

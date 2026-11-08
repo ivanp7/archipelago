@@ -39,7 +39,7 @@ PTYPE_string = ARCHI_AGGR_MEMBER_TYPE__POINTER_TO_PDATA(char*, char, 0);
 
 static
 const archi_aggr_member_type__pointer_t
-PTYPE_data = ARCHI_AGGR_MEMBER_TYPE__POINTER_TO_CDATA(void*, 0);
+PTYPE_data = ARCHI_AGGR_MEMBER_TYPE__POINTER_TO_CDATA(archi_pointer_t, 0);
 
 static
 const archi_aggr_member_type__pointer_t

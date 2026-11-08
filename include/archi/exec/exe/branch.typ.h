@@ -39,7 +39,7 @@ struct archi_dexgraph_node;
  */
 typedef struct archi_dexgraph_transition_data__branch {
     archi_dexgraph_condition_func_t function; ///< Condition function.
-    void *data; ///< Condition function data.
+    archi_pointer_t data; ///< Condition function data.
 
     const struct archi_dexgraph_node *target[2]; ///< Branch targets for both condition cases.
 } archi_dexgraph_transition_data__branch_t;

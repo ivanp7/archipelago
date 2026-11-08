@@ -25,11 +25,19 @@
 
 #include "archi/exec/exe/loop.fun.h"
 #include "archi/exec/exe/loop.typ.h"
+#include "archi_base/pointer.fun.h"
 
 
 ARCHI_DEXGRAPH_CONDITION_FUNC(archi_dexgraph_condition__loop_times)
 {
-    archi_dexgraph_condition_data__loop_times_t *loop = data;
+    if (!archi_pointer_attr_compatible(data.attr,
+                ARCHI_POINTER_ATTR__PDATA(2, size_t)))
+    {
+        ARCHI_ERROR_SET(ARCHI__ECONSTRAINT, "transition function data has incorrect type");
+        return NULL;
+    }
+
+    archi_dexgraph_condition_data__loop_times_t *loop = data.ptr;
 
     if (loop == NULL)
     {

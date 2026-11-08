@@ -25,7 +25,9 @@
 
 #include "archi/signal/exe/signal.fun.h"
 #include "archi/signal/exe/signal.typ.h"
+#include "archi/signal/exe/tag.def.h"
 #include "archi/signal/i/signal.fun.h"
+#include "archi_base/pointer.fun.h"
 #include "archi_base/util/size.def.h"
 
 #include <stdlib.h> // for malloc()
@@ -53,7 +55,14 @@ archi_dexgraph_transition_data__signal_detect_alloc(
 
 ARCHI_DEXGRAPH_TRANSITION_FUNC(archi_dexgraph_transition__signal_detect)
 {
-    archi_dexgraph_transition_data__signal_detect_t *detect = data;
+    if (!archi_pointer_attr_compatible(data.attr,
+                archi_pointer_attr__cdata(ARCHI_POINTER_DATA_TAG__DEXGRAPH_TRANSITION_DATA__SIGNAL_DETECT)))
+    {
+        ARCHI_ERROR_SET(ARCHI__ECONSTRAINT, "transition function data has incorrect type");
+        return NULL;
+    }
+
+    const archi_dexgraph_transition_data__signal_detect_t *detect = data.cptr;
 
     if (detect == NULL)
     {

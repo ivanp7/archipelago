@@ -26,6 +26,7 @@
 #include "archi/opencl/agg/kernel.var.h"
 #include "archi/opencl/agg/event.var.h"
 #include "archi/opencl/exe/kernel.typ.h"
+#include "archi/opencl/exe/tag.def.h"
 #include "archi/opencl/i/tag.def.h"
 
 
@@ -67,7 +68,8 @@ MEMBERS_dexgraph_op_data__opencl_kernel_set_argument[] = {
 
 const archi_aggr_type_t
 archi_aggr_type__dexgraph_op_data__opencl_kernel_set_argument = ARCHI_AGGR_TYPE(
-        archi_dexgraph_op_data__opencl_kernel_set_argument_t, 0,
+        archi_dexgraph_op_data__opencl_kernel_set_argument_t,
+        ARCHI_POINTER_DATA_TAG__DEXGRAPH_OP_DATA__OPENCL_KERNEL_SET_ARGUMENT,
         MEMBERS_dexgraph_op_data__opencl_kernel_set_argument);
 
 /*****************************************************************************/
@@ -94,7 +96,8 @@ MEMBERS_dexgraph_op_data__opencl_kernel_enqueue[] = {
 
 const archi_aggr_type_t
 archi_aggr_type__dexgraph_op_data__opencl_kernel_enqueue = ARCHI_AGGR_TYPE(
-        archi_dexgraph_op_data__opencl_kernel_enqueue_t, 0,
+        archi_dexgraph_op_data__opencl_kernel_enqueue_t,
+        ARCHI_POINTER_DATA_TAG__DEXGRAPH_OP_DATA__OPENCL_KERNEL_ENQUEUE,
         MEMBERS_dexgraph_op_data__opencl_kernel_enqueue);
 
 #ifdef __GNUC__

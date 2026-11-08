@@ -27,6 +27,7 @@
 #ifndef _ARCHI_EXEC_I_OPERATION_TYP_H_
 #define _ARCHI_EXEC_I_OPERATION_TYP_H_
 
+#include "archi_base/pointer.typ.h"
 #include "archi_base/error.typ.h"
 
 
@@ -34,7 +35,7 @@
  * @brief Signature of an operation function.
  */
 #define ARCHI_DEXGRAPH_OPERATION_FUNC(func_name)    void func_name( \
-        void *data, /* [in] Operation function data. */             \
+        archi_pointer_t data, /* [in] Operation function data. */   \
         ARCHI_ERROR_PARAM_DECL) /* [out] Error. */
 
 /**
@@ -47,7 +48,7 @@ typedef ARCHI_DEXGRAPH_OPERATION_FUNC((*archi_dexgraph_operation_func_t));
  */
 typedef struct archi_dexgraph_operation {
     archi_dexgraph_operation_func_t function; ///< Operation function.
-    void *data; ///< Operation function data.
+    archi_pointer_t data; ///< Operation function data.
 } archi_dexgraph_operation_t;
 
 #endif // _ARCHI_EXEC_I_OPERATION_TYP_H_

@@ -38,6 +38,8 @@
 #define ARCHI_POINTER_DATA_TAG__OPENCL_SVM              0x891 ///< Data type tag for SVM memory allocation.
 #define ARCHI_POINTER_DATA_TAG__OPENCL_SVM_ALLOC_DATA   0x892 ///< Data type tag for archi_memory_alloc_data__opencl_svm_t.
 #define ARCHI_POINTER_DATA_TAG__OPENCL_SVM_MAP_DATA     0x893 ///< Data type tag for archi_memory_map_data__opencl_svm_t.
+#define ARCHI_POINTER_DATA_TAG__OPENCL_EVENT_ARRAY      0x898 ///< Data type tag for archi_opencl_event_array_t.
+#define ARCHI_POINTER_DATA_TAG__OPENCL_EVENT_PTR_ARRAY  0x899 ///< Data type tag for archi_opencl_event_ptr_array_t.
 
 #endif // _ARCHI_OPENCL_I_TAG_DEF_H_
 

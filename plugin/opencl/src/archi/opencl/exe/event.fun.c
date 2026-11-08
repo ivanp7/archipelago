@@ -25,19 +25,28 @@
 
 #include "archi/opencl/exe/event.fun.h"
 #include "archi/opencl/exe/event.typ.h"
+#include "archi/opencl/exe/tag.def.h"
 #include "archi/opencl/i/event.fun.h"
+#include "archi/opencl/i/tag.def.h"
 #include "archi/timer/i/timer.fun.h"
+#include "archi_base/pointer.fun.h"
 
 
 ARCHI_DEXGRAPH_OPERATION_FUNC(archi_dexgraph_op__opencl_event_wait)
 {
-    if (data == NULL)
+    if (!archi_pointer_attr_compatible(data.attr,
+                archi_pointer_attr__cdata(ARCHI_POINTER_DATA_TAG__OPENCL_EVENT_ARRAY)))
+    {
+        ARCHI_ERROR_SET(ARCHI__ECONSTRAINT, "operation function data has incorrect type");
+        return;
+    }
+    else if (data.ptr == NULL)
     {
         ARCHI_ERROR_SET(ARCHI__ECONSTRAINT, "OpenCL event wait operation parameters is NULL");
         return;
     }
 
-    archi_opencl_event_array_t wait_list = *(archi_opencl_event_array_t*)data;
+    archi_opencl_event_array_t wait_list = *(archi_opencl_event_array_t*)data.ptr;
 
     if (!archi_opencl_event_wait(wait_list, ARCHI_ERROR_PARAM))
         return;
@@ -47,21 +56,26 @@ ARCHI_DEXGRAPH_OPERATION_FUNC(archi_dexgraph_op__opencl_event_wait)
 
 ARCHI_DEXGRAPH_OPERATION_FUNC(archi_dexgraph_op__opencl_event_profile)
 {
-    if (data == NULL)
+    if (!archi_pointer_attr_compatible(data.attr,
+                archi_pointer_attr__cdata(ARCHI_POINTER_DATA_TAG__DEXGRAPH_OP_DATA__OPENCL_EVENT_PROFILE)))
+    {
+        ARCHI_ERROR_SET(ARCHI__ECONSTRAINT, "operation function data has incorrect type");
+        return;
+    }
+
+    archi_dexgraph_op_data__opencl_event_profile_t *profiling_data = data.ptr;
+
+    if (profiling_data == NULL)
     {
         ARCHI_ERROR_SET(ARCHI__ECONSTRAINT, "OpenCL event time recording operation parameters is NULL");
         return;
     }
-
-    archi_dexgraph_op_data__opencl_event_profile_t *profiling_data = data;
-
-    if (profiling_data->event == NULL)
+    else if (profiling_data->event == NULL)
     {
         ARCHI_ERROR_RESET();
         return;
     }
-
-    if (profiling_data->timer == NULL)
+    else if (profiling_data->timer == NULL)
     {
         ARCHI_ERROR_SET(ARCHI__ECONSTRAINT, "timer is NULL");
         return;

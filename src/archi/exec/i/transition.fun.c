@@ -24,6 +24,8 @@
  */
 
 #include "archi/exec/i/transition.fun.h"
+#include "archi/exec/i/tag.def.h"
+#include "archi_base/pointer.fun.h"
 
 
 const struct archi_dexgraph_node*
@@ -40,8 +42,15 @@ archi_dexgraph_transition_target(
     }
     else
     {
+        if (!archi_pointer_attr_compatible(transition.data.attr,
+                    archi_pointer_attr__cdata(ARCHI_POINTER_DATA_TAG__DEXGRAPH_NODE)))
+        {
+            ARCHI_ERROR_SET(ARCHI__ECONSTRAINT, "transition data is not a node");
+            return NULL;
+        }
+
         ARCHI_ERROR_RESET();
-        return transition.data;
+        return transition.data.cptr;
     }
 }
 

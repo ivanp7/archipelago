@@ -33,46 +33,82 @@
 
 ARCHI_DEXGRAPH_OPERATION_FUNC(archi_dexgraph_op__timer_reset)
 {
-    if (data == NULL)
+    if (!archi_pointer_attr_compatible(data.attr,
+                archi_pointer_attr__cdata(ARCHI_POINTER_DATA_TAG__TIMER)))
+    {
+        ARCHI_ERROR_SET(ARCHI__ECONSTRAINT, "operation function data has incorrect type");
+        return;
+    }
+
+    archi_timer_t timer = data.ptr;
+
+    if (timer == NULL)
     {
         ARCHI_ERROR_SET(ARCHI__ECONSTRAINT, "timer is NULL");
         return;
     }
 
-    archi_timer_reset(data);
+    archi_timer_reset(timer);
 
     ARCHI_ERROR_RESET();
 }
 
 ARCHI_DEXGRAPH_OPERATION_FUNC(archi_dexgraph_op__timer_start)
 {
-    if (data == NULL)
+    if (!archi_pointer_attr_compatible(data.attr,
+                archi_pointer_attr__cdata(ARCHI_POINTER_DATA_TAG__TIMER)))
+    {
+        ARCHI_ERROR_SET(ARCHI__ECONSTRAINT, "operation function data has incorrect type");
+        return;
+    }
+
+    archi_timer_t timer = data.ptr;
+
+    if (timer == NULL)
     {
         ARCHI_ERROR_SET(ARCHI__ECONSTRAINT, "timer is NULL");
         return;
     }
 
-    archi_timer_start(data);
+    archi_timer_start(timer);
 
     ARCHI_ERROR_RESET();
 }
 
 ARCHI_DEXGRAPH_OPERATION_FUNC(archi_dexgraph_op__timer_stop)
 {
-    if (data == NULL)
+    if (!archi_pointer_attr_compatible(data.attr,
+                archi_pointer_attr__cdata(ARCHI_POINTER_DATA_TAG__TIMER)))
+    {
+        ARCHI_ERROR_SET(ARCHI__ECONSTRAINT, "operation function data has incorrect type");
+        return;
+    }
+
+    archi_timer_t timer = data.ptr;
+
+    if (timer == NULL)
     {
         ARCHI_ERROR_SET(ARCHI__ECONSTRAINT, "timer is NULL");
         return;
     }
 
-    archi_timer_stop(data);
+    archi_timer_stop(timer);
 
     ARCHI_ERROR_RESET();
 }
 
 ARCHI_DEXGRAPH_OPERATION_FUNC(archi_dexgraph_op__timer_report)
 {
-    if (data == NULL)
+    if (!archi_pointer_attr_compatible(data.attr,
+                archi_pointer_attr__cdata(ARCHI_POINTER_DATA_TAG__TIMER)))
+    {
+        ARCHI_ERROR_SET(ARCHI__ECONSTRAINT, "operation function data has incorrect type");
+        return;
+    }
+
+    archi_timer_t timer = data.ptr;
+
+    if (timer == NULL)
     {
         ARCHI_ERROR_SET(ARCHI__ECONSTRAINT, "timer is NULL");
         return;
@@ -81,18 +117,18 @@ ARCHI_DEXGRAPH_OPERATION_FUNC(archi_dexgraph_op__timer_report)
     printf("\n------ TIMER REPORT ------\n");
 
     {
-        const char *name = archi_timer_name(data);
+        const char *name = archi_timer_name(timer);
         if (name != NULL)
             printf("Name         : %s\n", name);
     }
 
     {
-        unsigned long runs_done = archi_timer_runs_done(data);
+        unsigned long runs_done = archi_timer_runs_done(timer);
         printf("Runs done    : %lu\n", runs_done);
     }
 
 #define PRINT_TIME(name, func) {                                    \
-        float time = func(data);                                    \
+        float time = func(timer);                                   \
         printf(name ": %.3g s (%.3g ms)\n", time, time * 1e+3f);    \
     }
 
@@ -104,7 +140,7 @@ ARCHI_DEXGRAPH_OPERATION_FUNC(archi_dexgraph_op__timer_report)
 #undef PRINT_TIME
 
     {
-        float runs_per_second = 1.0f / archi_timer_time_average(data);
+        float runs_per_second = 1.0f / archi_timer_time_average(timer);
         printf("Average rate : %.3g runs/s (%.3g runs/ms)\n",
                 runs_per_second, runs_per_second * 1e-3f);
     }

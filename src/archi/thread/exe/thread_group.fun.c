@@ -25,12 +25,22 @@
 
 #include "archi/thread/exe/thread_group.fun.h"
 #include "archi/thread/exe/thread_group.typ.h"
+#include "archi/thread/exe/tag.def.h"
 #include "archi/thread/i/thread_group.fun.h"
+#include "archi/thread/i/tag.def.h"
+#include "archi_base/pointer.fun.h"
 
 
 ARCHI_DEXGRAPH_OPERATION_FUNC(archi_dexgraph_op__thread_group_dispatch)
 {
-    const archi_dexgraph_op_data__thread_group_dispatch_t *dispatch_data = data;
+    if (!archi_pointer_attr_compatible(data.attr,
+                archi_pointer_attr__cdata(ARCHI_POINTER_DATA_TAG__DEXGRAPH_OP_DATA__THREAD_GROUP_DISPATCH)))
+    {
+        ARCHI_ERROR_SET(ARCHI__ECONSTRAINT, "operation function data has incorrect type");
+        return;
+    }
+
+    const archi_dexgraph_op_data__thread_group_dispatch_t *dispatch_data = data.cptr;
 
     if (dispatch_data == NULL)
     {
@@ -60,13 +70,22 @@ ARCHI_DEXGRAPH_OPERATION_FUNC(archi_dexgraph_op__thread_group_dispatch)
 
 ARCHI_DEXGRAPH_OPERATION_FUNC(archi_dexgraph_op__thread_group_wait)
 {
-    if (data == NULL)
+    if (!archi_pointer_attr_compatible(data.attr,
+                archi_pointer_attr__cdata(ARCHI_POINTER_DATA_TAG__THREAD_GROUP)))
+    {
+        ARCHI_ERROR_SET(ARCHI__ECONSTRAINT, "operation function data has incorrect type");
+        return;
+    }
+
+    archi_thread_group_t thread_group = data.ptr;
+
+    if (thread_group == NULL)
     {
         ARCHI_ERROR_SET(ARCHI__ECONSTRAINT, "thread group context is NULL");
         return;
     }
 
-    archi_thread_group_wait(data);
+    archi_thread_group_wait(thread_group);
 
     ARCHI_ERROR_RESET();
 }

@@ -83,13 +83,6 @@ ARCHI_CONTEXT_INIT_FUNC(archi_context_init__dexgraph_node)
 
     ARCHI_POINTER_NULLIFY_EMPTY(name);
 
-    if ((transition_func.fptr == NULL) && !archi_pointer_attr_compatible(transition_data.attr,
-                archi_pointer_attr__cdata(ARCHI_POINTER_DATA_TAG__DEXGRAPH_NODE)))
-    {
-        ARCHI_ERROR_SET(ARCHI__ECONSTRAINT, "transition data must be a node");
-        return NULL;
-    }
-
     // Construct the context
     struct archi_context_data__dexgraph_node *context_data = malloc(sizeof(*context_data));
     if (context_data == NULL)
@@ -159,9 +152,9 @@ ARCHI_CONTEXT_INIT_FUNC(archi_context_init__dexgraph_node)
     archi_dexgraph_node_t *node = context_data->node.ptr;
 
     node->name = context_data->ref_name.cptr;
-    node->metadata = context_data->ref_metadata.ptr;
+    node->metadata = context_data->ref_metadata.p;
     node->transition.function = (archi_dexgraph_transition_func_t)context_data->ref_transition_func.fptr;
-    node->transition.data = context_data->ref_transition_data.ptr;
+    node->transition.data = context_data->ref_transition_data.p;
 
     ARCHI_ERROR_RESET();
     return (archi_rcpointer_t*)context_data;
@@ -392,7 +385,7 @@ ARCHI_CONTEXT_SET_FUNC(archi_context_set__dexgraph_node)
         if (!value.attr)
             return;
 
-        node->metadata = value.ptr;
+        node->metadata = value.p;
         context_data->ref_metadata = value;
 
         ARCHI_ERROR_RESET();
@@ -455,7 +448,7 @@ ARCHI_CONTEXT_SET_FUNC(archi_context_set__dexgraph_node)
         if (!value.attr)
             return;
 
-        node->sequence[index].data = value.ptr;
+        node->sequence[index].data = value.p;
         context_data->ref_sequence_data[index] = value;
 
         ARCHI_ERROR_RESET();
@@ -482,14 +475,6 @@ ARCHI_CONTEXT_SET_FUNC(archi_context_set__dexgraph_node)
         node->transition.function = (archi_dexgraph_transition_func_t)value.fptr;
         context_data->ref_transition_func = value;
 
-        if (value.fptr == NULL)
-        {
-            // Ensure the transition data doesn't remain (it has to be a node now)
-            node->transition.data = NULL;
-            archi_rcpointer_disown(context_data->ref_transition_data);
-            context_data->ref_transition_data = (archi_rcpointer_t){0};
-        }
-
         ARCHI_ERROR_RESET();
     }
     else if (ARCHI_STRING_COMPARE("transition.data", ==, slot.name))
@@ -504,19 +489,13 @@ ARCHI_CONTEXT_SET_FUNC(archi_context_set__dexgraph_node)
             ARCHI_ERROR_SET(ARCHI__ECONSTRAINT, "assigned value is not data");
             return;
         }
-        else if ((node->transition.function == NULL) && !archi_pointer_attr_compatible(value.attr,
-                    archi_pointer_attr__cdata(ARCHI_POINTER_DATA_TAG__DEXGRAPH_NODE)))
-        {
-            ARCHI_ERROR_SET(ARCHI__ECONSTRAINT, "transition data must be a node");
-            return;
-        }
 
         value = archi_rcpointer_replace(value, context_data->ref_transition_data,
                 ARCHI_ERROR_PARAM);
         if (!value.attr)
             return;
 
-        node->transition.data = value.ptr;
+        node->transition.data = value.p;
         context_data->ref_transition_data = value;
 
         ARCHI_ERROR_RESET();

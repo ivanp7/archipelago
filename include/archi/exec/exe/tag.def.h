@@ -28,6 +28,7 @@
 #define _ARCHI_EXEC_EXE_TAG_DEF_H_
 
 #define ARCHI_POINTER_DATA_TAG__DEXGRAPH_TRANSITION_DATA__BRANCH    0x39 ///< Data type tag for archi_dexgraph_transition_data__branch_t.
+#define ARCHI_POINTER_DATA_TAG__DEXGRAPH_OP_DATA__PRINT_STRING      0x3A ///< Data type tag for archi_dexgraph_op_data__print_string_t.
 
 #define ARCHI_POINTER_FUNC_TAG__DEXGRAPH_CONDITION  0x3A ///< Function type tag for archi_dexgraph_transition_func_t.
 

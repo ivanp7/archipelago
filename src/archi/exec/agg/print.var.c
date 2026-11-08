@@ -25,6 +25,7 @@
 
 #include "archi/exec/agg/print.var.h"
 #include "archi/exec/exe/print.typ.h"
+#include "archi/exec/exe/tag.def.h"
 
 
 static
@@ -65,7 +66,8 @@ MEMBERS_dexgraph_op_data__print_string[] = {
 
 const archi_aggr_type_t
 archi_aggr_type__dexgraph_op_data__print_string = ARCHI_AGGR_TYPE_WITH_FAM(
-        archi_dexgraph_op_data__print_string_t, 0,
+        archi_dexgraph_op_data__print_string_t,
+        ARCHI_POINTER_DATA_TAG__DEXGRAPH_OP_DATA__PRINT_STRING,
         archi_dexgraph_op_data__print_string__token_t,
         MEMBERS_dexgraph_op_data__print_string);
 

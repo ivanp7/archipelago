@@ -25,6 +25,7 @@
 
 #include "archi/opencl/exe/kernel.fun.h"
 #include "archi/opencl/exe/kernel.typ.h"
+#include "archi/opencl/exe/tag.def.h"
 #include "archi/opencl/i/event.fun.h"
 #include "archi/opencl/i/tag.def.h"
 #include "archi_base/pointer.fun.h"
@@ -32,7 +33,14 @@
 
 ARCHI_DEXGRAPH_OPERATION_FUNC(archi_dexgraph_op__opencl_kernel_set_arg_value)
 {
-    const archi_dexgraph_op_data__opencl_kernel_set_argument_t *setarg_data = data;
+    if (!archi_pointer_attr_compatible(data.attr,
+                archi_pointer_attr__cdata(ARCHI_POINTER_DATA_TAG__DEXGRAPH_OP_DATA__OPENCL_KERNEL_SET_ARGUMENT)))
+    {
+        ARCHI_ERROR_SET(ARCHI__ECONSTRAINT, "operation function data has incorrect type");
+        return;
+    }
+
+    const archi_dexgraph_op_data__opencl_kernel_set_argument_t *setarg_data = data.cptr;
 
     if (setarg_data == NULL)
     {
@@ -67,7 +75,14 @@ ARCHI_DEXGRAPH_OPERATION_FUNC(archi_dexgraph_op__opencl_kernel_set_arg_value)
 
 ARCHI_DEXGRAPH_OPERATION_FUNC(archi_dexgraph_op__opencl_kernel_set_arg_svmptr)
 {
-    const archi_dexgraph_op_data__opencl_kernel_set_argument_t *setarg_data = data;
+    if (!archi_pointer_attr_compatible(data.attr,
+                archi_pointer_attr__cdata(ARCHI_POINTER_DATA_TAG__DEXGRAPH_OP_DATA__OPENCL_KERNEL_SET_ARGUMENT)))
+    {
+        ARCHI_ERROR_SET(ARCHI__ECONSTRAINT, "operation function data has incorrect type");
+        return;
+    }
+
+    const archi_dexgraph_op_data__opencl_kernel_set_argument_t *setarg_data = data.cptr;
 
     if (setarg_data == NULL)
     {
@@ -100,7 +115,14 @@ ARCHI_DEXGRAPH_OPERATION_FUNC(archi_dexgraph_op__opencl_kernel_set_arg_svmptr)
 
 ARCHI_DEXGRAPH_OPERATION_FUNC(archi_dexgraph_op__opencl_kernel_enqueue)
 {
-    const archi_dexgraph_op_data__opencl_kernel_enqueue_t *enqueue_data = data;
+    if (!archi_pointer_attr_compatible(data.attr,
+                archi_pointer_attr__cdata(ARCHI_POINTER_DATA_TAG__DEXGRAPH_OP_DATA__OPENCL_KERNEL_ENQUEUE)))
+    {
+        ARCHI_ERROR_SET(ARCHI__ECONSTRAINT, "operation function data has incorrect type");
+        return;
+    }
+
+    const archi_dexgraph_op_data__opencl_kernel_enqueue_t *enqueue_data = data.cptr;
 
     if (enqueue_data == NULL)
     {

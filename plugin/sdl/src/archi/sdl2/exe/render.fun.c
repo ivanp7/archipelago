@@ -25,6 +25,9 @@
 
 #include "archi/sdl2/exe/render.fun.h"
 #include "archi/sdl2/exe/render.typ.h"
+#include "archi/sdl2/exe/tag.def.h"
+#include "archi/sdl2/i/tag.def.h"
+#include "archi_base/pointer.fun.h"
 
 #include "SDL_render.h"
 
@@ -33,7 +36,14 @@
 
 ARCHI_DEXGRAPH_OPERATION_FUNC(archi_dexgraph_op__sdl2_texture_copy)
 {
-    const archi_dexgraph_op_data__sdl2_texture_copy_t *copy_params = data;
+    if (!archi_pointer_attr_compatible(data.attr,
+                archi_pointer_attr__cdata(ARCHI_POINTER_DATA_TAG__DEXGRAPH_OP_DATA__SDL2_TEXTURE_COPY)))
+    {
+        ARCHI_ERROR_SET(ARCHI__ECONSTRAINT, "operation function data has incorrect type");
+        return;
+    }
+
+    const archi_dexgraph_op_data__sdl2_texture_copy_t *copy_params = data.cptr;
 
     if (copy_params == NULL)
     {
@@ -127,20 +137,36 @@ ARCHI_DEXGRAPH_OPERATION_FUNC(archi_dexgraph_op__sdl2_texture_copy)
 
 ARCHI_DEXGRAPH_OPERATION_FUNC(archi_dexgraph_op__sdl2_render_clear)
 {
-    if (data == NULL)
+    if (!archi_pointer_attr_compatible(data.attr,
+                archi_pointer_attr__cdata(ARCHI_POINTER_DATA_TAG__SDL2_RENDERER)))
+    {
+        ARCHI_ERROR_SET(ARCHI__ECONSTRAINT, "operation function data has incorrect type");
+        return;
+    }
+
+    SDL_Renderer *renderer = data.ptr;
+
+    if (renderer == NULL)
     {
         ARCHI_ERROR_SET(ARCHI__ECONSTRAINT, "renderer handle is NULL");
         return;
     }
 
-    SDL_RenderClear(data);
+    SDL_RenderClear(renderer);
 
     ARCHI_ERROR_RESET();
 }
 
 ARCHI_DEXGRAPH_OPERATION_FUNC(archi_dexgraph_op__sdl2_render_copy)
 {
-    archi_dexgraph_op_data__sdl2_render_copy_t *copy_params = data;
+    if (!archi_pointer_attr_compatible(data.attr,
+                archi_pointer_attr__cdata(ARCHI_POINTER_DATA_TAG__DEXGRAPH_OP_DATA__SDL2_RENDER_COPY)))
+    {
+        ARCHI_ERROR_SET(ARCHI__ECONSTRAINT, "operation function data has incorrect type");
+        return;
+    }
+
+    const archi_dexgraph_op_data__sdl2_render_copy_t *copy_params = data.cptr;
 
     if (copy_params == NULL)
     {
@@ -171,13 +197,22 @@ ARCHI_DEXGRAPH_OPERATION_FUNC(archi_dexgraph_op__sdl2_render_copy)
 
 ARCHI_DEXGRAPH_OPERATION_FUNC(archi_dexgraph_op__sdl2_render_present)
 {
-    if (data == NULL)
+    if (!archi_pointer_attr_compatible(data.attr,
+                archi_pointer_attr__cdata(ARCHI_POINTER_DATA_TAG__SDL2_RENDERER)))
+    {
+        ARCHI_ERROR_SET(ARCHI__ECONSTRAINT, "operation function data has incorrect type");
+        return;
+    }
+
+    SDL_Renderer *renderer = data.ptr;
+
+    if (renderer == NULL)
     {
         ARCHI_ERROR_SET(ARCHI__ECONSTRAINT, "renderer handle is NULL");
         return;
     }
 
-    SDL_RenderPresent(data);
+    SDL_RenderPresent(renderer);
 
     ARCHI_ERROR_RESET();
 }

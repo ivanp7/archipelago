@@ -38,9 +38,12 @@
  *
  * If `num_iterations` is 0, the function will return true every time.
  */
-typedef struct archi_dexgraph_condition_data__loop_times {
-    size_t num_iterations; ///< Number of iterations to do.
-    size_t iteration; ///< Current iteration number.
+typedef union archi_dexgraph_condition_data__loop_times {
+    struct {
+        size_t num_iterations; ///< Number of iterations to do.
+        size_t iteration; ///< Current iteration number.
+    };
+    size_t field[2]; ///< Auxiliary member for array-style access.
 } archi_dexgraph_condition_data__loop_times_t;
 
 #endif // _ARCHI_EXEC_EXE_LOOP_TYP_H_
