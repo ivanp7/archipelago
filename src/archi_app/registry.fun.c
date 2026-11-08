@@ -239,7 +239,7 @@ archi_print_pointer_with_contents(
         int printed_chars = 0;                              \
         for (size_t index = 0; index < length; index++) {   \
             if (printed_chars >= PRINT_WIDTH) {             \
-                archi_print(" ...");                        \
+                archi_print(" [...]");                      \
                 break;                                      \
             }                                               \
             type element = ((type*)value.ptr)[index];       \
@@ -302,13 +302,13 @@ archi_print_pointer_with_contents(
 
     if (size > MAX_SIZE)
     {
-        archi_print_indent(indent_level);
+        archi_print_indent(indent_level + 1);
 
+        archi_print("[");
         archi_print_color(ARCHI_COLOR_FG_BRI_YELLOW);
-        archi_print("...");
+        archi_print("%zu", size - MAX_SIZE);
         archi_print_color(ARCHI_COLOR_RESET);
-
-        archi_print("\n");
+        archi_print(" bytes omitted]\n");
     }
 
 #undef MAX_SIZE
