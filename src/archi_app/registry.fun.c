@@ -304,11 +304,11 @@ archi_print_pointer_with_contents(
     {
         archi_print_indent(indent_level + 1);
 
-        archi_print("[");
+        archi_print("--- ");
         archi_print_color(ARCHI_COLOR_FG_BRI_YELLOW);
         archi_print("%zu", size - MAX_SIZE);
         archi_print_color(ARCHI_COLOR_RESET);
-        archi_print(" bytes omitted]\n");
+        archi_print(" bytes omitted ---\n");
     }
 
 #undef MAX_SIZE

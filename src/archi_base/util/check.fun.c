@@ -37,8 +37,7 @@ ARCHI_VALUE_CHECK_FUNC(archi_value_check__attr)
 
     archi_pointer_attr_t attr = *(archi_pointer_attr_t*)data;
 
-    ARCHI_ERROR_RESET();
-    return archi_pointer_attr_compatible(value.attr, attr, NULL);
+    return archi_pointer_attr_compatible(value.attr, attr, ARCHI_ERROR_PARAM);
 }
 
 ARCHI_VALUE_CHECK_FUNC(archi_value_check__attrs)

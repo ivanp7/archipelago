@@ -30,6 +30,7 @@ from archi.context import (
         TypeAttr,
         Context,
         AggregateContext,
+        DexgraphNodeContext,
         ThreadGroupContext,
         AggregateInterfaceSymbol,
         AggregateTypeSymbol,
@@ -89,7 +90,7 @@ def new_dexgraph_node(registry, key, /,
 
                 if operation[0] is not None and not TypeAttr.compatible(
                         TypeAttr.of(operation[0]),
-                        TypeAttr.function(type.ARCHI_POINTER_FUNC_TAG__DEXGRAPH_OPERATION)):
+                        TypeAttr.function(typ.ARCHI_POINTER_FUNC_TAG__DEXGRAPH_OPERATION)):
                     raise TypeError
 
                 if operation[1] is not None and not TypeAttr.compatible(
@@ -105,7 +106,7 @@ def new_dexgraph_node(registry, key, /,
         if transition[0] is not None:
             if not TypeAttr.compatible(
                     TypeAttr.of(transition[0]),
-                    TypeAttr.function(type.ARCHI_POINTER_FUNC_TAG__DEXGRAPH_TRANSITION)):
+                    TypeAttr.function(typ.ARCHI_POINTER_FUNC_TAG__DEXGRAPH_TRANSITION)):
                 raise TypeError
 
             if transition[1] is not None and not TypeAttr.compatible(
@@ -154,7 +155,7 @@ def new_dexgraph_branch_func_data(registry, key, /,
 
     if condition_func is not None and not TypeAttr.compatible(
             TypeAttr.of(condition_func),
-            TypeAttr.function(type.ARCHI_POINTER_FUNC_TAG__DEXGRAPH_CONDITION)):
+            TypeAttr.function(typ.ARCHI_POINTER_FUNC_TAG__DEXGRAPH_CONDITION)):
         raise TypeError
 
     if condition_data is not None and not TypeAttr.compatible(
