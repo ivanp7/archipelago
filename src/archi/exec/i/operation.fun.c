@@ -24,6 +24,9 @@
  */
 
 #include "archi/exec/i/operation.fun.h"
+#include "archi_base/util/size.def.h"
+
+#include <stdlib.h> // for malloc(), free()
 
 
 void
@@ -40,5 +43,72 @@ archi_dexgraph_operation_call(
     }
     else
         ARCHI_ERROR_RESET();
+}
+
+/*****************************************************************************/
+
+archi_dexgraph_operation_seq_t*
+archi_dexgraph_operation_seq_alloc(
+        size_t length)
+{
+    archi_dexgraph_operation_seq_t *sequence = malloc(
+            ARCHI_SIZEOF_FLEXIBLE(archi_dexgraph_operation_seq_t, operation, length));
+    if (sequence == NULL)
+        return NULL;
+
+    {
+        size_t *length_ptr = (size_t*)&sequence->length;
+        *length_ptr = length;
+    }
+    for (size_t i = 0; i < length; i++)
+        sequence->operation[i] = (archi_dexgraph_operation_t){0};
+
+    return sequence;
+}
+
+void
+archi_dexgraph_operation_seq_free(
+        archi_dexgraph_operation_seq_t *sequence)
+{
+    free(sequence);
+}
+
+archi_dexgraph_operation_t
+archi_dexgraph_operation_seq_elt(
+        const archi_dexgraph_operation_seq_t *sequence,
+        size_t op_index)
+{
+    if ((sequence == NULL) || (op_index >= sequence->length))
+        return (archi_dexgraph_operation_t){0};
+
+    return sequence->operation[op_index];
+}
+
+size_t
+archi_dexgraph_operation_seq_exec(
+        const archi_dexgraph_operation_seq_t *sequence,
+        size_t op_index,
+        ARCHI_ERROR_PARAM_DECL)
+{
+    if ((sequence == NULL) || (sequence->length == 0))
+    {
+        ARCHI_ERROR_RESET();
+        return ARCHI_DEXGRAPH_OPERATION_SEQ_END;
+    }
+
+    archi_error_t error;
+
+    for (; op_index < sequence->length; op_index++)
+    {
+        archi_dexgraph_operation_call(sequence->operation[op_index], &error);
+
+        if (error.code != 0)
+            goto finish;
+    }
+    op_index = ARCHI_DEXGRAPH_OPERATION_SEQ_END;
+
+finish:
+    ARCHI_ERROR_ASSIGN(error);
+    return op_index;
 }
 

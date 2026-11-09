@@ -1,3 +1,4 @@
+
 /*****************************************************************************
  * Copyright (C) 2023-2026 by Ivan Podmazov                                  *
  *                                                                           *
@@ -20,51 +21,34 @@
 
 /**
  * @file
- * @brief Functions for directed execution graph nodes.
+ * @brief Context interface for directed execution graph operation sequences.
  */
 
 #pragma once
-#ifndef _ARCHI_EXEC_I_NODE_FUN_H_
-#define _ARCHI_EXEC_I_NODE_FUN_H_
+#ifndef _ARCHI_EXEC_CTX_OPERATION_VAR_H_
+#define _ARCHI_EXEC_CTX_OPERATION_VAR_H_
 
-#include "archi/exec/i/node.typ.h"
+#include "archi/context/i/interface.typ.h"
 
-
-/**
- * @brief Allocate a node.
- *
- * @note Node name is copied.
- *
- * @return Newly allocated node.
- */
-archi_dexgraph_node_t*
-archi_dexgraph_node_alloc(
-        size_t sequence_length ///< [in] Length of the sequence of operation functions.
-);
 
 /**
- * @brief Deallocate a node.
+ * @brief Context interface: directed execution graph operation sequence.
  *
- * @note Node name is freed.
+ * Initialization parameters:
+ * - "length"   : (size_t) number of operations in the sequence
+ *
+ * Getter slots:
+ * - "length"           : (size_t) number of operations in the sequence
+ * - "function" [index] : (archi_dexgraph_operation_func_t) operation function #index
+ * - "data" [index]     : data of operation function #index
+ *
+ * Setter slots:
+ * - "function" [index] : (archi_dexgraph_operation_func_t) operation function #index
+ * - "data" [index]     : data of operation function #index
  */
-void
-archi_dexgraph_node_free(
-        archi_dexgraph_node_t *node ///< [in] Node.
-);
+extern
+const archi_context_interface_t
+archi_context_interface__dexgraph_operation_seq;
 
-/**
- * @brief Get node operation with the specified index.
- *
- * The function checks for the index range.
- * The empty operation is returned for any invalid inputs.
- *
- * @return An operation with the specified index.
- */
-archi_dexgraph_operation_t
-archi_dexgraph_node_operation(
-        const archi_dexgraph_node_t *node, ///< [in] Node.
-        size_t op_index ///< [in] Index of an operation.
-);
-
-#endif // _ARCHI_EXEC_I_NODE_FUN_H_
+#endif // _ARCHI_EXEC_CTX_OPERATION_VAR_H_
 

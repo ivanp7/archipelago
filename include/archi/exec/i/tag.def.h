@@ -27,10 +27,11 @@
 #ifndef _ARCHI_EXEC_I_TAG_DEF_H_
 #define _ARCHI_EXEC_I_TAG_DEF_H_
 
-#define ARCHI_POINTER_DATA_TAG__DEXGRAPH_NODE        0x38 ///< Data type tag for archi_dexgraph_node_t.
+#define ARCHI_POINTER_DATA_TAG__DEXGRAPH_OPERATION_SEQ  0x38 ///< Data type tag for archi_dexgraph_operation_seq_t.
+#define ARCHI_POINTER_DATA_TAG__DEXGRAPH_NODE           0x39 ///< Data type tag for archi_dexgraph_node_t.
 
-#define ARCHI_POINTER_FUNC_TAG__DEXGRAPH_OPERATION   0x38 ///< Function type tag for archi_dexgraph_operation_func_t.
-#define ARCHI_POINTER_FUNC_TAG__DEXGRAPH_TRANSITION  0x39 ///< Function type tag for archi_dexgraph_transition_func_t.
+#define ARCHI_POINTER_FUNC_TAG__DEXGRAPH_OPERATION      0x38 ///< Function type tag for archi_dexgraph_operation_func_t.
+#define ARCHI_POINTER_FUNC_TAG__DEXGRAPH_TRANSITION     0x39 ///< Function type tag for archi_dexgraph_transition_func_t.
 
 #endif // _ARCHI_EXEC_I_TAG_DEF_H_
 

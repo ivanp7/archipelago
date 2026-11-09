@@ -100,8 +100,9 @@ MEMBERS_dexgraph_transition_data__signal_detect[] = {
 };
 
 const archi_aggr_type_t
-archi_aggr_type__dexgraph_transition_data__signal_detect = ARCHI_AGGR_TYPE(
+archi_aggr_type__dexgraph_transition_data__signal_detect = ARCHI_AGGR_TYPE_WITH_FAM(
         archi_dexgraph_transition_data__signal_detect_t,
         ARCHI_POINTER_DATA_TAG__DEXGRAPH_TRANSITION_DATA__SIGNAL_DETECT,
+        archi_dexgraph_transition_data__signal_detect__signal_t,
         MEMBERS_dexgraph_transition_data__signal_detect);
 

@@ -35,19 +35,15 @@
  *
  * Initialization parameters:
  * - "name"             : (char[]) node name
- * - "metadata"         : node metadata
- * - "sequence_length"  : (size_t) number of functions in the node sequence
+ * - "sequence"         : (archi_dexgraph_operation_seq_t) operation sequence
  * - "transition_func"  : (archi_dexgraph_transition_func_t) transition function
  * - "transition_data"  : data of transition function, or the target node
  *
  * Getter slots:
- * - "name"                         : (char[]) node name
- * - "metadata"                     : node metadata
- * - "sequence.length"              : (size_t) number of functions in the node sequence
- * - "sequence.function" [index]    : (archi_dexgraph_operation_func_t) operation function #index
- * - "sequence.data" [index]        : data of operation function #index
- * - "transition.function"          : (archi_dexgraph_transition_func_t) transition function
- * - "transition.data"              : data of transition function, or the target node
+ * - "name"                 : (char[]) node name
+ * - "sequence"             : (archi_dexgraph_operation_seq_t) operation sequence
+ * - "transition.function"  : (archi_dexgraph_transition_func_t) transition function
+ * - "transition.data"      : data of transition function, or the target node
  *
  * Calls:
  * - "execute"  : execute graph with this node as entry node
@@ -55,12 +51,10 @@
  *      parameters: <none>
  *
  * Setter slots:
- * - "name"                         : (char[]) node name
- * - "metadata"                     : node metadata
- * - "sequence.function" [index]    : (archi_dexgraph_operation_func_t) operation function #index
- * - "sequence.data" [index]        : data of operation function #index
- * - "transition.function"          : (archi_dexgraph_transition_func_t) transition function
- * - "transition.data"              : data of transition function, or the target node
+ * - "name"                 : (char[]) node name
+ * - "sequence"             : (archi_dexgraph_operation_seq_t) operation sequence
+ * - "transition.function"  : (archi_dexgraph_transition_func_t) transition function
+ * - "transition.data"      : data of transition function, or the target node
  */
 extern
 const archi_context_interface_t

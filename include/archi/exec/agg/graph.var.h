@@ -31,18 +31,25 @@
 
 
 /**
- * @brief Aggregate type description for archi_dexgraph_transition_t.
- */
-extern
-const archi_aggr_type_t
-archi_aggr_type__dexgraph_transition;
-
-/**
  * @brief Aggregate type description for archi_dexgraph_operation_t.
  */
 extern
 const archi_aggr_type_t
 archi_aggr_type__dexgraph_operation;
+
+/**
+ * @brief Aggregate type description for archi_dexgraph_operation_seq_t.
+ */
+extern
+const archi_aggr_type_t
+archi_aggr_type__dexgraph_operation_seq;
+
+/**
+ * @brief Aggregate type description for archi_dexgraph_transition_t.
+ */
+extern
+const archi_aggr_type_t
+archi_aggr_type__dexgraph_transition;
 
 /**
  * @brief Aggregate type description for archi_dexgraph_node_t.

@@ -51,19 +51,10 @@ const archi_aggr_member_type__pointer_t
 PTYPE_dexgraph_transition_func = ARCHI_AGGR_MEMBER_TYPE__POINTER_TO_FUNC(archi_dexgraph_transition_func_t,
         ARCHI_POINTER_FUNC_TAG__DEXGRAPH_TRANSITION);
 
-/*****************************************************************************/
-
 static
-const archi_aggr_member_t
-MEMBERS_dexgraph_transition[] = {
-    ARCHI_AGGR_MEMBER__POINTER(archi_dexgraph_transition_t, function, 1, PTYPE_dexgraph_transition_func),
-    ARCHI_AGGR_MEMBER__POINTER(archi_dexgraph_transition_t, data, 1, PTYPE_data),
-};
-
-const archi_aggr_type_t
-archi_aggr_type__dexgraph_transition = ARCHI_AGGR_TYPE(
-        archi_dexgraph_transition_t, 0,
-        MEMBERS_dexgraph_transition);
+const archi_aggr_member_type__pointer_t
+PTYPE_dexgraph_operation_seq = ARCHI_AGGR_MEMBER_TYPE__POINTER_TO_CDATA(archi_dexgraph_operation_seq_t*,
+        ARCHI_POINTER_DATA_TAG__DEXGRAPH_OPERATION_SEQ);
 
 /*****************************************************************************/
 
@@ -83,14 +74,40 @@ archi_aggr_type__dexgraph_operation = ARCHI_AGGR_TYPE(
 
 static
 const archi_aggr_member_t
+MEMBERS_dexgraph_operation_seq[] = {
+    ARCHI_AGGR_MEMBER__VALUE(archi_dexgraph_operation_seq_t, length, 1, VTYPE_size),
+    ARCHI_AGGR_MEMBER__AGGREGATE(archi_dexgraph_operation_seq_t, operation, 0,
+            archi_aggr_type__dexgraph_operation.top_level),
+};
+
+const archi_aggr_type_t
+archi_aggr_type__dexgraph_operation_seq = ARCHI_AGGR_TYPE_WITH_FAM(
+        archi_dexgraph_operation_seq_t, ARCHI_POINTER_DATA_TAG__DEXGRAPH_OPERATION_SEQ,
+        archi_dexgraph_operation_t, MEMBERS_dexgraph_operation_seq);
+
+/*****************************************************************************/
+
+static
+const archi_aggr_member_t
+MEMBERS_dexgraph_transition[] = {
+    ARCHI_AGGR_MEMBER__POINTER(archi_dexgraph_transition_t, function, 1, PTYPE_dexgraph_transition_func),
+    ARCHI_AGGR_MEMBER__POINTER(archi_dexgraph_transition_t, data, 1, PTYPE_data),
+};
+
+const archi_aggr_type_t
+archi_aggr_type__dexgraph_transition = ARCHI_AGGR_TYPE(
+        archi_dexgraph_transition_t, 0,
+        MEMBERS_dexgraph_transition);
+
+/*****************************************************************************/
+
+static
+const archi_aggr_member_t
 MEMBERS_dexgraph_node[] = {
     ARCHI_AGGR_MEMBER__POINTER(archi_dexgraph_node_t, name, 1, PTYPE_string),
-    ARCHI_AGGR_MEMBER__POINTER(archi_dexgraph_node_t, metadata, 1, PTYPE_data),
+    ARCHI_AGGR_MEMBER__POINTER(archi_dexgraph_node_t, sequence, 1, PTYPE_dexgraph_operation_seq),
     ARCHI_AGGR_MEMBER__AGGREGATE(archi_dexgraph_node_t, transition, 1,
             archi_aggr_type__dexgraph_transition.top_level),
-    ARCHI_AGGR_MEMBER__VALUE(archi_dexgraph_node_t, sequence_length, 1, VTYPE_size),
-    ARCHI_AGGR_MEMBER__AGGREGATE(archi_dexgraph_node_t, sequence, 0,
-            archi_aggr_type__dexgraph_operation.top_level),
 };
 
 const archi_aggr_type_t

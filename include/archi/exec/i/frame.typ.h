@@ -42,10 +42,5 @@ typedef struct archi_dexgraph_frame {
     size_t op_index; ///< Operation index.
 } archi_dexgraph_frame_t;
 
-/**
- * @brief Invalid operation index designating transition.
- */
-#define ARCHI_DEXGRAPH_TRANS_INDEX  ((size_t)-1)
-
 #endif // _ARCHI_EXEC_I_FRAME_TYP_H_
 

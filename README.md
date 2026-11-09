@@ -429,8 +429,7 @@ Directed execution graphs can be created node by node within the context system 
 A graph consists of nodes connected by directed transitions. Each node contains:
 
 * **Name**: An optional C-string containing node name for logging and debugging.
-* **Metadata**: An optional pointer to metadata.
-* **Operations**: An array of functions (and associated data) executed linearly.
+* **Operation Sequence**: An array of functions (and associated data) executed linearly.
 * **Transition**: A function (and associated data) used to determine the successor node.
 
 #### Execution

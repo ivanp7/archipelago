@@ -30,6 +30,8 @@
 #include "archi_base/pointer.typ.h"
 #include "archi_base/error.typ.h"
 
+#include <stddef.h> // for size_t
+
 
 /**
  * @brief Signature of an operation function.
@@ -50,6 +52,21 @@ typedef struct archi_dexgraph_operation {
     archi_dexgraph_operation_func_t function; ///< Operation function.
     archi_pointer_t data; ///< Operation function data.
 } archi_dexgraph_operation_t;
+
+/**
+ * @brief Directed execution graph operation sequence.
+ */
+typedef struct archi_dexgraph_operation_seq {
+    const size_t length; ///< Length of the operation sequence.
+    archi_dexgraph_operation_t operation[]; ///< Array of operations.
+} archi_dexgraph_operation_seq_t;
+
+/**
+ * @brief Operation index pointing past sequence end.
+ *
+ * This special index never corresponds to a valid operation within a sequence.
+ */
+#define ARCHI_DEXGRAPH_OPERATION_SEQ_END   ((size_t)-1)
 
 #endif // _ARCHI_EXEC_I_OPERATION_TYP_H_
 

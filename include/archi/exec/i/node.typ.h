@@ -30,20 +30,15 @@
 #include "archi/exec/i/operation.typ.h"
 #include "archi/exec/i/transition.typ.h"
 
-#include <stddef.h> // for size_t
-
 
 /**
  * @brief Directed execution graph node.
  */
 typedef struct archi_dexgraph_node {
     const char *name; ///< Node name.
-    archi_pointer_t metadata; ///< Node metadata.
 
+    const archi_dexgraph_operation_seq_t *sequence; ///< Node operation sequence.
     archi_dexgraph_transition_t transition; ///< Node transition.
-
-    const size_t sequence_length; ///< Length of the node operation sequence.
-    archi_dexgraph_operation_t sequence[]; ///< Node operation sequence.
 } archi_dexgraph_node_t;
 
 #endif // _ARCHI_EXEC_I_NODE_TYP_H_

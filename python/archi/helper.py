@@ -30,6 +30,7 @@ from archi.context import (
         TypeAttr,
         Context,
         AggregateContext,
+        DexgraphOperationSeqContext,
         DexgraphNodeContext,
         ThreadGroupContext,
         AggregateInterfaceSymbol,
@@ -66,18 +67,11 @@ def new_aggregate_object(registry, key, /, interface=None, metadata=None, fam_le
 
 ### archi/exec ###
 
-def new_dexgraph_node(registry, key, /,
-                      name=None, metadata=None, operations=None, transition=None):
-    """Create a directed execution graph node.
+def new_dexgraph_operation_seq(registry, key, /,
+                               operations=None):
+    """Create a directed execution graph operation sequence.
     """
     if not isinstance(registry, Registry):
-        raise TypeError
-
-    if name is not None and not isinstance(name, str):
-        raise TypeError
-
-    if metadata is not None and not TypeAttr.compatible(
-            TypeAttr.of(metadata), TypeAttr.complex_data()):
         raise TypeError
 
     if operations is not None:
@@ -96,6 +90,38 @@ def new_dexgraph_node(registry, key, /,
                 if operation[1] is not None and not TypeAttr.compatible(
                         TypeAttr.of(operation[1]), TypeAttr.complex_data()):
                     raise TypeError
+
+    params = {}
+    if operations is not None:
+        params['length'] = PrimitiveData(c.c_size_t(len(operations)))
+
+    I_DEXGRAPH_OPERATION_SEQ = DexgraphOperationSeqContext.interface_in(registry.BUILTIN.executable)
+    sequence = registry.new_context(key, I_DEXGRAPH_OPERATION_SEQ(**params))
+
+    if operations is not None:
+        for i, operation in enumerate(operations):
+            if operation is not None:
+                if operation[0] is not None:
+                    registry(sequence.function[i] << operation[0])
+                if operation[1] is not None:
+                    registry(sequence.data[i] << operation[1])
+
+    return sequence
+
+
+def new_dexgraph_node(registry, key, /,
+                      name=None, sequence=None, transition=None):
+    """Create a directed execution graph node.
+    """
+    if not isinstance(registry, Registry):
+        raise TypeError
+
+    if name is not None and not isinstance(name, str):
+        raise TypeError
+
+    if sequence is not None and not TypeAttr.compatible(
+            TypeAttr.of(sequence), TypeAttr.complex_data(typ.ARCHI_POINTER_DATA_TAG__DEXGRAPH_OPERATION_SEQ)):
+        raise TypeError
 
     if transition is not None:
         if not isinstance(transition, tuple):
@@ -121,10 +147,8 @@ def new_dexgraph_node(registry, key, /,
     params = {}
     if name is not None:
         params['name'] = name
-    if metadata is not None:
-        params['metadata'] = metadata
-    if operations is not None:
-        params['sequence_length'] = PrimitiveData(c.c_size_t(len(operations)))
+    if sequence is not None:
+        params['sequence'] = sequence
     if transition is not None:
         if transition[0] is not None:
             params['transition_func'] = transition[0]
@@ -133,14 +157,6 @@ def new_dexgraph_node(registry, key, /,
 
     I_DEXGRAPH_NODE = DexgraphNodeContext.interface_in(registry.BUILTIN.executable)
     node = registry.new_context(key, I_DEXGRAPH_NODE(**params))
-
-    if operations is not None:
-        for i, operation in enumerate(operations):
-            if operation is not None:
-                if operation[0] is not None:
-                    registry(node.sequence.function[i] << operation[0])
-                if operation[1] is not None:
-                    registry(node.sequence.data[i] << operation[1])
 
     return node
 

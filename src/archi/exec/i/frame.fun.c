@@ -24,7 +24,7 @@
  */
 
 #include "archi/exec/i/frame.fun.h"
-#include "archi/exec/i/node.fun.h"
+#include "archi/exec/i/node.typ.h"
 #include "archi/exec/i/operation.fun.h"
 #include "archi/exec/i/transition.fun.h"
 
@@ -43,14 +43,10 @@ archi_dexgraph_execute_node(
     archi_error_t error;
 
     // Execute the sequence of operation functions
-    for (; frame.op_index < frame.node->sequence_length; frame.op_index++)
-    {
-        archi_dexgraph_operation_call(frame.node->sequence[frame.op_index], &error);
+    frame.op_index = archi_dexgraph_operation_seq_exec(frame.node->sequence, frame.op_index, &error);
 
-        if (error.code != 0)
-            goto finish;
-    }
-    frame.op_index = ARCHI_DEXGRAPH_TRANS_INDEX; // reached transition successfully
+    if (error.code != 0)
+        goto finish;
 
     // Execute the transition function
     const archi_dexgraph_node_t *target =
