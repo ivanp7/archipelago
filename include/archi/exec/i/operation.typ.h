@@ -57,6 +57,8 @@ typedef struct archi_dexgraph_operation {
  * @brief Directed execution graph operation sequence.
  */
 typedef struct archi_dexgraph_operation_seq {
+    const char *name; ///< Sequence name.
+
     const size_t length; ///< Length of the operation sequence.
     archi_dexgraph_operation_t operation[]; ///< Array of operations.
 } archi_dexgraph_operation_seq_t;

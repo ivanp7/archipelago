@@ -68,10 +68,13 @@ def new_aggregate_object(registry, key, /, interface=None, metadata=None, fam_le
 ### archi/exec ###
 
 def new_dexgraph_operation_seq(registry, key, /,
-                               operations=None):
+                               name=None, operations=None):
     """Create a directed execution graph operation sequence.
     """
     if not isinstance(registry, Registry):
+        raise TypeError
+
+    if name is not None and not isinstance(name, str):
         raise TypeError
 
     if operations is not None:
@@ -104,6 +107,8 @@ def new_dexgraph_operation_seq(registry, key, /,
                             raise TypeError
 
     params = {}
+    if name is not None:
+        params['name'] = name
     if operations is not None:
         params['length'] = PrimitiveData(c.c_size_t(len(operations)))
 

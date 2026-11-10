@@ -35,9 +35,11 @@
  * @brief Context interface: directed execution graph operation sequence.
  *
  * Initialization parameters:
+ * - "name"     : (char[]) sequence name
  * - "length"   : (size_t) number of operations in the sequence
  *
  * Getter slots:
+ * - "name"             : (char[]) sequence name
  * - "length"           : (size_t) number of operations in the sequence
  * - "function" [index] : (archi_dexgraph_operation_func_t) operation function #index
  * - "data" [index]     : data of operation function #index
@@ -48,6 +50,7 @@
  *      parameters: <none>
  *
  * Setter slots:
+ * - "name"             : (char[]) sequence name
  * - "function" [index] : (archi_dexgraph_operation_func_t) operation function #index
  * - "data" [index]     : data of operation function #index
  */

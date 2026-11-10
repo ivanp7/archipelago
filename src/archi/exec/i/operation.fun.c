@@ -67,6 +67,7 @@ archi_dexgraph_operation_seq_alloc(
     if (sequence == NULL)
         return NULL;
 
+    sequence->name = NULL;
     {
         size_t *length_ptr = (size_t*)&sequence->length;
         *length_ptr = length;

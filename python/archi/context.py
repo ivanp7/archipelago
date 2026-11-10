@@ -1302,18 +1302,21 @@ class DexgraphOperationSeqContext(ContextWhitelist):
     CONTEXT_TYPE = TypeAttr.complex_data(typ.ARCHI_POINTER_DATA_TAG__DEXGRAPH_OPERATION_SEQ)
 
     class InitParameters(ParametersWhitelist):
-        PARAMS = {'length': _TYPE_SIZE}
+        PARAMS = {'name': _TYPE_STRING,
+                  'length': _TYPE_SIZE}
 
     class ExecuteCallParameters(ParametersWhitelist):
         PARAMS = {}
 
-    GETTER_SLOTS = {'length': _TYPE_SIZE,
+    GETTER_SLOTS = {'name': _TYPE_STRING,
+                    'length': _TYPE_SIZE,
                     'function': {1: TypeAttr.function(typ.ARCHI_POINTER_FUNC_TAG__DEXGRAPH_OPERATION)},
                     'data': {1: _TYPE_DATA}}
 
     CALL_SLOTS = {'execute': (None, ExecuteCallParameters)}
 
-    SETTER_SLOTS = {'function': {1: TypeAttr.function(typ.ARCHI_POINTER_FUNC_TAG__DEXGRAPH_OPERATION)},
+    SETTER_SLOTS = {'name': _TYPE_STRING,
+                    'function': {1: TypeAttr.function(typ.ARCHI_POINTER_FUNC_TAG__DEXGRAPH_OPERATION)},
                     'data': {1: _TYPE_DATA}}
 
 

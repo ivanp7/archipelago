@@ -74,6 +74,7 @@ archi_aggr_type__dexgraph_operation = ARCHI_AGGR_TYPE(
 static
 const archi_aggr_member_t
 MEMBERS_dexgraph_operation_seq[] = {
+    ARCHI_AGGR_MEMBER__POINTER(archi_dexgraph_operation_seq_t, name, 1, PTYPE_string),
     ARCHI_AGGR_MEMBER__VALUE(archi_dexgraph_operation_seq_t, length, 1, VTYPE_size),
     ARCHI_AGGR_MEMBER__AGGREGATE(archi_dexgraph_operation_seq_t, operation, 0,
             archi_aggr_type__dexgraph_operation.top_level),

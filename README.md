@@ -441,7 +441,8 @@ This allows for nesting operations and creating operation trees.
 
 #### Operation Sequences
 
-An *operation sequence* is a structure containing two members:
+An *operation sequence* is a structure containing three members:
+- name (optional);
 - sequence length;
 - flexible array of *operations*.
 
