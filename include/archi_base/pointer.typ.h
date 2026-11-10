@@ -67,28 +67,22 @@ typedef void (*archi_function_t)(void);
  * 2. complex data: identified by tag;
  * 3. function: identified by tag.
  *
- * Data pointer attributes:
+ * Data pointer attributes for primitive data:
  * + bits (64; 62]   <2 bits>    -- memory type (equal to one of ARCHI_POINTER_TYPE__DATA_xxx constants);
- * + bits (62; 56]   <6 bits>    -- bit width (denoted below as N) of the data stride/alignment attribute;
+ * + bits (62; 56]   <6 bits>    -- 63-N, where N is the bit width of the data stride/alignment attribute;
  * + bits (56; 56-N] <N bits>    -- (data stride) / (alignment requirement) - 1,
  *                                  with M leading zeros designating alignment (1 << M);
  * + bits (56-N; 0]  <56-N bits> -- data length;
- * where 0 <= M <= N <= 55.
+ * where 0 <= M <= N < 56.
  *
- * This scheme allows to describe data of size up to 64 PiB minus 1 byte,
- * with stride and alignment up to 32 PiB, which is enough for practical purposes.
- *
- * When N >= 56, meaning of bits (59; 0] changes: it is now
- * a data type tag (integer in range [0; 0x07FFFFFFFFFFFFFF]) used to distinguish complex data types from one another.
- * Tag #0 is special - it means 'any/unknown type' and is compatible with any other data type,
- * both primitive and complex kinds.
+ * Data pointer attributes for complex data:
+ * + bits (64; 62]   <2 bits>    -- memory type (equal to one of ARCHI_POINTER_TYPE__DATA_xxx constants);
+ * + bits (62; 59]   <3 bits>    -- zeroes: `000`;
+ * + bits (59; 0]    <59 bits>   -- data tag.
  *
  * Function pointer attributes:
  * + bits (64; 62]   <2 bits>    -- equal to ARCHI_POINTER_TYPE__FUNCTION constant;
  * + bits (62; 0]    <62 bits>   -- function type tag.
- *
- * Function type tags (integers in range [0; 0x3FFFFFFFFFFFFFFF]) are used to distinguish function types from one another.
- * Tag #0 is special - it means 'any/unknown type' and is compatible with any other function type.
  */
 typedef uint64_t archi_pointer_attr_t;
 

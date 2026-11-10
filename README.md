@@ -715,7 +715,7 @@ Function tags are used for matching: unequal tags correspond to incompatible fun
 ### Data Pointers
 
 If the type is `00`, `01`, or `10`, the interpretation of bits 61–0 depends on the value of bits 61-59:
-- if the value is `111`, bits 61-0 encode a *complex data* type;
+- if the value is `000`, bits 61-0 encode a *complex data* type;
 - otherwise, it's a *primitive data* type.
 
 #### Complex Data
@@ -733,7 +733,7 @@ so that derived types are compatible with base types and not vice versa.
 | Bit Range  | Field Width | Field Value |
 | ---------- | ----------- | ----------- |
 | (64; 62]   | 2           | Memory type (`00`, `01`, or `10`) |
-| (62; 59]   | 3           | `111` |
+| (62; 59]   | 3           | `000` |
 | (59; 0]    | 59          | Data tag |
 
 #### Primitive Data
@@ -750,12 +750,13 @@ These are defined by length, stride (element size), and alignment requirement.
 | Bit Range  | Field Width | Field Value |
 | ---------- | ----------- | ----------- |
 | (64; 62]   | 2           | Memory type (`00`, `01`, or `10`) |
-| (62; 56]   | 6           | *N*: bit width of the next field |
+| (62; 56]   | 6           | *63 - N*, where *N* is the bit width of the next field |
 | (56; 56-N] | N           | *q* = (stride / alignment) - 1 |
 | (56-N; 0]  | 56-N        | Array length |
 
-> **Note**: *N* is always < 56 because bits 61-59 are never `111` for primitive data.
-> Therefore, the length field always contains at least one bit,
+> **Note**: value of *63 - N* is always >= 8 because bits 61-59 are never `000` for primitive data.
+> Therefore, 0 <= *N* < 56.
+> The length field always contains at least one bit,
 > unlike the stride/alignment field, which can be absent if *N* = 0.
 
 * Alignment is calculated as `1 << M`, where *M* is the number of leading zeros
@@ -767,7 +768,7 @@ in the stride/alignment field (0 ≤ *M* ≤ *N*).
 | Bit Range  | Field Width | Field Value |
 | ---------- | ----------- | ----------- |
 | (64; 62]   | 2           | Memory type (`00`, `01`, or `10`) |
-| (62; 56]   | 6           | *N* (`000000`) |
+| (62; 56]   | 6           | *63 - N* = 63 (`111111`) |
 | (56; 0]    | 56          | Array length |
 
 ### Constraints & Limits
@@ -838,27 +839,26 @@ Examples:
 
 ##### Complex Data
 
-| Scenario    | Memory Type | Tag (hex)           | Tag (bin)            | Binary Attribute (64-bit) |
-| ----------- | ----------- | ------------------- | -------------------- | ------------------------- |
-| zero tag    | stack       | `0x0`               | `000...000`          | `00 111 000...000` |
-| small tag   | writable    | `0x38`              | `000...000111000`    | `01 111 000...000111000` |
-| large tag   | writable    | `0x566666666666666` | `101(0110)...(0110)` | `01 111 101(0110)...(0110)` |
-| maximum tag | read-only   | `0x7ffffffffffffff` | `111...111`          | `10 111 111...111` |
+| Scenario       | Memory Type | Tag (hex)           | Tag (bin)            | Binary Attribute (64-bit) |
+| -------------- | ----------- | ------------------- | -------------------- | ------------------------- |
+| all bits clear | stack       | `0x0`               | `000...000`          | `00 000 000...000` |
+| small tag      | writable    | `0x38`              | `000...000111000`    | `01 000 000...000111000` |
+| large tag      | writable    | `0x566666666666666` | `101(0110)...(0110)` | `01 000 101(0110)...(0110)` |
+| maximum tag    | read-only   | `0x7ffffffffffffff` | `111...111`          | `10 000 111...111` |
 
 ##### Primitive Data
 
-| Scenario           | Memory Type | Array Length      | Array Stride                            | Alignment Requirement | *M* (# bits) | *N* (# bits) | Binary Attribute (64-bit) |
-| ------------------ | ----------- | ----------------- | --------------------------------------- | --------------------- | ------------ | ------------ | ------------------------- |
-| all bits zero      | stack       | 0                 | 1 B ((0+1) * 1 bytes)                   | 1 B (1<<0 bytes)      | 0            | 0            | `00 000000  000...000` |
-| byte array (N = 0) | stack       | 255               | 1 B ((0+1) * 1 bytes)                   | 1 B (1<<0 bytes)      | 0            | 0            | `00 000000  000...00011111111` |
-| prime stride       | writable    | 13                | 7 B ((6+1) * 1 bytes)                   | 1 B (1<<0 bytes)      | 0            | 3            | `01 000011 110 000...0001101` |
-| composite stride   | writable    | 25                | 832 B ((51+1) * 16 bytes)               | 16 B (1<<4 bytes)     | 4            | 10           | `01 001010 0000110011 000...00011001` |
-| N = 1, M = 1       | writable    | 128               | 2 B ((0+1) * 2 bytes)                   | 2 B (1<<1 bytes)      | 1            | 1            | `01 000001 0 000...00010000000` |
-| N = 1, M = 0       | writable    | 128               | 2 B ((1+1) * 1 bytes)                   | 1 B (1<<0 bytes)      | 0            | 1            | `01 000001 1 000...00010000000` |
-| N = 56/2, M = N/2  | read-only   | 43                | 256 MiB ((16383+1) * (1<<14) bytes)     | 16 KiB (1<<14 bytes)  | 14           | 28           | `10 011100 000...000111...111 000...000101011` |
-| maximum N, M = N   | read-only   | 1                 | 32 PiB ((0+1) * (1<<55) bytes)          | 32 PiB (1<<55 bytes)  | 55           | 55           | `10 110111 000...000 1` |
-| maximum N, M = 0   | read-only   | 1                 | 32 PiB ((0x7fffffffffffff+1) * 1 bytes) | 1 B (1<<0 bytes)      | 0            | 55           | `10 110111 111...111 1` |
-| maximum data size  | read-only   | (1<<56) - 1       | 1 B ((0+1) * 1 bytes)                   | 1 B (1<<0 bytes)      | 0            | 0            | `10 000000  111...111` |
+| Scenario           | Memory Type | Array Length      | Array Stride                            | Alignment Requirement | *M* (# bits) | *N* (# bits) | *63 - N* | Binary Attribute (64-bit) |
+| ------------------ | ----------- | ----------------- | --------------------------------------- | --------------------- | ------------ | ------------ | -------- | ------------------------- |
+| byte array (N = 0) | stack       | 255               | 1 B ((0+1) * 1 bytes)                   | 1 B (1<<0 bytes)      | 0            | 0            | 63       | `00 111111  000...00011111111` |
+| prime stride       | writable    | 13                | 7 B ((6+1) * 1 bytes)                   | 1 B (1<<0 bytes)      | 0            | 3            | 60       | `01 111100 110 000...0001101` |
+| composite stride   | writable    | 25                | 832 B ((51+1) * 16 bytes)               | 16 B (1<<4 bytes)     | 4            | 10           | 53       | `01 110101 0000110011 000...00011001` |
+| N = 1, M = 1       | writable    | 128               | 2 B ((0+1) * 2 bytes)                   | 2 B (1<<1 bytes)      | 1            | 1            | 62       | `01 111110 0 000...00010000000` |
+| N = 1, M = 0       | writable    | 128               | 2 B ((1+1) * 1 bytes)                   | 1 B (1<<0 bytes)      | 0            | 1            | 62       | `01 111110 1 000...00010000000` |
+| N = 56/2, M = N/2  | read-only   | 43                | 256 MiB ((16383+1) * (1<<14) bytes)     | 16 KiB (1<<14 bytes)  | 14           | 28           | 35       | `10 100011 000...000111...111 000...000101011` |
+| maximum N, M = N   | read-only   | 1                 | 32 PiB ((0+1) * (1<<55) bytes)          | 32 PiB (1<<55 bytes)  | 55           | 55           | 8        | `10 001000 000...000 1` |
+| maximum N, M = 0   | read-only   | 1                 | 32 PiB ((0x7fffffffffffff+1) * 1 bytes) | 1 B (1<<0 bytes)      | 0            | 55           | 8        | `10 001000 111...111 1` |
+| maximum data size  | read-only   | (1<<56) - 1       | 1 B ((0+1) * 1 bytes)                   | 1 B (1<<0 bytes)      | 0            | 0            | 63       | `10 111111  111...111` |
 
 ## Generic Pointer Validness
 

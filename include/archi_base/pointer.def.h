@@ -57,14 +57,14 @@ enum {
  * @brief Maximum data size that can be represented by the attribute format.
  */
 #define ARCHI_POINTER_DATA_SIZE_MAX                 \
-    (((size_t)1 << ARCHI_POINTER_ATTR_BITWIDTH__SHAPE) - 1)
+    (((size_t)1 << ARCHI_POINTER_ATTR_BITWIDTH__PDATA_SHAPE) - 1)
 
 /**
  * @def ARCHI_POINTER_DATA_STRIDE_MAX
  * @brief Maximum data stride that can be represented by the attribute format.
  */
 #define ARCHI_POINTER_DATA_STRIDE_MAX               \
-    (((size_t)1 << (ARCHI_POINTER_ATTR_BITWIDTH__SHAPE - 1)))
+    (((size_t)1 << (ARCHI_POINTER_ATTR_BITWIDTH__PDATA_SHAPE - 1)))
 
 /**
  * @def ARCHI_POINTER_DATA_ALIGNMENT_MAX
@@ -93,52 +93,67 @@ enum {
 
 /**
  * @def ARCHI_POINTER_ATTR_BITWIDTH
- * @brief Bit width of archi_pointer_attr_t type (total number of bits).
+ * @brief Bit width of archi_pointer_attr_t (total number of bits).
  */
 #define ARCHI_POINTER_ATTR_BITWIDTH                 \
     (sizeof(archi_pointer_attr_t) * CHAR_BIT)
 
 /**
  * @def ARCHI_POINTER_ATTR_BITWIDTH__TYPE
- * @brief Bit width of memory type attribute.
+ * @brief Bit width of the memory type attribute.
  */
 #define ARCHI_POINTER_ATTR_BITWIDTH__TYPE           2
 
 /**
- * @def ARCHI_POINTER_ATTR_BITWIDTH__PDATA_N_WIDTH
- * @brief Bit width of primitive data "N" attribute.
+ * @def ARCHI_POINTER_ATTR_BITWIDTH__DATA_TYPE
+ * @brief Bit width of the data type attribute.
  */
-#define ARCHI_POINTER_ATTR_BITWIDTH__PDATA_N_WIDTH  6
+#define ARCHI_POINTER_ATTR_BITWIDTH__DATA_TYPE      3
 
 /**
- * @def ARCHI_POINTER_ATTR_BITWIDTH__SHAPE
+ * @def ARCHI_POINTER_ATTR_BITWIDTH__PDATA_TYPE_EXT
+ * @brief Bit width of primitive data type attribute extention.
+ */
+#define ARCHI_POINTER_ATTR_BITWIDTH__PDATA_TYPE_EXT 3
+
+/**
+ * @def ARCHI_POINTER_ATTR_BITWIDTH__PDATA_SWIDTH
+ * @brief Bit width of primitive data type attribute (shape split).
+ */
+#define ARCHI_POINTER_ATTR_BITWIDTH__PDATA_SWIDTH   \
+    (ARCHI_POINTER_ATTR_BITWIDTH__DATA_TYPE         \
+     + ARCHI_POINTER_ATTR_BITWIDTH__PDATA_TYPE_EXT)
+
+/**
+ * @def ARCHI_POINTER_ATTR_BITWIDTH__PDATA_SHAPE
  * @brief Total bit width of data length and stride/alignment attributes.
  */
-#define ARCHI_POINTER_ATTR_BITWIDTH__SHAPE          \
+#define ARCHI_POINTER_ATTR_BITWIDTH__PDATA_SHAPE    \
     (ARCHI_POINTER_ATTR_BITWIDTH                    \
      - ARCHI_POINTER_ATTR_BITWIDTH__TYPE            \
-     - ARCHI_POINTER_ATTR_BITWIDTH__PDATA_N_WIDTH)
+     - ARCHI_POINTER_ATTR_BITWIDTH__PDATA_SWIDTH)
 
 /**
- * @def ARCHI_POINTER_ATTR_BITWIDTH__LENGTH
+ * @def ARCHI_POINTER_ATTR_BITWIDTH__PDATA_LENGTH
  * @brief Bit width of data length attribute.
  */
-#define ARCHI_POINTER_ATTR_BITWIDTH__LENGTH(N)      \
-    (ARCHI_POINTER_ATTR_BITWIDTH__SHAPE - (N))
-
-/**
- * @def ARCHI_POINTER_ATTR_BITWIDTH__DATA_TAG_SEPARATOR
- * @brief Bit width of the token separator in data tags.
- */
-#define ARCHI_POINTER_ATTR_BITWIDTH__DATA_TAG_SEPARATOR  4
+#define ARCHI_POINTER_ATTR_BITWIDTH__PDATA_LENGTH(N)\
+    (ARCHI_POINTER_ATTR_BITWIDTH__PDATA_SHAPE - (N))
 
 /**
  * @def ARCHI_POINTER_ATTR_BITWIDTH__DATA_TAG
  * @brief Bit width of a data tag.
  */
 #define ARCHI_POINTER_ATTR_BITWIDTH__DATA_TAG       \
-    (ARCHI_POINTER_ATTR_BITWIDTH__SHAPE             \
-     + 3) // shape bitwidth = 56, which is `111000`: the last 3 bits are available for a tag
+    (ARCHI_POINTER_ATTR_BITWIDTH                    \
+     - ARCHI_POINTER_ATTR_BITWIDTH__TYPE            \
+     - ARCHI_POINTER_ATTR_BITWIDTH__DATA_TYPE)
+
+/**
+ * @def ARCHI_POINTER_ATTR_BITWIDTH__DATA_TAG_SEP
+ * @brief Bit width of the token separator in data tags.
+ */
+#define ARCHI_POINTER_ATTR_BITWIDTH__DATA_TAG_SEP   4
 
 /**
  * @def ARCHI_POINTER_ATTR_BITWIDTH__FUNC_TAG
@@ -161,19 +176,27 @@ enum {
      - ARCHI_POINTER_ATTR_BITWIDTH__TYPE)
 
 /**
- * @def ARCHI_POINTER_ATTR_OFFSET__PDATA_N_WIDTH
- * @brief Offset to primitive data "N" attribute.
+ * @def ARCHI_POINTER_ATTR_OFFSET__DATA_TYPE
+ * @brief Offset to the data type attribute.
  */
-#define ARCHI_POINTER_ATTR_OFFSET__PDATA_N_WIDTH    \
+#define ARCHI_POINTER_ATTR_OFFSET__DATA_TYPE        \
     (ARCHI_POINTER_ATTR_OFFSET__TYPE                \
-     - ARCHI_POINTER_ATTR_BITWIDTH__PDATA_N_WIDTH)
+     - ARCHI_POINTER_ATTR_BITWIDTH__DATA_TYPE)
 
 /**
- * @def ARCHI_POINTER_ATTR_OFFSET__STRIDE_OVER_ALIGNMENT
- * @brief Offset to stride/alignment attribute.
+ * @def ARCHI_POINTER_ATTR_OFFSET__PDATA_SWIDTH
+ * @brief Offset to primitive data type attribute (shape split).
  */
-#define ARCHI_POINTER_ATTR_OFFSET__STRIDE_OVER_ALIGNMENT(N)     \
-    ARCHI_POINTER_ATTR_BITWIDTH__LENGTH((N))
+#define ARCHI_POINTER_ATTR_OFFSET__PDATA_SWIDTH     \
+    (ARCHI_POINTER_ATTR_OFFSET__DATA_TYPE           \
+     - ARCHI_POINTER_ATTR_BITWIDTH__PDATA_TYPE_EXT)
+
+/**
+ * @def ARCHI_POINTER_ATTR_OFFSET__PDATA_SOA
+ * @brief Offset to 'stride over (divided by) alignment' attribute.
+ */
+#define ARCHI_POINTER_ATTR_OFFSET__PDATA_SOA(N)     \
+    ARCHI_POINTER_ATTR_BITWIDTH__PDATA_LENGTH((N))
 
 /*****************************************************************************/
 // Masks of attributes

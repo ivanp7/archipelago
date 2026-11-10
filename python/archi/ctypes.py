@@ -40,23 +40,23 @@ ARCHI_POINTER_FUNC_TAG__STRING_COMP = 0x1
 class archi_pointer_attr_t(c.c_uint64):
     """Pointer attributes.
     """
-    ATTR_BITS = 64 - 2              # 62
-    SHAPE_BITS = ATTR_BITS - 6      # 56
-    DATA_TAG_BITS = SHAPE_BITS + 3  # 59
-    FUNC_TAG_BITS = ATTR_BITS       # 62
+    TYPE_OFFSET = 64 - 2               # 62
+    DATA_TAG_BITS = TYPE_OFFSET - 3    # 59
+    PDATA_SHAPE_BITS = TYPE_OFFSET - 6 # 56
+    FUNC_TAG_BITS = TYPE_OFFSET        # 62
 
-    DATA_TAG_SEPARATOR_BITS = 4
+    DATA_TAG_SEP_BITS = 4
 
-    DATA_SIZE_MAX   = (1 <<  SHAPE_BITS) - 1  # 0x00FFFFFFFFFFFFFF
-    DATA_STRIDE_MAX =  1 << (SHAPE_BITS  - 1) # 0x0080000000000000
-    DATA_TAG_MAX = (1 << DATA_TAG_BITS) - 1   # 0x07FFFFFFFFFFFFFF
-    FUNC_TAG_MAX = (1 << FUNC_TAG_BITS) - 1   # 0x3FFFFFFFFFFFFFFF
+    DATA_SIZE_MAX   = (1 <<  PDATA_SHAPE_BITS) - 1  # 0x00FFFFFFFFFFFFFF
+    DATA_STRIDE_MAX =  1 << (PDATA_SHAPE_BITS  - 1) # 0x0080000000000000
+    DATA_TAG_MAX = (1 << DATA_TAG_BITS) - 1 # 0x07FFFFFFFFFFFFFF
+    FUNC_TAG_MAX = (1 << FUNC_TAG_BITS) - 1 # 0x3FFFFFFFFFFFFFFF
 
-    TYPE_MASK = 0x3 << ATTR_BITS
-    DATA_ON_STACK = 0x0 << ATTR_BITS
-    DATA_WRITABLE = 0x1 << ATTR_BITS
-    DATA_READONLY = 0x2 << ATTR_BITS
-    FUNCTION      = 0x3 << ATTR_BITS
+    TYPE_MASK = 0x3 << TYPE_OFFSET
+    DATA_ON_STACK = 0x0 << TYPE_OFFSET
+    DATA_WRITABLE = 0x1 << TYPE_OFFSET
+    DATA_READONLY = 0x2 << TYPE_OFFSET
+    FUNCTION      = 0x3 << TYPE_OFFSET
 
     def __repr__(self, /):
         cls_name = self.__class__.__name__
@@ -114,17 +114,22 @@ class archi_pointer_attr_t(c.c_uint64):
         if self.is_function:
             return (None, None, None)
 
-        attr_bits = self.__class__.ATTR_BITS
-        shape_bits = self.__class__.SHAPE_BITS
+        type_offset = self.__class__.TYPE_OFFSET
+        pdata_shape_bits = self.__class__.PDATA_SHAPE_BITS
 
-        stride_width = (self.value >> shape_bits) & ((1 << (attr_bits - shape_bits)) - 1)
+        pdata_swidth_bits = type_offset - pdata_shape_bits
+        pdata_swidth_mask = (1 << pdata_swidth_bits) - 1
 
-        if stride_width >= shape_bits:
+        stride_width = (self.value >> pdata_shape_bits) & pdata_swidth_mask
+        stride_width = pdata_swidth_mask - stride_width
+
+        if stride_width >= pdata_shape_bits:
             return (None, None, None)
 
-        length = self.value & ((1 << (shape_bits - stride_width)) - 1)
+        length_width = pdata_shape_bits - stride_width
+        length = self.value & ((1 << length_width) - 1)
 
-        stride_over_alignment = (self.value >> (shape_bits - stride_width)) & ((1 << stride_width) - 1)
+        stride_over_alignment = (self.value >> length_width) & ((1 << stride_width) - 1)
         alignment_log2 = stride_width - stride_over_alignment.bit_length()
         alignment = 1 << alignment_log2
         stride = (stride_over_alignment + 1) * alignment
@@ -153,13 +158,13 @@ class archi_pointer_attr_t(c.c_uint64):
     def tag(self, /):
         """Extract type tag from the attributes.
         """
-        attr_bits = self.__class__.ATTR_BITS
-        shape_bits = self.__class__.SHAPE_BITS
-
         if self.is_data:
-            stride_width = (self.value >> shape_bits) & ((1 << (attr_bits - shape_bits)) - 1)
+            type_offset = self.__class__.TYPE_OFFSET
+            data_type_offset = self.__class__.DATA_TAG_BITS
 
-            if stride_width < shape_bits:
+            data_type_bits = type_offset - data_type_offset
+
+            if (self.value >> data_type_offset) & ((1 << data_type_bits) - 1) != 0:
                 return None
 
             return self.value & ((1 << self.__class__.DATA_TAG_BITS) - 1)
@@ -181,7 +186,7 @@ class archi_pointer_attr_t(c.c_uint64):
 
             if tag is not None and sample_tag is not None:
                 return (tag ^ sample_tag) & ((1 << (sample_tag.bit_length() \
-                        + self.__class__.DATA_TAG_SEPARATOR_BITS)) - 1) == 0
+                        + self.__class__.DATA_TAG_SEP_BITS)) - 1) == 0
             elif tag is None and sample_tag is None:
                 length, stride, alignment = self.layout
                 sample_length, sample_stride, sample_alignment = sample.layout
@@ -223,12 +228,15 @@ class archi_pointer_attr_t(c.c_uint64):
         elif stride > cls.DATA_STRIDE_MAX:
             raise ValueError("Stride exceeds maximum supported value of {cls.DATA_STRIDE_MAX} bytes")
 
+        type_offset = cls.TYPE_OFFSET
+        pdata_shape_bits = cls.PDATA_SHAPE_BITS
+        pdata_swidth_bits = type_offset - pdata_shape_bits
+
         stride_width = (stride - 1).bit_length()
 
-        attr_memtype = cls.DATA_WRITABLE if writable \
-                else cls.DATA_READONLY
-        attr_stride_width = stride_width << cls.SHAPE_BITS
-        attr_stride_over_alignment = (stride // alignment - 1) << (cls.SHAPE_BITS - stride_width)
+        attr_memtype = cls.DATA_WRITABLE if writable else cls.DATA_READONLY
+        attr_stride_width = (((1 << pdata_swidth_bits) - 1) - stride_width) << pdata_shape_bits
+        attr_stride_over_alignment = (stride // alignment - 1) << (pdata_shape_bits - stride_width)
         attr_length = length
 
         return cls(attr_memtype | attr_stride_width | attr_stride_over_alignment | attr_length)
@@ -245,12 +253,10 @@ class archi_pointer_attr_t(c.c_uint64):
         elif tag > cls.DATA_TAG_MAX:
             raise ValueError("Data type tag exceeds maximum supported value of {cls.DATA_TAG_MAX:016x}")
 
-        attr_memtype = cls.DATA_WRITABLE if writable \
-                else cls.DATA_READONLY
-        attr_complex_flag = ((1 << (cls.ATTR_BITS - cls.DATA_TAG_BITS)) - 1) << cls.DATA_TAG_BITS
+        attr_memtype = cls.DATA_WRITABLE if writable else cls.DATA_READONLY
         attr_tag = tag
 
-        return cls(attr_memtype | attr_complex_flag | attr_tag)
+        return cls(attr_memtype | attr_tag)
 
     @classmethod
     def function(cls, tag=0):
@@ -264,10 +270,9 @@ class archi_pointer_attr_t(c.c_uint64):
         elif tag > cls.FUNC_TAG_MAX:
             raise ValueError("Function type tag exceeds maximum supported value of {cls.FUNC_TAG_MAX:016x}")
 
-        attr_ptrtype = cls.FUNCTION
         attr_tag = tag
 
-        return cls(attr_ptrtype | attr_tag)
+        return cls(cls.FUNCTION | attr_tag)
 
     @classmethod
     def from_type(cls, c_type, /, writable=False):
