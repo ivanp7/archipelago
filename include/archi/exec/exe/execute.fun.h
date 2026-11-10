@@ -32,13 +32,6 @@
 
 
 /**
- * @brief Operation function: execute an operation sequence.
- *
- * Function data type: archi_dexgraph_operation_seq_t.
- */
-ARCHI_DEXGRAPH_OPERATION_FUNC(archi_dexgraph_op__execute_operation_seq);
-
-/**
  * @brief Operation function: execute a whole directed graph starting at the specified node.
  *
  * Function data type: archi_dexgraph_node_t.

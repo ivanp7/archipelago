@@ -24,6 +24,8 @@
  */
 
 #include "archi/exec/i/operation.fun.h"
+#include "archi/exec/i/tag.def.h"
+#include "archi_base/pointer.fun.h"
 #include "archi_base/util/size.def.h"
 
 #include <stdlib.h> // for malloc(), free()
@@ -42,7 +44,16 @@ archi_dexgraph_operation_call(
         /****************************************************/
     }
     else
-        ARCHI_ERROR_RESET();
+    {
+        if (!archi_pointer_attr_compatible(operation.data.attr,
+                    archi_pointer_attr__cdata(ARCHI_POINTER_DATA_TAG__DEXGRAPH_OPERATION_SEQ), NULL))
+        {
+            ARCHI_ERROR_SET(ARCHI__ECONSTRAINT, "operation data is not an operation sequence");
+            return;
+        }
+
+        archi_dexgraph_operation_seq_exec(operation.data.cptr, 0, ARCHI_ERROR_PARAM);
+    }
 }
 
 /*****************************************************************************/

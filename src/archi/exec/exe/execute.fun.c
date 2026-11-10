@@ -30,23 +30,6 @@
 #include "archi_base/pointer.fun.h"
 
 
-ARCHI_DEXGRAPH_OPERATION_FUNC(archi_dexgraph_op__execute_operation_seq)
-{
-    {
-        archi_error_t error;
-        if (!archi_pointer_attr_compatible(data.attr,
-                    archi_pointer_attr__cdata(ARCHI_POINTER_DATA_TAG__DEXGRAPH_OPERATION_SEQ),
-                    &error))
-        {
-            ARCHI_ERROR_SET(error.code, "operation data has incorrect type: %s", error.message);
-            return;
-        }
-    }
-
-    const archi_dexgraph_operation_seq_t *sequence = data.cptr;
-    archi_dexgraph_operation_seq_exec(sequence, 0, ARCHI_ERROR_PARAM);
-}
-
 ARCHI_DEXGRAPH_OPERATION_FUNC(archi_dexgraph_op__execute_graph)
 {
     {
