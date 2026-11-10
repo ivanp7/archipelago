@@ -36,14 +36,7 @@
  *
  * Function data type: archi_dexgraph_node_t.
  */
-ARCHI_DEXGRAPH_OPERATION_FUNC(archi_dexgraph_op__execute_graph);
-
-/**
- * @brief Transition function: execute a directed graph node.
- *
- * Function data type: archi_dexgraph_node_t.
- */
-ARCHI_DEXGRAPH_TRANSITION_FUNC(archi_dexgraph_transition__execute_node);
+ARCHI_DEXGRAPH_OPERATION_FUNC(archi_dexgraph_op__execute);
 
 #endif // _ARCHI_EXEC_EXE_EXECUTE_FUN_H_
 

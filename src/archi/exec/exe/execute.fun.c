@@ -30,7 +30,7 @@
 #include "archi_base/pointer.fun.h"
 
 
-ARCHI_DEXGRAPH_OPERATION_FUNC(archi_dexgraph_op__execute_graph)
+ARCHI_DEXGRAPH_OPERATION_FUNC(archi_dexgraph_op__execute)
 {
     {
         archi_error_t error;
@@ -45,22 +45,5 @@ ARCHI_DEXGRAPH_OPERATION_FUNC(archi_dexgraph_op__execute_graph)
 
     archi_dexgraph_frame_t frame = {.node = data.cptr};
     archi_dexgraph_execute(frame, ARCHI_ERROR_PARAM);
-}
-
-ARCHI_DEXGRAPH_TRANSITION_FUNC(archi_dexgraph_transition__execute_node)
-{
-    {
-        archi_error_t error;
-        if (!archi_pointer_attr_compatible(data.attr,
-                    archi_pointer_attr__cdata(ARCHI_POINTER_DATA_TAG__DEXGRAPH_NODE),
-                    &error))
-        {
-            ARCHI_ERROR_SET(error.code, "transition data has incorrect type: %s", error.message);
-            return NULL;
-        }
-    }
-
-    archi_dexgraph_frame_t frame = {.node = data.cptr};
-    return archi_dexgraph_execute_node(frame, ARCHI_ERROR_PARAM).node;
 }
 
