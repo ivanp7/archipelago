@@ -24,8 +24,7 @@
  */
 
 #include "archi/exec/exe/execute.fun.h"
-#include "archi/exec/i/operation.fun.h"
-#include "archi/exec/i/frame.fun.h"
+#include "archi/exec/i/node.fun.h"
 #include "archi/exec/i/tag.def.h"
 #include "archi_base/pointer.fun.h"
 
@@ -43,7 +42,6 @@ ARCHI_DEXGRAPH_OPERATION_FUNC(archi_dexgraph_op__execute)
         }
     }
 
-    archi_dexgraph_frame_t frame = {.node = data.cptr};
-    archi_dexgraph_execute(frame, ARCHI_ERROR_PARAM);
+    archi_dexgraph_execute(data.cptr, ARCHI_ERROR_PARAM);
 }
 

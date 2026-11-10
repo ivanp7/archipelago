@@ -20,27 +20,60 @@
 
 /**
  * @file
- * @brief Directed execution graph frame type.
+ * @brief Operations with directed execution graph nodes.
  */
 
-#pragma once
-#ifndef _ARCHI_EXEC_I_FRAME_TYP_H_
-#define _ARCHI_EXEC_I_FRAME_TYP_H_
+#include "archi/exec/i/node.fun.h"
+#include "archi/exec/i/node.typ.h"
+#include "archi/exec/i/operation.fun.h"
+#include "archi/exec/i/transition.fun.h"
 
-#include <stddef.h> // for size_t
 
+const archi_dexgraph_node_t*
+archi_dexgraph_execute_node(
+        const archi_dexgraph_node_t *node,
+        ARCHI_ERROR_PARAM_DECL)
+{
+    if (node == NULL)
+    {
+        ARCHI_ERROR_RESET();
+        return NULL;
+    }
 
-struct archi_dexgraph_node;
+    archi_error_t error;
+    const archi_dexgraph_node_t *target = NULL;
 
-/**
- * @brief Execution frame of a directed execution graph.
- *
- * The currently executed operation is `node->sequence[index]`.
- */
-typedef struct archi_dexgraph_frame {
-    const struct archi_dexgraph_node *node; ///< Node.
-    size_t op_index; ///< Operation index.
-} archi_dexgraph_frame_t;
+    // Execute the sequence of operation functions
+    archi_dexgraph_operation_seq_exec(node->sequence, 0, &error);
 
-#endif // _ARCHI_EXEC_I_FRAME_TYP_H_
+    if (error.code != 0)
+        goto finish;
+
+    // Execute the transition function
+    node = archi_dexgraph_transition_target(node->transition, &error);
+
+    if (error.code != 0)
+        goto finish;
+
+    // Update the node
+    target = node;
+
+finish:
+    ARCHI_ERROR_ASSIGN(error);
+    return target;
+}
+
+void
+archi_dexgraph_execute(
+        const archi_dexgraph_node_t *node,
+        ARCHI_ERROR_PARAM_DECL)
+{
+    archi_error_t error;
+    ARCHI_ERROR_VAR_RESET(&error);
+
+    while ((node != NULL) && (error.code == 0))
+        node = archi_dexgraph_execute_node(node, &error);
+
+    ARCHI_ERROR_ASSIGN(error);
+}
 

@@ -424,33 +424,46 @@ This is useful for computational pipelines or other complex procedures that must
 (modifiable without recompiling).
 Directed execution graphs can be created node by node within the context system similar to other contexts.
 
-#### Nodes
+#### Operations
 
-A graph consists of nodes connected by directed transitions. Each node contains:
+An *operation* is the main building block of directed execution graphs.
+It is a structure with two fields:
+- an *operation function*;
+- a generic pointer to *operation data*.
 
-* **Name**: An optional C-string containing node name for logging and debugging.
-* **Operation Sequence**: An array of functions (and associated data) executed linearly.
-* **Transition**: A function (and associated data) used to determine the successor node.
+An *operation function* returns nothing and accepts two parameters:
+- a generic pointer to the corresponding *operation data*;
+- (output) an error.
 
-#### Execution
+When an *operation function* is NULL, an *operation data* must be
+an *operation sequence* to be executed.
+This allows for nesting operations and creating operation trees.
 
-Execution state is described by a *frame*, which is a combination of a pointer to the current node
-and the current operation index within that node.
+#### Operation Sequences
 
-1. **Operation Phase**: Operations of the current node are executed sequentially,
-    starting from the current operation index.
-    A NULL function is treated as a 'no-op'.
-    If any operation returns an error, the entire execution is interrupted.
-2. **Transition Phase**: The transition function of the current node is called to determine the successor node.
-    If the function is NULL, the transition function data is interpreted as a pointer to the successor node.
-    If an error occurs, the entire execution is interrupted.
-3. **Loop**: The current node is set to the successor node, the operation index is reset to 0.
-    Execution continues until the successor node is NULL.
+An *operation sequence* is a structure containing two members:
+- sequence length;
+- flexible array of *operations*.
 
-Both phases are implemented as separate functions,
-which is useful for implementing of alternative execution algorithms.
+Operations in a sequence are executed linearly, from the lowest to the highest indices.
 
-#### Branching & Conditions
+#### Transitions
+
+A *transition* is the description of a connection between *nodes* in a *directed execution graph*.
+Like an *operation*, it is a structure of two fields:
+- a *transition function*;
+- a generic pointer to *transition data*.
+
+A *transition function* has the same parameters as an *operation function*:
+- a generic pointer to the corresponding *transition data*;
+- (output) an error.
+
+Unlike *operation functions*, a *transition function* returns a pointer to a target (successor) *node*,
+or NULL if the execution is finished.
+
+When a *transition function* is NULL, a *transition data* must be a successor node, which is used as is.
+
+##### Branching & Conditions
 
 An example of a transition function is the built-in 'branch' function.
 This function allows to choose between two branches,
@@ -459,6 +472,25 @@ depending on a boolean value returned by the specified condition function.
 An example of a condition function is the built-in function for looping 'N times'.
 This function returns 'false' for N times while incrementing an iteration counter,
 then returns 'true' and resets the counter.
+
+#### Nodes
+
+A *graph* consists of *nodes* connected by *transitions*. Each node contains:
+
+* **Name**: An optional C-string containing node name for logging and debugging.
+* **Operation Sequence**: An array of functions (and associated data) executed linearly.
+* **Transition**: A function (and associated data) used to determine the successor node.
+
+#### Execution
+
+1. **Operation Phase**: Operations of the current node are executed sequentially.
+    A NULL function is treated as a 'no-op'.
+    If any operation returns an error, the entire execution is interrupted.
+2. **Transition Phase**: The transition function of the current node is called to determine the successor node.
+    If the function is NULL, the transition function data is interpreted as a pointer to the successor node.
+    If an error occurs, the entire execution is interrupted.
+3. **Loop**: The current node is set to the successor node.
+    Execution continues until the successor node is NULL.
 
 ### Threads
 

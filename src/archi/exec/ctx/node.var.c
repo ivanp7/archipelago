@@ -25,7 +25,7 @@
 
 #include "archi/exec/ctx/node.var.h"
 #include "archi/exec/i/node.typ.h"
-#include "archi/exec/i/frame.fun.h"
+#include "archi/exec/i/node.fun.h"
 #include "archi/exec/i/tag.def.h"
 #include "archi/context/i/interface.def.h"
 #include "archi_base/rcpointer.fun.h"
@@ -221,7 +221,7 @@ ARCHI_CONTEXT_EVAL_FUNC(archi_context_eval__dexgraph_node)
             }
 
             // Execute the graph
-            archi_dexgraph_execute((archi_dexgraph_frame_t){.node = node}, ARCHI_ERROR_PARAM);
+            archi_dexgraph_execute(node, ARCHI_ERROR_PARAM);
         }
         else
             ARCHI_ERROR_SET(ARCHI__EKEY, "unknown slot '%s' encountered", slot.name);

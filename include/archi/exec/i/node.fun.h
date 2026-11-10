@@ -20,54 +20,48 @@
 
 /**
  * @file
- * @brief Operations with directed execution graph frames.
+ * @brief Operations with directed execution graph nodes.
  */
 
 #pragma once
-#ifndef _ARCHI_EXEC_I_FRAME_FUN_H_
-#define _ARCHI_EXEC_I_FRAME_FUN_H_
+#ifndef _ARCHI_EXEC_I_NODE_FUN_H_
+#define _ARCHI_EXEC_I_NODE_FUN_H_
 
-#include "archi/exec/i/frame.typ.h"
 #include "archi_base/error.typ.h"
 
 
+struct archi_dexgraph_node;
+
 /**
- * @brief Execute the rest of node operations and the transition, starting at the specified frame.
+ * @brief Execute node operations and transition.
  *
- * The function calls non-NULL operation functions in the current node sequence,
- * starting from the specified index, halting if any function returns non-zero error code.
+ * The function executes the operation sequence of a node,
+ * halting if any function returns non-zero error code.
  *
- * Then, the transition function is called to determine the successor node.
- * If it fails, the returned frame is pointing to the current node.
+ * Then, the transition is used to determine the successor node.
  *
- * @return Frame of the halt point.
+ * @return Pointer to the successor node.
  */
-archi_dexgraph_frame_t
+const struct archi_dexgraph_node*
 archi_dexgraph_execute_node(
-        archi_dexgraph_frame_t frame, ///< [in] Frame.
+        const struct archi_dexgraph_node *node, ///< [in] Node.
         ARCHI_ERROR_PARAM_DECL ///< [out] Error.
 );
 
 /**
- * @brief Execute a directed graph starting at the specified frame.
+ * @brief Execute a directed graph starting at the specified entry node.
  *
  * This function implements the most basic graph execution algorithm:
  * 1. execute the current node operation functions;
  * 2. execute the current node transition function;
  * 3. update the current node;
  * 4. repeat until the current node is NULL.
- *
- * Returned frame contains NULL node if execution terminated without errors.
- * Otherwise, it stores the current node pointer and operation index
- * of the location where an error occured.
- *
- * @return Frame of the halt point.
  */
-archi_dexgraph_frame_t
+void
 archi_dexgraph_execute(
-        archi_dexgraph_frame_t frame, ///< [in] Frame.
+        const struct archi_dexgraph_node *node, ///< [in] Entry node.
         ARCHI_ERROR_PARAM_DECL ///< [out] Error.
 );
 
-#endif // _ARCHI_EXEC_I_FRAME_FUN_H_
+#endif // _ARCHI_EXEC_I_NODE_FUN_H_
 
