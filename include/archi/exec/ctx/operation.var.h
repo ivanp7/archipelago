@@ -42,6 +42,11 @@
  * - "function" [index] : (archi_dexgraph_operation_func_t) operation function #index
  * - "data" [index]     : data of operation function #index
  *
+ * Calls:
+ * - "execute"  : execute the operation sequence
+ *      returns: <nothing>
+ *      parameters: <none>
+ *
  * Setter slots:
  * - "function" [index] : (archi_dexgraph_operation_func_t) operation function #index
  * - "data" [index]     : data of operation function #index

@@ -23,13 +23,31 @@
  * @brief Operation functions for executing directed execution graphs.
  */
 
-#include "archi/exec/exe/graph.fun.h"
+#include "archi/exec/exe/execute.fun.h"
+#include "archi/exec/i/operation.fun.h"
 #include "archi/exec/i/frame.fun.h"
 #include "archi/exec/i/tag.def.h"
 #include "archi_base/pointer.fun.h"
 
 
-ARCHI_DEXGRAPH_OPERATION_FUNC(archi_dexgraph_op__execute)
+ARCHI_DEXGRAPH_OPERATION_FUNC(archi_dexgraph_op__execute_operation_seq)
+{
+    {
+        archi_error_t error;
+        if (!archi_pointer_attr_compatible(data.attr,
+                    archi_pointer_attr__cdata(ARCHI_POINTER_DATA_TAG__DEXGRAPH_OPERATION_SEQ),
+                    &error))
+        {
+            ARCHI_ERROR_SET(error.code, "operation data has incorrect type: %s", error.message);
+            return;
+        }
+    }
+
+    const archi_dexgraph_operation_seq_t *sequence = data.cptr;
+    archi_dexgraph_operation_seq_exec(sequence, 0, ARCHI_ERROR_PARAM);
+}
+
+ARCHI_DEXGRAPH_OPERATION_FUNC(archi_dexgraph_op__execute_graph)
 {
     {
         archi_error_t error;
@@ -48,20 +66,18 @@ ARCHI_DEXGRAPH_OPERATION_FUNC(archi_dexgraph_op__execute)
 
 ARCHI_DEXGRAPH_TRANSITION_FUNC(archi_dexgraph_transition__execute_node)
 {
-    archi_error_t error;
-    if (!archi_pointer_attr_compatible(data.attr,
-                archi_pointer_attr__cdata(ARCHI_POINTER_DATA_TAG__DEXGRAPH_NODE),
-                &error))
     {
-        ARCHI_ERROR_SET(error.code, "transition data has incorrect type: %s", error.message);
-        return NULL;
+        archi_error_t error;
+        if (!archi_pointer_attr_compatible(data.attr,
+                    archi_pointer_attr__cdata(ARCHI_POINTER_DATA_TAG__DEXGRAPH_NODE),
+                    &error))
+        {
+            ARCHI_ERROR_SET(error.code, "transition data has incorrect type: %s", error.message);
+            return NULL;
+        }
     }
 
     archi_dexgraph_frame_t frame = {.node = data.cptr};
-    const struct archi_dexgraph_node *target =
-        archi_dexgraph_execute_node(frame, &error).node;
-
-    ARCHI_ERROR_ASSIGN(error);
-    return (error.code == 0) ? target : NULL;
+    return archi_dexgraph_execute_node(frame, ARCHI_ERROR_PARAM).node;
 }
 

@@ -24,19 +24,26 @@
  */
 
 #pragma once
-#ifndef _ARCHI_EXEC_EXE_GRAPH_FUN_H_
-#define _ARCHI_EXEC_EXE_GRAPH_FUN_H_
+#ifndef _ARCHI_EXEC_EXE_EXECUTE_FUN_H_
+#define _ARCHI_EXEC_EXE_EXECUTE_FUN_H_
 
 #include "archi/exec/i/operation.typ.h"
 #include "archi/exec/i/transition.typ.h"
 
 
 /**
+ * @brief Operation function: execute an operation sequence.
+ *
+ * Function data type: archi_dexgraph_operation_seq_t.
+ */
+ARCHI_DEXGRAPH_OPERATION_FUNC(archi_dexgraph_op__execute_operation_seq);
+
+/**
  * @brief Operation function: execute a whole directed graph starting at the specified node.
  *
  * Function data type: archi_dexgraph_node_t.
  */
-ARCHI_DEXGRAPH_OPERATION_FUNC(archi_dexgraph_op__execute);
+ARCHI_DEXGRAPH_OPERATION_FUNC(archi_dexgraph_op__execute_graph);
 
 /**
  * @brief Transition function: execute a directed graph node.
@@ -45,5 +52,5 @@ ARCHI_DEXGRAPH_OPERATION_FUNC(archi_dexgraph_op__execute);
  */
 ARCHI_DEXGRAPH_TRANSITION_FUNC(archi_dexgraph_transition__execute_node);
 
-#endif // _ARCHI_EXEC_EXE_GRAPH_FUN_H_
+#endif // _ARCHI_EXEC_EXE_EXECUTE_FUN_H_
 

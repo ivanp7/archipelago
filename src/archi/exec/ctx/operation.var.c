@@ -147,75 +147,91 @@ ARCHI_CONTEXT_FINAL_FUNC(archi_context_final__dexgraph_operation_seq)
 static
 ARCHI_CONTEXT_EVAL_FUNC(archi_context_eval__dexgraph_operation_seq)
 {
-    (void) params;
-
-    if (call)
-    {
-        ARCHI_ERROR_SET(ARCHI__ECONSTRAINT, "no calls are supported");
-        return;
-    }
-
     struct archi_context_data__dexgraph_operation_seq *context_data =
         (struct archi_context_data__dexgraph_operation_seq*)context;
 
     archi_dexgraph_operation_seq_t *sequence = context_data->sequence.ptr;
 
-    if (ARCHI_STRING_COMPARE("length", ==, slot.name))
+    if (!call)
     {
-        if (slot.num_indices != 0)
+        if (ARCHI_STRING_COMPARE("length", ==, slot.name))
         {
-            ARCHI_ERROR_SET(ARCHI__EINDEX, "number of slot indices isn't 0");
-            return;
+            if (slot.num_indices != 0)
+            {
+                ARCHI_ERROR_SET(ARCHI__EINDEX, "number of slot indices isn't 0");
+                return;
+            }
+
+            size_t sequence_length = sequence->length;
+
+            archi_rcpointer_t value = {
+                .ptr = &sequence_length,
+                .attr = ARCHI_POINTER_TYPE__DATA_ON_STACK |
+                    ARCHI_POINTER_ATTR__PDATA(1, size_t),
+            };
+
+            ARCHI_CONTEXT_YIELD(value);
         }
-
-        size_t sequence_length = sequence->length;
-
-        archi_rcpointer_t value = {
-            .ptr = &sequence_length,
-            .attr = ARCHI_POINTER_TYPE__DATA_ON_STACK |
-                ARCHI_POINTER_ATTR__PDATA(1, size_t),
-        };
-
-        ARCHI_CONTEXT_YIELD(value);
-    }
-    else if (ARCHI_STRING_COMPARE("function", ==, slot.name))
-    {
-        if (slot.num_indices != 1)
+        else if (ARCHI_STRING_COMPARE("function", ==, slot.name))
         {
-            ARCHI_ERROR_SET(ARCHI__EINDEX, "number of slot indices isn't 1");
-            return;
-        }
+            if (slot.num_indices != 1)
+            {
+                ARCHI_ERROR_SET(ARCHI__EINDEX, "number of slot indices isn't 1");
+                return;
+            }
 
-        archi_context_slot_index_t index = slot.index[0];
-        if ((index < 0) || ((size_t)index >= sequence->length))
+            archi_context_slot_index_t index = slot.index[0];
+            if ((index < 0) || ((size_t)index >= sequence->length))
+            {
+                ARCHI_ERROR_SET(ARCHI__EINDEX, "index %lli is out of bounds [0; %zu)",
+                        index, sequence->length);
+                return;
+            }
+
+            ARCHI_CONTEXT_YIELD(context_data->ref_function[index]);
+        }
+        else if (ARCHI_STRING_COMPARE("data", ==, slot.name))
         {
-            ARCHI_ERROR_SET(ARCHI__EINDEX, "index %lli is out of bounds [0; %zu)",
-                    index, sequence->length);
-            return;
-        }
+            if (slot.num_indices != 1)
+            {
+                ARCHI_ERROR_SET(ARCHI__EINDEX, "number of slot indices isn't 1");
+                return;
+            }
 
-        ARCHI_CONTEXT_YIELD(context_data->ref_function[index]);
-    }
-    else if (ARCHI_STRING_COMPARE("data", ==, slot.name))
-    {
-        if (slot.num_indices != 1)
-        {
-            ARCHI_ERROR_SET(ARCHI__EINDEX, "number of slot indices isn't 1");
-            return;
-        }
+            archi_context_slot_index_t index = slot.index[0];
+            if ((index < 0) || ((size_t)index >= sequence->length))
+            {
+                ARCHI_ERROR_SET(ARCHI__EINDEX, "index %lli is out of bounds [0; %zu)",
+                        index, sequence->length);
+                return;
+            }
 
-        archi_context_slot_index_t index = slot.index[0];
-        if ((index < 0) || ((size_t)index >= sequence->length))
-        {
-            ARCHI_ERROR_SET(ARCHI__EINDEX, "index %lli is out of bounds [0; %zu)",
-                    index, sequence->length);
-            return;
+            ARCHI_CONTEXT_YIELD(context_data->ref_data[index]);
         }
-
-        ARCHI_CONTEXT_YIELD(context_data->ref_data[index]);
+        else
+            ARCHI_ERROR_SET(ARCHI__EKEY, "unknown slot '%s' encountered", slot.name);
     }
     else
-        ARCHI_ERROR_SET(ARCHI__EKEY, "unknown slot '%s' encountered", slot.name);
+    {
+        if (ARCHI_STRING_COMPARE("execute", ==, slot.name))
+        {
+            if (slot.num_indices != 0)
+            {
+                ARCHI_ERROR_SET(ARCHI__EINDEX, "number of slot indices isn't 0");
+                return;
+            }
+            else if (params != NULL)
+            {
+                ARCHI_ERROR_SET(ARCHI__EKEY, "call doesn't accept parameters");
+                return;
+            }
+
+            // Execute the operation sequence
+            archi_dexgraph_operation_seq_exec(sequence, 0, ARCHI_ERROR_PARAM);
+        }
+        else
+            ARCHI_ERROR_SET(ARCHI__EKEY, "unknown slot '%s' encountered", slot.name);
+    }
 }
 
 static
