@@ -598,16 +598,31 @@ create_builtin_contexts(void)
         exit(EXIT_FAILURE);
 }
 
+static
+ARCHI_HASHMAP_TRAV_KV_FUNC(finalize_context)
+{
+    (void) value;
+    (void) index;
+    (void) data;
+
+    archi_log_info(__func__, " * finalizing context '%s'", key);
+
+    return (archi_hashmap_trav_action_t){.type = ARCHI_HASHMAP_TRAV_UNSET};
+}
+
 void
 finalize_contexts(void)
 {
     if (archi_process.context.registry != NULL)
     {
-        archi_log_info(__func__, "Finalizing context registry...");
+        archi_hashmap_t registry = archi_context_data(archi_process.context.registry).ptr;
 
-        // Remove all contexts from the registry
-        archi_hashmap_traverse(archi_context_data(archi_process.context.registry).ptr,
-                false, archi_hashmap_trav_kv__unset_all, NULL, NULL);
+        archi_log_info(__func__, "Finalizing the remaining %zu contexts...",
+                archi_hashmap_num_elements(registry));
+
+        archi_hashmap_traverse(registry, false, finalize_context, NULL, NULL);
+
+        archi_log_info(__func__, "Finalizing the context registry...");
 
         archi_context_finalize(archi_process.context.registry);
         archi_process.context.registry = NULL;
@@ -846,7 +861,8 @@ prepare_signal_watch_set(void)
             // Log the signal set
             if (archi_print_lock(ARCHI_LOG_VERBOSITY__DEBUG))
             {
-                archi_print("    signal watch set #%zu: {", num_signal_sets - 1);
+                archi_print_indent(1);
+                archi_print("signal watch set #%zu: {", num_signal_sets - 1);
                 print_signal_set(signal_watch_set);
                 archi_print(" }\n");
 
@@ -868,7 +884,8 @@ prepare_signal_watch_set(void)
         // Log the signal watch set
         if (archi_print_lock(ARCHI_LOG_VERBOSITY__DEBUG))
         {
-            archi_print("    signal watch set: {");
+            archi_print_indent(1);
+            archi_print("signal watch set: {");
             print_signal_set(archi_process.signal.watch_set);
             archi_print(" }\n");
 
