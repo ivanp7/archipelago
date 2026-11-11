@@ -36,6 +36,7 @@
 #include "archi_base/util/string.fun.h"
 
 #include <stdlib.h> // for malloc(), free()
+#include <stdint.h> // for uintmax_t
 
 
 static
@@ -204,8 +205,8 @@ ARCHI_CONTEXT_EVAL_FUNC(archi_context_eval__library)
             symbol_attr = ARCHI_POINTER_TYPE__DATA_READONLY | archi_pointer_attr__cdata(tag);
             if (symbol_attr == (archi_pointer_attr_t)-1)
             {
-                ARCHI_ERROR_SET(ARCHI__ECONSTRAINT, "complex data type tag (%llu) exceeds maximum value",
-                        (unsigned long long)tag);
+                ARCHI_ERROR_SET(ARCHI__ECONSTRAINT, "complex data type tag (%#jx) exceeds maximum value",
+                        (uintmax_t)tag);
                 return;
             }
         }
@@ -215,8 +216,8 @@ ARCHI_CONTEXT_EVAL_FUNC(archi_context_eval__library)
         symbol_attr = archi_pointer_attr__func(tag);
         if (symbol_attr == 0)
         {
-            ARCHI_ERROR_SET(ARCHI__ECONSTRAINT, "function type tag (%llu) exceeds maximum value",
-                    (unsigned long long)tag);
+            ARCHI_ERROR_SET(ARCHI__ECONSTRAINT, "function type tag (%#jx) exceeds maximum value",
+                    (uintmax_t)tag);
             return;
         }
     }

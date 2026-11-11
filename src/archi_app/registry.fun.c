@@ -37,6 +37,8 @@
 #include "archi_log/print.fun.h"
 #include "archi_log/color.def.h"
 
+#include <stdint.h> // for uintmax_t
+
 
 static
 void
@@ -184,7 +186,7 @@ archi_print_pointer(
         archi_print_color(ARCHI_COLOR_RESET);
         archi_print(", tag = ");
         archi_print_color(ARCHI_COLOR_FG_BRI_YELLOW);
-        archi_print("%#llx", (unsigned long long)tag);
+        archi_print("%#jx", (uintmax_t)tag);
         archi_print_color(ARCHI_COLOR_RESET);
     }
     else if (archi_pointer_attr_unpk__func(value.attr, &tag, NULL))
@@ -194,7 +196,7 @@ archi_print_pointer(
         archi_print_color(ARCHI_COLOR_RESET);
         archi_print(", tag = ");
         archi_print_color(ARCHI_COLOR_FG_BRI_YELLOW);
-        archi_print("%#llx", (unsigned long long)tag);
+        archi_print("%#jx", (uintmax_t)tag);
         archi_print_color(ARCHI_COLOR_RESET);
     }
     else // must never happen

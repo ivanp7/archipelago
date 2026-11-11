@@ -27,6 +27,8 @@
 #include "archi_base/pointer.def.h"
 #include "archi_base/util/size.def.h"
 
+#include <stdint.h> // for uintmax_t
+
 
 #define MASK(width) (((archi_pointer_attr_t)1 << (width)) - 1)
 
@@ -297,8 +299,8 @@ archi_pointer_attr_compatible(
 
             if (((attr_tag ^ sample_tag) & MASK(mask_width)) != 0)
             {
-                ARCHI_ERROR_SET(ARCHI__EATTRIBUTES, "data tag is incorrect (have = %#llx, need = %#llx)",
-                        (unsigned long long)attr_tag, (unsigned long long)sample_tag);
+                ARCHI_ERROR_SET(ARCHI__EATTRIBUTES, "data tag is incorrect (have = %#jx, need = %#jx)",
+                        (uintmax_t)attr_tag, (uintmax_t)sample_tag);
                 return false;
             }
         }
@@ -349,8 +351,8 @@ archi_pointer_attr_compatible(
 
         if (attr_tag != sample_tag)
         {
-            ARCHI_ERROR_SET(ARCHI__EATTRIBUTES, "function tag is incorrect (have = %#llx, need = %#llx)",
-                    (unsigned long long)attr_tag, (unsigned long long)sample_tag);
+            ARCHI_ERROR_SET(ARCHI__EATTRIBUTES, "function tag is incorrect (have = %#jx, need = %#jx)",
+                    (uintmax_t)attr_tag, (uintmax_t)sample_tag);
             return false;
         }
     }

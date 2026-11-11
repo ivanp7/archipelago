@@ -31,6 +31,7 @@
 #include "archi_base/ref_count.fun.h"
 
 #include <stdlib.h> // for malloc(), free()
+#include <stdint.h> // for uintmax_t
 
 
 struct archi_aggr {
@@ -284,7 +285,7 @@ archi_aggr_allocate(
 
             if (attr == (archi_pointer_attr_t)-1)
             {
-                ARCHI_ERROR_SET(ARCHI__ECONSTRAINT, "aggregate type tag (%llx) is invalid", (unsigned long long)tag);
+                ARCHI_ERROR_SET(ARCHI__ECONSTRAINT, "aggregate type tag (%#jx) is invalid", (uintmax_t)tag);
                 return NULL;
             }
         }

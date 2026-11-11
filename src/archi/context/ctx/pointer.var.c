@@ -35,6 +35,7 @@
 
 #include <stdlib.h> // for malloc(), free()
 #include <string.h> // for memcpy(), memmove()
+#include <stdint.h> // for uintmax_t
 
 
 static
@@ -1080,8 +1081,8 @@ ARCHI_CONTEXT_INIT_FUNC(archi_context_init__cdpointer)
     }
     else if (tag > ARCHI_POINTER_DATA_TAG_MAX)
     {
-        ARCHI_ERROR_SET(ARCHI__ECONSTRAINT, "data type tag (%llu) exceeds ARCHI_POINTER_DATA_TAG_MAX",
-                (unsigned long long)tag);
+        ARCHI_ERROR_SET(ARCHI__ECONSTRAINT, "data type tag (%#jx) exceeds ARCHI_POINTER_DATA_TAG_MAX",
+                (uintmax_t)tag);
         return NULL;
     }
 
@@ -1257,8 +1258,8 @@ ARCHI_CONTEXT_SET_FUNC(archi_context_set__cdpointer)
         archi_pointer_attr_t tag = *(archi_pointer_attr_t*)value.ptr;
         if (tag > ARCHI_POINTER_DATA_TAG_MAX)
         {
-            ARCHI_ERROR_SET(ARCHI__ECONSTRAINT, "data type tag (%llu) exceeds ARCHI_POINTER_DATA_TAG_MAX",
-                    (unsigned long long)tag);
+            ARCHI_ERROR_SET(ARCHI__ECONSTRAINT, "data type tag (%#jx) exceeds ARCHI_POINTER_DATA_TAG_MAX",
+                    (uintmax_t)tag);
             return;
         }
 
@@ -1308,8 +1309,8 @@ ARCHI_CONTEXT_INIT_FUNC(archi_context_init__fpointer)
     // Check validness of parameters
     if (tag > ARCHI_POINTER_FUNC_TAG_MAX)
     {
-        ARCHI_ERROR_SET(ARCHI__ECONSTRAINT, "function type tag (%llu) exceeds ARCHI_POINTER_FUNC_TAG_MAX",
-                (unsigned long long)tag);
+        ARCHI_ERROR_SET(ARCHI__ECONSTRAINT, "function type tag (%#jx) exceeds ARCHI_POINTER_FUNC_TAG_MAX",
+                (uintmax_t)tag);
         return NULL;
     }
 
@@ -1427,8 +1428,8 @@ ARCHI_CONTEXT_SET_FUNC(archi_context_set__fpointer)
         archi_pointer_attr_t tag = *(archi_pointer_attr_t*)value.ptr;
         if (tag > ARCHI_POINTER_FUNC_TAG_MAX)
         {
-            ARCHI_ERROR_SET(ARCHI__ECONSTRAINT, "function type tag (%llu) exceeds ARCHI_POINTER_FUNC_TAG_MAX",
-                    (unsigned long long)tag);
+            ARCHI_ERROR_SET(ARCHI__ECONSTRAINT, "function type tag (%#jx) exceeds ARCHI_POINTER_FUNC_TAG_MAX",
+                    (uintmax_t)tag);
             return;
         }
 

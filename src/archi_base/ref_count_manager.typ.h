@@ -28,20 +28,31 @@
 #define _SRC_ARCHI_BASE_REF_COUNT_MANAGER_TYP_H_
 
 #ifndef __STDC_NO_ATOMICS__
-#  include <stdatomic.h> // for atomic_ullong, atomic_bool
+#  include <stdatomic.h> // for atomic_uintmax_t, atomic_bool
 #else
+#  include <stdint.h> // for uintmax_t
 #  include <stdbool.h>
 #endif
 
 
 struct archi_ref_count_manager {
 #ifndef __STDC_NO_ATOMICS__
-    atomic_ullong num_increments;
-    atomic_ullong num_decrements;
+    atomic_uintmax_t num_allocations;
+    atomic_uintmax_t num_releases;
+
+    atomic_uintmax_t num_increments;
+    atomic_uintmax_t num_decrements;
+
+    atomic_bool double_release;
     atomic_bool negative_count;
 #else
-    unsigned long long num_increments;
-    unsigned long long num_decrements;
+    uintmax_t num_allocations;
+    uintmax_t num_releases;
+
+    uintmax_t num_increments;
+    uintmax_t num_decrements;
+
+    bool double_release;
     bool negative_count;
 #endif
 };

@@ -28,9 +28,7 @@
 #include "ref_count_manager.typ.h"
 
 #ifndef __STDC_NO_ATOMICS__
-#  include <stdatomic.h> // for atomic_size_t, atomic_*
-#else
-#  include <stddef.h> // for size_t
+#  include <stdatomic.h> // for atomic_*
 #endif
 #include <stdlib.h> // for malloc(), free()
 
@@ -53,7 +51,49 @@ ARCHI_MANAGER_PTR_INIT_FUNC(archi_manager_ptr_init__ref_count)
 
 /*****************************************************************************/
 
-unsigned long long
+uintmax_t
+archi_reference_count_total_allocations(void)
+{
+    if (archi_ref_count_manager == NULL)
+        return 0;
+
+#ifndef __STDC_NO_ATOMICS__
+    return atomic_load_explicit(&archi_ref_count_manager->num_allocations,
+            memory_order_acquire);
+#else
+    return archi_ref_count_manager->num_allocations;
+#endif
+}
+
+uintmax_t
+archi_reference_count_total_releases(void)
+{
+    if (archi_ref_count_manager == NULL)
+        return 0;
+
+#ifndef __STDC_NO_ATOMICS__
+    return atomic_load_explicit(&archi_ref_count_manager->num_releases,
+            memory_order_acquire);
+#else
+    return archi_ref_count_manager->num_releases;
+#endif
+}
+
+bool
+archi_reference_count_double_release_detected(void)
+{
+    if (archi_ref_count_manager == NULL)
+        return false;
+
+#ifndef __STDC_NO_ATOMICS__
+    return atomic_load_explicit(&archi_ref_count_manager->double_release,
+            memory_order_relaxed);
+#else
+    return archi_ref_count_manager->double_release;
+#endif
+}
+
+uintmax_t
 archi_reference_count_total_increments(void)
 {
     if (archi_ref_count_manager == NULL)
@@ -67,7 +107,7 @@ archi_reference_count_total_increments(void)
 #endif
 }
 
-unsigned long long
+uintmax_t
 archi_reference_count_total_decrements(void)
 {
     if (archi_ref_count_manager == NULL)
@@ -98,12 +138,13 @@ archi_reference_count_negative_detected(void)
 /*****************************************************************************/
 
 struct archi_reference_count {
+    uintmax_t id;
+
 #ifndef __STDC_NO_ATOMICS__
-    atomic_size_t
+    atomic_uintmax_t value;
 #else
-    size_t
+    uintmax_t value;
 #endif
-        value;
 
     archi_destructor_func_t destructor_fn;
     void *destructor_data;
@@ -123,6 +164,14 @@ archi_reference_count_alloc(
 
     if (archi_ref_count_manager != NULL)
     {
+        ref_count->id =
+#ifndef __STDC_NO_ATOMICS__
+            atomic_fetch_add_explicit(&archi_ref_count_manager->num_allocations, 1,
+                    memory_order_release);
+#else
+            archi_ref_count_manager->num_allocations++;
+#endif
+
 #ifndef __STDC_NO_ATOMICS__
         atomic_fetch_add_explicit(&archi_ref_count_manager->num_increments, 1,
                 memory_order_release);
@@ -130,6 +179,8 @@ archi_reference_count_alloc(
         archi_ref_count_manager->num_increments++;
 #endif
     }
+    else
+        ref_count->id = 0;
 
 #ifndef __STDC_NO_ATOMICS__
     atomic_init(&ref_count->value, 1);
@@ -147,6 +198,29 @@ void
 archi_reference_count_free(
         archi_reference_count_t ref_count)
 {
+    if (archi_ref_count_manager != NULL)
+    {
+        uintmax_t num_releases = 1 + // calculating the new value from the old
+#ifndef __STDC_NO_ATOMICS__
+            atomic_fetch_add_explicit(&archi_ref_count_manager->num_releases, 1,
+                    memory_order_release);
+#else
+            archi_ref_count_manager->num_releases++;
+#endif
+
+        uintmax_t num_allocations = archi_reference_count_total_allocations();
+
+        if (num_allocations < num_releases) // memory error detected
+        {
+#ifndef __STDC_NO_ATOMICS__
+            atomic_store_explicit(&archi_ref_count_manager->double_release,
+                    true, memory_order_relaxed);
+#else
+            archi_ref_count_manager->double_release = true;
+#endif
+        }
+    }
+
     free(ref_count);
 }
 
@@ -183,7 +257,7 @@ archi_reference_count_decrement(
 
     if (archi_ref_count_manager != NULL)
     {
-        unsigned long long num_decrements = 1 + // calculating the new value from the old
+        uintmax_t num_decrements = 1 + // calculating the new value from the old
 #ifndef __STDC_NO_ATOMICS__
             atomic_fetch_add_explicit(&archi_ref_count_manager->num_decrements, 1,
                     memory_order_release);
@@ -191,7 +265,7 @@ archi_reference_count_decrement(
             archi_ref_count_manager->num_decrements++;
 #endif
 
-        unsigned long long num_increments = archi_reference_count_total_increments();
+        uintmax_t num_increments = archi_reference_count_total_increments();
 
         if (num_increments < num_decrements) // memory error detected
         {

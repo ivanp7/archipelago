@@ -30,6 +30,7 @@
 #include "archi_base/pointer.def.h"
 
 #include <stdio.h>
+#include <stdint.h> // for uintmax_t
 
 
 #define INDENTATION     4
@@ -79,13 +80,13 @@ ARCHI_HASHMAP_TRAV_KV_FUNC(archi_dexgraph_op__hashmap_print_traverse)
         else
             mem_type = "on stack";
 
-        printf("data, %s, tag = %llu",
-                mem_type, (unsigned long long)tag);
+        printf("data, %s, tag = %#jx",
+                mem_type, (uintmax_t)tag);
     }
     else if (archi_pointer_attr_unpk__func(value.attr, &tag, NULL))
     {
-        printf("function, tag = %llu",
-                (unsigned long long)tag);
+        printf("function, tag = %#jx",
+                (uintmax_t)tag);
     }
 
     printf(">");

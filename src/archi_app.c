@@ -56,6 +56,7 @@
 #include "archi/env/i/manager.fun.h"
 
 // Reference counting
+#include "archi_app/manager/ref_count.fun.h"
 #include "archi_base/ref_count_manager.fun.h"
 
 // Error handling
@@ -268,6 +269,13 @@ main(
     if (archi_process.args.num_inputs == 0)
         return EXIT_SUCCESS;
 
+    // Initialize the reference counting manager
+    {
+        archi_log_info(__func__, "Initializing the reference counting manager...");
+
+        archi_manager_ptr_init__ref_count(archi_app_manager_ptr_get__ref_count());
+    }
+
     // Initialize the environment manager
     {
         archi_log_info(__func__, "Initializing the environment manager...");
@@ -426,7 +434,7 @@ exec_list(
                 archi_pointer_attr_t tag;
 
                 if (archi_pointer_attr_unpk__cdata(operation_list->value.attr, &tag, NULL))
-                    archi_log_debug(__func__, "       operation data tag = %#llx", (unsigned long long)tag);
+                    archi_log_debug(__func__, "       operation data tag = %#jx", (uintmax_t)tag);
                 else
                 {
                     size_t length, stride, alignment;
@@ -525,11 +533,22 @@ exit_clean(void) // is called on exit() or if main() returns
 
     // Check for memory leaks and corruption
     {
-        unsigned long long total_increments = archi_reference_count_total_increments();
-        unsigned long long total_decrements = archi_reference_count_total_decrements();
+        uintmax_t total_allocations = archi_reference_count_total_allocations();
+        uintmax_t total_releases = archi_reference_count_total_releases();
+        uintmax_t total_increments = archi_reference_count_total_increments();
+        uintmax_t total_decrements = archi_reference_count_total_decrements();
 
-        archi_log_debug(__func__, "total reference counter increments = %llu, decrements = %llu",
-                total_increments, total_decrements);
+        archi_log_debug(__func__, "total reference counter allocations = %ju, releases = %ju, increments = %ju, decrements = %ju",
+                total_allocations, total_releases, total_increments, total_decrements);
+
+        if (total_allocations < total_releases)
+            archi_log_error(__func__, "Memory corruption detected: total number of reference counter releases (%zu) exceeds allocations (%zu) by %zu",
+                    total_releases, total_allocations, total_releases - total_allocations);
+        else if (archi_reference_count_double_release_detected())
+            archi_log_error(__func__, "Memory corruption detected: total number of reference counter releases exceeded allocations (double release)");
+        else if (total_allocations > total_releases)
+            archi_log_warning(__func__, "Memory leak detected: total number of reference counter allocations (%zu) exceeds releases (%zu) by %zu",
+                    total_allocations, total_releases, total_allocations - total_releases);
 
         if (total_increments < total_decrements)
             archi_log_error(__func__, "Memory corruption detected: total number of reference counter decrements (%zu) exceeds increments (%zu) by %zu",
