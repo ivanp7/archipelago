@@ -1145,26 +1145,26 @@ print_logo(void)
 void
 print_error(void)
 {
-#define ERROR_ORIGIN_LENGTH     1024
+#define ORIGIN_LENGTH     1024
 
-    char error_origin[ERROR_ORIGIN_LENGTH];
+    char origin[ORIGIN_LENGTH];
 
     if ((archi_process.error.origin.func != NULL) && (archi_process.error.origin.file != NULL))
-        snprintf(error_origin, ERROR_ORIGIN_LENGTH, "%s()@'%s':%i",
-                archi_process.error.origin.func,
+        snprintf(origin, ORIGIN_LENGTH, " | (%s:%i) in %s()",
+                archi_process.error.origin.file,
+                archi_process.error.origin.line,
+                archi_process.error.origin.func);
+    else if (archi_process.error.origin.file != NULL)
+        snprintf(origin, ORIGIN_LENGTH, " | (%s:%i)",
                 archi_process.error.origin.file,
                 archi_process.error.origin.line);
     else if (archi_process.error.origin.func != NULL)
-        snprintf(error_origin, ERROR_ORIGIN_LENGTH, "%s()",
+        snprintf(origin, ORIGIN_LENGTH, " | in %s()",
                 archi_process.error.origin.func);
-    else if (archi_process.error.origin.file != NULL)
-        snprintf(error_origin, ERROR_ORIGIN_LENGTH, "'%s':%i",
-                archi_process.error.origin.file,
-                archi_process.error.origin.line);
     else
-        error_origin[0] = '\0';
+        origin[0] = '\0';
 
-#undef ERROR_ORIGIN_LENGTH
+#undef ORIGIN_LENGTH
 
     if (archi_process.error.code != 0)
     {
@@ -1173,24 +1173,24 @@ print_error(void)
         if (code_name != NULL)
         {
             if (archi_process.error.message[0] != '\0')
-                archi_log_error(error_origin, "Error code %i (%s): %s",
-                        archi_process.error.code, code_name, archi_process.error.message);
+                archi_log_error(NULL, "%i (%s): %s%s",
+                        archi_process.error.code, code_name, archi_process.error.message, origin);
             else
-                archi_log_error(error_origin, "Error code %i (%s)",
-                        archi_process.error.code, code_name);
+                archi_log_error(NULL, "%i (%s)%s",
+                        archi_process.error.code, code_name, origin);
         }
         else
         {
             if (archi_process.error.message[0] != '\0')
-                archi_log_error(error_origin, "Error code %i: %s",
-                        archi_process.error.code, archi_process.error.message);
+                archi_log_error(NULL, "%i: %s%s",
+                        archi_process.error.code, archi_process.error.message, origin);
             else
-                archi_log_error(error_origin, "Error code %i",
-                        archi_process.error.code);
+                archi_log_error(NULL, "%i%s",
+                        archi_process.error.code, origin);
         }
     }
     else if (archi_process.error.message[0] != '\0')
-        archi_log_warning(error_origin, "%s", archi_process.error.message);
+        archi_log_warning(NULL, "%s%s", archi_process.error.message, origin);
 }
 
 ///////////////////////////////////////////////////////////////////////////////
