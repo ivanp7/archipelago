@@ -80,31 +80,32 @@ def new_dexgraph_operation_seq(registry, key, /,
     if operations is not None:
         for operation in operations:
             if operation is not None:
-                if not isinstance(operation, tuple):
-                    raise TypeError
-                elif len(operation) > 2:
-                    raise ValueError
+                operation_func, operation_data = None, None
 
-                if len(operation) == 1:
-                    if operation[0] is not None and not TypeAttr.compatible(
-                            TypeAttr.of(operation[0]),
+                if isinstance(operation, tuple):
+                    if len(operation) > 2:
+                        raise ValueError
+                    elif len(operation) == 2:
+                        operation_func, operation_data = operation
+                    elif len(operation) == 1:
+                        operation_data = operation[0]
+                else:
+                    operation_data = operation
+
+                if operation_func is not None:
+                    if not TypeAttr.compatible(
+                            TypeAttr.of(operation_func),
+                            TypeAttr.function(typ.ARCHI_POINTER_FUNC_TAG__DEXGRAPH_OPERATION)):
+                        raise TypeError
+
+                    if operation_data is not None and not TypeAttr.compatible(
+                            TypeAttr.of(operation_data), TypeAttr.complex_data()):
+                        raise TypeError
+                else:
+                    if operation_data is not None and not TypeAttr.compatible(
+                            TypeAttr.of(operation_data),
                             TypeAttr.complex_data(typ.ARCHI_POINTER_DATA_TAG__DEXGRAPH_OPERATION_SEQ)):
                         raise TypeError
-                elif len(operation) == 2:
-                    if operation[0] is not None:
-                        if not TypeAttr.compatible(
-                                TypeAttr.of(operation[0]),
-                                TypeAttr.function(typ.ARCHI_POINTER_FUNC_TAG__DEXGRAPH_OPERATION)):
-                            raise TypeError
-
-                        if operation[1] is not None and not TypeAttr.compatible(
-                                TypeAttr.of(operation[1]), TypeAttr.complex_data()):
-                            raise TypeError
-                    else:
-                        if operation[1] is not None and not TypeAttr.compatible(
-                                TypeAttr.of(operation[1]),
-                                TypeAttr.complex_data(typ.ARCHI_POINTER_DATA_TAG__DEXGRAPH_OPERATION_SEQ)):
-                            raise TypeError
 
     params = {}
     if name is not None:
@@ -118,14 +119,17 @@ def new_dexgraph_operation_seq(registry, key, /,
     if operations is not None:
         for i, operation in enumerate(operations):
             if operation is not None:
-                if len(operation) == 1:
-                    if operation[0] is not None:
-                        registry(sequence.data[i] << operation[0])
-                elif len(operation) == 2:
-                    if operation[0] is not None:
-                        registry(sequence.function[i] << operation[0])
-                    if operation[1] is not None:
-                        registry(sequence.data[i] << operation[1])
+                if isinstance(operation, tuple):
+                    if len(operation) == 1:
+                        if operation[0] is not None:
+                            registry(sequence.data[i] << operation[0])
+                    elif len(operation) == 2:
+                        if operation[0] is not None:
+                            registry(sequence.function[i] << operation[0])
+                        if operation[1] is not None:
+                            registry(sequence.data[i] << operation[1])
+                else:
+                    registry(sequence.data[i] << operation)
 
     return sequence
 
@@ -145,31 +149,32 @@ def new_dexgraph_node(registry, key, /,
         raise TypeError
 
     if transition is not None:
-        if not isinstance(transition, tuple):
-            raise TypeError
-        elif len(transition) > 2:
-            raise ValueError
+        transition_func, transition_data = None, None
 
-        if len(transition) == 1:
-                if transition[0] is not None and not TypeAttr.compatible(
-                        TypeAttr.of(transition[0]),
-                        TypeAttr.complex_data(typ.ARCHI_POINTER_DATA_TAG__DEXGRAPH_NODE)):
-                    raise TypeError
-        elif len(transition) == 2:
-            if transition[0] is not None:
-                if not TypeAttr.compatible(
-                        TypeAttr.of(transition[0]),
-                        TypeAttr.function(typ.ARCHI_POINTER_FUNC_TAG__DEXGRAPH_TRANSITION)):
-                    raise TypeError
+        if isinstance(transition, tuple):
+            if len(transition) > 2:
+                raise ValueError
+            elif len(transition) == 2:
+                transition_func, transition_data = transition
+            elif len(transition) == 1:
+                transition_data = transition[0]
+        else:
+            transition_data = transition
 
-                if transition[1] is not None and not TypeAttr.compatible(
-                        TypeAttr.of(transition[1]), TypeAttr.complex_data()):
-                    raise TypeError
-            else:
-                if transition[1] is not None and not TypeAttr.compatible(
-                        TypeAttr.of(transition[1]),
-                        TypeAttr.complex_data(typ.ARCHI_POINTER_DATA_TAG__DEXGRAPH_NODE)):
-                    raise TypeError
+        if transition_func is not None:
+            if not TypeAttr.compatible(
+                    TypeAttr.of(transition_func),
+                    TypeAttr.function(typ.ARCHI_POINTER_FUNC_TAG__DEXGRAPH_TRANSITION)):
+                raise TypeError
+
+            if transition_data is not None and not TypeAttr.compatible(
+                    TypeAttr.of(transition_data), TypeAttr.complex_data()):
+                raise TypeError
+        else:
+            if transition_data is not None and not TypeAttr.compatible(
+                    TypeAttr.of(transition_data),
+                    TypeAttr.complex_data(typ.ARCHI_POINTER_DATA_TAG__DEXGRAPH_NODE)):
+                raise TypeError
 
     params = {}
     if name is not None:
@@ -177,14 +182,17 @@ def new_dexgraph_node(registry, key, /,
     if sequence is not None:
         params['sequence'] = sequence
     if transition is not None:
-        if len(transition) == 1:
-            if transition[0] is not None:
-                params['transition_data'] = transition[0]
-        elif len(transition) == 2:
-            if transition[0] is not None:
-                params['transition_func'] = transition[0]
-            if transition[1] is not None:
-                params['transition_data'] = transition[1]
+        if isinstance(transition, tuple):
+            if len(transition) == 1:
+                if transition[0] is not None:
+                    params['transition_data'] = transition[0]
+            elif len(transition) == 2:
+                if transition[0] is not None:
+                    params['transition_func'] = transition[0]
+                if transition[1] is not None:
+                    params['transition_data'] = transition[1]
+        else:
+            params['transition_data'] = transition
 
     I_DEXGRAPH_NODE = DexgraphNodeContext.interface_in(registry.BUILTIN.executable)
     node = registry.new_context(key, I_DEXGRAPH_NODE(**params))
