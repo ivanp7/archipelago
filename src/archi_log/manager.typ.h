@@ -20,7 +20,7 @@
 
 /**
  * @file
- * @brief The logger manager type.
+ * @brief The logging manager type.
  */
 
 #pragma once

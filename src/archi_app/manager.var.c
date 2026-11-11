@@ -24,6 +24,7 @@
  */
 
 #include "archi_base/manager.var.h"
+#include "archi_app/manager/ref_count.fun.h"
 #include "archi_app/manager/log.fun.h"
 #include "archi_app/manager/signal.fun.h"
 #include "archi_app/manager/env.fun.h"
@@ -31,6 +32,7 @@
 
 const archi_manager_ptr_init_spec_t
 archi_manager_ptr_init_specs[] = {
+    {"archi_manager_ptr_init__ref_count", archi_app_manager_ptr_get__ref_count},
     {"archi_manager_ptr_init__log", archi_app_manager_ptr_get__log},
     {"archi_manager_ptr_init__signal", archi_app_manager_ptr_get__signal},
     {"archi_manager_ptr_init__env", archi_app_manager_ptr_get__env},

@@ -102,7 +102,7 @@ archi_log_indentation(void);
 /**
  * @brief Determine whether colored output is enabled for log messages.
  *
- * Checks the logger manager to see if log messages
+ * Checks the logging manager to see if log messages
  * should include ANSI color codes to produce
  * colored output on supported terminals.
  * If the logger is not initialized, this function returns false.

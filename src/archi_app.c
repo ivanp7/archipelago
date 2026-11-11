@@ -55,6 +55,9 @@
 #include "archi_app/manager/env.fun.h"
 #include "archi/env/i/manager.fun.h"
 
+// Reference counting
+#include "archi_base/ref_count_manager.fun.h"
+
 // Error handling
 #include "archi_base/error.fun.h"
 
@@ -520,6 +523,24 @@ exit_clean(void) // is called on exit() or if main() returns
         archi_app_manager_finalize__env();
     }
 
+    // Check for memory leaks and corruption
+    {
+        unsigned long long total_increments = archi_reference_count_total_increments();
+        unsigned long long total_decrements = archi_reference_count_total_decrements();
+
+        archi_log_debug(__func__, "total reference counter increments = %llu, decrements = %llu",
+                total_increments, total_decrements);
+
+        if (total_increments < total_decrements)
+            archi_log_error(__func__, "Memory corruption detected: total number of reference counter decrements (%zu) exceeds increments (%zu) by %zu",
+                    total_decrements, total_increments, total_decrements - total_increments);
+        else if (archi_reference_count_negative_detected())
+            archi_log_error(__func__, "Memory corruption detected: total number of reference counter decrements exceeded increments (negative count)");
+        else if (total_increments > total_decrements)
+            archi_log_warning(__func__, "Memory leak detected: total number of reference counter increments (%zu) exceeds decrements (%zu) by %zu",
+                    total_increments, total_decrements, total_increments - total_decrements);
+    }
+
     archi_log_notice(__func__, "The application has exited normally.");
 
     archi_app_manager_finalize__log();
@@ -708,7 +729,7 @@ map_input_file(
 
     // Close file descriptor
     INIT_ERROR();
-    archi_file_close(fd, &archi_process.error); // this line prevents from initialize_context() being used here
+    archi_file_close(fd, &archi_process.error);
     print_error();
 
     if ((archi_process.context.input_file[index] == NULL) ||

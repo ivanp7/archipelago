@@ -20,7 +20,7 @@
 
 /**
  * @file
- * @brief Reference counter API.
+ * @brief Reference counting operations.
  */
 
 #pragma once

@@ -20,10 +20,12 @@
 
 /**
  * @file
- * @brief Reference counter interface.
+ * @brief Reference counting operations.
  */
 
 #include "archi_base/ref_count.fun.h"
+#include "archi_base/ref_count_manager.fun.h"
+#include "ref_count_manager.typ.h"
 
 #ifndef __STDC_NO_ATOMICS__
 #  include <stdatomic.h> // for atomic_size_t, atomic_*
@@ -32,6 +34,68 @@
 #endif
 #include <stdlib.h> // for malloc(), free()
 
+
+static
+struct archi_ref_count_manager *archi_ref_count_manager;
+
+ARCHI_MANAGER_PTR_GET_FUNC(archi_manager_ptr_get__ref_count)
+{
+    return archi_ref_count_manager;
+}
+
+ARCHI_MANAGER_PTR_INIT_FUNC(archi_manager_ptr_init__ref_count)
+{
+    if (archi_ref_count_manager != NULL)
+        return;
+
+    archi_ref_count_manager = manager;
+}
+
+/*****************************************************************************/
+
+unsigned long long
+archi_reference_count_total_increments(void)
+{
+    if (archi_ref_count_manager == NULL)
+        return 0;
+
+#ifndef __STDC_NO_ATOMICS__
+    return atomic_load_explicit(&archi_ref_count_manager->num_increments,
+            memory_order_acquire);
+#else
+    return archi_ref_count_manager->num_increments;
+#endif
+}
+
+unsigned long long
+archi_reference_count_total_decrements(void)
+{
+    if (archi_ref_count_manager == NULL)
+        return 0;
+
+#ifndef __STDC_NO_ATOMICS__
+    return atomic_load_explicit(&archi_ref_count_manager->num_decrements,
+            memory_order_acquire);
+#else
+    return archi_ref_count_manager->num_decrements;
+#endif
+}
+
+bool
+archi_reference_count_negative_detected(void)
+{
+    if (archi_ref_count_manager == NULL)
+        return false;
+
+#ifndef __STDC_NO_ATOMICS__
+    return atomic_load_explicit(&archi_ref_count_manager->negative_count,
+            memory_order_relaxed);
+#else
+    return archi_ref_count_manager->negative_count;
+#endif
+}
+
+/*****************************************************************************/
 
 struct archi_reference_count {
 #ifndef __STDC_NO_ATOMICS__
@@ -56,6 +120,16 @@ archi_reference_count_alloc(
     archi_reference_count_t ref_count = malloc(sizeof(*ref_count));
     if (ref_count == NULL)
         return NULL;
+
+    if (archi_ref_count_manager != NULL)
+    {
+#ifndef __STDC_NO_ATOMICS__
+        atomic_fetch_add_explicit(&archi_ref_count_manager->num_increments, 1,
+                memory_order_release);
+#else
+        archi_ref_count_manager->num_increments++;
+#endif
+    }
 
 #ifndef __STDC_NO_ATOMICS__
     atomic_init(&ref_count->value, 1);
@@ -83,6 +157,16 @@ archi_reference_count_increment(
     if (ref_count == NULL)
         return;
 
+    if (archi_ref_count_manager != NULL)
+    {
+#ifndef __STDC_NO_ATOMICS__
+        atomic_fetch_add_explicit(&archi_ref_count_manager->num_increments, 1,
+                memory_order_release);
+#else
+        archi_ref_count_manager->num_increments++;
+#endif
+    }
+
 #ifndef __STDC_NO_ATOMICS__
     atomic_fetch_add_explicit(&ref_count->value, 1, memory_order_relaxed);
 #else
@@ -96,6 +180,29 @@ archi_reference_count_decrement(
 {
     if (ref_count == NULL)
         return false;
+
+    if (archi_ref_count_manager != NULL)
+    {
+        unsigned long long num_decrements = 1 + // calculating the new value from the old
+#ifndef __STDC_NO_ATOMICS__
+            atomic_fetch_add_explicit(&archi_ref_count_manager->num_decrements, 1,
+                    memory_order_release);
+#else
+            archi_ref_count_manager->num_decrements++;
+#endif
+
+        unsigned long long num_increments = archi_reference_count_total_increments();
+
+        if (num_increments < num_decrements) // memory error detected
+        {
+#ifndef __STDC_NO_ATOMICS__
+            atomic_store_explicit(&archi_ref_count_manager->negative_count,
+                    true, memory_order_relaxed);
+#else
+            archi_ref_count_manager->negative_count = true;
+#endif
+        }
+    }
 
 #ifndef __STDC_NO_ATOMICS__
     if (atomic_fetch_sub_explicit(&ref_count->value, 1, memory_order_release) == 1)
