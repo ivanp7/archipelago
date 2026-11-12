@@ -102,13 +102,14 @@ archi_dexgraph_operation_seq_exec(
         size_t op_index,
         ARCHI_ERROR_PARAM_DECL)
 {
-    if ((sequence == NULL) || (sequence->length == 0))
+    if (sequence == NULL)
     {
         ARCHI_ERROR_RESET();
         return ARCHI_DEXGRAPH_OPERATION_SEQ_END;
     }
 
     archi_error_t error;
+    ARCHI_ERROR_VAR_RESET(&error);
 
     for (; op_index < sequence->length; op_index++)
     {
