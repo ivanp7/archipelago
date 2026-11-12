@@ -596,7 +596,7 @@ class Registry:
         """Require a context with the specified key to exist in the registry.
         """
         if context is None:
-            return
+            return None
 
         if not isinstance(context, Context):
             raise TypeError
@@ -613,6 +613,8 @@ class Registry:
                 raise TypeError(f"Required context mismatch: want {context}, have {self._contexts[key]}")
             elif protect != self.is_protected(key):
                 raise ValueError(f"Required context protection mode mismatch: want {protect}, have {self.is_protected(key)}")
+
+        return context
 
     def delete(self, context, /):
         """Delete a context from the registry.
