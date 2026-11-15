@@ -22,6 +22,7 @@
 # @brief Context registry procedures.
 
 from contextlib import contextmanager
+import ctypes as c
 from types import MappingProxyType, NoneType
 
 import archi.ctypes as typ
@@ -130,6 +131,13 @@ class _MemoryAllocation:
             registry(file.read(dest=mapping.ptr))
 
         return func
+
+    @classmethod
+    def of_type(cls, c_type, /, length, ext_alignment=None, init_fn=None):
+        """Initialize a memory allocation description (using a C type).
+        """
+        return cls(length=length, stride=c.sizeof(c_type), alignment=c.alignment(c_type),
+                   ext_alignment=ext_alignment, init_fn=init_fn)
 
     def __init__(self, /, length, stride, alignment, ext_alignment=None, init_fn=None):
         """Initialize a memory allocation description.
