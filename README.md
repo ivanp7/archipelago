@@ -479,13 +479,13 @@ then returns 'true' and resets the counter.
 A *graph* consists of *nodes* connected by *transitions*. Each node contains:
 
 * **Name**: An optional C-string containing node name for logging and debugging.
-* **Operation Sequence**: An array of functions (and associated data) executed linearly.
+* **Operation**: A function (and associated data) defining the node logic.
 * **Transition**: A function (and associated data) used to determine the successor node.
 
 #### Execution
 
-1. **Operation Phase**: Operations of the current node are executed sequentially.
-    A NULL function is treated as a 'no-op'.
+1. **Operation Phase**: Operation of the current node is executed.
+    If the function is NULL, the operation function data is interpreted as a pointer to an operation sequence.
     If any operation returns an error, the entire execution is interrupted.
 2. **Transition Phase**: The transition function of the current node is called to determine the successor node.
     If the function is NULL, the transition function data is interpreted as a pointer to the successor node.

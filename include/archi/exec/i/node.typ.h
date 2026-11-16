@@ -37,7 +37,7 @@
 typedef struct archi_dexgraph_node {
     const char *name; ///< Node name.
 
-    const archi_dexgraph_operation_seq_t *sequence; ///< Node operation sequence.
+    archi_dexgraph_operation_t operation; ///< Node operation.
     archi_dexgraph_transition_t transition; ///< Node transition.
 } archi_dexgraph_node_t;
 

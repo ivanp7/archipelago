@@ -43,13 +43,13 @@ archi_dexgraph_execute_node(
     archi_error_t error;
     const archi_dexgraph_node_t *target = NULL;
 
-    // Execute the sequence of operation functions
-    archi_dexgraph_operation_seq_exec(node->sequence, 0, &error);
+    // Execute the node operation
+    archi_dexgraph_operation_call(node->operation, &error);
 
     if (error.code != 0)
         goto finish;
 
-    // Execute the transition function
+    // Execute the node transition
     node = archi_dexgraph_transition_target(node->transition, &error);
 
     if (error.code != 0)

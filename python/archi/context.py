@@ -1329,7 +1329,8 @@ class DexgraphNodeContext(ContextWhitelist):
 
     class InitParameters(ParametersWhitelist):
         PARAMS = {'name': _TYPE_STRING,
-                  'sequence': TypeAttr.complex_data(typ.ARCHI_POINTER_DATA_TAG__DEXGRAPH_OPERATION_SEQ),
+                  'operation_func': TypeAttr.function(typ.ARCHI_POINTER_FUNC_TAG__DEXGRAPH_OPERATION),
+                  'operation_data': _TYPE_DATA,
                   'transition_func': TypeAttr.function(typ.ARCHI_POINTER_FUNC_TAG__DEXGRAPH_TRANSITION),
                   'transition_data': _TYPE_DATA}
 
@@ -1337,14 +1338,16 @@ class DexgraphNodeContext(ContextWhitelist):
         PARAMS = {}
 
     GETTER_SLOTS = {'name': _TYPE_STRING,
-                    'sequence': TypeAttr.complex_data(typ.ARCHI_POINTER_DATA_TAG__DEXGRAPH_OPERATION_SEQ),
+                    'operation.function': TypeAttr.function(typ.ARCHI_POINTER_FUNC_TAG__DEXGRAPH_OPERATION),
+                    'operation.data': _TYPE_DATA,
                     'transition.function': TypeAttr.function(typ.ARCHI_POINTER_FUNC_TAG__DEXGRAPH_TRANSITION),
                     'transition.data': _TYPE_DATA}
 
     CALL_SLOTS = {'execute': (None, ExecuteCallParameters)}
 
     SETTER_SLOTS = {'name': _TYPE_STRING,
-                    'sequence': TypeAttr.complex_data(typ.ARCHI_POINTER_DATA_TAG__DEXGRAPH_OPERATION_SEQ),
+                    'operation.function': TypeAttr.function(typ.ARCHI_POINTER_FUNC_TAG__DEXGRAPH_OPERATION),
+                    'operation.data': _TYPE_DATA,
                     'transition.function': TypeAttr.function(typ.ARCHI_POINTER_FUNC_TAG__DEXGRAPH_TRANSITION),
                     'transition.data': _TYPE_DATA}
 

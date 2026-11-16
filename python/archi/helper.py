@@ -135,7 +135,7 @@ def new_dexgraph_operation_seq(registry, key, /,
 
 
 def new_dexgraph_node(registry, key, /,
-                      name=None, sequence=None, transition=None):
+                      name=None, operation=None, transition=None):
     """Create a directed execution graph node.
     """
     if not isinstance(registry, Registry):
@@ -144,9 +144,33 @@ def new_dexgraph_node(registry, key, /,
     if name is not None and not isinstance(name, str):
         raise TypeError
 
-    if sequence is not None and not TypeAttr.compatible(
-            TypeAttr.of(sequence), TypeAttr.complex_data(typ.ARCHI_POINTER_DATA_TAG__DEXGRAPH_OPERATION_SEQ)):
-        raise TypeError
+    if operation is not None:
+        operation_func, operation_data = None, None
+
+        if isinstance(operation, tuple):
+            if len(operation) > 2:
+                raise ValueError
+            elif len(operation) == 2:
+                operation_func, operation_data = operation
+            elif len(operation) == 1:
+                operation_data = operation[0]
+        else:
+            operation_data = operation
+
+        if operation_func is not None:
+            if not TypeAttr.compatible(
+                    TypeAttr.of(operation_func),
+                    TypeAttr.function(typ.ARCHI_POINTER_FUNC_TAG__DEXGRAPH_OPERATION)):
+                raise TypeError
+
+            if operation_data is not None and not TypeAttr.compatible(
+                    TypeAttr.of(operation_data), TypeAttr.complex_data()):
+                raise TypeError
+        else:
+            if operation_data is not None and not TypeAttr.compatible(
+                    TypeAttr.of(operation_data),
+                    TypeAttr.complex_data(typ.ARCHI_POINTER_DATA_TAG__DEXGRAPH_OPERATION_SEQ)):
+                raise TypeError
 
     if transition is not None:
         transition_func, transition_data = None, None
@@ -179,8 +203,18 @@ def new_dexgraph_node(registry, key, /,
     params = {}
     if name is not None:
         params['name'] = name
-    if sequence is not None:
-        params['sequence'] = sequence
+    if operation is not None:
+        if isinstance(operation, tuple):
+            if len(operation) == 1:
+                if operation[0] is not None:
+                    params['operation_data'] = operation[0]
+            elif len(operation) == 2:
+                if operation[0] is not None:
+                    params['operation_func'] = operation[0]
+                if operation[1] is not None:
+                    params['operation_data'] = operation[1]
+        else:
+            params['operation_data'] = operation
     if transition is not None:
         if isinstance(transition, tuple):
             if len(transition) == 1:
