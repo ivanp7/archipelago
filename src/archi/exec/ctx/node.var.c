@@ -53,8 +53,8 @@ ARCHI_CONTEXT_INIT_FUNC(archi_context_init__dexgraph_node)
 {
     // Parse parameters
     archi_rcpointer_t name = {0}, operation_data = {0}, transition_data = {0},
-                      operation_func = {.attr = ARCHI_POINTER_TYPE__FUNCTION},
-                      transition_func = {.attr = ARCHI_POINTER_TYPE__FUNCTION};
+                      operation_func = ARCHI_POINTER_NULL_FUNCTION,
+                      transition_func = ARCHI_POINTER_NULL_FUNCTION;
     {
         archi_plist_param_t parsed[] = {
             {.name = "name",

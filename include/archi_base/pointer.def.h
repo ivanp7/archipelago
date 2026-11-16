@@ -292,5 +292,14 @@ enum {
         (pointer).ptr = NULL;                           \
 } while (0)
 
+/**
+ * @brief Initializer for a NULL pointer to function.
+ *
+ * This is to be used to initialize function pointers,
+ * as `{0}` initializes data pointers instead.
+ */
+#define ARCHI_POINTER_NULL_FUNCTION                 \
+    {.fptr = NULL, .attr = ARCHI_POINTER_TYPE__FUNCTION}
+
 #endif // _ARCHI_BASE_POINTER_DEF_H_
 
