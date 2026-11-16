@@ -257,7 +257,7 @@ ARCHI_CONTEXT_EVAL_FUNC(archi_context_eval__dexgraph_operation_seq)
             }
 
             // Execute the operation sequence
-            archi_dexgraph_operation_seq_exec(sequence, 0, ARCHI_ERROR_PARAM);
+            archi_dexgraph_operation_seq_call(sequence, 0, ARCHI_ERROR_PARAM);
         }
         else
             ARCHI_ERROR_SET(ARCHI__EKEY, "unknown slot '%s' encountered", slot.name);

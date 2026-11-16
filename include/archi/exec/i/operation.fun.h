@@ -90,9 +90,9 @@ archi_dexgraph_operation_seq_elt(
  * if all operations were executed successfully.
  */
 size_t
-archi_dexgraph_operation_seq_exec(
+archi_dexgraph_operation_seq_call(
         const archi_dexgraph_operation_seq_t *sequence, ///< [in] Operation sequence.
-        size_t op_index, ///< [in] Starting index.
+        size_t start_index, ///< [in] Start index.
         ARCHI_ERROR_PARAM_DECL ///< [out] Error.
 );
 
