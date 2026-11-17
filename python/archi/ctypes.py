@@ -53,10 +53,10 @@ class archi_pointer_attr_t(c.c_uint64):
     FUNC_TAG_MAX = (1 << FUNC_TAG_BITS) - 1 # 0x3FFFFFFFFFFFFFFF
 
     TYPE_MASK = 0x3 << TYPE_OFFSET
-    DATA_ON_STACK = 0x0 << TYPE_OFFSET
-    DATA_WRITABLE = 0x1 << TYPE_OFFSET
-    DATA_READONLY = 0x2 << TYPE_OFFSET
-    FUNCTION      = 0x3 << TYPE_OFFSET
+    DATA_TRANSIENT = 0x0 << TYPE_OFFSET
+    DATA_PERSISTENT_WRITABLE = 0x1 << TYPE_OFFSET
+    DATA_PERSISTENT_READONLY = 0x2 << TYPE_OFFSET
+    FUNCTION = 0x3 << TYPE_OFFSET
 
     def __repr__(self, /):
         cls_name = self.__class__.__name__
@@ -66,8 +66,8 @@ class archi_pointer_attr_t(c.c_uint64):
         if self.is_function:
             return f"{cls_name}.function(tag={tag})"
 
-        mem_type = f"writable={self.is_data_writable}" \
-                if not self.is_data_on_stack else "stack=True"
+        mem_type = f"writable={self.is_data_persistent_writable}" \
+                if not self.is_data_transient else "transient=True"
 
         if tag is None:
             layout = self.layout
@@ -84,22 +84,28 @@ class archi_pointer_attr_t(c.c_uint64):
         return not self.is_function
 
     @property
-    def is_data_on_stack(self, /):
-        """Check if the attributes describes data stored on stack.
+    def is_data_transient(self, /):
+        """Check if the attributes describes data stored in transient memory.
         """
-        return self.value & self.__class__.TYPE_MASK == self.__class__.DATA_ON_STACK
+        return self.value & self.__class__.TYPE_MASK == self.__class__.DATA_TRANSIENT
 
     @property
-    def is_data_writable(self, /):
-        """Check if the attributes describes data stored in writable memory.
+    def is_data_persistent(self, /):
+        """Check if the attributes describes data stored in persistent memory.
         """
-        return self.value & self.__class__.TYPE_MASK == self.__class__.DATA_WRITABLE
+        return self.is_data and not self.is_data_transient
 
     @property
-    def is_data_readonly(self, /):
-        """Check if the attributes describes data stored in read-only memory.
+    def is_data_persistent_writable(self, /):
+        """Check if the attributes describes data stored in writable persistent memory.
         """
-        return self.value & self.__class__.TYPE_MASK == self.__class__.DATA_READONLY
+        return self.value & self.__class__.TYPE_MASK == self.__class__.DATA_PERSISTENT_WRITABLE
+
+    @property
+    def is_data_persistent_readonly(self, /):
+        """Check if the attributes describes data stored in read-only persistent memory.
+        """
+        return self.value & self.__class__.TYPE_MASK == self.__class__.DATA_PERSISTENT_READONLY
 
     @property
     def is_function(self, /):
@@ -234,7 +240,7 @@ class archi_pointer_attr_t(c.c_uint64):
 
         stride_width = (stride - 1).bit_length()
 
-        attr_memtype = cls.DATA_WRITABLE if writable else cls.DATA_READONLY
+        attr_memtype = cls.DATA_PERSISTENT_WRITABLE if writable else cls.DATA_PERSISTENT_READONLY
         attr_stride_width = (((1 << pdata_swidth_bits) - 1) - stride_width) << pdata_shape_bits
         attr_stride_over_alignment = (stride // alignment - 1) << (pdata_shape_bits - stride_width)
         attr_length = length
@@ -253,7 +259,7 @@ class archi_pointer_attr_t(c.c_uint64):
         elif tag > cls.DATA_TAG_MAX:
             raise ValueError("Data type tag exceeds maximum supported value of {cls.DATA_TAG_MAX:016x}")
 
-        attr_memtype = cls.DATA_WRITABLE if writable else cls.DATA_READONLY
+        attr_memtype = cls.DATA_PERSISTENT_WRITABLE if writable else cls.DATA_PERSISTENT_READONLY
         attr_tag = tag
 
         return cls(attr_memtype | attr_tag)

@@ -90,7 +90,7 @@ ARCHI_CONTEXT_INIT_FUNC(archi_context_init__memory_mapping)
     *context_data = (struct archi_context_data__memory_mapping){
         .mapping = {
             .ptr = mapping,
-            .attr = ARCHI_POINTER_TYPE__DATA_WRITABLE |
+            .attr = ARCHI_POINTER_TYPE__DATA_PERSISTENT_W |
                 archi_pointer_attr__cdata(ARCHI_POINTER_DATA_TAG__MEMORY_MAPPING),
         },
         .offset = offset,
@@ -138,7 +138,7 @@ ARCHI_CONTEXT_EVAL_FUNC(archi_context_eval__memory_mapping)
         archi_rcpointer_t value = {
             .ptr = memory,
             .ref_count = archi_memory_allocation(memory).ref_count,
-            .attr = ARCHI_POINTER_TYPE__DATA_WRITABLE |
+            .attr = ARCHI_POINTER_TYPE__DATA_PERSISTENT_W |
                 archi_pointer_attr__cdata(ARCHI_POINTER_DATA_TAG__MEMORY),
         };
 
@@ -166,7 +166,7 @@ ARCHI_CONTEXT_EVAL_FUNC(archi_context_eval__memory_mapping)
 
         archi_rcpointer_t value = {
             .ptr = &offset,
-            .attr = ARCHI_POINTER_TYPE__DATA_ON_STACK |
+            .attr = ARCHI_POINTER_TYPE__DATA_TRANSIENT |
                 ARCHI_POINTER_ATTR__PDATA(1, size_t),
         };
 
@@ -184,7 +184,7 @@ ARCHI_CONTEXT_EVAL_FUNC(archi_context_eval__memory_mapping)
 
         archi_rcpointer_t value = {
             .ptr = &length,
-            .attr = ARCHI_POINTER_TYPE__DATA_ON_STACK |
+            .attr = ARCHI_POINTER_TYPE__DATA_TRANSIENT |
                 ARCHI_POINTER_ATTR__PDATA(1, size_t),
         };
 
@@ -203,7 +203,7 @@ ARCHI_CONTEXT_EVAL_FUNC(archi_context_eval__memory_mapping)
 
         archi_rcpointer_t value = {
             .ptr = &size,
-            .attr = ARCHI_POINTER_TYPE__DATA_ON_STACK |
+            .attr = ARCHI_POINTER_TYPE__DATA_TRANSIENT |
                 ARCHI_POINTER_ATTR__PDATA(1, size_t),
         };
 

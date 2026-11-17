@@ -39,7 +39,7 @@ archi_rcpointer(
 {
     return (archi_rcpointer_t){
         .p = p,
-        .ref_count = (!ARCHI_POINTER_IS_NULL(p) && !ARCHI_POINTER_TO_STACK(p.attr)) ? ref_count : NULL,
+        .ref_count = (!ARCHI_POINTER_IS_NULL(p) && !ARCHI_POINTER_TO_TRANS_DATA(p.attr)) ? ref_count : NULL,
     };
 }
 
@@ -63,7 +63,7 @@ archi_rcpointer_memcopy(
 
     // Change pointer type
     copy.attr &= ~ARCHI_POINTER_ATTR_MASK__TYPE;
-    copy.attr |= ARCHI_POINTER_TYPE__DATA_WRITABLE;
+    copy.attr |= ARCHI_POINTER_TYPE__DATA_PERSISTENT_W;
 
     if (source.ptr != NULL)
     {
@@ -101,13 +101,13 @@ archi_rcpointer_own(
         archi_rcpointer_t entity,
         ARCHI_ERROR_PARAM_DECL)
 {
-    if (!ARCHI_POINTER_TO_STACK(entity.attr))
+    if (!ARCHI_POINTER_TO_TRANS_DATA(entity.attr))
         archi_reference_count_increment(entity.ref_count);
     else
     {
         archi_rcpointer_t entity_copy = archi_rcpointer_memcopy(entity, ARCHI_ERROR_PARAM);
         if ((entity_copy.ptr == NULL) && (entity.ptr != NULL))
-            return (archi_rcpointer_t){.attr = ARCHI_POINTER_TYPE__DATA_ON_STACK};
+            return (archi_rcpointer_t){.attr = ARCHI_POINTER_TYPE__DATA_TRANSIENT};
 
         entity = entity_copy;
     }

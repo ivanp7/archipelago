@@ -35,7 +35,7 @@
  * @brief Attach a reference counter to a pointer.
  *
  * `ref_count` field is assigned only if the pointer
- * is non-null and is not referring to stack.
+ * is non-null and is not referring to transient data.
  *
  * @return Pointer with a reference counter.
  */
@@ -49,7 +49,7 @@ archi_rcpointer(
  * @brief Create a long-lived, writable copy of data on the heap.
  *
  * Pointer attributes (except type) are preserved.
- * Pointer type is set to ARCHI_POINTER_TYPE__DATA_WRITABLE.
+ * Pointer type is set to ARCHI_POINTER_TYPE__DATA_PERSISTENT_W.
  *
  * New reference counter is created for the copy.
  *
@@ -64,7 +64,7 @@ archi_rcpointer_memcopy(
 /**
  * @brief Claim ownership of an entity.
  *
- * Reference counter of the entity gets incremented, unless it is data on stack.
+ * Reference counter of the entity gets incremented, unless it is transient memory.
  * In that case, a memory copy is allocated using archi_rcpointer_memcopy().
  *
  * @return Pointer to claimed entity, or null pointer with attributes == 0 in case of error.

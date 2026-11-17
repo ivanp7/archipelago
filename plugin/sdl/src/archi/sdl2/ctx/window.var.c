@@ -182,7 +182,7 @@ ARCHI_CONTEXT_INIT_FUNC(archi_context_init__sdl2_window)
 
     *context_data = (archi_rcpointer_t){
         .ptr = SDL_CreateWindow(title, coord_x, coord_y, width, height, flags),
-        .attr = ARCHI_POINTER_TYPE__DATA_WRITABLE |
+        .attr = ARCHI_POINTER_TYPE__DATA_PERSISTENT_W |
             archi_pointer_attr__cdata(ARCHI_POINTER_DATA_TAG__SDL2_WINDOW),
     };
 

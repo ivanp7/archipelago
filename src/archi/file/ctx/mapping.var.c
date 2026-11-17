@@ -185,7 +185,7 @@ ARCHI_CONTEXT_INIT_FUNC(archi_context_init__file_mapping)
     *context_data = (archi_rcpointer_t){
         .ptr = mm,
         .attr = (file_map_params.writable ?
-                ARCHI_POINTER_TYPE__DATA_WRITABLE : ARCHI_POINTER_TYPE__DATA_READONLY) | attr,
+                ARCHI_POINTER_TYPE__DATA_PERSISTENT_W : ARCHI_POINTER_TYPE__DATA_PERSISTENT_R) | attr,
     };
 
     ARCHI_ERROR_RESET();
@@ -226,7 +226,7 @@ ARCHI_CONTEXT_EVAL_FUNC(archi_context_eval__file_mapping)
 
         archi_rcpointer_t value = {
             .ptr = &length,
-            .attr = ARCHI_POINTER_TYPE__DATA_ON_STACK |
+            .attr = ARCHI_POINTER_TYPE__DATA_TRANSIENT |
                 ARCHI_POINTER_ATTR__PDATA(1, size_t),
         };
 
@@ -245,7 +245,7 @@ ARCHI_CONTEXT_EVAL_FUNC(archi_context_eval__file_mapping)
 
         archi_rcpointer_t value = {
             .ptr = &stride,
-            .attr = ARCHI_POINTER_TYPE__DATA_ON_STACK |
+            .attr = ARCHI_POINTER_TYPE__DATA_TRANSIENT |
                 ARCHI_POINTER_ATTR__PDATA(1, size_t),
         };
 
@@ -266,7 +266,7 @@ ARCHI_CONTEXT_EVAL_FUNC(archi_context_eval__file_mapping)
 
         archi_rcpointer_t value = {
             .ptr = &size,
-            .attr = ARCHI_POINTER_TYPE__DATA_ON_STACK |
+            .attr = ARCHI_POINTER_TYPE__DATA_TRANSIENT |
                 ARCHI_POINTER_ATTR__PDATA(1, size_t),
         };
 
@@ -285,7 +285,7 @@ ARCHI_CONTEXT_EVAL_FUNC(archi_context_eval__file_mapping)
 
         archi_rcpointer_t value = {
             .ptr = &alignment,
-            .attr = ARCHI_POINTER_TYPE__DATA_ON_STACK |
+            .attr = ARCHI_POINTER_TYPE__DATA_TRANSIENT |
                 ARCHI_POINTER_ATTR__PDATA(1, size_t),
         };
 

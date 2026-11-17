@@ -197,9 +197,9 @@ archi_aggr_allocate(
         ARCHI_ERROR_SET(ARCHI__ECONSTRAINT, "aggregate type interface pointer is NULL");
         return NULL;
     }
-    else if (ARCHI_POINTER_TO_STACK(interface.attr))
+    else if (ARCHI_POINTER_TO_TRANS_DATA(interface.attr))
     {
-        ARCHI_ERROR_SET(ARCHI__ECONSTRAINT, "aggregate type interface is on stack");
+        ARCHI_ERROR_SET(ARCHI__ECONSTRAINT, "aggregate type interface at transient memory");
         return NULL;
     }
 
@@ -238,9 +238,9 @@ archi_aggr_allocate(
         ARCHI_ERROR_SET(error.code, "aggregate type metadata attributes are incorrect: %s", error.message);
         return NULL;
     }
-    else if (ARCHI_POINTER_TO_STACK(metadata.attr))
+    else if (ARCHI_POINTER_TO_TRANS_DATA(metadata.attr))
     {
-        ARCHI_ERROR_SET(ARCHI__ECONSTRAINT, "aggregate type metadata is on stack");
+        ARCHI_ERROR_SET(ARCHI__ECONSTRAINT, "aggregate type metadata is at transient memory");
         return NULL;
     }
 
@@ -314,7 +314,7 @@ archi_aggr_allocate(
         .metadata = metadata,
 
         .object = {
-            .attr = ARCHI_POINTER_TYPE__DATA_WRITABLE | attr,
+            .attr = ARCHI_POINTER_TYPE__DATA_PERSISTENT_W | attr,
         },
 
         .layout = layout,

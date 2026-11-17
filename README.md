@@ -692,9 +692,9 @@ The **memory type** is determined by bits 63–62:
 
 | Bits 63-62 | Memory Type                | Description |
 | ---------- | -------------------------- | ----------- |
-| `00`       | Short-lived, writable data | Stack memory (automatic storage duration) |
-| `01`       | Long-lived, writable data  | Writable memory (e.g., heap); **may or may not be readable** |
-| `10`       | Long-lived, read-only data | Read-only memory (e.g., memory mapping) |
+| `00`       | Transient, readable data   | Short-lived memory (e.g. stack); **may or may not be writable** |
+| `01`       | Persistent, writable data  | Writable memory (e.g., heap); **may or may not be readable** |
+| `10`       | Persistent, read-only data | Read-only memory (e.g., memory mapping) |
 | `11`       | Function                   | Executable memory |
 
 > Readability for writable memory is unspecified, which mirrors standard C semantics.
@@ -842,7 +842,7 @@ Examples:
 
 | Scenario       | Memory Type | Tag (hex)           | Tag (bin)            | Binary Attribute (64-bit) |
 | -------------- | ----------- | ------------------- | -------------------- | ------------------------- |
-| all bits clear | stack       | `0x0`               | `000...000`          | `00 000 000...000` |
+| all bits clear | transient   | `0x0`               | `000...000`          | `00 000 000...000` |
 | small tag      | writable    | `0x38`              | `000...000111000`    | `01 000 000...000111000` |
 | large tag      | writable    | `0x566666666666666` | `101(0110)...(0110)` | `01 000 101(0110)...(0110)` |
 | maximum tag    | read-only   | `0x7ffffffffffffff` | `111...111`          | `10 000 111...111` |
@@ -851,7 +851,7 @@ Examples:
 
 | Scenario           | Memory Type | Array Length      | Array Stride                            | Alignment Requirement | *M* (# bits) | *N* (# bits) | *63 - N* | Binary Attribute (64-bit) |
 | ------------------ | ----------- | ----------------- | --------------------------------------- | --------------------- | ------------ | ------------ | -------- | ------------------------- |
-| byte array (N = 0) | stack       | 255               | 1 B ((0+1) * 1 bytes)                   | 1 B (1<<0 bytes)      | 0            | 0            | 63       | `00 111111  000...00011111111` |
+| byte array (N = 0) | transient   | 255               | 1 B ((0+1) * 1 bytes)                   | 1 B (1<<0 bytes)      | 0            | 0            | 63       | `00 111111  000...00011111111` |
 | prime stride       | writable    | 13                | 7 B ((6+1) * 1 bytes)                   | 1 B (1<<0 bytes)      | 0            | 3            | 60       | `01 111100 110 000...0001101` |
 | composite stride   | writable    | 25                | 832 B ((51+1) * 16 bytes)               | 16 B (1<<4 bytes)     | 4            | 10           | 53       | `01 110101 0000110011 000...00011001` |
 | N = 1, M = 1       | writable    | 128               | 2 B ((0+1) * 2 bytes)                   | 2 B (1<<1 bytes)      | 1            | 1            | 62       | `01 111110 0 000...00010000000` |

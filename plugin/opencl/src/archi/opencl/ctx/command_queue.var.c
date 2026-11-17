@@ -112,7 +112,7 @@ ARCHI_CONTEXT_INIT_FUNC(archi_context_init__opencl_command_queue)
 
     *context_data = (struct archi_context_data__opencl_command_queue){
         .command_queue = {
-            .attr = ARCHI_POINTER_TYPE__DATA_WRITABLE |
+            .attr = ARCHI_POINTER_TYPE__DATA_PERSISTENT_W |
                 archi_pointer_attr__cdata(ARCHI_POINTER_DATA_TAG__OPENCL_COMMAND_QUEUE),
         },
         .device_id = device_id,
@@ -213,7 +213,7 @@ ARCHI_CONTEXT_EVAL_FUNC(archi_context_eval__opencl_command_queue)
 
         archi_rcpointer_t value = {
             .ptr = context_data->platform_id,
-            .attr = ARCHI_POINTER_TYPE__DATA_READONLY |
+            .attr = ARCHI_POINTER_TYPE__DATA_PERSISTENT_R |
                 archi_pointer_attr__cdata(ARCHI_POINTER_DATA_TAG__OPENCL_PLATFORM_ID),
         };
 
@@ -229,7 +229,7 @@ ARCHI_CONTEXT_EVAL_FUNC(archi_context_eval__opencl_command_queue)
 
         archi_rcpointer_t value = {
             .ptr = context_data->device_id,
-            .attr = ARCHI_POINTER_TYPE__DATA_READONLY |
+            .attr = ARCHI_POINTER_TYPE__DATA_PERSISTENT_R |
                 archi_pointer_attr__cdata(ARCHI_POINTER_DATA_TAG__OPENCL_DEVICE_ID),
         };
 

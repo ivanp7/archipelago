@@ -117,7 +117,7 @@ ARCHI_CONTEXT_EVAL_FUNC(archi_context_eval__env_variable)
     {
         value = (archi_rcpointer_t){
             .ptr = env_var,
-            .attr = ARCHI_POINTER_TYPE__DATA_WRITABLE |
+            .attr = ARCHI_POINTER_TYPE__DATA_PERSISTENT_W |
                 ARCHI_POINTER_ATTR__PDATA(strlen(env_var) + 1, char),
             .ref_count = archi_reference_count_alloc(free, env_var),
         };

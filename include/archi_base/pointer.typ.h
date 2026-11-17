@@ -96,10 +96,10 @@ typedef uint64_t archi_pointer_attr_t;
  *   - `fptr`: a generic pointer to a function.
  *
  * The used field depends on the pointer type stored in the attributes:
- *   - `ARCHI_POINTER_TYPE__DATA_ON_STACK` -- `ptr` is used;
- *   - `ARCHI_POINTER_TYPE__DATA_WRITABLE` -- `ptr` is used;
- *   - `ARCHI_POINTER_TYPE__DATA_READONLY` -- `cptr` is used;
- *   - `ARCHI_POINTER_TYPE__FUNCTION`      -- `fptr` is used.
+ *   - `ARCHI_POINTER_TYPE__DATA_TRANSIENT` -- `ptr` is used;
+ *   - `ARCHI_POINTER_TYPE__DATA_PERSISTENT_W` -- `ptr` is used;
+ *   - `ARCHI_POINTER_TYPE__DATA_PERSISTENT_R` -- `cptr` is used;
+ *   - `ARCHI_POINTER_TYPE__FUNCTION` -- `fptr` is used.
  *
  * `attr` contains pointer attributes allowing to extract information about the pointee.
  * @see archi_pointer_attr_t

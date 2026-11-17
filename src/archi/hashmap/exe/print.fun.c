@@ -59,12 +59,12 @@ ARCHI_HASHMAP_TRAV_KV_FUNC(archi_dexgraph_op__hashmap_print_traverse)
     {
         const char *mem_type;
 
-        if (ARCHI_POINTER_TO_READONLY_DATA(value.attr))
-            mem_type = "read-only";
-        else if (ARCHI_POINTER_TO_WRITABLE_DATA(value.attr))
-            mem_type = "writable";
+        if (ARCHI_POINTER_TO_PERS_R_DATA(value.attr))
+            mem_type = "persistent/read-only";
+        else if (ARCHI_POINTER_TO_PERS_W_DATA(value.attr))
+            mem_type = "persistent/writable";
         else
-            mem_type = "on stack";
+            mem_type = "transient";
 
         printf("data, %s, length = %zu, stride = %zu, alignment = %#zx",
                 mem_type, length, stride, alignment);
@@ -73,12 +73,12 @@ ARCHI_HASHMAP_TRAV_KV_FUNC(archi_dexgraph_op__hashmap_print_traverse)
     {
         const char *mem_type;
 
-        if (ARCHI_POINTER_TO_READONLY_DATA(value.attr))
-            mem_type = "read-only";
-        else if (ARCHI_POINTER_TO_WRITABLE_DATA(value.attr))
-            mem_type = "writable";
+        if (ARCHI_POINTER_TO_PERS_R_DATA(value.attr))
+            mem_type = "persistent/read-only";
+        else if (ARCHI_POINTER_TO_PERS_W_DATA(value.attr))
+            mem_type = "persistent/writable";
         else
-            mem_type = "on stack";
+            mem_type = "transient";
 
         printf("data, %s, tag = %#jx",
                 mem_type, (uintmax_t)tag);

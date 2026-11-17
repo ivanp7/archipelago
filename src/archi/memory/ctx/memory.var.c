@@ -88,7 +88,7 @@ ARCHI_CONTEXT_INIT_FUNC(archi_context_init__memory)
 
     *context_data = (archi_rcpointer_t){
         .ptr = memory,
-        .attr = ARCHI_POINTER_TYPE__DATA_WRITABLE |
+        .attr = ARCHI_POINTER_TYPE__DATA_PERSISTENT_W |
             archi_pointer_attr__cdata(ARCHI_POINTER_DATA_TAG__MEMORY),
     };
 
@@ -146,7 +146,7 @@ ARCHI_CONTEXT_EVAL_FUNC(archi_context_eval__memory)
 
         archi_rcpointer_t value = {
             .ptr = &length,
-            .attr = ARCHI_POINTER_TYPE__DATA_ON_STACK |
+            .attr = ARCHI_POINTER_TYPE__DATA_TRANSIENT |
                 ARCHI_POINTER_ATTR__PDATA(1, size_t),
         };
 
@@ -164,7 +164,7 @@ ARCHI_CONTEXT_EVAL_FUNC(archi_context_eval__memory)
 
         archi_rcpointer_t value = {
             .ptr = &stride,
-            .attr = ARCHI_POINTER_TYPE__DATA_ON_STACK |
+            .attr = ARCHI_POINTER_TYPE__DATA_TRANSIENT |
                 ARCHI_POINTER_ATTR__PDATA(1, size_t),
         };
 
@@ -182,7 +182,7 @@ ARCHI_CONTEXT_EVAL_FUNC(archi_context_eval__memory)
 
         archi_rcpointer_t value = {
             .ptr = &size,
-            .attr = ARCHI_POINTER_TYPE__DATA_ON_STACK |
+            .attr = ARCHI_POINTER_TYPE__DATA_TRANSIENT |
                 ARCHI_POINTER_ATTR__PDATA(1, size_t),
         };
 
@@ -200,7 +200,7 @@ ARCHI_CONTEXT_EVAL_FUNC(archi_context_eval__memory)
 
         archi_rcpointer_t value = {
             .ptr = &alignment,
-            .attr = ARCHI_POINTER_TYPE__DATA_ON_STACK |
+            .attr = ARCHI_POINTER_TYPE__DATA_TRANSIENT |
                 ARCHI_POINTER_ATTR__PDATA(1, size_t),
         };
 
@@ -218,7 +218,7 @@ ARCHI_CONTEXT_EVAL_FUNC(archi_context_eval__memory)
 
         archi_rcpointer_t value = {
             .ptr = &ext_alignment,
-            .attr = ARCHI_POINTER_TYPE__DATA_ON_STACK |
+            .attr = ARCHI_POINTER_TYPE__DATA_TRANSIENT |
                 ARCHI_POINTER_ATTR__PDATA(1, size_t),
         };
 

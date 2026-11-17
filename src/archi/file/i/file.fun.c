@@ -201,7 +201,7 @@ archi_file_read(
         ARCHI_ERROR_SET(ARCHI__ECONSTRAINT, "file descriptor (%i) is invalid", fd);
         return 0;
     }
-    else if (!ARCHI_POINTER_TO_WRITABLE_DATA(destination.attr) && !ARCHI_POINTER_TO_STACK(destination.attr))
+    else if (!ARCHI_POINTER_TO_PERS_W_DATA(destination.attr) && !ARCHI_POINTER_TO_TRANS_DATA(destination.attr))
     {
         ARCHI_ERROR_SET(ARCHI__ECONSTRAINT, "destination is not a pointer to writable memory");
         return 0;

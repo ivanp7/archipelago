@@ -220,7 +220,7 @@ ARCHI_CONTEXT_INIT_FUNC(archi_context_init__sdl2_texture)
     *context_data = (struct archi_context_data__sdl2_texture){
         .texture = {
             .ptr = SDL_CreateTexture(renderer.ptr, pixel_format, access, width, height),
-            .attr = ARCHI_POINTER_TYPE__DATA_WRITABLE |
+            .attr = ARCHI_POINTER_TYPE__DATA_PERSISTENT_W |
                 archi_pointer_attr__cdata(ARCHI_POINTER_DATA_TAG__SDL2_TEXTURE),
         },
     };

@@ -114,9 +114,9 @@ archi_context_initialize(
         ARCHI_ERROR_SET(ARCHI__ECONSTRAINT, "context interface pointer is NULL");
         return NULL;
     }
-    else if (ARCHI_POINTER_TO_STACK(interface.attr))
+    else if (ARCHI_POINTER_TO_TRANS_DATA(interface.attr))
     {
-        ARCHI_ERROR_SET(ARCHI__ECONSTRAINT, "context interface on stack is not supported");
+        ARCHI_ERROR_SET(ARCHI__ECONSTRAINT, "context interface is at transient memory");
         return NULL;
     }
 
@@ -215,9 +215,9 @@ ARCHI_CONTEXT_CALLBACK_FUNC(archi_context_callback_wrapper)
             ARCHI_ERROR_SET(error.code, "output pointer is invalid: %s", error.message);
             return;
         }
-        else if (ARCHI_POINTER_TO_STACK(value.attr) && (value.ref_count != NULL))
+        else if (ARCHI_POINTER_TO_TRANS_DATA(value.attr) && (value.ref_count != NULL))
         {
-            ARCHI_ERROR_SET(ARCHI__ECONSTRAINT, "output pointer to stack has reference counter, which is meaningless");
+            ARCHI_ERROR_SET(ARCHI__ECONSTRAINT, "output pointer to transient memory has reference counter");
             return;
         }
     }

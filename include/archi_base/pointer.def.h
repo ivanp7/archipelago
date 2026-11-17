@@ -215,24 +215,24 @@ enum {
 /*****************************************************************************/
 
 /**
- * @def ARCHI_POINTER_TYPE__DATA_ON_STACK
- * @brief Pointer type: short-lived data, writable memory.
+ * @def ARCHI_POINTER_TYPE__DATA_TRANSIENT
+ * @brief Pointer type: short-lived data, readable memory.
  */
-#define ARCHI_POINTER_TYPE__DATA_ON_STACK           \
+#define ARCHI_POINTER_TYPE__DATA_TRANSIENT          \
     ((archi_pointer_attr_t)0x0 << ARCHI_POINTER_ATTR_OFFSET__TYPE)
 
 /**
- * @def ARCHI_POINTER_TYPE__DATA_WRITABLE
+ * @def ARCHI_POINTER_TYPE__DATA_PERSISTENT_W
  * @brief Pointer type: long-lived data, writable memory.
  */
-#define ARCHI_POINTER_TYPE__DATA_WRITABLE           \
+#define ARCHI_POINTER_TYPE__DATA_PERSISTENT_W       \
     ((archi_pointer_attr_t)0x1 << ARCHI_POINTER_ATTR_OFFSET__TYPE)
 
 /**
- * @def ARCHI_POINTER_TYPE__DATA_READONLY
+ * @def ARCHI_POINTER_TYPE__DATA_PERSISTENT_R
  * @brief Pointer type: long-lived data, read-only memory.
  */
-#define ARCHI_POINTER_TYPE__DATA_READONLY           \
+#define ARCHI_POINTER_TYPE__DATA_PERSISTENT_R       \
     ((archi_pointer_attr_t)0x2 << ARCHI_POINTER_ATTR_OFFSET__TYPE)
 
 /**
@@ -243,29 +243,8 @@ enum {
     ((archi_pointer_attr_t)0x3 << ARCHI_POINTER_ATTR_OFFSET__TYPE)
 
 /*****************************************************************************/
-// Utility macros
+// Utility macros for attributes
 /*****************************************************************************/
-
-/**
- * @brief Check if pointer refers to stack memory.
- */
-#define ARCHI_POINTER_TO_STACK(attr)                \
-    (((attr) & ARCHI_POINTER_ATTR_MASK__TYPE)       \
-     == ARCHI_POINTER_TYPE__DATA_ON_STACK)
-
-/**
- * @brief Check if pointer refers to writable memory (excluding stack memory).
- */
-#define ARCHI_POINTER_TO_WRITABLE_DATA(attr)        \
-    (((attr) & ARCHI_POINTER_ATTR_MASK__TYPE)       \
-     == ARCHI_POINTER_TYPE__DATA_WRITABLE)
-
-/**
- * @brief Check if pointer refers to read-only memory.
- */
-#define ARCHI_POINTER_TO_READONLY_DATA(attr)        \
-    (((attr) & ARCHI_POINTER_ATTR_MASK__TYPE)       \
-     == ARCHI_POINTER_TYPE__DATA_READONLY)
 
 /**
  * @brief Check if a pointer refers to a function.
@@ -273,6 +252,44 @@ enum {
 #define ARCHI_POINTER_TO_FUNCTION(attr)             \
     (((attr) & ARCHI_POINTER_ATTR_MASK__TYPE)       \
      == ARCHI_POINTER_TYPE__FUNCTION)
+
+/**
+ * @brief Check if a pointer refers to data.
+ */
+#define ARCHI_POINTER_TO_DATA(attr)                 \
+    (!ARCHI_POINTER_TO_FUNCTION((attr)))
+
+/**
+ * @brief Check if pointer refers to transient data.
+ */
+#define ARCHI_POINTER_TO_TRANS_DATA(attr)           \
+    (((attr) & ARCHI_POINTER_ATTR_MASK__TYPE)       \
+     == ARCHI_POINTER_TYPE__DATA_TRANSIENT)
+
+/**
+ * @brief Check if pointer refers to persistent data.
+ */
+#define ARCHI_POINTER_TO_PERS_DATA(attr)            \
+    (ARCHI_POINTER_TO_DATA((attr))                  \
+     && !ARCHI_POINTER_TO_TRANS_DATA((attr)))
+
+/**
+ * @brief Check if pointer refers to writable persistent data.
+ */
+#define ARCHI_POINTER_TO_PERS_W_DATA(attr)          \
+    (((attr) & ARCHI_POINTER_ATTR_MASK__TYPE)       \
+     == ARCHI_POINTER_TYPE__DATA_PERSISTENT_W)
+
+/**
+ * @brief Check if pointer refers to read-only persistent data.
+ */
+#define ARCHI_POINTER_TO_PERS_R_DATA(attr)          \
+    (((attr) & ARCHI_POINTER_ATTR_MASK__TYPE)       \
+     == ARCHI_POINTER_TYPE__DATA_PERSISTENT_R)
+
+/*****************************************************************************/
+// Utility macros for pointers
+/*****************************************************************************/
 
 /**
  * @brief Check if pointer is null.
