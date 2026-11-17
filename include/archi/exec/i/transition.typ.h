@@ -50,6 +50,9 @@ typedef ARCHI_DEXGRAPH_TRANSITION_FUNC((*archi_dexgraph_transition_func_t));
 
 /**
  * @brief Directed execution graph transition.
+ *
+ * If the function pointer is NULL, the data must be a node.
+ * This node is to be used as a target as is.
  */
 typedef struct archi_dexgraph_transition {
     archi_dexgraph_transition_func_t function; ///< Transition function.

@@ -34,7 +34,7 @@
 /**
  * @brief Call an operation.
  *
- * If the operation function is NULL, it is a no-op.
+ * If the operation function is NULL, the operation data is executed as an operation sequence.
  *
  * @return True on success, false on failure.
  */
@@ -83,8 +83,9 @@ archi_dexgraph_operation_seq_elt(
 /**
  * @brief Execute an operation sequence, starting at the specified index.
  *
- * If the operation function is NULL, it is a no-op.
- * Null sequences are treated like empty sequences.
+ * If the sequence is NULL, it is a no-op.
+ *
+ * To execute the whole sequence, the starting index must be set to `0`.
  *
  * @return Index of the failed operation, or ARCHI_DEXGRAPH_OPERATION_SEQ_END
  * if all operations were executed successfully.

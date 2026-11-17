@@ -47,6 +47,9 @@ typedef ARCHI_DEXGRAPH_OPERATION_FUNC((*archi_dexgraph_operation_func_t));
 
 /**
  * @brief Directed execution graph operation.
+ *
+ * If the function pointer is NULL, the data must be an operation sequence.
+ * This sequence is to be executed by an implicit archi_dexgraph_operation_seq_call().
  */
 typedef struct archi_dexgraph_operation {
     archi_dexgraph_operation_func_t function; ///< Operation function.
