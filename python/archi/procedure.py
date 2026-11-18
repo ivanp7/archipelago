@@ -103,7 +103,7 @@ class _MemoryAllocation:
     def init_from_memory(contents, /, fill=False):
         """Get the memory initialization function (contents copied from memory).
         """
-        if not isinstance(contents, (Context, Context.Slot)):
+        if not isinstance(contents, (Object, Context, Context.Slot)):
             raise TypeError
         elif not isinstance(fill, bool):
             raise TypeError
