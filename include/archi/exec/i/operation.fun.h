@@ -81,19 +81,13 @@ archi_dexgraph_operation_seq_elt(
 );
 
 /**
- * @brief Execute an operation sequence, starting at the specified index.
+ * @brief Execute an operation sequence.
  *
  * If the sequence is NULL, it is a no-op.
- *
- * To execute the whole sequence, the starting index must be set to `0`.
- *
- * @return Index of the failed operation, or ARCHI_DEXGRAPH_OPERATION_SEQ_END
- * if all operations were executed successfully.
  */
-size_t
+void
 archi_dexgraph_operation_seq_call(
         const archi_dexgraph_operation_seq_t *sequence, ///< [in] Operation sequence.
-        size_t start_index, ///< [in] Start index.
         ARCHI_ERROR_PARAM_DECL ///< [out] Error.
 );
 

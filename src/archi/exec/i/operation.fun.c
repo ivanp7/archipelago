@@ -52,7 +52,7 @@ archi_dexgraph_operation_call(
             return;
         }
 
-        archi_dexgraph_operation_seq_call(operation.data.cptr, 0, ARCHI_ERROR_PARAM);
+        archi_dexgraph_operation_seq_call(operation.data.cptr, ARCHI_ERROR_PARAM);
     }
 }
 
@@ -96,32 +96,29 @@ archi_dexgraph_operation_seq_elt(
     return sequence->operation[op_index];
 }
 
-size_t
+void
 archi_dexgraph_operation_seq_call(
         const archi_dexgraph_operation_seq_t *sequence,
-        size_t start_index,
         ARCHI_ERROR_PARAM_DECL)
 {
     if (sequence == NULL)
     {
         ARCHI_ERROR_RESET();
-        return ARCHI_DEXGRAPH_OPERATION_SEQ_END;
+        return;
     }
 
     archi_error_t error;
     ARCHI_ERROR_VAR_RESET(&error);
 
-    for (; start_index < sequence->length; start_index++)
+    for (size_t op_index = 0; op_index < sequence->length; op_index++)
     {
-        archi_dexgraph_operation_call(sequence->operation[start_index], &error);
+        archi_dexgraph_operation_call(sequence->operation[op_index], &error);
 
         if (error.code != 0)
             goto finish;
     }
-    start_index = ARCHI_DEXGRAPH_OPERATION_SEQ_END;
 
 finish:
     ARCHI_ERROR_ASSIGN(error);
-    return start_index;
 }
 
