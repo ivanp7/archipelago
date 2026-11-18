@@ -195,36 +195,6 @@ archi_reference_count_alloc(
 }
 
 void
-archi_reference_count_free(
-        archi_reference_count_t ref_count)
-{
-    if (archi_ref_count_manager != NULL)
-    {
-        uintmax_t num_releases = 1 + // calculating the new value from the old
-#ifndef __STDC_NO_ATOMICS__
-            atomic_fetch_add_explicit(&archi_ref_count_manager->num_releases, 1,
-                    memory_order_release);
-#else
-            archi_ref_count_manager->num_releases++;
-#endif
-
-        uintmax_t num_allocations = archi_reference_count_total_allocations();
-
-        if (num_allocations < num_releases) // memory error detected
-        {
-#ifndef __STDC_NO_ATOMICS__
-            atomic_store_explicit(&archi_ref_count_manager->double_release,
-                    true, memory_order_relaxed);
-#else
-            archi_ref_count_manager->double_release = true;
-#endif
-        }
-    }
-
-    free(ref_count);
-}
-
-void
 archi_reference_count_increment(
         archi_reference_count_t ref_count)
 {
@@ -248,9 +218,11 @@ archi_reference_count_increment(
 #endif
 }
 
+static
 bool
-archi_reference_count_decrement(
-        archi_reference_count_t ref_count)
+archi_reference_count_decrement_impl(
+        archi_reference_count_t ref_count,
+        bool call_destructor)
 {
     if (ref_count == NULL)
         return false;
@@ -292,9 +264,48 @@ archi_reference_count_decrement(
     return false;
 
 destroy:
-    ref_count->destructor_fn(ref_count->destructor_data);
-    archi_reference_count_free(ref_count);
+    if (archi_ref_count_manager != NULL)
+    {
+        uintmax_t num_releases = 1 + // calculating the new value from the old
+#ifndef __STDC_NO_ATOMICS__
+            atomic_fetch_add_explicit(&archi_ref_count_manager->num_releases, 1,
+                    memory_order_release);
+#else
+            archi_ref_count_manager->num_releases++;
+#endif
+
+        uintmax_t num_allocations = archi_reference_count_total_allocations();
+
+        if (num_allocations < num_releases) // memory error detected
+        {
+#ifndef __STDC_NO_ATOMICS__
+            atomic_store_explicit(&archi_ref_count_manager->double_release,
+                    true, memory_order_relaxed);
+#else
+            archi_ref_count_manager->double_release = true;
+#endif
+        }
+    }
+
+    if (call_destructor)
+        ref_count->destructor_fn(ref_count->destructor_data);
+
+    free(ref_count);
 
     return true;
+}
+
+bool
+archi_reference_count_decrement(
+        archi_reference_count_t ref_count)
+{
+    return archi_reference_count_decrement_impl(ref_count, true);
+}
+
+bool
+archi_reference_count_decrement_nodestruct(
+        archi_reference_count_t ref_count)
+{
+    return archi_reference_count_decrement_impl(ref_count, false);
 }
 

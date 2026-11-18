@@ -376,7 +376,7 @@ archi_aggr_allocate(
 
 failure:
     free(aggregate->reference);
-    archi_reference_count_free(aggregate->object.ref_count);
+    archi_reference_count_decrement_nodestruct(aggregate->object.ref_count);
     free(aggregate->object.ptr);
     free(aggregate);
 

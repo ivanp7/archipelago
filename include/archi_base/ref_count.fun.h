@@ -57,24 +57,8 @@ archi_reference_count_alloc(
 );
 
 /**
- * @brief Deallocate a new reference counter object unconditionally.
- *
- * The associated destructor function is not called.
- *
- * @param ref_count Pointer to a valid reference counter object.
- *
- * @note
- * Passing NULL as ref_count is a no-op.
- */
-void
-archi_reference_count_free(
-        archi_reference_count_t ref_count
-);
-
-/**
  * @brief Increment the reference count.
  *
- * Signals that an additional user holds a reference to the managed object.
  * This function is thread-safe and may be called from multiple threads.
  *
  * @param ref_count Pointer to a valid reference counter object.
@@ -92,11 +76,12 @@ archi_reference_count_increment(
  *
  * If the reference count drops to zero, the associated destructor function
  * is called with the provided data, and the reference counter object is freed.
+ *
  * This function is thread-safe and may be called from multiple threads.
  *
  * @param ref_count Pointer to a valid reference counter object.
  *
- * @return true if the destructor was called and the associated object was destroyed;
+ * @return True if the count reached zero and the reference counter was destroyed;
  *         false otherwise.
  *
  * @note
@@ -108,6 +93,31 @@ archi_reference_count_increment(
  */
 bool
 archi_reference_count_decrement(
+        archi_reference_count_t ref_count
+);
+
+/**
+ * @brief Decrement the reference count without calling the destructor.
+ *
+ * If the reference count drops to zero, the associated destructor function is not called,
+ * but the reference counter object is freed anyway.
+ *
+ * This function is thread-safe and may be called from multiple threads.
+ *
+ * @param ref_count Pointer to a valid reference counter object.
+ *
+ * @return True if the count reached zero and the reference counter was destroyed;
+ *         false otherwise.
+ *
+ * @note
+ * Passing NULL as ref_count is a no-op and returns false.
+ *
+ * @warning
+ * After this function returns true, the memory pointed to by ref_count is invalid and
+ * must not be accessed.
+ */
+bool
+archi_reference_count_decrement_nodestruct(
         archi_reference_count_t ref_count
 );
 

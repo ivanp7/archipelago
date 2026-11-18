@@ -73,7 +73,7 @@ archi_reference_count_total_allocations(void);
 /**
  * @brief Obtain total number of times reference counters were deallocated.
  *
- * This function counts archi_reference_count_free() calls.
+ * This function counts archi_reference_count_decrement() calls which lead to object destruction.
  *
  * @return Total number of releases.
  */
