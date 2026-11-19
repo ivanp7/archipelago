@@ -43,7 +43,7 @@ ARCHI_VALUE_CHECK_FUNC(archi_value_check__attr);
  * Function data type: archi_pointer_attr_t[].
  *
  * The array of attributes must begin and end with the same terminator value,
- * which is not participating in the check. Thus, the array length must not be less than 2.
+ * which is not checked. Thus, the array length must not be less than 2.
  */
 ARCHI_VALUE_CHECK_FUNC(archi_value_check__attrs);
 

@@ -36,7 +36,7 @@
 /**
  * @brief Signature of a value check function.
  *
- * @return True if the value is compatible, false otherwise.
+ * @return True if the value passes the check, false otherwise.
  */
 #define ARCHI_VALUE_CHECK_FUNC(func_name)   bool func_name( \
         archi_pointer_t value, /* [in] Value to check. */   \
