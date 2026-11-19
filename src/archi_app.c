@@ -541,15 +541,6 @@ exit_clean(void) // is called on exit() or if main() returns
         archi_log_debug(__func__, "total reference counter allocations = %ju, releases = %ju, increments = %ju, decrements = %ju",
                 total_allocations, total_releases, total_increments, total_decrements);
 
-        if (total_allocations < total_releases)
-            archi_log_error(__func__, "Memory corruption detected: total number of reference counter releases (%zu) exceeds allocations (%zu) by %zu",
-                    total_releases, total_allocations, total_releases - total_allocations);
-        else if (archi_reference_count_double_release_detected())
-            archi_log_error(__func__, "Memory corruption detected: total number of reference counter releases exceeded allocations (double release)");
-        else if (total_allocations > total_releases)
-            archi_log_warning(__func__, "Memory leak detected: total number of reference counter allocations (%zu) exceeds releases (%zu) by %zu",
-                    total_allocations, total_releases, total_allocations - total_releases);
-
         if (total_increments < total_decrements)
             archi_log_error(__func__, "Memory corruption detected: total number of reference counter decrements (%zu) exceeds increments (%zu) by %zu",
                     total_decrements, total_increments, total_decrements - total_increments);

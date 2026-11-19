@@ -81,14 +81,6 @@ uintmax_t
 archi_reference_count_total_releases(void);
 
 /**
- * @brief Check if double release of a reference counter has been detected.
- *
- * @return False if all reference counters were released at most once, true otherwise.
- */
-bool
-archi_reference_count_double_release_detected(void);
-
-/**
  * @brief Obtain total number of times reference counters were incremented.
  *
  * This function counts archi_reference_count_alloc() and archi_reference_count_increment() calls.

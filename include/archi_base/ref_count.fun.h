@@ -29,6 +29,7 @@
 
 #include "archi_base/ref_count.typ.h"
 
+#include <stdint.h> // for uintmax_t
 #include <stdbool.h>
 
 
@@ -118,6 +119,16 @@ archi_reference_count_decrement(
  */
 bool
 archi_reference_count_decrement_nodestruct(
+        archi_reference_count_t ref_count
+);
+
+/**
+ * @brief Obtain the unique ID of a reference counter.
+ *
+ * @return Reference counter ID.
+ */
+uintmax_t
+archi_reference_count_id(
         archi_reference_count_t ref_count
 );
 

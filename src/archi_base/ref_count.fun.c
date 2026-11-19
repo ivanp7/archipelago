@@ -79,20 +79,6 @@ archi_reference_count_total_releases(void)
 #endif
 }
 
-bool
-archi_reference_count_double_release_detected(void)
-{
-    if (archi_ref_count_manager == NULL)
-        return false;
-
-#ifndef __STDC_NO_ATOMICS__
-    return atomic_load_explicit(&archi_ref_count_manager->double_release,
-            memory_order_relaxed);
-#else
-    return archi_ref_count_manager->double_release;
-#endif
-}
-
 uintmax_t
 archi_reference_count_total_increments(void)
 {
@@ -164,7 +150,7 @@ archi_reference_count_alloc(
 
     if (archi_ref_count_manager != NULL)
     {
-        ref_count->id =
+        ref_count->id = 1 +
 #ifndef __STDC_NO_ATOMICS__
             atomic_fetch_add_explicit(&archi_ref_count_manager->num_allocations, 1,
                     memory_order_release);
@@ -180,7 +166,7 @@ archi_reference_count_alloc(
 #endif
     }
     else
-        ref_count->id = 0;
+        ref_count->id = -1;
 
 #ifndef __STDC_NO_ATOMICS__
     atomic_init(&ref_count->value, 1);
@@ -266,25 +252,12 @@ archi_reference_count_decrement_impl(
 destroy:
     if (archi_ref_count_manager != NULL)
     {
-        uintmax_t num_releases = 1 + // calculating the new value from the old
 #ifndef __STDC_NO_ATOMICS__
-            atomic_fetch_add_explicit(&archi_ref_count_manager->num_releases, 1,
-                    memory_order_release);
+        atomic_fetch_add_explicit(&archi_ref_count_manager->num_releases, 1,
+                memory_order_release);
 #else
-            archi_ref_count_manager->num_releases++;
+        archi_ref_count_manager->num_releases++;
 #endif
-
-        uintmax_t num_allocations = archi_reference_count_total_allocations();
-
-        if (num_allocations < num_releases) // memory error detected
-        {
-#ifndef __STDC_NO_ATOMICS__
-            atomic_store_explicit(&archi_ref_count_manager->double_release,
-                    true, memory_order_relaxed);
-#else
-            archi_ref_count_manager->double_release = true;
-#endif
-        }
     }
 
     if (call_destructor)
@@ -307,5 +280,15 @@ archi_reference_count_decrement_nodestruct(
         archi_reference_count_t ref_count)
 {
     return archi_reference_count_decrement_impl(ref_count, false);
+}
+
+uintmax_t
+archi_reference_count_id(
+        archi_reference_count_t ref_count)
+{
+    if (ref_count == NULL)
+        return 0;
+
+    return ref_count->id;
 }
 

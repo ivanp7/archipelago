@@ -28,6 +28,7 @@
 #include "archi/hashmap/i/tag.def.h"
 #include "archi_base/pointer.fun.h"
 #include "archi_base/pointer.def.h"
+#include "archi_base/ref_count.fun.h"
 
 #include <stdio.h>
 #include <stdint.h> // for uintmax_t
@@ -92,7 +93,7 @@ ARCHI_HASHMAP_TRAV_KV_FUNC(archi_dexgraph_op__hashmap_print_traverse)
     printf(">");
 
     if (value.ref_count != NULL)
-        printf(" (refcount %p)", (void*)value.ref_count);
+        printf(" (refcount #%ju)", archi_reference_count_id(value.ref_count));
 
     printf("\n");
 
