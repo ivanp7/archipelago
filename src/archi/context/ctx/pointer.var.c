@@ -63,12 +63,13 @@ ARCHI_CONTEXT_INIT_FUNC(archi_context_init__pointer)
     }
 
     // Own the entity
-    *context_data = archi_rcpointer_own(entity, ARCHI_ERROR_PARAM);
-    if (!context_data->attr)
+    if (!archi_rcpointer_claim(&entity, ARCHI_ERROR_PARAM))
     {
         free(context_data);
         return NULL;
     }
+
+    *context_data = entity;
 
     ARCHI_ERROR_RESET();
     return context_data;
@@ -77,7 +78,7 @@ ARCHI_CONTEXT_INIT_FUNC(archi_context_init__pointer)
 static
 ARCHI_CONTEXT_FINAL_FUNC(archi_context_final__pointer)
 {
-    archi_rcpointer_disown(*context);
+    archi_rcpointer_abandon(*context);
     free(context);
 }
 
@@ -123,8 +124,7 @@ ARCHI_CONTEXT_SET_FUNC(archi_context_set__pointer)
             return;
         }
 
-        value = archi_rcpointer_replace(value, *context, ARCHI_ERROR_PARAM);
-        if (!value.attr)
+        if (!archi_rcpointer_replace(&value, *context, ARCHI_ERROR_PARAM))
             return;
 
         *context = value;
@@ -179,12 +179,13 @@ ARCHI_CONTEXT_INIT_FUNC(archi_context_init__dpointer)
     }
 
     // Own the data
-    *context_data = archi_rcpointer_own(data, ARCHI_ERROR_PARAM);
-    if (!context_data->attr)
+    if (!archi_rcpointer_claim(&data, ARCHI_ERROR_PARAM))
     {
         free(context_data);
         return NULL;
     }
+
+    *context_data = data;
 
     // Set writability flag
     if (writable_set)
@@ -263,8 +264,7 @@ ARCHI_CONTEXT_SET_FUNC(archi_context_set__dpointer)
             return;
         }
 
-        value = archi_rcpointer_replace(value, *context, ARCHI_ERROR_PARAM);
-        if (!value.attr)
+        if (!archi_rcpointer_replace(&value, *context, ARCHI_ERROR_PARAM))
             return;
 
         *context = value;
@@ -405,12 +405,13 @@ ARCHI_CONTEXT_INIT_FUNC(archi_context_init__pdpointer)
     }
 
     // Own the data
-    *context_data = archi_rcpointer_own(data, ARCHI_ERROR_PARAM);
-    if (!context_data->attr)
+    if (!archi_rcpointer_claim(&data, ARCHI_ERROR_PARAM))
     {
         free(context_data);
         return NULL;
     }
+
+    *context_data = data;
 
     // Set writability flag
     if (writable_set)
@@ -891,8 +892,7 @@ ARCHI_CONTEXT_SET_FUNC(archi_context_set__pdpointer)
             return;
         }
 
-        value = archi_rcpointer_replace(value, *context, ARCHI_ERROR_PARAM);
-        if (!value.attr)
+        if (!archi_rcpointer_replace(&value, *context, ARCHI_ERROR_PARAM))
             return;
 
         *context = value;
@@ -1104,12 +1104,13 @@ ARCHI_CONTEXT_INIT_FUNC(archi_context_init__cdpointer)
     }
 
     // Own the data
-    *context_data = archi_rcpointer_own(data, ARCHI_ERROR_PARAM);
-    if (!context_data->attr)
+    if (!archi_rcpointer_claim(&data, ARCHI_ERROR_PARAM))
     {
         free(context_data);
         return NULL;
     }
+
+    *context_data = data;
 
     // Set writability flag
     if (writable_set)
@@ -1212,8 +1213,7 @@ ARCHI_CONTEXT_SET_FUNC(archi_context_set__cdpointer)
             return;
         }
 
-        value = archi_rcpointer_replace(value, *context, ARCHI_ERROR_PARAM);
-        if (!value.attr)
+        if (!archi_rcpointer_replace(&value, *context, ARCHI_ERROR_PARAM))
             return;
 
         if (!archi_pointer_attr_unpk__cdata(value.attr, NULL, NULL))
@@ -1323,12 +1323,13 @@ ARCHI_CONTEXT_INIT_FUNC(archi_context_init__fpointer)
     }
 
     // Own the data
-    *context_data = archi_rcpointer_own(function, ARCHI_ERROR_PARAM);
-    if (!context_data->attr)
+    if (!archi_rcpointer_claim(&function, ARCHI_ERROR_PARAM))
     {
         free(context_data);
         return NULL;
     }
+
+    *context_data = function;
 
     // Set function type tag
     if (tag_set)
@@ -1405,8 +1406,7 @@ ARCHI_CONTEXT_SET_FUNC(archi_context_set__fpointer)
             return;
         }
 
-        value = archi_rcpointer_replace(value, *context, ARCHI_ERROR_PARAM);
-        if (!value.attr)
+        if (!archi_rcpointer_replace(&value, *context, ARCHI_ERROR_PARAM))
             return;
 
         *context = value;

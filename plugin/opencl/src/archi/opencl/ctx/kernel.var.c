@@ -92,11 +92,12 @@ ARCHI_CONTEXT_INIT_FUNC(archi_context_init__opencl_kernel_new)
             .attr = ARCHI_POINTER_TYPE__DATA_PERSISTENT_W |
                 archi_pointer_attr__cdata(ARCHI_POINTER_DATA_TAG__OPENCL_KERNEL),
         },
-        .ref_program = archi_rcpointer_own(program, ARCHI_ERROR_PARAM),
     };
 
-    if (!context_data->ref_program.attr)
+    if (!archi_rcpointer_claim(&program, ARCHI_ERROR_PARAM))
         goto failure;
+
+    context_data->ref_program = program;
 
     context_data->kernel_name = archi_string_copy(kernel_name);
     if (context_data->kernel_name == NULL)
@@ -130,7 +131,7 @@ ARCHI_CONTEXT_INIT_FUNC(archi_context_init__opencl_kernel_new)
 failure:
     if (context_data->kernel.ptr != NULL)
         clReleaseKernel(context_data->kernel.ptr);
-    archi_rcpointer_disown(context_data->ref_program);
+    archi_rcpointer_abandon(context_data->ref_program);
     free(context_data->kernel_name);
     free(context_data);
 
@@ -254,7 +255,7 @@ ARCHI_CONTEXT_FINAL_FUNC(archi_context_final__opencl_kernel)
 
     clReleaseKernel(context_data->kernel.ptr);
     if (context_data->ref_program.ref_count != ARCHI_CONTEXT_REF_COUNT)
-        archi_rcpointer_disown(context_data->ref_program);
+        archi_rcpointer_abandon(context_data->ref_program);
     free(context_data->kernel_name);
     free(context_data);
 }

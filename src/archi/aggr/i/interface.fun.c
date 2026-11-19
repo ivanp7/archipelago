@@ -151,7 +151,7 @@ ARCHI_DESTRUCTOR_FUNC(archi_aggr_deallocator)
 
     // Disown the references
     for (size_t i = 0; i < aggregate->num_references; i++)
-        archi_rcpointer_disown(aggregate->reference[i]);
+        archi_rcpointer_abandon(aggregate->reference[i]);
 
     // Dellocate the array of references
     free(aggregate->reference);
@@ -582,8 +582,7 @@ archi_aggr_set(
     if (ref_index != (size_t)-1) // reference member
     {
         // Own the assigned value
-        value = archi_rcpointer_own(value, ARCHI_ERROR_PARAM);
-        if (!value.attr)
+        if (!archi_rcpointer_claim(&value, ARCHI_ERROR_PARAM))
             return;
     }
 
@@ -597,14 +596,14 @@ archi_aggr_set(
 
     if (error.code != 0)
     {
-        archi_rcpointer_disown(value);
+        archi_rcpointer_abandon(value);
         return;
     }
 
     if (ref_index != (size_t)-1) // reference member
     {
         // Update the reference
-        archi_rcpointer_disown(aggregate->reference[ref_index]);
+        archi_rcpointer_abandon(aggregate->reference[ref_index]);
         aggregate->reference[ref_index] = value;
     }
 }

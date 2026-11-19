@@ -234,9 +234,10 @@ ARCHI_CONTEXT_INIT_FUNC(archi_context_init__sdl2_texture)
     }
 
     // Initialize references
-    context_data->renderer = archi_rcpointer_own(renderer, ARCHI_ERROR_PARAM);
-    if (!context_data->renderer.attr)
+    if (!archi_rcpointer_claim(&renderer, ARCHI_ERROR_PARAM))
         goto failure;
+
+    context_data->renderer = renderer;
 
     ARCHI_ERROR_RESET();
     return (archi_rcpointer_t*)context_data;
@@ -255,7 +256,7 @@ ARCHI_CONTEXT_FINAL_FUNC(archi_context_final__sdl2_texture)
         (struct archi_context_data__sdl2_texture*)context;
 
     SDL_DestroyTexture(context_data->texture.ptr);
-    archi_rcpointer_disown(context_data->renderer);
+    archi_rcpointer_abandon(context_data->renderer);
     free(context_data);
 }
 

@@ -202,8 +202,7 @@ archi_hashmap_set(
             return false;
         }
 
-        value = archi_rcpointer_own(value, ARCHI_ERROR_PARAM);
-        if (!value.attr)
+        if (!archi_rcpointer_claim(&value, ARCHI_ERROR_PARAM))
         {
             free(key_copy);
             free(node);
@@ -238,8 +237,7 @@ archi_hashmap_set(
             return false;
         }
 
-        value = archi_rcpointer_replace(value, node->value, ARCHI_ERROR_PARAM);
-        if (!value.attr)
+        if (!archi_rcpointer_replace(&value, node->value, ARCHI_ERROR_PARAM))
             return false;
 
         node->value = value;
@@ -323,7 +321,7 @@ archi_hashmap_unset(
     archi_hashmap_remove_node(hashmap, node);
 
     // Decrement the value reference counter and destroy the node
-    archi_rcpointer_disown(node->value);
+    archi_rcpointer_abandon(node->value);
 
     free(node->key);
     free(node);
@@ -366,9 +364,7 @@ archi_hashmap_traverse(
                 break;
 
             case ARCHI_HASHMAP_TRAV_SET:
-                action.new_value = archi_rcpointer_replace(action.new_value, node->value,
-                        ARCHI_ERROR_PARAM);
-                if (!action.new_value.attr)
+                if (!archi_rcpointer_replace(&action.new_value, node->value, ARCHI_ERROR_PARAM))
                     return false;
 
                 node->value = action.new_value;
@@ -377,7 +373,7 @@ archi_hashmap_traverse(
             case ARCHI_HASHMAP_TRAV_UNSET:
                 archi_hashmap_remove_node(hashmap, node);
 
-                archi_rcpointer_disown(node->value);
+                archi_rcpointer_abandon(node->value);
 
                 free(node->key);
                 free(node);

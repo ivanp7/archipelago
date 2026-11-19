@@ -121,7 +121,7 @@ ARCHI_CONTEXT_FINAL_FUNC(archi_context_final__dptr_array)
     archi_dptr_array_t array = context_data->array.ptr;
 
     for (size_t i = 0; i < array->length; i++)
-        archi_rcpointer_disown(context_data->ref_element[i]);
+        archi_rcpointer_abandon(context_data->ref_element[i]);
 
     free(context_data->ref_element);
     free(context_data->array.ptr);
@@ -269,8 +269,7 @@ ARCHI_CONTEXT_SET_FUNC(archi_context_set__dptr_array)
             return;
         }
 
-        value = archi_rcpointer_replace(value, context_data->ref_element[index], ARCHI_ERROR_PARAM);
-        if (!value.attr)
+        if (!archi_rcpointer_replace(&value, context_data->ref_element[index], ARCHI_ERROR_PARAM))
             return;
 
         array->ptr[index] = value.ptr;
@@ -328,7 +327,7 @@ ARCHI_CONTEXT_SET_FUNC(archi_context_set__dptr_array)
             }
 
             for (size_t i = new_length; i < array->length; i++)
-                archi_rcpointer_disown(context_data->ref_element[i]);
+                archi_rcpointer_abandon(context_data->ref_element[i]);
         }
         else
         {

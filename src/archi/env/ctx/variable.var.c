@@ -66,8 +66,7 @@ ARCHI_CONTEXT_INIT_FUNC(archi_context_init__env_variable)
         return NULL;
     }
 
-    default_value = archi_rcpointer_own(default_value, ARCHI_ERROR_PARAM);
-    if (!default_value.attr)
+    if (!archi_rcpointer_claim(&default_value, ARCHI_ERROR_PARAM))
     {
         free(context_data);
         return NULL;
@@ -82,7 +81,7 @@ ARCHI_CONTEXT_INIT_FUNC(archi_context_init__env_variable)
 static
 ARCHI_CONTEXT_FINAL_FUNC(archi_context_final__env_variable)
 {
-    archi_rcpointer_disown(*context);
+    archi_rcpointer_abandon(*context);
     free(context);
 }
 
@@ -162,8 +161,7 @@ ARCHI_CONTEXT_SET_FUNC(archi_context_set__env_variable)
 
         ARCHI_POINTER_NULLIFY_EMPTY(value);
 
-        value = archi_rcpointer_replace(value, *context, ARCHI_ERROR_PARAM);
-        if (!value.attr)
+        if (!archi_rcpointer_replace(&value, *context, ARCHI_ERROR_PARAM))
             return;
 
         *context = value;

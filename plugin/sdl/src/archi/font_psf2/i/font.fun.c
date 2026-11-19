@@ -177,9 +177,10 @@ archi_font_psf2_load(
     }
 
     // Increment the font data reference counter
-    font->data = archi_rcpointer_own(font_data, ARCHI_ERROR_PARAM);
-    if (!font->data.attr)
+    if (!archi_rcpointer_claim(&font_data, ARCHI_ERROR_PARAM))
         goto failure;
+
+    font->data = font_data;
 
     ARCHI_ERROR_RESET();
     return font;
@@ -197,7 +198,7 @@ archi_font_psf2_unload(
     if (font == NULL)
         return;
 
-    archi_rcpointer_disown(font->data);
+    archi_rcpointer_abandon(font->data);
     free(font->mapping_table);
     free(font);
 }

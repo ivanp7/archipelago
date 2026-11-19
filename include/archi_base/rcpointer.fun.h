@@ -30,6 +30,8 @@
 #include "archi_base/rcpointer.typ.h"
 #include "archi_base/error.typ.h"
 
+#include <stdbool.h>
+
 
 /**
  * @brief Attach a reference counter to a pointer.
@@ -66,12 +68,13 @@ archi_rcpointer_memcopy(
  *
  * Reference counter of the entity gets incremented, unless it is transient memory.
  * In that case, a memory copy is allocated using archi_rcpointer_memcopy().
+ * The resulting pointer is written to the output parameter.
  *
- * @return Pointer to claimed entity, or null pointer with attributes == 0 in case of error.
+ * @return True on success, false on error.
  */
-archi_rcpointer_t
-archi_rcpointer_own(
-        archi_rcpointer_t entity, ///< [in] Owned entity.
+bool
+archi_rcpointer_claim(
+        archi_rcpointer_t *entity, ///< [in,out] Entity.
         ARCHI_ERROR_PARAM_DECL ///< [out] Error.
 );
 
@@ -81,8 +84,8 @@ archi_rcpointer_own(
  * Reference counter of the entity gets decremented.
  */
 void
-archi_rcpointer_disown(
-        archi_rcpointer_t entity ///< [in] Disowned entity.
+archi_rcpointer_abandon(
+        archi_rcpointer_t entity ///< [in] Entity.
 );
 
 /**
@@ -90,12 +93,12 @@ archi_rcpointer_disown(
  *
  * If claiming ownership of the first entity failed, the second entity is not abandoned.
  *
- * @return Pointer to claimed entity, or null pointer with attributes == 0 in case of error.
+ * @return True on success, false on error.
  */
-archi_rcpointer_t
+bool
 archi_rcpointer_replace(
-        archi_rcpointer_t owned_entity, ///< [in] Owned entity.
-        archi_rcpointer_t disowned_entity, ///< [in] Disowned entity.
+        archi_rcpointer_t *claimed_entity, ///< [in,out] Claimed entity.
+        archi_rcpointer_t abandoned_entity, ///< [in] Abandoned entity.
         ARCHI_ERROR_PARAM_DECL ///< [out] Error.
 );
 

@@ -117,9 +117,10 @@ ARCHI_CONTEXT_INIT_FUNC(archi_context_init__dexgraph_operation_seq)
         }
     }
 
-    context_data->ref_name = archi_rcpointer_own(name, ARCHI_ERROR_PARAM);
-    if (!context_data->ref_name.attr)
+    if (!archi_rcpointer_claim(&name, ARCHI_ERROR_PARAM))
         goto failure;
+
+    context_data->ref_name = name;
 
     // Initialize data
     archi_dexgraph_operation_seq_t *sequence = context_data->sequence.ptr;
@@ -130,7 +131,7 @@ ARCHI_CONTEXT_INIT_FUNC(archi_context_init__dexgraph_operation_seq)
     return (archi_rcpointer_t*)context_data;
 
 failure:
-    archi_rcpointer_disown(context_data->ref_name);
+    archi_rcpointer_abandon(context_data->ref_name);
 
     archi_dexgraph_operation_seq_free(context_data->sequence.ptr);
 
@@ -151,11 +152,11 @@ ARCHI_CONTEXT_FINAL_FUNC(archi_context_final__dexgraph_operation_seq)
 
     for (size_t i = 0; i < sequence->length; i++)
     {
-        archi_rcpointer_disown(context_data->ref_function[i]);
-        archi_rcpointer_disown(context_data->ref_data[i]);
+        archi_rcpointer_abandon(context_data->ref_function[i]);
+        archi_rcpointer_abandon(context_data->ref_data[i]);
     }
 
-    archi_rcpointer_disown(context_data->ref_name);
+    archi_rcpointer_abandon(context_data->ref_name);
 
     archi_dexgraph_operation_seq_free(sequence);
 
@@ -294,9 +295,7 @@ ARCHI_CONTEXT_SET_FUNC(archi_context_set__dexgraph_operation_seq)
 
         ARCHI_POINTER_NULLIFY_EMPTY(value);
 
-        value = archi_rcpointer_replace(value, context_data->ref_name,
-                ARCHI_ERROR_PARAM);
-        if (!value.attr)
+        if (!archi_rcpointer_replace(&value, context_data->ref_name, ARCHI_ERROR_PARAM))
             return;
 
         sequence->name = value.cptr;
@@ -326,9 +325,7 @@ ARCHI_CONTEXT_SET_FUNC(archi_context_set__dexgraph_operation_seq)
             return;
         }
 
-        value = archi_rcpointer_replace(value, context_data->ref_function[index],
-                ARCHI_ERROR_PARAM);
-        if (!value.attr)
+        if (!archi_rcpointer_replace(&value, context_data->ref_function[index], ARCHI_ERROR_PARAM))
             return;
 
         sequence->operation[index].function = (archi_dexgraph_operation_func_t)value.fptr;
@@ -357,9 +354,7 @@ ARCHI_CONTEXT_SET_FUNC(archi_context_set__dexgraph_operation_seq)
             return;
         }
 
-        value = archi_rcpointer_replace(value, context_data->ref_data[index],
-                ARCHI_ERROR_PARAM);
-        if (!value.attr)
+        if (!archi_rcpointer_replace(&value, context_data->ref_data[index], ARCHI_ERROR_PARAM))
             return;
 
         sequence->operation[index].data = value.p;

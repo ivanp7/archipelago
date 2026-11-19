@@ -116,14 +116,15 @@ ARCHI_CONTEXT_INIT_FUNC(archi_context_init__opencl_command_queue)
                 archi_pointer_attr__cdata(ARCHI_POINTER_DATA_TAG__OPENCL_COMMAND_QUEUE),
         },
         .device_id = device_id,
-        .ref_context = archi_rcpointer_own(opencl_context, ARCHI_ERROR_PARAM),
     };
 
-    if (!context_data->ref_context.attr)
+    if (!archi_rcpointer_claim(&opencl_context, ARCHI_ERROR_PARAM))
     {
         free(context_data);
         return NULL;
     }
+
+    context_data->ref_context = opencl_context;
 
     // Get platform ID
     {
@@ -131,7 +132,7 @@ ARCHI_CONTEXT_INIT_FUNC(archi_context_init__opencl_command_queue)
                 sizeof(context_data->platform_id), &context_data->platform_id, NULL);
         if (ret != CL_SUCCESS)
         {
-            archi_rcpointer_disown(context_data->ref_context);
+            archi_rcpointer_abandon(context_data->ref_context);
             free(context_data);
 
             ARCHI_ERROR_SET(ARCHI__ESYSTEM, "couldn't obtain platform ID of the devices");
@@ -157,7 +158,7 @@ ARCHI_CONTEXT_INIT_FUNC(archi_context_init__opencl_command_queue)
 
     if (context_data->command_queue.ptr == NULL)
     {
-        archi_rcpointer_disown(context_data->ref_context);
+        archi_rcpointer_abandon(context_data->ref_context);
         free(context_data);
 
         ARCHI_ERROR_SET(ARCHI__ESYSTEM, "couldn't create an OpenCL command queue: error %i", ret);
@@ -175,7 +176,7 @@ ARCHI_CONTEXT_FINAL_FUNC(archi_context_final__opencl_command_queue)
         (struct archi_context_data__opencl_command_queue*)context;
 
     clReleaseCommandQueue(context_data->command_queue.ptr);
-    archi_rcpointer_disown(context_data->ref_context);
+    archi_rcpointer_abandon(context_data->ref_context);
     free(context_data);
 }
 

@@ -127,11 +127,12 @@ ARCHI_CONTEXT_INIT_FUNC(archi_context_init__opencl_program_src)
             .attr = ARCHI_POINTER_TYPE__DATA_PERSISTENT_W |
                 archi_pointer_attr__cdata(ARCHI_POINTER_DATA_TAG__OPENCL_PROGRAM),
         },
-        .ref_context = archi_rcpointer_own(opencl_context, ARCHI_ERROR_PARAM),
     };
 
-    if (!context_data->ref_context.attr)
+    if (!archi_rcpointer_claim(&opencl_context, ARCHI_ERROR_PARAM))
         goto failure;
+
+    context_data->ref_context = opencl_context;
 
     ARCHI_ERROR_VAR(error);
 
@@ -186,7 +187,7 @@ ARCHI_CONTEXT_INIT_FUNC(archi_context_init__opencl_program_src)
 failure:
     if (context_data->program.ptr != NULL)
         clReleaseProgram(context_data->program.ptr);
-    archi_rcpointer_disown(context_data->ref_context);
+    archi_rcpointer_abandon(context_data->ref_context);
     free(context_data->platdev);
     free(context_data);
 
@@ -278,11 +279,12 @@ ARCHI_CONTEXT_INIT_FUNC(archi_context_init__opencl_program_bin)
             .attr = ARCHI_POINTER_TYPE__DATA_PERSISTENT_W |
                 archi_pointer_attr__cdata(ARCHI_POINTER_DATA_TAG__OPENCL_PROGRAM),
         },
-        .ref_context = archi_rcpointer_own(opencl_context, ARCHI_ERROR_PARAM),
     };
 
-    if (!context_data->ref_context.attr)
+    if (!archi_rcpointer_claim(&opencl_context, ARCHI_ERROR_PARAM))
         goto failure;
+
+    context_data->ref_context = opencl_context;
 
     // Allocate platform/device IDs storage object
     context_data->platdev = archi_opencl_platdev_alloc(num_devices);
@@ -337,7 +339,7 @@ ARCHI_CONTEXT_INIT_FUNC(archi_context_init__opencl_program_bin)
 failure:
     if (context_data->program.ptr != NULL)
         clReleaseProgram(context_data->program.ptr);
-    archi_rcpointer_disown(context_data->ref_context);
+    archi_rcpointer_abandon(context_data->ref_context);
     archi_opencl_program_bin_free(context_data->binaries, true);
     free(context_data->platdev);
     free(context_data);
@@ -352,7 +354,7 @@ ARCHI_CONTEXT_FINAL_FUNC(archi_context_final__opencl_program)
         (struct archi_context_data__opencl_program*)context;
 
     clReleaseProgram(context_data->program.ptr);
-    archi_rcpointer_disown(context_data->ref_context);
+    archi_rcpointer_abandon(context_data->ref_context);
     archi_opencl_program_bin_free(context_data->binaries, true);
     free(context_data->platdev);
     free(context_data);

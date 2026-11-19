@@ -62,8 +62,7 @@ archi_context_parameters_copy(
     {
         archi_rcpointer_t value = ARCHI_KRCVLIST_RCPOINTER(node);
 
-        value = archi_rcpointer_own(value, ARCHI_ERROR_PARAM);
-        if (!value.attr)
+        if (!archi_rcpointer_claim(&value, ARCHI_ERROR_PARAM))
         {
             // Failed to copy memory, undo the work
             for (const archi_krcvlist_t *node2 = head; node2 != node; node2 = (archi_krcvlist_t*)node2->n.next)
@@ -184,8 +183,7 @@ ARCHI_CONTEXT_SET_FUNC(archi_context_set__plist)
     }
 
     // Increment reference counter of the new value or copy its memory
-    value = archi_rcpointer_own(value, ARCHI_ERROR_PARAM);
-    if (!value.attr)
+    if (!archi_rcpointer_claim(&value, ARCHI_ERROR_PARAM))
         return;
 
     // Find node with the specified key
@@ -197,7 +195,7 @@ ARCHI_CONTEXT_SET_FUNC(archi_context_set__plist)
         node = archi_krcvlist_node_alloc(slot.name);
         if (node == NULL)
         {
-            archi_rcpointer_disown(value);
+            archi_rcpointer_abandon(value);
 
             ARCHI_ERROR_SET(ARCHI__EMEMORY, "couldn't allocate key-value list node");
             return;

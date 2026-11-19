@@ -130,9 +130,10 @@ ARCHI_CONTEXT_INIT_FUNC(archi_context_init__sdl2_renderer)
     }
 
     // Initialize references
-    context_data->window = archi_rcpointer_own(window, ARCHI_ERROR_PARAM);
-    if (!context_data->window.attr)
+    if (!archi_rcpointer_claim(&window, ARCHI_ERROR_PARAM))
         goto failure;
+
+    context_data->window = window;
 
     ARCHI_ERROR_RESET();
     return (archi_rcpointer_t*)context_data;
@@ -151,7 +152,7 @@ ARCHI_CONTEXT_FINAL_FUNC(archi_context_final__sdl2_renderer)
         (struct archi_context_data__sdl2_renderer*)context;
 
     SDL_DestroyRenderer(context_data->renderer.ptr);
-    archi_rcpointer_disown(context_data->window);
+    archi_rcpointer_abandon(context_data->window);
     free(context_data);
 }
 

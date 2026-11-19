@@ -104,25 +104,30 @@ ARCHI_CONTEXT_INIT_FUNC(archi_context_init__dexgraph_node)
     }
 
     // Initialize references
-    context_data->ref_name = archi_rcpointer_own(name, ARCHI_ERROR_PARAM);
-    if (!context_data->ref_name.attr)
+    if (!archi_rcpointer_claim(&name, ARCHI_ERROR_PARAM))
         goto failure;
 
-    context_data->ref_operation_func = archi_rcpointer_own(operation_func, ARCHI_ERROR_PARAM);
-    if (!context_data->ref_operation_func.attr)
+    context_data->ref_name = name;
+
+    if (!archi_rcpointer_claim(&operation_func, ARCHI_ERROR_PARAM))
         goto failure;
 
-    context_data->ref_operation_data = archi_rcpointer_own(operation_data, ARCHI_ERROR_PARAM);
-    if (!context_data->ref_operation_data.attr)
+    context_data->ref_operation_func = operation_func;
+
+    if (!archi_rcpointer_claim(&operation_data, ARCHI_ERROR_PARAM))
         goto failure;
 
-    context_data->ref_transition_func = archi_rcpointer_own(transition_func, ARCHI_ERROR_PARAM);
-    if (!context_data->ref_transition_func.attr)
+    context_data->ref_operation_data = operation_data;
+
+    if (!archi_rcpointer_claim(&transition_func, ARCHI_ERROR_PARAM))
         goto failure;
 
-    context_data->ref_transition_data = archi_rcpointer_own(transition_data, ARCHI_ERROR_PARAM);
-    if (!context_data->ref_transition_data.attr)
+    context_data->ref_transition_func = transition_func;
+
+    if (!archi_rcpointer_claim(&transition_data, ARCHI_ERROR_PARAM))
         goto failure;
+
+    context_data->ref_transition_data = transition_data;
 
     // Initialize data
     archi_dexgraph_node_t *node = context_data->node.ptr;
@@ -137,11 +142,11 @@ ARCHI_CONTEXT_INIT_FUNC(archi_context_init__dexgraph_node)
     return (archi_rcpointer_t*)context_data;
 
 failure:
-    archi_rcpointer_disown(context_data->ref_name);
-    archi_rcpointer_disown(context_data->ref_operation_func);
-    archi_rcpointer_disown(context_data->ref_operation_data);
-    archi_rcpointer_disown(context_data->ref_transition_func);
-    archi_rcpointer_disown(context_data->ref_transition_data);
+    archi_rcpointer_abandon(context_data->ref_name);
+    archi_rcpointer_abandon(context_data->ref_operation_func);
+    archi_rcpointer_abandon(context_data->ref_operation_data);
+    archi_rcpointer_abandon(context_data->ref_transition_func);
+    archi_rcpointer_abandon(context_data->ref_transition_data);
 
     free(context_data->node.ptr);
     free(context_data);
@@ -155,11 +160,11 @@ ARCHI_CONTEXT_FINAL_FUNC(archi_context_final__dexgraph_node)
     struct archi_context_data__dexgraph_node *context_data =
         (struct archi_context_data__dexgraph_node*)context;
 
-    archi_rcpointer_disown(context_data->ref_name);
-    archi_rcpointer_disown(context_data->ref_operation_func);
-    archi_rcpointer_disown(context_data->ref_operation_data);
-    archi_rcpointer_disown(context_data->ref_transition_func);
-    archi_rcpointer_disown(context_data->ref_transition_data);
+    archi_rcpointer_abandon(context_data->ref_name);
+    archi_rcpointer_abandon(context_data->ref_operation_func);
+    archi_rcpointer_abandon(context_data->ref_operation_data);
+    archi_rcpointer_abandon(context_data->ref_transition_func);
+    archi_rcpointer_abandon(context_data->ref_transition_data);
 
     free(context_data->node.ptr);
     free(context_data);
@@ -281,9 +286,7 @@ ARCHI_CONTEXT_SET_FUNC(archi_context_set__dexgraph_node)
 
         ARCHI_POINTER_NULLIFY_EMPTY(value);
 
-        value = archi_rcpointer_replace(value, context_data->ref_name,
-                ARCHI_ERROR_PARAM);
-        if (!value.attr)
+        if (!archi_rcpointer_replace(&value, context_data->ref_name, ARCHI_ERROR_PARAM))
             return;
 
         node->name = value.cptr;
@@ -305,9 +308,7 @@ ARCHI_CONTEXT_SET_FUNC(archi_context_set__dexgraph_node)
             return;
         }
 
-        value = archi_rcpointer_replace(value, context_data->ref_operation_func,
-                ARCHI_ERROR_PARAM);
-        if (!value.attr)
+        if (!archi_rcpointer_replace(&value, context_data->ref_operation_func, ARCHI_ERROR_PARAM))
             return;
 
         node->operation.function = (archi_dexgraph_operation_func_t)value.fptr;
@@ -328,9 +329,7 @@ ARCHI_CONTEXT_SET_FUNC(archi_context_set__dexgraph_node)
             return;
         }
 
-        value = archi_rcpointer_replace(value, context_data->ref_operation_data,
-                ARCHI_ERROR_PARAM);
-        if (!value.attr)
+        if (!archi_rcpointer_replace(&value, context_data->ref_operation_data, ARCHI_ERROR_PARAM))
             return;
 
         node->operation.data = value.p;
@@ -352,9 +351,7 @@ ARCHI_CONTEXT_SET_FUNC(archi_context_set__dexgraph_node)
             return;
         }
 
-        value = archi_rcpointer_replace(value, context_data->ref_transition_func,
-                ARCHI_ERROR_PARAM);
-        if (!value.attr)
+        if (!archi_rcpointer_replace(&value, context_data->ref_transition_func, ARCHI_ERROR_PARAM))
             return;
 
         node->transition.function = (archi_dexgraph_transition_func_t)value.fptr;
@@ -375,9 +372,7 @@ ARCHI_CONTEXT_SET_FUNC(archi_context_set__dexgraph_node)
             return;
         }
 
-        value = archi_rcpointer_replace(value, context_data->ref_transition_data,
-                ARCHI_ERROR_PARAM);
-        if (!value.attr)
+        if (!archi_rcpointer_replace(&value, context_data->ref_transition_data, ARCHI_ERROR_PARAM))
             return;
 
         node->transition.data = value.p;

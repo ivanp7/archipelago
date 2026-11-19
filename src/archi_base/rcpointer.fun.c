@@ -96,45 +96,52 @@ archi_rcpointer_memcopy(
     return copy;
 }
 
-archi_rcpointer_t
-archi_rcpointer_own(
-        archi_rcpointer_t entity,
+bool
+archi_rcpointer_claim(
+        archi_rcpointer_t *entity,
         ARCHI_ERROR_PARAM_DECL)
 {
-    if (!ARCHI_POINTER_TO_TRANS_DATA(entity.attr))
-        archi_reference_count_increment(entity.ref_count);
-    else
+    if (entity == NULL)
     {
-        archi_rcpointer_t entity_copy = archi_rcpointer_memcopy(entity, ARCHI_ERROR_PARAM);
-        if ((entity_copy.ptr == NULL) && (entity.ptr != NULL))
-            return (archi_rcpointer_t){.attr = ARCHI_POINTER_TYPE__DATA_TRANSIENT};
-
-        entity = entity_copy;
+        ARCHI_ERROR_SET(ARCHI__ECONSTRAINT, "pointer to claimed entity is NULL");
+        return false;
     }
 
-    ARCHI_ERROR_RESET();
-    return entity;
+    if (!ARCHI_POINTER_TO_TRANS_DATA(entity->attr))
+    {
+        archi_reference_count_increment(entity->ref_count);
+        ARCHI_ERROR_RESET();
+    }
+    else
+    {
+        archi_rcpointer_t entity_copy = archi_rcpointer_memcopy(*entity, ARCHI_ERROR_PARAM);
+        if ((entity_copy.ptr == NULL) && (entity->ptr != NULL))
+            return false;
+
+        *entity = entity_copy;
+    }
+
+    return true;
 }
 
 void
-archi_rcpointer_disown(
+archi_rcpointer_abandon(
         archi_rcpointer_t entity)
 {
     archi_reference_count_decrement(entity.ref_count);
 }
 
-archi_rcpointer_t
+bool
 archi_rcpointer_replace(
-        archi_rcpointer_t owned_entity,
-        archi_rcpointer_t disowned_entity,
+        archi_rcpointer_t *claimed_entity,
+        archi_rcpointer_t abandoned_entity,
         ARCHI_ERROR_PARAM_DECL)
 {
-    owned_entity = archi_rcpointer_own(owned_entity, ARCHI_ERROR_PARAM);
-    if (!owned_entity.attr)
-        return (archi_rcpointer_t){0};
+    if (!archi_rcpointer_claim(claimed_entity, ARCHI_ERROR_PARAM))
+        return false;
 
-    archi_rcpointer_disown(disowned_entity);
+    archi_rcpointer_abandon(abandoned_entity);
 
-    return owned_entity;
+    return true;
 }
 
