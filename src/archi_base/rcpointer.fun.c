@@ -35,7 +35,7 @@
 archi_rcpointer_t
 archi_rcpointer(
         archi_pointer_t p,
-        archi_reference_count_t ref_count)
+        archi_refcount_t ref_count)
 {
     return (archi_rcpointer_t){
         .p = p,
@@ -79,7 +79,7 @@ archi_rcpointer_memcopy(
         }
 
         // Allocate the reference counter
-        copy.ref_count = archi_reference_count_alloc(free, copy.ptr);
+        copy.ref_count = archi_refcount_alloc(free, copy.ptr);
         if (copy.ref_count == NULL)
         {
             free(copy.ptr);
@@ -109,7 +109,7 @@ archi_rcpointer_claim(
 
     if (!ARCHI_POINTER_TO_TRANS_DATA(entity->attr))
     {
-        archi_reference_count_increment(entity->ref_count);
+        archi_refcount_increment(entity->ref_count);
         ARCHI_ERROR_RESET();
     }
     else
@@ -128,7 +128,7 @@ void
 archi_rcpointer_abandon(
         archi_rcpointer_t entity)
 {
-    archi_reference_count_decrement(entity.ref_count);
+    archi_refcount_decrement(entity.ref_count);
 }
 
 bool

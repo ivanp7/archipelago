@@ -160,10 +160,10 @@ ARCHI_DESTRUCTOR_FUNC(archi_aggr_deallocator)
     free(aggregate->object.ptr);
 
     // Decrement the reference count of the metadata
-    archi_reference_count_decrement(aggregate->metadata.ref_count);
+    archi_refcount_decrement(aggregate->metadata.ref_count);
 
     // Decrement the reference count of the interface
-    archi_reference_count_decrement(aggregate->interface.ref_count);
+    archi_refcount_decrement(aggregate->interface.ref_count);
 
     // Destroy the aggregate object handle
     free(aggregate);
@@ -334,7 +334,7 @@ archi_aggr_allocate(
 
     // Allocate the reference counter
     aggregate->object.ref_count =
-        archi_reference_count_alloc(archi_aggr_deallocator, aggregate);
+        archi_refcount_alloc(archi_aggr_deallocator, aggregate);
     if (aggregate->object.ref_count == NULL)
     {
         ARCHI_ERROR_SET(ARCHI__EMEMORY, "couldn't allocate aggregate object reference counter");
@@ -367,16 +367,16 @@ archi_aggr_allocate(
         goto failure;
 
     // Increase the reference count of the interface
-    archi_reference_count_increment(interface.ref_count);
+    archi_refcount_increment(interface.ref_count);
 
     // Increase the reference count of the metadata
-    archi_reference_count_increment(metadata.ref_count);
+    archi_refcount_increment(metadata.ref_count);
 
     return aggregate;
 
 failure:
     free(aggregate->reference);
-    archi_reference_count_free(aggregate->object.ref_count);
+    archi_refcount_free(aggregate->object.ref_count);
     free(aggregate->object.ptr);
     free(aggregate);
 
@@ -391,7 +391,7 @@ archi_aggr_free(
         return;
 
     // Decrement the reference count of the aggregate object
-    archi_reference_count_decrement(aggregate->object.ref_count);
+    archi_refcount_decrement(aggregate->object.ref_count);
 }
 
 archi_rcpointer_t

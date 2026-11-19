@@ -37,10 +37,10 @@
 /**
  * @brief Signature of a context registry operation function.
  */
-#define ARCHI_APP_REGISTRY_OPERATION_FUNC(func_name) void func_name(                \
-        archi_context_t registry, /* [in] Context registry. */                      \
-        archi_pointer_t data, /* [in] Operation data. */                            \
-        archi_reference_count_t ref_count, /* [in] Reference counter for data. */   \
+#define ARCHI_APP_REGISTRY_OPERATION_FUNC(func_name) void func_name(        \
+        archi_context_t registry, /* [in] Context registry. */              \
+        archi_pointer_t data, /* [in] Operation data. */                    \
+        archi_refcount_t ref_count, /* [in] Reference counter for data. */  \
         ARCHI_ERROR_PARAM_DECL) /* [out] Error. */
 
 /**

@@ -142,7 +142,7 @@ ARCHI_DESTRUCTOR_FUNC(archi_memory_deallocator)
     }
 
     // Decrement the reference count of the interface
-    archi_reference_count_decrement(memory->interface.ref_count);
+    archi_refcount_decrement(memory->interface.ref_count);
 
     // Destroy the memory object
     free(memory);
@@ -263,8 +263,8 @@ archi_memory_allocate(
     };
 
     // Allocate the reference counter
-    archi_reference_count_t ref_count =
-        archi_reference_count_alloc(archi_memory_deallocator, memory);
+    archi_refcount_t ref_count =
+        archi_refcount_alloc(archi_memory_deallocator, memory);
     if (ref_count == NULL)
     {
         ARCHI_ERROR_SET(ARCHI__EMEMORY, "couldn't allocate memory reference counter");
@@ -298,12 +298,12 @@ archi_memory_allocate(
     memory->metadata = alloc_info.metadata;
 
     // Increase the reference count of the interface
-    archi_reference_count_increment(interface.ref_count);
+    archi_refcount_increment(interface.ref_count);
 
     return memory;
 
 failure:
-    archi_reference_count_free(ref_count);
+    archi_refcount_free(ref_count);
     free(memory);
 
     return NULL;
@@ -317,7 +317,7 @@ archi_memory_free(
         return;
 
     // Decrement the reference count of the memory allocation
-    archi_reference_count_decrement(memory->allocation.ref_count);
+    archi_refcount_decrement(memory->allocation.ref_count);
 }
 
 /*****************************************************************************/
@@ -397,7 +397,7 @@ ARCHI_DESTRUCTOR_FUNC(archi_memory_mapping_destructor)
     }
 
     // Decrement the reference count of the memory object
-    archi_reference_count_decrement(memory->allocation.ref_count);
+    archi_refcount_decrement(memory->allocation.ref_count);
 
     // Destroy the memory mapping object
     free(mapping);
@@ -473,8 +473,8 @@ archi_memory_map(
     };
 
     // Allocate the reference counter
-    archi_reference_count_t ref_count =
-        archi_reference_count_alloc(archi_memory_mapping_destructor, mapping);
+    archi_refcount_t ref_count =
+        archi_refcount_alloc(archi_memory_mapping_destructor, mapping);
     if (ref_count == NULL)
     {
         ARCHI_ERROR_SET(ARCHI__EMEMORY, "couldn't allocate memory mapping refcounter");
@@ -516,12 +516,12 @@ archi_memory_map(
     mapping->metadata = map_info.metadata;
 
     // Increase the reference count of the memory object
-    archi_reference_count_increment(memory->allocation.ref_count);
+    archi_refcount_increment(memory->allocation.ref_count);
 
     return mapping;
 
 failure:
-    archi_reference_count_free(ref_count);
+    archi_refcount_free(ref_count);
     free(mapping);
 
     return NULL;
@@ -534,6 +534,6 @@ archi_memory_unmap(
     if (mapping == NULL)
         return;
 
-    archi_reference_count_decrement(mapping->pointer.ref_count);
+    archi_refcount_decrement(mapping->pointer.ref_count);
 }
 

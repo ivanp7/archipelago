@@ -132,7 +132,7 @@ archi_memory_allocate(
  *
  * This function is equivalent to:
  * ```c
- * archi_reference_count_decrement(archi_memory_allocation(memory).ref_count);
+ * archi_refcount_decrement(archi_memory_allocation(memory).ref_count);
  * ```
  *
  * The memory object is to be considered invalid after this call.
@@ -200,7 +200,7 @@ archi_memory_map(
  *
  * This function is equivalent to:
  * ```c
- * archi_reference_count_decrement(archi_memory_mapping_pointer(mapping).ref_count);
+ * archi_refcount_decrement(archi_memory_mapping_pointer(mapping).ref_count);
  * ```
  *
  * A memory mapping object is to be considered invalid after this call.

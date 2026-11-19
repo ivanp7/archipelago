@@ -216,7 +216,7 @@ static
 void
 exec_list(
         const archi_kvlist_t *operation_list,
-        archi_reference_count_t file_ref_count,
+        archi_refcount_t file_ref_count,
         size_t list_index,
         size_t file_index
 );
@@ -405,7 +405,7 @@ exec_file(
 void
 exec_list(
         const archi_kvlist_t *operation_list,
-        archi_reference_count_t file_ref_count,
+        archi_refcount_t file_ref_count,
         size_t list_index,
         size_t file_index)
 {
@@ -533,10 +533,10 @@ exit_clean(void) // is called on exit() or if main() returns
 
     // Check for memory leaks and corruption
     {
-        uintmax_t total_allocations = archi_reference_count_total_allocations();
-        uintmax_t total_releases = archi_reference_count_total_releases();
-        uintmax_t total_increments = archi_reference_count_total_increments();
-        uintmax_t total_decrements = archi_reference_count_total_decrements();
+        uintmax_t total_allocations = archi_refcount_total_allocations();
+        uintmax_t total_releases = archi_refcount_total_releases();
+        uintmax_t total_increments = archi_refcount_total_increments();
+        uintmax_t total_decrements = archi_refcount_total_decrements();
 
         archi_log_debug(__func__, "total reference counter allocations = %ju, releases = %ju, increments = %ju, decrements = %ju",
                 total_allocations, total_releases, total_increments, total_decrements);
@@ -544,7 +544,7 @@ exit_clean(void) // is called on exit() or if main() returns
         if (total_increments < total_decrements)
             archi_log_error(__func__, "Memory corruption detected: total number of reference counter decrements (%zu) exceeds increments (%zu) by %zu",
                     total_decrements, total_increments, total_decrements - total_increments);
-        else if (archi_reference_count_negative_detected())
+        else if (archi_refcount_negative_detected())
             archi_log_error(__func__, "Memory corruption detected: total number of reference counter decrements exceeded increments (negative count)");
         else if (total_increments > total_decrements)
             archi_log_warning(__func__, "Memory leak detected: total number of reference counter increments (%zu) exceeds decrements (%zu) by %zu",

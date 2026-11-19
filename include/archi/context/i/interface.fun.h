@@ -84,7 +84,7 @@ archi_context_initialize(
  *
  * This function is equivalent to:
  * ```c
- * archi_reference_count_decrement(archi_context_data(context).ref_count);
+ * archi_refcount_decrement(archi_context_data(context).ref_count);
  * ```
  *
  * The context is to be considered invalid after this call.

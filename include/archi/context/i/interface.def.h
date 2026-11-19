@@ -35,13 +35,13 @@
  * @brief Special reference counter placeholder used for output values in context getters
  * (placeholder for context reference counter).
  */
-#define ARCHI_CONTEXT_REF_COUNT             ((archi_reference_count_t)-1)
+#define ARCHI_CONTEXT_REF_COUNT             ((archi_refcount_t)-1)
 
 /**
  * @brief Special reference counter placeholder used for output values in context getters
  * (placeholder for context interface reference counter).
  */
-#define ARCHI_CONTEXT_INTERFACE_REF_COUNT   ((archi_reference_count_t)-2)
+#define ARCHI_CONTEXT_INTERFACE_REF_COUNT   ((archi_refcount_t)-2)
 
 /**
  * @brief Macro for checking if a callback function is not provided.

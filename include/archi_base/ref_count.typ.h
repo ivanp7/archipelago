@@ -27,12 +27,12 @@
 #ifndef _ARCHI_BASE_REF_COUNT_TYP_H_
 #define _ARCHI_BASE_REF_COUNT_TYP_H_
 
-struct archi_reference_count;
+struct archi_refcount;
 
 /**
  * @brief Pointer to reference count.
  */
-typedef struct archi_reference_count *archi_reference_count_t;
+typedef struct archi_refcount *archi_refcount_t;
 
 /**
  * @brief Declare or define a resource destructor function.

@@ -52,7 +52,7 @@ ARCHI_MANAGER_PTR_INIT_FUNC(archi_manager_ptr_init__ref_count)
 /*****************************************************************************/
 
 uintmax_t
-archi_reference_count_total_allocations(void)
+archi_refcount_total_allocations(void)
 {
     if (archi_ref_count_manager == NULL)
         return 0;
@@ -66,7 +66,7 @@ archi_reference_count_total_allocations(void)
 }
 
 uintmax_t
-archi_reference_count_total_releases(void)
+archi_refcount_total_releases(void)
 {
     if (archi_ref_count_manager == NULL)
         return 0;
@@ -80,7 +80,7 @@ archi_reference_count_total_releases(void)
 }
 
 uintmax_t
-archi_reference_count_total_increments(void)
+archi_refcount_total_increments(void)
 {
     if (archi_ref_count_manager == NULL)
         return 0;
@@ -94,7 +94,7 @@ archi_reference_count_total_increments(void)
 }
 
 uintmax_t
-archi_reference_count_total_decrements(void)
+archi_refcount_total_decrements(void)
 {
     if (archi_ref_count_manager == NULL)
         return 0;
@@ -108,7 +108,7 @@ archi_reference_count_total_decrements(void)
 }
 
 bool
-archi_reference_count_negative_detected(void)
+archi_refcount_negative_detected(void)
 {
     if (archi_ref_count_manager == NULL)
         return false;
@@ -123,7 +123,7 @@ archi_reference_count_negative_detected(void)
 
 /*****************************************************************************/
 
-struct archi_reference_count {
+struct archi_refcount {
     uintmax_t id; // globally unique ID for debugging purposes
 
 #ifndef __STDC_NO_ATOMICS__
@@ -136,15 +136,15 @@ struct archi_reference_count {
     void *destructor_data; // object destructor data
 };
 
-archi_reference_count_t
-archi_reference_count_alloc(
+archi_refcount_t
+archi_refcount_alloc(
         archi_destructor_func_t destructor_fn,
         void *destructor_data)
 {
     if (destructor_fn == NULL)
         return NULL;
 
-    archi_reference_count_t ref_count = malloc(sizeof(*ref_count));
+    archi_refcount_t ref_count = malloc(sizeof(*ref_count));
     if (ref_count == NULL)
         return NULL;
 
@@ -184,8 +184,8 @@ archi_reference_count_alloc(
 }
 
 void
-archi_reference_count_free(
-        archi_reference_count_t ref_count)
+archi_refcount_free(
+        archi_refcount_t ref_count)
 {
     if (ref_count == NULL)
         return;
@@ -222,8 +222,8 @@ archi_reference_count_free(
 }
 
 void
-archi_reference_count_increment(
-        archi_reference_count_t ref_count)
+archi_refcount_increment(
+        archi_refcount_t ref_count)
 {
     if (ref_count == NULL)
         return;
@@ -248,8 +248,8 @@ archi_reference_count_increment(
 }
 
 bool
-archi_reference_count_decrement(
-        archi_reference_count_t ref_count)
+archi_refcount_decrement(
+        archi_refcount_t ref_count)
 {
     if (ref_count == NULL)
         return false;
@@ -266,7 +266,7 @@ archi_reference_count_decrement(
 #endif
 
         // Fetch the global counter of increments
-        uintmax_t num_increments = archi_reference_count_total_increments();
+        uintmax_t num_increments = archi_refcount_total_increments();
 
         // Check for the negative count error
         if (num_increments < num_decrements)
@@ -316,8 +316,8 @@ destroy:
 }
 
 uintmax_t
-archi_reference_count_id(
-        archi_reference_count_t ref_count)
+archi_refcount_id(
+        archi_refcount_t ref_count)
 {
     if (ref_count == NULL)
         return 0;

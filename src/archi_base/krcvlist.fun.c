@@ -114,7 +114,7 @@ failure:
 archi_krcvlist_t*
 archi_krcvlist_copy_kvlist(
         const archi_kvlist_t *head,
-        archi_reference_count_t ref_count,
+        archi_refcount_t ref_count,
         archi_krcvlist_t **out_tail)
 {
     if (head == NULL)
@@ -167,7 +167,7 @@ archi_krcvlist_free(
         archi_krcvlist_t *next = (archi_krcvlist_t*)head->n.next;
         {
             if (decrement_ref_counts)
-                archi_reference_count_decrement(head->ref_count);
+                archi_refcount_decrement(head->ref_count);
 
             archi_krcvlist_node_free(head);
         }

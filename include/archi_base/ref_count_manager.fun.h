@@ -63,43 +63,43 @@ ARCHI_MANAGER_PTR_INIT_FUNC(archi_manager_ptr_init__ref_count);
 /**
  * @brief Obtain total number of times reference counters were allocated.
  *
- * This function counts archi_reference_count_alloc() calls.
+ * This function counts archi_refcount_alloc() calls.
  *
  * @return Total number of allocations.
  */
 uintmax_t
-archi_reference_count_total_allocations(void);
+archi_refcount_total_allocations(void);
 
 /**
  * @brief Obtain total number of times reference counters were deallocated.
  *
- * This function counts archi_reference_count_free() calls,
- * and archi_reference_count_decrement() calls which lead to object destruction.
+ * This function counts archi_refcount_free() calls,
+ * and archi_refcount_decrement() calls which lead to object destruction.
  *
  * @return Total number of releases.
  */
 uintmax_t
-archi_reference_count_total_releases(void);
+archi_refcount_total_releases(void);
 
 /**
  * @brief Obtain total number of times reference counters were incremented.
  *
- * This function counts archi_reference_count_alloc() and archi_reference_count_increment() calls.
+ * This function counts archi_refcount_alloc() and archi_refcount_increment() calls.
  *
  * @return Total number of increments.
  */
 uintmax_t
-archi_reference_count_total_increments(void);
+archi_refcount_total_increments(void);
 
 /**
  * @brief Obtain total number of times reference counters were decremented.
  *
- * This function counts archi_reference_count_decrement() calls.
+ * This function counts archi_refcount_decrement() calls.
  *
  * @return Total number of decrements.
  */
 uintmax_t
-archi_reference_count_total_decrements(void);
+archi_refcount_total_decrements(void);
 
 /**
  * @brief Check if negative reference count has been detected.
@@ -107,7 +107,7 @@ archi_reference_count_total_decrements(void);
  * @return False if all reference counters were non-negative, true otherwise.
  */
 bool
-archi_reference_count_negative_detected(void);
+archi_refcount_negative_detected(void);
 
 #endif // _ARCHI_BASE_REF_COUNT_MANAGER_FUN_H_
 

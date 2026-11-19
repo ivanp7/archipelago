@@ -37,7 +37,7 @@
 struct archi_context {
     archi_rcpointer_t interface; ///< Context interface.
     archi_rcpointer_t *data;     ///< Context data.
-    archi_reference_count_t ref_count; ///< Context reference counter.
+    archi_refcount_t ref_count;  ///< Context reference counter.
 };
 
 archi_rcpointer_t
@@ -81,7 +81,7 @@ ARCHI_DESTRUCTOR_FUNC(archi_context_destructor)
     }
 
     // Decrement the reference count of the interface
-    archi_reference_count_decrement(context->interface.ref_count);
+    archi_refcount_decrement(context->interface.ref_count);
 
     // Destroy the context object
     free(context);
@@ -138,7 +138,7 @@ archi_context_initialize(
 
     *context = (struct archi_context){
         .interface = interface,
-        .ref_count = archi_reference_count_alloc(archi_context_destructor, context),
+        .ref_count = archi_refcount_alloc(archi_context_destructor, context),
     };
 
     if (context->ref_count == NULL)
@@ -162,12 +162,12 @@ archi_context_initialize(
     }
 
     // Increment the reference count of the interface
-    archi_reference_count_increment(interface.ref_count);
+    archi_refcount_increment(interface.ref_count);
 
     return context;
 
 failure:
-    archi_reference_count_free(context->ref_count);
+    archi_refcount_free(context->ref_count);
     free(context);
 
     return NULL;
@@ -181,15 +181,15 @@ archi_context_finalize(
         return;
 
     // Decrement the reference count of the context itself
-    archi_reference_count_decrement(context->ref_count);
+    archi_refcount_decrement(context->ref_count);
 }
 
 struct archi_context_callback_wrapper_data {
     archi_context_callback_t callback;
     bool called_once;
 
-    archi_reference_count_t context_ref_count;
-    archi_reference_count_t interface_ref_count;
+    archi_refcount_t context_ref_count;
+    archi_refcount_t interface_ref_count;
 };
 
 static

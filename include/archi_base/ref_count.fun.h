@@ -51,8 +51,8 @@
  * When the reference count reaches zero, the destructor will be called and
  * the object will be freed automatically, as well as the counter itself.
  */
-archi_reference_count_t
-archi_reference_count_alloc(
+archi_refcount_t
+archi_refcount_alloc(
         archi_destructor_func_t destructor_fn,
         void *destructor_data
 );
@@ -66,8 +66,8 @@ archi_reference_count_alloc(
  * Passing NULL as ref_count is a no-op.
  */
 void
-archi_reference_count_free(
-        archi_reference_count_t ref_count
+archi_refcount_free(
+        archi_refcount_t ref_count
 );
 
 /**
@@ -81,8 +81,8 @@ archi_reference_count_free(
  * Passing NULL as ref_count is a no-op.
  */
 void
-archi_reference_count_increment(
-        archi_reference_count_t ref_count
+archi_refcount_increment(
+        archi_refcount_t ref_count
 );
 
 /**
@@ -106,8 +106,8 @@ archi_reference_count_increment(
  * must not be accessed.
  */
 bool
-archi_reference_count_decrement(
-        archi_reference_count_t ref_count
+archi_refcount_decrement(
+        archi_refcount_t ref_count
 );
 
 /**
@@ -118,8 +118,8 @@ archi_reference_count_decrement(
  * @return Reference counter ID, or zero if the reference counting manager was not initialized.
  */
 uintmax_t
-archi_reference_count_id(
-        archi_reference_count_t ref_count
+archi_refcount_id(
+        archi_refcount_t ref_count
 );
 
 #endif // _ARCHI_BASE_REF_COUNT_FUN_H_

@@ -118,7 +118,7 @@ ARCHI_CONTEXT_EVAL_FUNC(archi_context_eval__env_variable)
             .ptr = env_var,
             .attr = ARCHI_POINTER_TYPE__DATA_PERSISTENT_W |
                 ARCHI_POINTER_ATTR__PDATA(strlen(env_var) + 1, char),
-            .ref_count = archi_reference_count_alloc(free, env_var),
+            .ref_count = archi_refcount_alloc(free, env_var),
         };
 
         if (value.ref_count == NULL)
@@ -133,7 +133,7 @@ ARCHI_CONTEXT_EVAL_FUNC(archi_context_eval__env_variable)
     ARCHI_CONTEXT_YIELD(value);
 
     if (env_var != NULL)
-        archi_reference_count_decrement(value.ref_count); // abandon ownership
+        archi_refcount_decrement(value.ref_count); // abandon ownership
 }
 
 static

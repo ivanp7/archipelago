@@ -93,7 +93,7 @@ ARCHI_HASHMAP_TRAV_KV_FUNC(archi_dexgraph_op__hashmap_print_traverse)
     printf(">");
 
     if (value.ref_count != NULL)
-        printf(" (refcount #%ju)", archi_reference_count_id(value.ref_count));
+        printf(" (refcount #%ju)", archi_refcount_id(value.ref_count));
 
     printf("\n");
 

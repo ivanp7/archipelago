@@ -44,7 +44,7 @@
 archi_rcpointer_t
 archi_rcpointer(
         archi_pointer_t p, ///< [in] Pointer.
-        archi_reference_count_t ref_count ///< [in] Reference counter.
+        archi_refcount_t ref_count ///< [in] Reference counter.
 );
 
 /**

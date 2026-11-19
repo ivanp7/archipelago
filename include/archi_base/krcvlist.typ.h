@@ -36,7 +36,7 @@
  */
 typedef struct archi_krcvlist {
     archi_kvlist_t n; ///< Node base.
-    archi_reference_count_t ref_count; ///< Value.
+    archi_refcount_t ref_count; ///< Value.
 } archi_krcvlist_t;
 
 /**

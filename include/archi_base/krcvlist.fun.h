@@ -82,7 +82,7 @@ archi_krcvlist_copy(
 archi_krcvlist_t*
 archi_krcvlist_copy_kvlist(
         const archi_kvlist_t *head, ///< [in] Head of the original key-value list.
-        archi_reference_count_t ref_count, ///< [in] Assigned reference counter.
+        archi_refcount_t ref_count, ///< [in] Assigned reference counter.
         archi_krcvlist_t **out_tail ///< [out] Tail node of the list copy.
 );
 

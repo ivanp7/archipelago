@@ -66,7 +66,7 @@ archi_context_parameters_copy(
         {
             // Failed to copy memory, undo the work
             for (const archi_krcvlist_t *node2 = head; node2 != node; node2 = (archi_krcvlist_t*)node2->n.next)
-                archi_reference_count_decrement(node2->ref_count);
+                archi_refcount_decrement(node2->ref_count);
 
             archi_krcvlist_free(head, false);
             return NULL;
@@ -211,7 +211,7 @@ ARCHI_CONTEXT_SET_FUNC(archi_context_set__plist)
     }
     else
     {
-        archi_reference_count_decrement(node->ref_count);
+        archi_refcount_decrement(node->ref_count);
         ARCHI_KRCVLIST_SET_RCPOINTER(node, value);
     }
 

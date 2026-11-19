@@ -49,7 +49,7 @@ typedef struct archi_rcpointer {
             archi_pointer_attr_t attr; ///< Pointer attributes.
         };
     };
-    archi_reference_count_t ref_count; ///< Reference counter of the pointee.
+    archi_refcount_t ref_count; ///< Reference counter of the pointee.
 } archi_rcpointer_t;
 
 #endif // _ARCHI_BASE_RCPOINTER_TYP_H_
