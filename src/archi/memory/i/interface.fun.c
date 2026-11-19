@@ -303,7 +303,7 @@ archi_memory_allocate(
     return memory;
 
 failure:
-    archi_reference_count_decrement_nodestruct(ref_count);
+    archi_reference_count_free(ref_count);
     free(memory);
 
     return NULL;
@@ -521,7 +521,7 @@ archi_memory_map(
     return mapping;
 
 failure:
-    archi_reference_count_decrement_nodestruct(ref_count);
+    archi_reference_count_free(ref_count);
     free(mapping);
 
     return NULL;

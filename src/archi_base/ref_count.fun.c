@@ -124,16 +124,16 @@ archi_reference_count_negative_detected(void)
 /*****************************************************************************/
 
 struct archi_reference_count {
-    uintmax_t id;
+    uintmax_t id; // globally unique ID for debugging purposes
 
 #ifndef __STDC_NO_ATOMICS__
-    atomic_uintmax_t value;
+    atomic_uintmax_t value; // reference count
 #else
-    uintmax_t value;
+    uintmax_t value; // reference count
 #endif
 
-    archi_destructor_func_t destructor_fn;
-    void *destructor_data;
+    archi_destructor_func_t destructor_fn; // object destructor
+    void *destructor_data; // object destructor data
 };
 
 archi_reference_count_t
@@ -150,6 +150,7 @@ archi_reference_count_alloc(
 
     if (archi_ref_count_manager != NULL)
     {
+        // Set the counter ID and increment the global counter of allocations
         ref_count->id = 1 +
 #ifndef __STDC_NO_ATOMICS__
             atomic_fetch_add_explicit(&archi_ref_count_manager->num_allocations, 1,
@@ -158,6 +159,7 @@ archi_reference_count_alloc(
             archi_ref_count_manager->num_allocations++;
 #endif
 
+        // Increment the global counter of increments
 #ifndef __STDC_NO_ATOMICS__
         atomic_fetch_add_explicit(&archi_ref_count_manager->num_increments, 1,
                 memory_order_release);
@@ -166,8 +168,9 @@ archi_reference_count_alloc(
 #endif
     }
     else
-        ref_count->id = -1;
+        ref_count->id = 0; // ID is not set
 
+    // Initialize the reference counter
 #ifndef __STDC_NO_ATOMICS__
     atomic_init(&ref_count->value, 1);
 #else
@@ -181,6 +184,44 @@ archi_reference_count_alloc(
 }
 
 void
+archi_reference_count_free(
+        archi_reference_count_t ref_count)
+{
+    if (ref_count == NULL)
+        return;
+
+    if (archi_ref_count_manager != NULL)
+    {
+        // Increment the global counter of releases
+#ifndef __STDC_NO_ATOMICS__
+        atomic_fetch_add_explicit(&archi_ref_count_manager->num_releases, 1,
+                memory_order_release);
+#else
+        archi_ref_count_manager->num_releases++;
+#endif
+
+        // Fetch the current reference count
+        uintmax_t count =
+#ifndef __STDC_NO_ATOMICS__
+            atomic_load_explicit(&ref_count->value, memory_order_acquire);
+#else
+            ref_count->value;
+#endif
+
+        // Add the current count to the global counter of decrements (to avoid false positives for memory leak detection)
+#ifndef __STDC_NO_ATOMICS__
+        atomic_fetch_add_explicit(&archi_ref_count_manager->num_decrements, count,
+                memory_order_release);
+#else
+        archi_ref_count_manager->num_decrements += count;
+#endif
+    }
+
+    // Release the reference counter
+    free(ref_count);
+}
+
+void
 archi_reference_count_increment(
         archi_reference_count_t ref_count)
 {
@@ -189,6 +230,7 @@ archi_reference_count_increment(
 
     if (archi_ref_count_manager != NULL)
     {
+        // Increment the global counter of increments
 #ifndef __STDC_NO_ATOMICS__
         atomic_fetch_add_explicit(&archi_ref_count_manager->num_increments, 1,
                 memory_order_release);
@@ -197,6 +239,7 @@ archi_reference_count_increment(
 #endif
     }
 
+    // Increment the reference counter
 #ifndef __STDC_NO_ATOMICS__
     atomic_fetch_add_explicit(&ref_count->value, 1, memory_order_relaxed);
 #else
@@ -204,17 +247,16 @@ archi_reference_count_increment(
 #endif
 }
 
-static
 bool
-archi_reference_count_decrement_impl(
-        archi_reference_count_t ref_count,
-        bool call_destructor)
+archi_reference_count_decrement(
+        archi_reference_count_t ref_count)
 {
     if (ref_count == NULL)
         return false;
 
     if (archi_ref_count_manager != NULL)
     {
+        // Fetch and increment the global counter of decrements
         uintmax_t num_decrements = 1 + // calculating the new value from the old
 #ifndef __STDC_NO_ATOMICS__
             atomic_fetch_add_explicit(&archi_ref_count_manager->num_decrements, 1,
@@ -223,9 +265,11 @@ archi_reference_count_decrement_impl(
             archi_ref_count_manager->num_decrements++;
 #endif
 
+        // Fetch the global counter of increments
         uintmax_t num_increments = archi_reference_count_total_increments();
 
-        if (num_increments < num_decrements) // memory error detected
+        // Check for the negative count error
+        if (num_increments < num_decrements)
         {
 #ifndef __STDC_NO_ATOMICS__
             atomic_store_explicit(&archi_ref_count_manager->negative_count,
@@ -236,10 +280,11 @@ archi_reference_count_decrement_impl(
         }
     }
 
+    // Decrement the reference counter
 #ifndef __STDC_NO_ATOMICS__
     if (atomic_fetch_sub_explicit(&ref_count->value, 1, memory_order_release) == 1)
     {
-        atomic_thread_fence(memory_order_acquire);
+        atomic_thread_fence(memory_order_acquire); // synchronize memory before destroying the object
         goto destroy;
     }
 #else
@@ -250,8 +295,12 @@ archi_reference_count_decrement_impl(
     return false;
 
 destroy:
+    // Call the destructor
+    ref_count->destructor_fn(ref_count->destructor_data);
+
     if (archi_ref_count_manager != NULL)
     {
+        // Increment the global counter of releases
 #ifndef __STDC_NO_ATOMICS__
         atomic_fetch_add_explicit(&archi_ref_count_manager->num_releases, 1,
                 memory_order_release);
@@ -260,26 +309,10 @@ destroy:
 #endif
     }
 
-    if (call_destructor)
-        ref_count->destructor_fn(ref_count->destructor_data);
-
+    // Release the reference counter
     free(ref_count);
 
     return true;
-}
-
-bool
-archi_reference_count_decrement(
-        archi_reference_count_t ref_count)
-{
-    return archi_reference_count_decrement_impl(ref_count, true);
-}
-
-bool
-archi_reference_count_decrement_nodestruct(
-        archi_reference_count_t ref_count)
-{
-    return archi_reference_count_decrement_impl(ref_count, false);
 }
 
 uintmax_t

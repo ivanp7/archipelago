@@ -167,7 +167,7 @@ archi_context_initialize(
     return context;
 
 failure:
-    archi_reference_count_decrement_nodestruct(context->ref_count);
+    archi_reference_count_free(context->ref_count);
     free(context);
 
     return NULL;

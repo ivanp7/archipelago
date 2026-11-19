@@ -58,6 +58,19 @@ archi_reference_count_alloc(
 );
 
 /**
+ * @brief Set a reference count to zero without calling the destructor and destroy the reference counter.
+ *
+ * @param ref_count Pointer to a valid reference counter object.
+ *
+ * @note
+ * Passing NULL as ref_count is a no-op.
+ */
+void
+archi_reference_count_free(
+        archi_reference_count_t ref_count
+);
+
+/**
  * @brief Increment the reference count.
  *
  * This function is thread-safe and may be called from multiple threads.
@@ -98,34 +111,11 @@ archi_reference_count_decrement(
 );
 
 /**
- * @brief Decrement the reference count without calling the destructor.
- *
- * If the reference count drops to zero, the associated destructor function is not called,
- * but the reference counter object is freed anyway.
- *
- * This function is thread-safe and may be called from multiple threads.
- *
- * @param ref_count Pointer to a valid reference counter object.
- *
- * @return True if the count reached zero and the reference counter was destroyed;
- *         false otherwise.
- *
- * @note
- * Passing NULL as ref_count is a no-op and returns false.
- *
- * @warning
- * After this function returns true, the memory pointed to by ref_count is invalid and
- * must not be accessed.
- */
-bool
-archi_reference_count_decrement_nodestruct(
-        archi_reference_count_t ref_count
-);
-
-/**
  * @brief Obtain the unique ID of a reference counter.
  *
- * @return Reference counter ID.
+ * IDs are non-zero.
+ *
+ * @return Reference counter ID, or zero if the reference counting manager was not initialized.
  */
 uintmax_t
 archi_reference_count_id(
