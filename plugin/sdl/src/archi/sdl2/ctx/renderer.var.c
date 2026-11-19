@@ -116,7 +116,7 @@ ARCHI_CONTEXT_INIT_FUNC(archi_context_init__sdl2_renderer)
     *context_data = (struct archi_context_data__sdl2_renderer){
         .renderer = {
             .ptr = SDL_CreateRenderer(window.ptr, driver_index, flags),
-            .attr = ARCHI_POINTER_TYPE__DATA_PERSISTENT_W |
+            .attr = ARCHI_POINTER_TYPE__DATA_WRITABLE |
                 archi_pointer_attr__cdata(ARCHI_POINTER_DATA_TAG__SDL2_RENDERER),
         },
     };

@@ -89,7 +89,7 @@ ARCHI_CONTEXT_INIT_FUNC(archi_context_init__opencl_kernel_new)
 
     *context_data = (struct archi_context_data__opencl_kernel){
         .kernel = {
-            .attr = ARCHI_POINTER_TYPE__DATA_PERSISTENT_W |
+            .attr = ARCHI_POINTER_TYPE__DATA_WRITABLE |
                 archi_pointer_attr__cdata(ARCHI_POINTER_DATA_TAG__OPENCL_KERNEL),
         },
     };
@@ -171,11 +171,11 @@ ARCHI_CONTEXT_INIT_FUNC(archi_context_init__opencl_kernel_clone)
 
     *context_data = (struct archi_context_data__opencl_kernel){
         .kernel = {
-            .attr = ARCHI_POINTER_TYPE__DATA_PERSISTENT_W |
+            .attr = ARCHI_POINTER_TYPE__DATA_WRITABLE |
                 archi_pointer_attr__cdata(ARCHI_POINTER_DATA_TAG__OPENCL_KERNEL),
         },
         .ref_program = {
-            .attr = ARCHI_POINTER_TYPE__DATA_PERSISTENT_W |
+            .attr = ARCHI_POINTER_TYPE__DATA_WRITABLE |
                 archi_pointer_attr__cdata(ARCHI_POINTER_DATA_TAG__OPENCL_PROGRAM),
             .ref_count = source_kernel.ref_count,
         },
@@ -294,7 +294,7 @@ ARCHI_CONTEXT_EVAL_FUNC(archi_context_eval__opencl_kernel)
 
         archi_rcpointer_t value = {
             .ptr = context_data->kernel_name,
-            .attr = ARCHI_POINTER_TYPE__DATA_PERSISTENT_W |
+            .attr = ARCHI_POINTER_TYPE__DATA_WRITABLE |
                 ARCHI_POINTER_ATTR__PDATA(strlen(context_data->kernel_name) + 1, char),
             .ref_count = ARCHI_CONTEXT_REF_COUNT,
         };

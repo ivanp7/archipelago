@@ -39,7 +39,7 @@ archi_rcpointer(
 {
     return (archi_rcpointer_t){
         .p = p,
-        .ref_count = (!ARCHI_POINTER_IS_NULL(p) && !ARCHI_POINTER_TO_TRANS_DATA(p.attr)) ? ref_count : NULL,
+        .ref_count = (!ARCHI_POINTER_IS_NULL(p) && !ARCHI_POINTER_TO_TRANSIENT_DATA(p.attr)) ? ref_count : NULL,
     };
 }
 
@@ -63,7 +63,7 @@ archi_rcpointer_memcopy(
 
     // Change pointer type
     copy.attr &= ~ARCHI_POINTER_ATTR_MASK__TYPE;
-    copy.attr |= ARCHI_POINTER_TYPE__DATA_PERSISTENT_W;
+    copy.attr |= ARCHI_POINTER_TYPE__DATA_WRITABLE;
 
     if (source.ptr != NULL)
     {
@@ -107,7 +107,7 @@ archi_rcpointer_claim(
         return false;
     }
 
-    if (!ARCHI_POINTER_TO_TRANS_DATA(entity->attr))
+    if (!ARCHI_POINTER_TO_TRANSIENT_DATA(entity->attr))
     {
         archi_refcount_increment(entity->ref_count);
         ARCHI_ERROR_RESET();

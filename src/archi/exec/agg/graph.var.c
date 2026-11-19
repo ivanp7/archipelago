@@ -50,11 +50,6 @@ const archi_aggr_member_type__pointer_t
 PTYPE_dexgraph_transition_func = ARCHI_AGGR_MEMBER_TYPE__POINTER_TO_FUNC(archi_dexgraph_transition_func_t,
         ARCHI_POINTER_FUNC_TAG__DEXGRAPH_TRANSITION);
 
-static
-const archi_aggr_member_type__pointer_t
-PTYPE_dexgraph_operation_seq = ARCHI_AGGR_MEMBER_TYPE__POINTER_TO_CDATA(archi_dexgraph_operation_seq_t*,
-        ARCHI_POINTER_DATA_TAG__DEXGRAPH_OPERATION_SEQ);
-
 /*****************************************************************************/
 
 static

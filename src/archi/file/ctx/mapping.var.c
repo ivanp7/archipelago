@@ -185,7 +185,7 @@ ARCHI_CONTEXT_INIT_FUNC(archi_context_init__file_mapping)
     *context_data = (archi_rcpointer_t){
         .ptr = mm,
         .attr = (file_map_params.writable ?
-                ARCHI_POINTER_TYPE__DATA_PERSISTENT_W : ARCHI_POINTER_TYPE__DATA_PERSISTENT_R) | attr,
+                ARCHI_POINTER_TYPE__DATA_WRITABLE : ARCHI_POINTER_TYPE__DATA_READONLY) | attr,
     };
 
     ARCHI_ERROR_RESET();

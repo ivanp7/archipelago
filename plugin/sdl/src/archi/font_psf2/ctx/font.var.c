@@ -70,7 +70,7 @@ ARCHI_CONTEXT_INIT_FUNC(archi_context_init__font_psf2)
 
     *context_data = (archi_rcpointer_t){
         .ptr = font,
-        .attr = ARCHI_POINTER_TYPE__DATA_PERSISTENT_W |
+        .attr = ARCHI_POINTER_TYPE__DATA_WRITABLE |
             archi_pointer_attr__cdata(ARCHI_POINTER_DATA_TAG__FONT_PSF2),
     };
 

@@ -79,7 +79,7 @@ ARCHI_CONTEXT_INIT_FUNC(archi_context_init__dexgraph_operation_seq)
     *context_data = (struct archi_context_data__dexgraph_operation_seq){
         .sequence = {
             .ptr = archi_dexgraph_operation_seq_alloc(sequence_length),
-            .attr = ARCHI_POINTER_TYPE__DATA_PERSISTENT_W |
+            .attr = ARCHI_POINTER_TYPE__DATA_WRITABLE |
                 archi_pointer_attr__cdata(ARCHI_POINTER_DATA_TAG__DEXGRAPH_OPERATION_SEQ),
         },
     };

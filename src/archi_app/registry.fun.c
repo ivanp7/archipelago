@@ -137,9 +137,9 @@ archi_print_pointer(
     {
         const char *mem_type;
 
-        if (ARCHI_POINTER_TO_PERS_R_DATA(value.attr))
+        if (ARCHI_POINTER_TO_READONLY_DATA(value.attr))
             mem_type = "persistent/read-only";
-        else if (ARCHI_POINTER_TO_PERS_W_DATA(value.attr))
+        else if (ARCHI_POINTER_TO_WRITABLE_DATA(value.attr))
             mem_type = "persistent/writable";
         else
             mem_type = "transient";
@@ -170,9 +170,9 @@ archi_print_pointer(
     {
         const char *mem_type;
 
-        if (ARCHI_POINTER_TO_PERS_R_DATA(value.attr))
+        if (ARCHI_POINTER_TO_READONLY_DATA(value.attr))
             mem_type = "persistent/read-only";
-        else if (ARCHI_POINTER_TO_PERS_W_DATA(value.attr))
+        else if (ARCHI_POINTER_TO_WRITABLE_DATA(value.attr))
             mem_type = "persistent/writable";
         else
             mem_type = "transient";
@@ -615,7 +615,7 @@ ARCHI_APP_REGISTRY_OPERATION_FUNC(archi_app_registry_op__create_plist)
     // Prepare the interface
     archi_rcpointer_t interface = {
         .cptr = &archi_context_interface__plist,
-        .attr = ARCHI_POINTER_TYPE__DATA_PERSISTENT_R |
+        .attr = ARCHI_POINTER_TYPE__DATA_READONLY |
             archi_pointer_attr__cdata(ARCHI_POINTER_DATA_TAG__CONTEXT_INTERFACE),
     };
 
@@ -663,7 +663,7 @@ ARCHI_APP_REGISTRY_OPERATION_FUNC(archi_app_registry_op__create_ptr)
     // Prepare the interface
     archi_rcpointer_t interface = {
         .cptr = &archi_context_interface__pointer,
-        .attr = ARCHI_POINTER_TYPE__DATA_PERSISTENT_R |
+        .attr = ARCHI_POINTER_TYPE__DATA_READONLY |
             archi_pointer_attr__cdata(ARCHI_POINTER_DATA_TAG__CONTEXT_INTERFACE),
     };
 
@@ -721,7 +721,7 @@ ARCHI_APP_REGISTRY_OPERATION_FUNC(archi_app_registry_op__create_dptr_array)
     // Prepare the interface
     archi_rcpointer_t interface = {
         .cptr = &archi_context_interface__dptr_array,
-        .attr = ARCHI_POINTER_TYPE__DATA_PERSISTENT_R |
+        .attr = ARCHI_POINTER_TYPE__DATA_READONLY |
             archi_pointer_attr__cdata(ARCHI_POINTER_DATA_TAG__CONTEXT_INTERFACE),
     };
 
@@ -731,7 +731,7 @@ ARCHI_APP_REGISTRY_OPERATION_FUNC(archi_app_registry_op__create_dptr_array)
             .n.key = "length",
             .n.value = {
                 .cptr = &op_data->length,
-                .attr = ARCHI_POINTER_TYPE__DATA_PERSISTENT_R |
+                .attr = ARCHI_POINTER_TYPE__DATA_READONLY |
                     ARCHI_POINTER_ATTR__PDATA(1, size_t),
             },
             .ref_count = ref_count,

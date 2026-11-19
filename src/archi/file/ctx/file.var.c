@@ -121,7 +121,7 @@ ARCHI_CONTEXT_INIT_FUNC(archi_context_init__file)
 
     *context_data = (struct archi_context_data__file){
         .stream = {
-            .attr = ARCHI_POINTER_TYPE__DATA_PERSISTENT_W |
+            .attr = ARCHI_POINTER_TYPE__DATA_WRITABLE |
                 archi_pointer_attr__cdata(ARCHI_POINTER_DATA_TAG__FILE_STREAM),
         },
     };

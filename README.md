@@ -692,14 +692,17 @@ The **memory type** is determined by bits 63–62:
 
 | Bits 63-62 | Memory Type                | Description |
 | ---------- | -------------------------- | ----------- |
-| `00`       | Transient, readable data   | Short-lived memory (e.g. stack); **may or may not be writable** |
+| `00`       | Persistent, read-only data | Read-only memory (e.g., memory mapping) |
 | `01`       | Persistent, writable data  | Writable memory (e.g., heap); **may or may not be readable** |
-| `10`       | Persistent, read-only data | Read-only memory (e.g., memory mapping) |
+| `10`       | Transient, readable data   | Short-lived memory (e.g. stack); **may or may not be writable** |
 | `11`       | Function                   | Executable memory |
 
 > Readability for writable memory is unspecified, which mirrors standard C semantics.
 > In C language, pointers to `const`-qualified types denote read-only memory (memory that shouldn't be written to),
 > but there is no guarantee that pointers to non-`const` types denote memory that can be read.
+
+> Transient memory is not guaranteed to be writable.
+> Data in transient memory should only be read and/or copied.
 
 ### Function Pointers
 
@@ -842,24 +845,24 @@ Examples:
 
 | Scenario       | Memory Type | Tag (hex)           | Tag (bin)            | Binary Attribute (64-bit) |
 | -------------- | ----------- | ------------------- | -------------------- | ------------------------- |
-| all bits clear | transient   | `0x0`               | `000...000`          | `00 000 000...000` |
+| all bits clear | read-only   | `0x0`               | `000...000`          | `00 000 000...000` |
 | small tag      | writable    | `0x38`              | `000...000111000`    | `01 000 000...000111000` |
 | large tag      | writable    | `0x566666666666666` | `101(0110)...(0110)` | `01 000 101(0110)...(0110)` |
-| maximum tag    | read-only   | `0x7ffffffffffffff` | `111...111`          | `10 000 111...111` |
+| maximum tag    | transient   | `0x7ffffffffffffff` | `111...111`          | `10 000 111...111` |
 
 ##### Primitive Data
 
 | Scenario           | Memory Type | Array Length      | Array Stride                            | Alignment Requirement | *M* (# bits) | *N* (# bits) | *63 - N* | Binary Attribute (64-bit) |
 | ------------------ | ----------- | ----------------- | --------------------------------------- | --------------------- | ------------ | ------------ | -------- | ------------------------- |
-| byte array (N = 0) | transient   | 255               | 1 B ((0+1) * 1 bytes)                   | 1 B (1<<0 bytes)      | 0            | 0            | 63       | `00 111111  000...00011111111` |
+| maximum data size  | read-only   | (1<<56) - 1       | 1 B ((0+1) * 1 bytes)                   | 1 B (1<<0 bytes)      | 0            | 0            | 63       | `00 111111  111...111` |
+| byte array (N = 0) | read-only   | 255               | 1 B ((0+1) * 1 bytes)                   | 1 B (1<<0 bytes)      | 0            | 0            | 63       | `00 111111  000...00011111111` |
+| maximum N, M = N   | read-only   | 1                 | 32 PiB ((0+1) * (1<<55) bytes)          | 32 PiB (1<<55 bytes)  | 55           | 55           | 8        | `00 001000 000...000 1` |
+| maximum N, M = 0   | read-only   | 1                 | 32 PiB ((0x7fffffffffffff+1) * 1 bytes) | 1 B (1<<0 bytes)      | 0            | 55           | 8        | `00 001000 111...111 1` |
+| N = 56/2, M = N/2  | writable    | 43                | 256 MiB ((16383+1) * (1<<14) bytes)     | 16 KiB (1<<14 bytes)  | 14           | 28           | 35       | `01 100011 000...000111...111 000...000101011` |
 | prime stride       | writable    | 13                | 7 B ((6+1) * 1 bytes)                   | 1 B (1<<0 bytes)      | 0            | 3            | 60       | `01 111100 110 000...0001101` |
 | composite stride   | writable    | 25                | 832 B ((51+1) * 16 bytes)               | 16 B (1<<4 bytes)     | 4            | 10           | 53       | `01 110101 0000110011 000...00011001` |
-| N = 1, M = 1       | writable    | 128               | 2 B ((0+1) * 2 bytes)                   | 2 B (1<<1 bytes)      | 1            | 1            | 62       | `01 111110 0 000...00010000000` |
-| N = 1, M = 0       | writable    | 128               | 2 B ((1+1) * 1 bytes)                   | 1 B (1<<0 bytes)      | 0            | 1            | 62       | `01 111110 1 000...00010000000` |
-| N = 56/2, M = N/2  | read-only   | 43                | 256 MiB ((16383+1) * (1<<14) bytes)     | 16 KiB (1<<14 bytes)  | 14           | 28           | 35       | `10 100011 000...000111...111 000...000101011` |
-| maximum N, M = N   | read-only   | 1                 | 32 PiB ((0+1) * (1<<55) bytes)          | 32 PiB (1<<55 bytes)  | 55           | 55           | 8        | `10 001000 000...000 1` |
-| maximum N, M = 0   | read-only   | 1                 | 32 PiB ((0x7fffffffffffff+1) * 1 bytes) | 1 B (1<<0 bytes)      | 0            | 55           | 8        | `10 001000 111...111 1` |
-| maximum data size  | read-only   | (1<<56) - 1       | 1 B ((0+1) * 1 bytes)                   | 1 B (1<<0 bytes)      | 0            | 0            | 63       | `10 111111  111...111` |
+| N = 1, M = 1       | transient   | 128               | 2 B ((0+1) * 2 bytes)                   | 2 B (1<<1 bytes)      | 1            | 1            | 62       | `10 111110 0 000...00010000000` |
+| N = 1, M = 0       | transient   | 128               | 2 B ((1+1) * 1 bytes)                   | 1 B (1<<0 bytes)      | 0            | 1            | 62       | `10 111110 1 000...00010000000` |
 
 ## Generic Pointer Validness
 

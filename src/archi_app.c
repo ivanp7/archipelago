@@ -133,7 +133,7 @@ struct {
 
 #define INTERFACE_PTR(interface_var)    {                                       \
     .cptr = &interface_var,                                                     \
-    .attr = ARCHI_POINTER_TYPE__DATA_PERSISTENT_R |                                 \
+    .attr = ARCHI_POINTER_TYPE__DATA_READONLY |                                 \
         archi_pointer_attr__cdata(ARCHI_POINTER_DATA_TAG__CONTEXT_INTERFACE),   \
 }
 

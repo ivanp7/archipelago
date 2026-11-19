@@ -520,7 +520,7 @@ ARCHI_AGGR_GET_FUNC(archi_aggr_get__generic)
     ARCHI_ERROR_RESET();
     return (archi_pointer_t){
         .ptr = (char*)object + walk_data.offset,
-        .attr = ARCHI_POINTER_TYPE__DATA_PERSISTENT_W | attr,
+        .attr = ARCHI_POINTER_TYPE__DATA_WRITABLE | attr,
     };
 }
 

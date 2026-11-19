@@ -249,7 +249,7 @@ ARCHI_CONTEXT_INIT_FUNC(archi_context_init__number_parser)
 #define _INIT_CONTEXT_DATA(type, value) do {                \
         *context_data = (archi_rcpointer_t){                \
             .ptr = malloc(sizeof(type)),                    \
-            .attr = ARCHI_POINTER_TYPE__DATA_PERSISTENT_W |     \
+            .attr = ARCHI_POINTER_TYPE__DATA_WRITABLE |     \
                     ARCHI_POINTER_ATTR__PDATA(1, type),     \
         };                                                  \
         if (context_data->ptr == NULL)                      \

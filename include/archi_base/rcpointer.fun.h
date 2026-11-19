@@ -51,7 +51,7 @@ archi_rcpointer(
  * @brief Create a long-lived, writable copy of data on the heap.
  *
  * Pointer attributes (except type) are preserved.
- * Pointer type is set to ARCHI_POINTER_TYPE__DATA_PERSISTENT_W.
+ * Pointer type is set to ARCHI_POINTER_TYPE__DATA_WRITABLE.
  *
  * New reference counter is created for the copy.
  *

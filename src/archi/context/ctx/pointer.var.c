@@ -191,8 +191,8 @@ ARCHI_CONTEXT_INIT_FUNC(archi_context_init__dpointer)
     if (writable_set)
     {
         context_data->attr &= ~ARCHI_POINTER_ATTR_MASK__TYPE;
-        context_data->attr |= writable ? ARCHI_POINTER_TYPE__DATA_PERSISTENT_W :
-            ARCHI_POINTER_TYPE__DATA_PERSISTENT_R;
+        context_data->attr |= writable ? ARCHI_POINTER_TYPE__DATA_WRITABLE :
+            ARCHI_POINTER_TYPE__DATA_READONLY;
     }
 
     ARCHI_ERROR_RESET();
@@ -228,7 +228,7 @@ ARCHI_CONTEXT_EVAL_FUNC(archi_context_eval__dpointer)
             return;
         }
 
-        char writable = !ARCHI_POINTER_TO_PERS_R_DATA(context->attr);
+        char writable = !ARCHI_POINTER_TO_READONLY_DATA(context->attr);
 
         archi_rcpointer_t value = {
             .ptr = &writable,
@@ -286,8 +286,8 @@ ARCHI_CONTEXT_SET_FUNC(archi_context_set__dpointer)
         bool writable = *(char*)value.ptr;
 
         context->attr &= ~ARCHI_POINTER_ATTR_MASK__TYPE;
-        context->attr |= writable ? ARCHI_POINTER_TYPE__DATA_PERSISTENT_W :
-            ARCHI_POINTER_TYPE__DATA_PERSISTENT_R;
+        context->attr |= writable ? ARCHI_POINTER_TYPE__DATA_WRITABLE :
+            ARCHI_POINTER_TYPE__DATA_READONLY;
     }
     else
     {
@@ -417,8 +417,8 @@ ARCHI_CONTEXT_INIT_FUNC(archi_context_init__pdpointer)
     if (writable_set)
     {
         context_data->attr &= ~ARCHI_POINTER_ATTR_MASK__TYPE;
-        context_data->attr |= writable ? ARCHI_POINTER_TYPE__DATA_PERSISTENT_W :
-            ARCHI_POINTER_TYPE__DATA_PERSISTENT_R;
+        context_data->attr |= writable ? ARCHI_POINTER_TYPE__DATA_WRITABLE :
+            ARCHI_POINTER_TYPE__DATA_READONLY;
     }
 
     // Set pointer attributes
@@ -496,7 +496,7 @@ ARCHI_CONTEXT_EVAL_FUNC(archi_context_eval__pdpointer)
                 return;
             }
 
-            char writable = !ARCHI_POINTER_TO_PERS_R_DATA(context->attr);
+            char writable = !ARCHI_POINTER_TO_READONLY_DATA(context->attr);
 
             archi_rcpointer_t value = {
                 .ptr = &writable,
@@ -680,7 +680,7 @@ ARCHI_CONTEXT_EVAL_FUNC(archi_context_eval__pdpointer)
                 ARCHI_ERROR_SET(ARCHI__EINDEX, "number of slot indices isn't 0");
                 return;
             }
-            else if (ARCHI_POINTER_TO_PERS_R_DATA(context->attr))
+            else if (ARCHI_POINTER_TO_READONLY_DATA(context->attr))
             {
                 ARCHI_ERROR_SET(ARCHI__ECONSTRAINT, "destination memory is read-only");
                 return;
@@ -798,7 +798,7 @@ ARCHI_CONTEXT_EVAL_FUNC(archi_context_eval__pdpointer)
                 ARCHI_ERROR_SET(ARCHI__EINDEX, "number of slot indices isn't 0");
                 return;
             }
-            else if (ARCHI_POINTER_TO_PERS_R_DATA(context->attr))
+            else if (ARCHI_POINTER_TO_READONLY_DATA(context->attr))
             {
                 ARCHI_ERROR_SET(ARCHI__ECONSTRAINT, "destination memory is read-only");
                 return;
@@ -914,8 +914,8 @@ ARCHI_CONTEXT_SET_FUNC(archi_context_set__pdpointer)
         bool writable = *(char*)value.ptr;
 
         context->attr &= ~ARCHI_POINTER_ATTR_MASK__TYPE;
-        context->attr |= writable ? ARCHI_POINTER_TYPE__DATA_PERSISTENT_W :
-            ARCHI_POINTER_TYPE__DATA_PERSISTENT_R;
+        context->attr |= writable ? ARCHI_POINTER_TYPE__DATA_WRITABLE :
+            ARCHI_POINTER_TYPE__DATA_READONLY;
     }
     else if (ARCHI_STRING_COMPARE("length", ==, slot.name))
     {
@@ -1116,8 +1116,8 @@ ARCHI_CONTEXT_INIT_FUNC(archi_context_init__cdpointer)
     if (writable_set)
     {
         context_data->attr &= ~ARCHI_POINTER_ATTR_MASK__TYPE;
-        context_data->attr |= writable ? ARCHI_POINTER_TYPE__DATA_PERSISTENT_W :
-            ARCHI_POINTER_TYPE__DATA_PERSISTENT_R;
+        context_data->attr |= writable ? ARCHI_POINTER_TYPE__DATA_WRITABLE :
+            ARCHI_POINTER_TYPE__DATA_READONLY;
     }
 
     // Set data type tag
@@ -1157,7 +1157,7 @@ ARCHI_CONTEXT_EVAL_FUNC(archi_context_eval__cdpointer)
             return;
         }
 
-        char writable = !ARCHI_POINTER_TO_PERS_R_DATA(context->attr);
+        char writable = !ARCHI_POINTER_TO_READONLY_DATA(context->attr);
 
         archi_rcpointer_t value = {
             .ptr = &writable,
@@ -1238,8 +1238,8 @@ ARCHI_CONTEXT_SET_FUNC(archi_context_set__cdpointer)
         bool writable = *(char*)value.ptr;
 
         context->attr &= ~ARCHI_POINTER_ATTR_MASK__TYPE;
-        context->attr |= writable ? ARCHI_POINTER_TYPE__DATA_PERSISTENT_W :
-            ARCHI_POINTER_TYPE__DATA_PERSISTENT_R;
+        context->attr |= writable ? ARCHI_POINTER_TYPE__DATA_WRITABLE :
+            ARCHI_POINTER_TYPE__DATA_READONLY;
     }
     else if (ARCHI_STRING_COMPARE("tag", ==, slot.name))
     {

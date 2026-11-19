@@ -60,9 +60,9 @@ ARCHI_HASHMAP_TRAV_KV_FUNC(archi_dexgraph_op__hashmap_print_traverse)
     {
         const char *mem_type;
 
-        if (ARCHI_POINTER_TO_PERS_R_DATA(value.attr))
+        if (ARCHI_POINTER_TO_READONLY_DATA(value.attr))
             mem_type = "persistent/read-only";
-        else if (ARCHI_POINTER_TO_PERS_W_DATA(value.attr))
+        else if (ARCHI_POINTER_TO_WRITABLE_DATA(value.attr))
             mem_type = "persistent/writable";
         else
             mem_type = "transient";
@@ -74,9 +74,9 @@ ARCHI_HASHMAP_TRAV_KV_FUNC(archi_dexgraph_op__hashmap_print_traverse)
     {
         const char *mem_type;
 
-        if (ARCHI_POINTER_TO_PERS_R_DATA(value.attr))
+        if (ARCHI_POINTER_TO_READONLY_DATA(value.attr))
             mem_type = "persistent/read-only";
-        else if (ARCHI_POINTER_TO_PERS_W_DATA(value.attr))
+        else if (ARCHI_POINTER_TO_WRITABLE_DATA(value.attr))
             mem_type = "persistent/writable";
         else
             mem_type = "transient";

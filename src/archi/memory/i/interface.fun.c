@@ -130,7 +130,7 @@ ARCHI_DESTRUCTOR_FUNC(archi_memory_deallocator)
         archi_memory_alloc_info_t alloc_info = {
             .allocation = {
                 .ptr = memory->allocation.ptr,
-                .writable = ARCHI_POINTER_TO_PERS_W_DATA(memory->allocation.attr),
+                .writable = ARCHI_POINTER_TO_WRITABLE_DATA(memory->allocation.attr),
             },
             .metadata = memory->metadata,
         };
@@ -208,7 +208,7 @@ archi_memory_allocate(
         ARCHI_ERROR_SET(ARCHI__ECONSTRAINT, "memory interface pointer is NULL");
         return NULL;
     }
-    else if (ARCHI_POINTER_TO_TRANS_DATA(interface.attr))
+    else if (ARCHI_POINTER_TO_TRANSIENT_DATA(interface.attr))
     {
         ARCHI_ERROR_SET(ARCHI__ECONSTRAINT, "memory interface is at transient memory");
         return NULL;
@@ -290,7 +290,7 @@ archi_memory_allocate(
     memory->allocation = (archi_rcpointer_t){
         .ptr = alloc_info.allocation.ptr,
         .attr = (alloc_info.allocation.writable ?
-                ARCHI_POINTER_TYPE__DATA_PERSISTENT_W : ARCHI_POINTER_TYPE__DATA_PERSISTENT_R) |
+                ARCHI_POINTER_TYPE__DATA_WRITABLE : ARCHI_POINTER_TYPE__DATA_READONLY) |
             (alloc_info.allocation.tag ?
              archi_pointer_attr__cdata(alloc_info.allocation.tag) : attr),
         .ref_count = ref_count,
@@ -377,7 +377,7 @@ ARCHI_DESTRUCTOR_FUNC(archi_memory_mapping_destructor)
         archi_memory_alloc_info_t alloc_info = {
             .allocation = {
                 .ptr = memory->allocation.ptr,
-                .writable = ARCHI_POINTER_TO_PERS_W_DATA(memory->allocation.attr),
+                .writable = ARCHI_POINTER_TO_WRITABLE_DATA(memory->allocation.attr),
             },
             .metadata = memory->metadata,
         };
@@ -386,7 +386,7 @@ ARCHI_DESTRUCTOR_FUNC(archi_memory_mapping_destructor)
         archi_memory_map_info_t map_info = {
             .mapping = {
                 .ptr = mapping->pointer.ptr,
-                .writable = ARCHI_POINTER_TO_PERS_W_DATA(mapping->pointer.attr),
+                .writable = ARCHI_POINTER_TO_WRITABLE_DATA(mapping->pointer.attr),
             },
             .metadata = mapping->metadata,
         };
@@ -485,7 +485,7 @@ archi_memory_map(
     archi_memory_alloc_info_t alloc_info = {
         .allocation = {
             .ptr = memory->allocation.ptr,
-            .writable = ARCHI_POINTER_TO_PERS_W_DATA(memory->allocation.attr),
+            .writable = ARCHI_POINTER_TO_WRITABLE_DATA(memory->allocation.attr),
         },
         .metadata = memory->metadata,
     };
@@ -509,7 +509,7 @@ archi_memory_map(
     mapping->pointer = (archi_rcpointer_t){
         .ptr = map_info.mapping.ptr,
         .attr = (map_info.mapping.writable ?
-                ARCHI_POINTER_TYPE__DATA_PERSISTENT_W : ARCHI_POINTER_TYPE__DATA_PERSISTENT_R) |
+                ARCHI_POINTER_TYPE__DATA_WRITABLE : ARCHI_POINTER_TYPE__DATA_READONLY) |
             archi_pointer_attr__pdata(length, memory->stride, memory->alignment, NULL),
         .ref_count = ref_count,
     };

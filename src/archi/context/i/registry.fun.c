@@ -209,7 +209,7 @@ archi_context_registry_insert(
     // Insert the context
     archi_rcpointer_t context_ptr = {
         .ptr = context,
-        .attr = ARCHI_POINTER_TYPE__DATA_PERSISTENT_W |
+        .attr = ARCHI_POINTER_TYPE__DATA_WRITABLE |
             archi_pointer_attr__cdata(ARCHI_POINTER_DATA_TAG__CONTEXT),
         .ref_count = archi_context_data(context).ref_count,
     };
