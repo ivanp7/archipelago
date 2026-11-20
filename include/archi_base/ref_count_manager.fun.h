@@ -102,12 +102,15 @@ uintmax_t
 archi_refcount_total_decrements(void);
 
 /**
- * @brief Check if negative reference count has been detected.
+ * @brief Check if reference counting error has been detected.
  *
- * @return False if all reference counters were non-negative, true otherwise.
+ * This function may return true if a reference counter
+ * that reached zero (and thus had been released) has been accessed again.
+ *
+ * @return False if no errors were detected, true otherwise.
  */
 bool
-archi_refcount_negative_detected(void);
+archi_refcount_error_detected(void);
 
 #endif // _ARCHI_BASE_REF_COUNT_MANAGER_FUN_H_
 

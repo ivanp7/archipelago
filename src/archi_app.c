@@ -544,8 +544,8 @@ exit_clean(void) // is called on exit() or if main() returns
         if (total_increments < total_decrements)
             archi_log_error(__func__, "Memory corruption detected: total number of reference counter decrements (%zu) exceeds increments (%zu) by %zu",
                     total_decrements, total_increments, total_decrements - total_increments);
-        else if (archi_refcount_negative_detected())
-            archi_log_error(__func__, "Memory corruption detected: total number of reference counter decrements exceeded increments (negative count)");
+        else if (archi_refcount_error_detected())
+            archi_log_error(__func__, "Memory corruption detected: a reference counter that reached zero has been accessed");
         else if (total_increments > total_decrements)
             archi_log_warning(__func__, "Memory leak detected: total number of reference counter increments (%zu) exceeds decrements (%zu) by %zu",
                     total_increments, total_decrements, total_increments - total_decrements);

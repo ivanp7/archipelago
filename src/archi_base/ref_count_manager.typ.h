@@ -43,7 +43,7 @@ struct archi_ref_count_manager {
     atomic_uintmax_t num_increments;
     atomic_uintmax_t num_decrements;
 
-    atomic_bool negative_count;
+    atomic_bool error_detected;
 #else
     uintmax_t num_allocations;
     uintmax_t num_releases;
@@ -51,7 +51,7 @@ struct archi_ref_count_manager {
     uintmax_t num_increments;
     uintmax_t num_decrements;
 
-    bool negative_count;
+    bool error_detected;
 #endif
 };
 
