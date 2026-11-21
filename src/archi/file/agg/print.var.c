@@ -20,12 +20,13 @@
 
 /**
  * @file
- * @brief Aggregate type descriptions for data of operation functions for printing messages.
+ * @brief Aggregate type descriptions for data of operation functions for printing formatted messages to streams.
  */
 
-#include "archi/exec/agg/print.var.h"
-#include "archi/exec/exe/print.typ.h"
-#include "archi/exec/exe/tag.def.h"
+#include "archi/file/agg/print.var.h"
+#include "archi/file/exe/print.typ.h"
+#include "archi/file/exe/tag.def.h"
+#include "archi/file/i/tag.def.h"
 
 
 static
@@ -40,34 +41,40 @@ static
 const archi_aggr_member_type__pointer_t
 PTYPE_pointer = ARCHI_AGGR_MEMBER_TYPE__POINTER_TO_CDATA(archi_pointer_t, 0);
 
-/*****************************************************************************/
-
 static
-const archi_aggr_member_t
-MEMBERS_dexgraph_op_data__print_string__token[] = {
-    ARCHI_AGGR_MEMBER__POINTER(archi_dexgraph_op_data__print_string__token_t, conv_spec, 1, PTYPE_string),
-    ARCHI_AGGR_MEMBER__POINTER(archi_dexgraph_op_data__print_string__token_t, argument, 1, PTYPE_pointer),
-};
-
-const archi_aggr_type_t
-archi_aggr_type__dexgraph_op_data__print_string__token = ARCHI_AGGR_TYPE(
-        archi_dexgraph_op_data__print_string__token_t, 0,
-        MEMBERS_dexgraph_op_data__print_string__token);
+const archi_aggr_member_type__pointer_t
+PTYPE_file = ARCHI_AGGR_MEMBER_TYPE__POINTER_TO_CDATA(FILE*,
+        ARCHI_POINTER_DATA_TAG__FILE_STREAM);
 
 /*****************************************************************************/
 
 static
 const archi_aggr_member_t
-MEMBERS_dexgraph_op_data__print_string[] = {
-    ARCHI_AGGR_MEMBER__VALUE(archi_dexgraph_op_data__print_string_t, num_tokens, 1, VTYPE_size),
-    ARCHI_AGGR_MEMBER__AGGREGATE(archi_dexgraph_op_data__print_string_t, token, 0,
-            archi_aggr_type__dexgraph_op_data__print_string__token.top_level),
+MEMBERS_dexgraph_op_data__file_printf__token[] = {
+    ARCHI_AGGR_MEMBER__POINTER(archi_dexgraph_op_data__file_printf__token_t, conv_spec, 1, PTYPE_string),
+    ARCHI_AGGR_MEMBER__POINTER(archi_dexgraph_op_data__file_printf__token_t, argument, 1, PTYPE_pointer),
 };
 
 const archi_aggr_type_t
-archi_aggr_type__dexgraph_op_data__print_string = ARCHI_AGGR_TYPE_WITH_FAM(
-        archi_dexgraph_op_data__print_string_t,
-        ARCHI_POINTER_DATA_TAG__DEXGRAPH_OP_DATA__PRINT_STRING,
-        archi_dexgraph_op_data__print_string__token_t,
-        MEMBERS_dexgraph_op_data__print_string);
+archi_aggr_type__dexgraph_op_data__file_printf__token = ARCHI_AGGR_TYPE(
+        archi_dexgraph_op_data__file_printf__token_t, 0,
+        MEMBERS_dexgraph_op_data__file_printf__token);
+
+/*****************************************************************************/
+
+static
+const archi_aggr_member_t
+MEMBERS_dexgraph_op_data__file_printf[] = {
+    ARCHI_AGGR_MEMBER__POINTER(archi_dexgraph_op_data__file_printf_t, stream, 1, PTYPE_file),
+    ARCHI_AGGR_MEMBER__VALUE(archi_dexgraph_op_data__file_printf_t, num_tokens, 1, VTYPE_size),
+    ARCHI_AGGR_MEMBER__AGGREGATE(archi_dexgraph_op_data__file_printf_t, token, 0,
+            archi_aggr_type__dexgraph_op_data__file_printf__token.top_level),
+};
+
+const archi_aggr_type_t
+archi_aggr_type__dexgraph_op_data__file_printf = ARCHI_AGGR_TYPE_WITH_FAM(
+        archi_dexgraph_op_data__file_printf_t,
+        ARCHI_POINTER_DATA_TAG__DEXGRAPH_OP_DATA__FILE_PRINTF,
+        archi_dexgraph_op_data__file_printf__token_t,
+        MEMBERS_dexgraph_op_data__file_printf);
 

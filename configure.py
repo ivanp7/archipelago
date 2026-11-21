@@ -83,6 +83,8 @@ MODULES = [
 
         # files
         "archi/file/i",
+        "archi/file/exe",
+        "archi/file/agg",
         "archi/file/ctx",
 
         # shared libraries

@@ -20,30 +20,24 @@
 
 /**
  * @file
- * @brief Operation functions for printing messages.
+ * @brief Operation functions for printing formatted messages to streams.
  */
 
 #pragma once
-#ifndef _ARCHI_EXEC_EXE_PRINT_FUN_H_
-#define _ARCHI_EXEC_EXE_PRINT_FUN_H_
+#ifndef _ARCHI_FILE_EXE_PRINT_FUN_H_
+#define _ARCHI_FILE_EXE_PRINT_FUN_H_
 
 #include "archi/exec/i/operation.typ.h"
 
 
 /**
- * @brief Operation function: print a string to the standard output stream.
+ * @brief Operation function: print a string to the specified stream.
  *
- * Function data type: archi_dexgraph_op_data__print_string_t.
+ * Function data type: archi_dexgraph_op_data__file_printf_t.
  *
- * Tokens are treated in the following way:
- * 1. if `conv_spec` is NULL, token is ignored;
- * 2. if `conv_spec` doesn't begin with '%', it is printed as `printf("%s", conv_spec)`;
- * 3. otherwise, `conv_spec` must be a single valid printf conversion specification
- *    with no superfluous trailing characters.
- *    Value is interpreted according to the length modifier,
- *    and the node is printed as `printf(conv_spec, argument)`.
+ * This function uses series of fprintf() calls to do the job.
  */
-ARCHI_DEXGRAPH_OPERATION_FUNC(archi_dexgraph_op__print_string);
+ARCHI_DEXGRAPH_OPERATION_FUNC(archi_dexgraph_op__file_printf);
 
-#endif // _ARCHI_EXEC_EXE_PRINT_FUN_H_
+#endif // _ARCHI_FILE_EXE_PRINT_FUN_H_
 

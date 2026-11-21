@@ -20,29 +20,29 @@
 
 /**
  * @file
- * @brief Aggregate type descriptions for data of operation functions for printing messages.
+ * @brief Aggregate type descriptions for data of operation functions for printing formatted messages to streams.
  */
 
 #pragma once
-#ifndef _ARCHI_EXEC_AGG_PRINT_VAR_H_
-#define _ARCHI_EXEC_AGG_PRINT_VAR_H_
+#ifndef _ARCHI_FILE_AGG_PRINT_VAR_H_
+#define _ARCHI_FILE_AGG_PRINT_VAR_H_
 
 #include "archi/aggr/agg/generic.typ.h"
 
 
 /**
- * @brief Aggregate type description for archi_dexgraph_op_data__print_string__token_t.
+ * @brief Aggregate type description for archi_dexgraph_op_data__file_printf__token_t.
  */
 extern
 const archi_aggr_type_t
-archi_aggr_type__dexgraph_op_data__print_string__token;
+archi_aggr_type__dexgraph_op_data__file_printf__token;
 
 /**
- * @brief Aggregate type description for archi_dexgraph_op_data__print_string_t.
+ * @brief Aggregate type description for archi_dexgraph_op_data__file_printf_t.
  */
 extern
 const archi_aggr_type_t
-archi_aggr_type__dexgraph_op_data__print_string;
+archi_aggr_type__dexgraph_op_data__file_printf;
 
-#endif // _ARCHI_EXEC_AGG_PRINT_VAR_H_
+#endif // _ARCHI_FILE_AGG_PRINT_VAR_H_
 

@@ -20,31 +20,14 @@
 
 /**
  * @file
- * @brief Data for operation functions for printing messages.
+ * @brief Data and function type tags.
  */
 
 #pragma once
-#ifndef _ARCHI_EXEC_EXE_PRINT_TYP_H_
-#define _ARCHI_EXEC_EXE_PRINT_TYP_H_
+#ifndef _ARCHI_EXEC_EXE_TAG_DEF_H_
+#define _ARCHI_EXEC_EXE_TAG_DEF_H_
 
-#include "archi_base/pointer.typ.h"
+#define ARCHI_POINTER_DATA_TAG__DEXGRAPH_OP_DATA__FILE_PRINTF   0x7A ///< Data type tag for archi_dexgraph_op_data__file_printf_t.
 
-
-/**
- * @brief Conversion specifier + argument.
- */
-typedef struct archi_dexgraph_op_data__print_string__token {
-    const char *conv_spec; ///< printf() conversion specifier.
-    archi_pointer_t argument; ///< printf() argument.
-} archi_dexgraph_op_data__print_string__token_t;
-
-/**
- * @brief Operation function data: print a string to the standard output stream.
- */
-typedef struct archi_dexgraph_op_data__print_string {
-    const size_t num_tokens; ///< Number of printed tokens.
-    archi_dexgraph_op_data__print_string__token_t token[]; ///< Array of "conversion specifier + argument" pairs.
-} archi_dexgraph_op_data__print_string_t;
-
-#endif // _ARCHI_EXEC_EXE_PRINT_TYP_H_
+#endif // _ARCHI_EXEC_EXE_TAG_DEF_H_
 
