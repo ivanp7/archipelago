@@ -187,10 +187,10 @@ ARCHI_DEXGRAPH_OPERATION_FUNC(archi_dexgraph_op__print_string)
                 }
                 break;
 
+            case 'u':
             case 'o':
             case 'x':
             case 'X':
-            case 'u':
                 switch (length_modifier)
                 {
                     case 'h':
@@ -273,6 +273,12 @@ ARCHI_DEXGRAPH_OPERATION_FUNC(archi_dexgraph_op__print_string)
                 break;
 
             case 'n':
+                if (!ARCHI_POINTER_TO_WRITABLE_DATA(token.argument.attr))
+                {
+                    ARCHI_ERROR_SET(ARCHI__ECONSTRAINT, "printf argument is not writable");
+                    return;
+                }
+
                 switch (length_modifier)
                 {
                     case 'h':

@@ -22,10 +22,11 @@
 # @brief Context creation helpers.
 
 import ctypes as c
+import re
 from types import NoneType
 
 import archi.ctypes as typ
-from .object import PrimitiveData
+from .object import PrimitiveData, String
 from archi.context import (
         TypeAttr,
         Context,
@@ -274,6 +275,94 @@ def new_dexgraph_branch_func_data(registry, key, /,
         registry(branch_data.member.target[1] << target_true)
 
     return branch_data
+
+
+def new_dexgraph_print_func_data(registry, key, /,
+                                 format_string, *args):
+    """Create operation data for the print function.
+    """
+    if not isinstance(registry, Registry):
+        raise TypeError
+
+    if not isinstance(format_string, str):
+        raise TypeError
+    elif not all(isinstance(arg, (Object, Context, Context.Slot)) for arg in args):
+        raise TypeError
+
+    tokens = []
+
+    flag_chars = ' #-0+'
+    regex_specific = { # conversion specifications supported by the operation function
+                      'c': re.compile(r'%[ +-]*(?:[1-9]\d*)?l?c'),
+                      's': re.compile(r'%[ +-]*(?:[1-9]\d*)?(?:\.\d+)?l?s'),
+                      'diu': re.compile(r'%[ 0+-]*(?:[1-9]\d*)?(?:\.\d+)?(?:hh|h|l|ll|j|z|t)?[diu]'),
+                      'oxX': re.compile(r'%[ #0+-]*(?:[1-9]\d*)?(?:\.\d+)?(?:hh|h|l|ll|j|z|t)?[oxX]'),
+                      'fFeEgGaA': re.compile(r'%[ #0+-]*(?:[1-9]\d*)?(?:\.\d+)?(?:l|L)?[fFeEgGaA]'),
+                      'p': re.compile(r'%[ +-]*(?:[1-9]\d*)?p'),
+                      'n': re.compile(r'%(?:hh|h|l|ll|j|z|t)?n'),
+                      }
+    conv_spec_chars = ''.join(regex_specific.keys())
+    regex_generic = re.compile(rf'%[^%{conv_spec_chars}]*[%{conv_spec_chars}]')
+
+    processed_len = 0
+    arg_i = 0
+    while processed_len < len(format_string):
+        # Find the next conversion specification
+        index = format_string.find('%', processed_len)
+
+        if index < 0: # not found
+            # Process the rest of the format string
+            tokens.append((format_string[processed_len:], None))
+            break
+        elif index > processed_len:
+            # Process the string preceding the conversion specification
+            tokens.append((format_string[processed_len:index], None))
+            processed_len = index
+
+        # Match the conversion specification
+        match = re.match(regex_generic, format_string[processed_len:])
+        if match is None:
+            raise ValueError(f"Conversion specification starting at index {processed_len} is incorrect")
+
+        conv_spec = format_string[processed_len:processed_len+match.end()]
+
+        # Validate the conversion specification and set the argument
+        if conv_spec[-1] == '%':
+            if conv_spec != '%%':
+                raise ValueError(f"Conversion specification '{conv_spec}' is incorrect")
+
+            arg = None
+        else:
+            for specifier, regex in regex_specific.items():
+                if conv_spec[-1] in specifier:
+                    if re.match(regex, conv_spec) is None:
+                        raise ValueError(f"Conversion specification '{conv_spec}' is incorrect")
+                    break
+            else: # should never happen
+                raise RuntimeError
+
+            if any(conv_spec.count(flag_char) > 1 for flag_char in flag_chars):
+                raise ValueError(f"Conversion specification '{conv_spec}' is incorrect")
+
+            arg = args[arg_i]
+            arg_i += 1
+
+        # Process the token
+        tokens.append((conv_spec, arg))
+        processed_len += len(conv_spec)
+
+    print_data = new_aggregate_object(registry, key, metadata=AggregateTypeSymbol.slot(
+        DexgraphOperationDataSymbol.full_name('print_string'), registry.BUILTIN.executable),
+                                      fam_length=len(tokens))
+
+    registry(print_data.member.num_tokens << PrimitiveData(c.c_size_t(len(tokens))))
+
+    for i, token in enumerate(tokens):
+        registry(print_data.member.token[i].conv_spec << String(token[0]))
+        if token[1] is not None:
+            registry(print_data.member.token[i].argument << token[1])
+
+    return print_data
 
 ### archi/thread ###
 
