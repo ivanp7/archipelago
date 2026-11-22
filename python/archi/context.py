@@ -1461,7 +1461,7 @@ class MemoryMappingContext(ContextWhitelist):
 ### archi/file ###
 
 class FileContext(ContextWhitelist):
-    """File handle.
+    """File stream.
     """
     C_NAME = 'file'
 
@@ -1507,6 +1507,15 @@ class FileContext(ContextWhitelist):
     SETTER_SLOTS = {'offset': _TYPE_LONGLONG,
                     'offset.end': _TYPE_LONGLONG,
                     'offset.shift': _TYPE_LONGLONG}
+
+
+class FileStdContext(FileContext):
+    """Standard file stream.
+    """
+    C_NAME = 'file_std'
+
+    class InitParameters(ParametersWhitelist):
+        PARAMS = {'id': _TYPE_INT}
 
 
 class FileMappingContext(ContextWhitelist):

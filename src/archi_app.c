@@ -38,6 +38,7 @@
 #include "archi_app/input_file.typ.h"
 #include "archi_app/input_file.def.h"
 #include "archi/file/i/file.fun.h"
+#include "archi/file/ctx/file.var.h"
 #include "archi/file/ctx/mapping.var.h"
 
 // Shared libraries
@@ -613,20 +614,79 @@ create_builtin_contexts(void)
     if (archi_process.args.dry_run)
         return;
 
-    archi_log_info(__func__, "Creating the library handle context of the executable...");
+    {
+        archi_log_info(__func__, "Creating the library handle context of the executable...");
 
-    archi_rcpointer_t interface =
-        INTERFACE_PTR(archi_context_interface__library);
+        archi_rcpointer_t interface =
+            INTERFACE_PTR(archi_context_interface__library);
 
-    INIT_ERROR();
-    archi_context_registry_create(archi_process.context.registry,
-            ARCHI_APP_REGISTRY_CONTEXT__EXECUTABLE, interface,
-            (archi_context_registry_params_t){0},
-            &archi_process.error);
-    print_error();
+        INIT_ERROR();
+        archi_context_registry_create(archi_process.context.registry,
+                ARCHI_APP_REGISTRY_CONTEXT__EXECUTABLE, interface,
+                (archi_context_registry_params_t){0},
+                &archi_process.error);
+        print_error();
 
-    if (archi_process.error.code != 0)
-        exit(EXIT_FAILURE);
+        if (archi_process.error.code != 0)
+            exit(EXIT_FAILURE);
+    }
+    {
+        archi_log_info(__func__, "Creating the standard streams contexts...");
+
+        archi_rcpointer_t interface =
+            INTERFACE_PTR(archi_context_interface__file_std);
+
+        int stream_id;
+        archi_krcvlist_t params[] = {
+            {
+                .n.key = "id",
+                .n.value = {
+                    .ptr = &stream_id,
+                    .attr = ARCHI_POINTER_TYPE__DATA_TRANSIENT |
+                        ARCHI_POINTER_ATTR__PDATA(1, int),
+                },
+            },
+        };
+
+        // stdin
+        stream_id = 0;
+
+        INIT_ERROR();
+        archi_context_registry_create(archi_process.context.registry,
+                ARCHI_APP_REGISTRY_CONTEXT__STREAM_STDIN, interface,
+                (archi_context_registry_params_t){.list = params},
+                &archi_process.error);
+        print_error();
+
+        if (archi_process.error.code != 0)
+            exit(EXIT_FAILURE);
+
+        // stdout
+        stream_id = 1;
+
+        INIT_ERROR();
+        archi_context_registry_create(archi_process.context.registry,
+                ARCHI_APP_REGISTRY_CONTEXT__STREAM_STDOUT, interface,
+                (archi_context_registry_params_t){.list = params},
+                &archi_process.error);
+        print_error();
+
+        if (archi_process.error.code != 0)
+            exit(EXIT_FAILURE);
+
+        // stderr
+        stream_id = 2;
+
+        INIT_ERROR();
+        archi_context_registry_create(archi_process.context.registry,
+                ARCHI_APP_REGISTRY_CONTEXT__STREAM_STDERR, interface,
+                (archi_context_registry_params_t){.list = params},
+                &archi_process.error);
+        print_error();
+
+        if (archi_process.error.code != 0)
+            exit(EXIT_FAILURE);
+    }
 }
 
 static

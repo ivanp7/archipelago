@@ -74,5 +74,17 @@ extern
 const archi_context_interface_t
 archi_context_interface__file;
 
+/**
+ * @brief Context interface: standard stream.
+ *
+ * Initialization parameters:
+ * - "id"   : (int) ID number of a stream (0 = stdin, 1 = stdout, 2 = stderr)
+ *
+ * All slots are the same as for @p archi_context_interface__file.
+ */
+extern
+const archi_context_interface_t
+archi_context_interface__file_std;
+
 #endif // _ARCHI_FILE_CTX_FILE_VAR_H_
 

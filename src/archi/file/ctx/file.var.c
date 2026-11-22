@@ -512,3 +512,76 @@ archi_context_interface__file = {
     .set_fn = archi_context_set__file,
 };
 
+/*****************************************************************************/
+
+static
+ARCHI_CONTEXT_INIT_FUNC(archi_context_init__file_std)
+{
+    // Parse parameters
+    int stream_id = -1;
+    {
+        archi_plist_param_t parsed[] = {
+            {.name = "id",
+                .check = {archi_value_check__attr, (archi_pointer_attr_t[]){ARCHI_POINTER_ATTR__PDATA(1, int)}},
+                .assign = {archi_plist_assign__value, &stream_id, sizeof(stream_id), NULL}},
+            {0},
+        };
+
+        if (!archi_plist_parse(&params->n, true, parsed, false, ARCHI_ERROR_PARAM))
+            return NULL;
+    }
+
+    archi_file_stream_t stream;
+    switch (stream_id)
+    {
+        case 0:
+            stream = stdin;
+            break;
+
+        case 1:
+            stream = stdout;
+            break;
+
+        case 2:
+            stream = stderr;
+            break;
+
+        default:
+            ARCHI_ERROR_SET(ARCHI__ECONSTRAINT, "incorrect standard stream ID provided");
+            return NULL;
+    }
+
+    // Construct the context
+    struct archi_context_data__file *context_data = malloc(sizeof(*context_data));
+    if (context_data == NULL)
+    {
+        ARCHI_ERROR_SET(ARCHI__EMEMORY, "couldn't allocate context data");
+        return NULL;
+    }
+
+    *context_data = (struct archi_context_data__file){
+        .stream = {
+            .ptr = stream,
+            .attr = ARCHI_POINTER_TYPE__DATA_WRITABLE |
+                archi_pointer_attr__cdata(ARCHI_POINTER_DATA_TAG__FILE_STREAM),
+        },
+        .fd = archi_file_stream_descriptor(stream),
+    };
+
+    if (context_data->fd < 0)
+    {
+        free(context_data);
+        return NULL;
+    }
+
+    ARCHI_ERROR_RESET();
+    return (archi_rcpointer_t*)context_data;
+}
+
+const archi_context_interface_t
+archi_context_interface__file_std = {
+    .init_fn = archi_context_init__file_std,
+    .eval_fn = archi_context_eval__file,
+    .set_fn = archi_context_set__file,
+};
+

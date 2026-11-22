@@ -34,6 +34,11 @@
 #define ARCHI_APP_REGISTRY_CONTEXT__REGISTRY            "archi.registry"        ///< Built-in context: the context registry itself.
 
 #define ARCHI_APP_REGISTRY_CONTEXT__EXECUTABLE          "archi.executable"      ///< Built-in context: the library handle of the executable itself.
+
+#define ARCHI_APP_REGISTRY_CONTEXT__STREAM_STDIN        "archi.stream.stdin"    ///< Built-in context: the standard input stream.
+#define ARCHI_APP_REGISTRY_CONTEXT__STREAM_STDOUT       "archi.stream.stdout"   ///< Built-in context: the standard output stream.
+#define ARCHI_APP_REGISTRY_CONTEXT__STREAM_STDERR       "archi.stream.stderr"   ///< Built-in context: the standard error stream.
+
 #define ARCHI_APP_REGISTRY_CONTEXT__INPUT_FILE_PREV     "archi.input_file.prev" ///< Built-in context: the previous input file mapping.
 #define ARCHI_APP_REGISTRY_CONTEXT__INPUT_FILE_CURR     "archi.input_file.curr" ///< Built-in context: the current input file mapping.
 #define ARCHI_APP_REGISTRY_CONTEXT__INPUT_FILE_NEXT     "archi.input_file.next" ///< Built-in context: the next input file mapping.

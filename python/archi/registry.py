@@ -401,12 +401,21 @@ class Registry:
     """Representation of a context registry.
     """
     # Built-in contexts
-    BUILTIN = SimpleNamespace(registry=ctx.HashmapContext('archi.registry'),
-                              executable=ctx.LibraryContext('archi.executable'),
-                              input_file_prev=ctx.FileMappingContext('archi.input_file.prev'),
-                              input_file_curr=ctx.FileMappingContext('archi.input_file.curr'),
-                              input_file_next=ctx.FileMappingContext('archi.input_file.next'),
-                              signal_handler=ctx.SignalHandlerDataHashmapContext('archi.signal_handler'))
+    BUILTIN = SimpleNamespace(
+            registry=ctx.HashmapContext('archi.registry'),
+            executable=ctx.LibraryContext('archi.executable'),
+            stream=SimpleNamespace(
+                stdin=ctx.FileStdContext('archi.stream.stdin'),
+                stdout=ctx.FileStdContext('archi.stream.stdout'),
+                stderr=ctx.FileStdContext('archi.stream.stderr'),
+                ),
+            input_file=SimpleNamespace(
+                prev=ctx.FileMappingContext('archi.input_file.prev'),
+                curr=ctx.FileMappingContext('archi.input_file.curr'),
+                next=ctx.FileMappingContext('archi.input_file.next'),
+                ),
+            signal_handler=ctx.SignalHandlerDataHashmapContext('archi.signal_handler'),
+            )
 
     # Input file contents key for lists of registry operations
     INPUT_FILE_KEY = 'archi/ops'
