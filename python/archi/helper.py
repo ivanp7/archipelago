@@ -38,6 +38,7 @@ from archi.context import (
         AggregateTypeSymbol,
         DexgraphOperationDataSymbol,
         DexgraphTransitionDataSymbol,
+        DexgraphConditionDataSymbol,
         MemoryInterfaceSymbol,
         )
 from .registry import Registry
@@ -275,6 +276,42 @@ def new_dexgraph_branch_func_data(registry, key, /,
         registry(branch_data.member.target[1] << target_true)
 
     return branch_data
+
+
+def new_dexgraph_loop_times_func_data(registry, key, /,
+                                      num_iterations=None, iteration=None):
+    """Create condition data for the loop-times function.
+    """
+    if not isinstance(registry, Registry):
+        raise TypeError
+
+    if isinstance(num_iterations, int):
+        if num_iterations < 0:
+            raise ValueError
+
+        num_iterations = PrimitiveData(c.c_size_t(num_iterations))
+    elif num_iterations is not None and not TypeAttr.compatible(
+            TypeAttr.of(num_iterations), TypeAttr.from_type(c.c_size_t)):
+        raise TypeError
+
+    if isinstance(iteration, int):
+        if iteration < 0:
+            raise ValueError
+
+        iteration = PrimitiveData(c.c_size_t(iteration))
+    elif iteration is not None and not TypeAttr.compatible(
+            TypeAttr.of(iteration), TypeAttr.from_type(c.c_size_t)):
+        raise TypeError
+
+    loop_data = new_aggregate_object(registry, key, metadata=AggregateTypeSymbol.slot(
+        DexgraphConditionDataSymbol.full_name('loop_times'), registry.BUILTIN.executable))
+
+    if num_iterations is not None:
+        registry(loop_data.member.num_iterations << num_iterations)
+    if iteration is not None:
+        registry(loop_data.member.iteration << iteration)
+
+    return loop_data
 
 ### archi/thread ###
 
