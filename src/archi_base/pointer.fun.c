@@ -63,9 +63,9 @@ archi_pointer_attr__pdata(
         ARCHI_ERROR_SET(ARCHI__ECONSTRAINT, "stride is zero");
         return -1;
     }
-    else if (stride > ARCHI_POINTER_DATA_STRIDE_MAX)
+    else if (stride > ARCHI_POINTER_ATTR_MAX__DATA_STRIDE)
     {
-        ARCHI_ERROR_SET(ARCHI__ECONSTRAINT, "stride (%zu) is greater than ARCHI_POINTER_DATA_STRIDE_MAX",
+        ARCHI_ERROR_SET(ARCHI__ECONSTRAINT, "stride (%zu) is greater than ARCHI_POINTER_ATTR_MAX__DATA_STRIDE",
                 stride);
         return -1;
     }
@@ -74,9 +74,9 @@ archi_pointer_attr__pdata(
         ARCHI_ERROR_SET(ARCHI__ECONSTRAINT, "length * stride (%zu * %zu) overflows size_t", length, stride);
         return -1;
     }
-    else if (length * stride > ARCHI_POINTER_DATA_SIZE_MAX)
+    else if (length * stride > ARCHI_POINTER_ATTR_MAX__DATA_SIZE)
     {
-        ARCHI_ERROR_SET(ARCHI__ECONSTRAINT, "length * stride (%zu * %zu) is greater than ARCHI_POINTER_DATA_SIZE_MAX",
+        ARCHI_ERROR_SET(ARCHI__ECONSTRAINT, "length * stride (%zu * %zu) is greater than ARCHI_POINTER_ATTR_MAX__DATA_SIZE",
                 length, stride);
         return -1;
     }
@@ -92,30 +92,32 @@ archi_pointer_attr__pdata(
         return -1;
     }
 
-    // Compute bitwidth of stride
-    int stride_width = bitwidth_of(stride - 1);
+    // Compute width of the stride/alignment field
+    int stride_align_width = bitwidth_of(stride - 1);
 
-    // Compute the stride width attribute
-    archi_pointer_attr_t attr_stride_width = MASK(ARCHI_POINTER_ATTR_BITWIDTH__PDATA_SWIDTH) - stride_width;
-    attr_stride_width <<= ARCHI_POINTER_ATTR_OFFSET__PDATA_SWIDTH;
+    // Compute the primitive data shape split field
+    int shape_split = MASK(ARCHI_POINTER_ATTR_WIDTH__PDATA_SHAPE_SPLIT) - stride_align_width;
 
-    // Compute the stride/alignment attribute
-    archi_pointer_attr_t attr_stride_over_alignment = stride / alignment - 1;
-    attr_stride_over_alignment <<= ARCHI_POINTER_ATTR_OFFSET__PDATA_SOA(stride_width);
+    archi_pointer_attr_t field_shape_split = (archi_pointer_attr_t)shape_split
+        << ARCHI_POINTER_ATTR_OFFSET__PDATA_SHAPE_SPLIT;
+
+    // Compute the stride/alignment field
+    archi_pointer_attr_t field_stride_align = (stride / alignment - 1)
+        << ARCHI_POINTER_ATTR_OFFSET__PDATA_STRIDE_ALIGN(shape_split);
 
     // Compute the length attribute
-    archi_pointer_attr_t attr_length = length;
+    archi_pointer_attr_t field_length = length;
 
     // Compute the whole attributes
     ARCHI_ERROR_RESET();
-    return attr_stride_width | attr_stride_over_alignment | attr_length;
+    return field_shape_split | field_stride_align | field_length;
 }
 
 archi_pointer_attr_t
 archi_pointer_attr__cdata(
         archi_pointer_attr_t tag)
 {
-    if (tag > ARCHI_POINTER_DATA_TAG_MAX)
+    if (tag > ARCHI_POINTER_ATTR_MAX__DATA_TAG)
         return -1;
 
     return tag;
@@ -125,34 +127,32 @@ archi_pointer_attr_t
 archi_pointer_attr__func(
         archi_pointer_attr_t tag)
 {
-    if (tag > ARCHI_POINTER_FUNC_TAG_MAX)
+    if (tag > ARCHI_POINTER_ATTR_MAX__FUNC_TAG)
         return 0;
 
-    return ARCHI_POINTER_TYPE__FUNCTION | tag;
+    return ARCHI_POINTEE_MEM__FUNCTION | tag;
 }
 
 void
 archi_pointer_attr_unpk(
         archi_pointer_attr_t attr,
-        unsigned char *out_kind,
+        unsigned char *out_type,
         archi_pointer_attr_t *out_tag,
         size_t *out_length,
         size_t *out_stride,
         size_t *out_alignment)
 {
-    unsigned char kind;
+    unsigned char type = ARCHI_POINTEE_TYPE__UNSPEC;
 
     if (archi_pointer_attr_unpk__pdata(attr, out_length, out_stride, out_alignment, NULL))
-        kind = ARCHI_POINTEE__PDATA;
+        type = ARCHI_POINTEE_TYPE__PDATA;
     else if (archi_pointer_attr_unpk__cdata(attr, out_tag, NULL))
-        kind = ARCHI_POINTEE__CDATA;
+        type = ARCHI_POINTEE_TYPE__CDATA;
     else if (archi_pointer_attr_unpk__func(attr, out_tag, NULL))
-        kind = ARCHI_POINTEE__FUNC;
-    else // should not ever happen, listed for robustness
-        kind = ARCHI_POINTEE__UNSPEC;
+        type = ARCHI_POINTEE_TYPE__FUNC;
 
-    if (out_kind != NULL)
-        *out_kind = kind;
+    if (out_type != NULL)
+        *out_type = type;
 }
 
 bool
@@ -170,12 +170,12 @@ archi_pointer_attr_unpk__pdata(
         return false;
     }
 
-    // Extract stride attribute bit width
-    int stride_width = (attr >> ARCHI_POINTER_ATTR_OFFSET__PDATA_SWIDTH) &
-        MASK(ARCHI_POINTER_ATTR_BITWIDTH__PDATA_SWIDTH);
-    stride_width = MASK(ARCHI_POINTER_ATTR_BITWIDTH__PDATA_SWIDTH) - stride_width;
+    // Extract primitive data shape split
+    int shape_split = (attr >> ARCHI_POINTER_ATTR_OFFSET__PDATA_SHAPE_SPLIT) &
+        MASK(ARCHI_POINTER_ATTR_WIDTH__PDATA_SHAPE_SPLIT);
 
-    if (stride_width >= (int)ARCHI_POINTER_ATTR_BITWIDTH__PDATA_SHAPE)
+    int stride_align_width = ARCHI_POINTER_ATTR_WIDTH__PDATA_STRIDE_ALIGN(shape_split);
+    if (stride_align_width >= ARCHI_POINTER_ATTR_WIDTH__PDATA_SHAPE)
     {
         ARCHI_ERROR_SET(ARCHI__ECONSTRAINT, "pointer data type is complex (expected primitive)");
         return false;
@@ -185,23 +185,23 @@ archi_pointer_attr_unpk__pdata(
     if (out_length != NULL)
     {
         archi_pointer_attr_t length = attr &
-            MASK(ARCHI_POINTER_ATTR_BITWIDTH__PDATA_LENGTH(stride_width));
+            MASK(ARCHI_POINTER_ATTR_WIDTH__PDATA_LENGTH(shape_split));
 
         *out_length = length;
     }
 
     if ((out_stride != NULL) || (out_alignment != NULL))
     {
-        archi_pointer_attr_t stride_over_alignment = MASK(stride_width) &
-            (attr >> ARCHI_POINTER_ATTR_OFFSET__PDATA_SOA(stride_width));
+        archi_pointer_attr_t stride_align = MASK(stride_align_width) &
+            (attr >> ARCHI_POINTER_ATTR_OFFSET__PDATA_STRIDE_ALIGN(shape_split));
 
-        int alignment_log2 = stride_width - bitwidth_of(stride_over_alignment);
+        int alignment_log2 = stride_align_width - bitwidth_of(stride_align);
+
+        if (out_stride != NULL)
+            *out_stride = (size_t)(stride_align + 1) << alignment_log2;
 
         if (out_alignment != NULL)
             *out_alignment = (size_t)1 << alignment_log2;
-
-        if (out_stride != NULL)
-            *out_stride = (stride_over_alignment + 1) << alignment_log2;
     }
 
     ARCHI_ERROR_RESET();
@@ -223,7 +223,7 @@ archi_pointer_attr_unpk__cdata(
 
     // Check data type
     if (((attr >> ARCHI_POINTER_ATTR_OFFSET__DATA_TYPE) &
-                MASK(ARCHI_POINTER_ATTR_BITWIDTH__DATA_TYPE)) != 0)
+                MASK(ARCHI_POINTER_ATTR_WIDTH__DATA_TYPE)) != 0)
     {
         ARCHI_ERROR_SET(ARCHI__ECONSTRAINT, "pointer data type is primitive (expected complex)");
         return false;
@@ -232,7 +232,7 @@ archi_pointer_attr_unpk__cdata(
     // Write tag to output parameter
     if (out_tag != NULL)
     {
-        archi_pointer_attr_t tag = attr & MASK(ARCHI_POINTER_ATTR_BITWIDTH__DATA_TAG);
+        archi_pointer_attr_t tag = attr & MASK(ARCHI_POINTER_ATTR_WIDTH__DATA_TAG);
 
         *out_tag = tag;
     }
@@ -257,7 +257,7 @@ archi_pointer_attr_unpk__func(
     // Write attributes to output parameters
     if (out_tag != NULL)
     {
-        archi_pointer_attr_t tag = attr & MASK(ARCHI_POINTER_ATTR_BITWIDTH__FUNC_TAG);
+        archi_pointer_attr_t tag = attr & MASK(ARCHI_POINTER_ATTR_WIDTH__FUNC_TAG);
 
         *out_tag = tag;
     }
@@ -278,8 +278,8 @@ archi_pointer_attr_compatible(
 
     if (!attr_is_function && !sample_is_function)
     {
-         // quick check if attributes are the same (ignoring memory type)
-        if ((attr & ~ARCHI_POINTER_ATTR_MASK__TYPE) == (sample & ~ARCHI_POINTER_ATTR_MASK__TYPE))
+         // quick check if data attributes are the same (ignoring memory kind)
+        if ((attr & ~ARCHI_POINTER_ATTR_MASK__MEM_KIND) == (sample & ~ARCHI_POINTER_ATTR_MASK__MEM_KIND))
             goto compatible;
 
         bool attr_is_complex = archi_pointer_attr_unpk__cdata(attr, &attr_tag, NULL);
@@ -293,9 +293,9 @@ archi_pointer_attr_compatible(
             if (!attr_tag || !sample_tag) // wildcard
                 goto compatible;
 
-            int mask_width = bitwidth_of(sample_tag) + ARCHI_POINTER_ATTR_BITWIDTH__DATA_TAG_SEP;
-            if (mask_width > (int)ARCHI_POINTER_ATTR_BITWIDTH__DATA_TAG)
-                mask_width = ARCHI_POINTER_ATTR_BITWIDTH__DATA_TAG;
+            int mask_width = bitwidth_of(sample_tag) + ARCHI_POINTER_ATTR_WIDTH__DATA_TAG_SEP;
+            if (mask_width > (int)ARCHI_POINTER_ATTR_WIDTH__DATA_TAG)
+                mask_width = ARCHI_POINTER_ATTR_WIDTH__DATA_TAG;
 
             if (((attr_tag ^ sample_tag) & MASK(mask_width)) != 0)
             {

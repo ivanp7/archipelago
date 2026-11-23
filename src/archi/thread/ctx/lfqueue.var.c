@@ -77,7 +77,7 @@ ARCHI_CONTEXT_INIT_FUNC(archi_context_init__thread_lfqueue)
 
     *context_data = (archi_rcpointer_t){
         .ptr = lfqueue,
-        .attr = ARCHI_POINTER_TYPE__DATA_WRITABLE |
+        .attr = ARCHI_POINTEE_MEM__DATA_GENERIC |
             archi_pointer_attr__cdata(ARCHI_POINTER_DATA_TAG__THREAD_LFQUEUE),
     };
 
@@ -115,7 +115,7 @@ ARCHI_CONTEXT_EVAL_FUNC(archi_context_eval__thread_lfqueue)
 
         archi_rcpointer_t value = {
             .ptr = &capacity,
-            .attr = ARCHI_POINTER_TYPE__DATA_TRANSIENT |
+            .attr = ARCHI_POINTEE_MEM__DATA_TRANSIENT |
                 ARCHI_POINTER_ATTR__PDATA(1, size_t),
         };
 
@@ -133,7 +133,7 @@ ARCHI_CONTEXT_EVAL_FUNC(archi_context_eval__thread_lfqueue)
 
         archi_rcpointer_t value = {
             .ptr = &element_size,
-            .attr = ARCHI_POINTER_TYPE__DATA_TRANSIENT |
+            .attr = ARCHI_POINTEE_MEM__DATA_TRANSIENT |
                 ARCHI_POINTER_ATTR__PDATA(1, size_t),
         };
 

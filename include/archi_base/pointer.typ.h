@@ -68,7 +68,7 @@ typedef void (*archi_function_t)(void);
  * 3. function: identified by tag.
  *
  * Data pointer attributes for primitive data:
- * + bits (64; 62]   <2 bits>    -- memory type (equal to 0 or one of ARCHI_POINTER_TYPE__DATA_xxx constants);
+ * + bits (64; 62]   <2 bits>    -- memory type (equal to 0 or one of ARCHI_POINTEE_MEM__DATA_xxx constants);
  * + bits (62; 56]   <6 bits>    -- 63-N, where N is the bit width of the data stride/alignment attribute;
  * + bits (56; 56-N] <N bits>    -- (data stride) / (alignment requirement) - 1,
  *                                  with M leading zeros designating alignment (1 << M);
@@ -76,12 +76,12 @@ typedef void (*archi_function_t)(void);
  * where 0 <= M <= N < 56.
  *
  * Data pointer attributes for complex data:
- * + bits (64; 62]   <2 bits>    -- memory type (equal to one of ARCHI_POINTER_TYPE__DATA_xxx constants);
+ * + bits (64; 62]   <2 bits>    -- memory type (equal to one of ARCHI_POINTEE_MEM__DATA_xxx constants);
  * + bits (62; 59]   <3 bits>    -- zeroes: `000`;
  * + bits (59; 0]    <59 bits>   -- data tag.
  *
  * Function pointer attributes:
- * + bits (64; 62]   <2 bits>    -- equal to ARCHI_POINTER_TYPE__FUNCTION constant;
+ * + bits (64; 62]   <2 bits>    -- equal to ARCHI_POINTEE_MEM__FUNCTION constant;
  * + bits (62; 0]    <62 bits>   -- function type tag.
  */
 typedef uint64_t archi_pointer_attr_t;
@@ -96,9 +96,9 @@ typedef uint64_t archi_pointer_attr_t;
  *   - `fptr`: a generic pointer to a function.
  *
  * The used field depends on the pointer type stored in the attributes:
- *   * `fptr` is used when `ARCHI_POINTER_TYPE__FUNCTION` is set;
- *   * `ptr` is used when `ARCHI_POINTER_TYPE__DATA_WRITABLE` is set;
- *   * `ptr` or `cptr` is used when `ARCHI_POINTER_TYPE__DATA_TRANSIENT` is set;
+ *   * `fptr` is used when `ARCHI_POINTEE_MEM__FUNCTION` is set;
+ *   * `ptr` is used when `ARCHI_POINTEE_MEM__DATA_WRITABLE` is set;
+ *   * `ptr` or `cptr` is used when `ARCHI_POINTEE_MEM__DATA_TRANSIENT` is set;
  *   * otherwise, `cptr` is used.
  *
  * `attr` contains pointer attributes allowing to extract information about the pointee.

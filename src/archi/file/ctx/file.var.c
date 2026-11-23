@@ -121,7 +121,7 @@ ARCHI_CONTEXT_INIT_FUNC(archi_context_init__file)
 
     *context_data = (struct archi_context_data__file){
         .stream = {
-            .attr = ARCHI_POINTER_TYPE__DATA_WRITABLE |
+            .attr = ARCHI_POINTEE_MEM__DATA_GENERIC |
                 archi_pointer_attr__cdata(ARCHI_POINTER_DATA_TAG__FILE_STREAM),
         },
     };
@@ -186,7 +186,7 @@ ARCHI_CONTEXT_EVAL_FUNC(archi_context_eval__file)
 
             archi_rcpointer_t value = {
                 .ptr = &fd,
-                .attr = ARCHI_POINTER_TYPE__DATA_TRANSIENT |
+                .attr = ARCHI_POINTEE_MEM__DATA_TRANSIENT |
                     ARCHI_POINTER_ATTR__PDATA(1, archi_file_descriptor_t),
             };
 
@@ -206,7 +206,7 @@ ARCHI_CONTEXT_EVAL_FUNC(archi_context_eval__file)
 
             archi_rcpointer_t value = {
                 .ptr = &offset,
-                .attr = ARCHI_POINTER_TYPE__DATA_TRANSIENT |
+                .attr = ARCHI_POINTEE_MEM__DATA_TRANSIENT |
                     ARCHI_POINTER_ATTR__PDATA(1, long long),
             };
 
@@ -562,7 +562,7 @@ ARCHI_CONTEXT_INIT_FUNC(archi_context_init__file_std)
     *context_data = (struct archi_context_data__file){
         .stream = {
             .ptr = stream,
-            .attr = ARCHI_POINTER_TYPE__DATA_WRITABLE |
+            .attr = ARCHI_POINTEE_MEM__DATA_GENERIC |
                 archi_pointer_attr__cdata(ARCHI_POINTER_DATA_TAG__FILE_STREAM),
         },
         .fd = archi_file_stream_descriptor(stream),

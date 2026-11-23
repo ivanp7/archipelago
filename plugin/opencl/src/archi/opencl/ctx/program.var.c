@@ -124,7 +124,7 @@ ARCHI_CONTEXT_INIT_FUNC(archi_context_init__opencl_program_src)
 
     *context_data = (struct archi_context_data__opencl_program){
         .program = {
-            .attr = ARCHI_POINTER_TYPE__DATA_WRITABLE |
+            .attr = ARCHI_POINTEE_MEM__DATA_GENERIC |
                 archi_pointer_attr__cdata(ARCHI_POINTER_DATA_TAG__OPENCL_PROGRAM),
         },
     };
@@ -276,7 +276,7 @@ ARCHI_CONTEXT_INIT_FUNC(archi_context_init__opencl_program_bin)
 
     *context_data = (struct archi_context_data__opencl_program){
         .program = {
-            .attr = ARCHI_POINTER_TYPE__DATA_WRITABLE |
+            .attr = ARCHI_POINTEE_MEM__DATA_GENERIC |
                 archi_pointer_attr__cdata(ARCHI_POINTER_DATA_TAG__OPENCL_PROGRAM),
         },
     };
@@ -394,7 +394,7 @@ ARCHI_CONTEXT_EVAL_FUNC(archi_context_eval__opencl_program)
 
         archi_rcpointer_t value = {
             .ptr = context_data->platdev->platform_id,
-            .attr = ARCHI_POINTER_TYPE__DATA_READONLY |
+            .attr = ARCHI_POINTEE_MEM__DATA_GENERIC |
                 archi_pointer_attr__cdata(ARCHI_POINTER_DATA_TAG__OPENCL_PLATFORM_ID),
         };
 
@@ -414,7 +414,7 @@ ARCHI_CONTEXT_EVAL_FUNC(archi_context_eval__opencl_program)
         {
             value = (archi_rcpointer_t){
                 .ptr = context_data->platdev->device_id,
-                .attr = ARCHI_POINTER_TYPE__DATA_WRITABLE |
+                .attr = ARCHI_POINTEE_MEM__DATA_GENERIC |
                     ARCHI_POINTER_ATTR__PDATA(context_data->platdev->num_devices, cl_device_id),
                 .ref_count = ARCHI_CONTEXT_REF_COUNT,
             };
@@ -430,7 +430,7 @@ ARCHI_CONTEXT_EVAL_FUNC(archi_context_eval__opencl_program)
 
             value = (archi_rcpointer_t){
                 .ptr = context_data->platdev->device_id[slot.index[0]],
-                .attr = ARCHI_POINTER_TYPE__DATA_READONLY |
+                .attr = ARCHI_POINTEE_MEM__DATA_GENERIC |
                     archi_pointer_attr__cdata(ARCHI_POINTER_DATA_TAG__OPENCL_DEVICE_ID),
             };
         }
@@ -451,7 +451,7 @@ ARCHI_CONTEXT_EVAL_FUNC(archi_context_eval__opencl_program)
         {
             value = (archi_rcpointer_t){
                 .ptr = context_data->binaries.size,
-                .attr = ARCHI_POINTER_TYPE__DATA_WRITABLE |
+                .attr = ARCHI_POINTEE_MEM__DATA_GENERIC |
                     ARCHI_POINTER_ATTR__PDATA(context_data->platdev->num_devices, size_t),
                 .ref_count = ARCHI_CONTEXT_REF_COUNT,
             };
@@ -469,7 +469,7 @@ ARCHI_CONTEXT_EVAL_FUNC(archi_context_eval__opencl_program)
 
             value = (archi_rcpointer_t){
                 .ptr = &size,
-                .attr = ARCHI_POINTER_TYPE__DATA_TRANSIENT |
+                .attr = ARCHI_POINTEE_MEM__DATA_TRANSIENT |
                     ARCHI_POINTER_ATTR__PDATA(1, size_t),
             };
         }
@@ -490,7 +490,7 @@ ARCHI_CONTEXT_EVAL_FUNC(archi_context_eval__opencl_program)
         {
             value = (archi_rcpointer_t){
                 .ptr = context_data->binaries.content,
-                .attr = ARCHI_POINTER_TYPE__DATA_WRITABLE |
+                .attr = ARCHI_POINTEE_MEM__DATA_GENERIC |
                     ARCHI_POINTER_ATTR__PDATA(context_data->platdev->num_devices, unsigned char*),
                 .ref_count = ARCHI_CONTEXT_REF_COUNT,
             };
@@ -506,7 +506,7 @@ ARCHI_CONTEXT_EVAL_FUNC(archi_context_eval__opencl_program)
 
             value = (archi_rcpointer_t){
                 .ptr = context_data->binaries.content[slot.index[0]],
-                .attr = ARCHI_POINTER_TYPE__DATA_WRITABLE |
+                .attr = ARCHI_POINTEE_MEM__DATA_GENERIC |
                     ARCHI_POINTER_ATTR__PDATA(context_data->binaries.size[slot.index[0]], unsigned char),
                 .ref_count = ARCHI_CONTEXT_REF_COUNT,
             };

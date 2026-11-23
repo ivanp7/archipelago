@@ -205,7 +205,7 @@ archi_aggr_allocate(
 
     const archi_aggr_interface_t *interface_ptr = interface.cptr;
 
-    if (interface_ptr->metadata_tag > ARCHI_POINTER_DATA_TAG_MAX)
+    if (interface_ptr->metadata_tag > ARCHI_POINTER_ATTR_MAX__DATA_TAG)
     {
         ARCHI_ERROR_SET(ARCHI__ECONSTRAINT, "aggregate type metadata tag is invalid");
         return NULL;
@@ -314,7 +314,7 @@ archi_aggr_allocate(
         .metadata = metadata,
 
         .object = {
-            .attr = ARCHI_POINTER_TYPE__DATA_WRITABLE | attr,
+            .attr = ARCHI_POINTEE_MEM__DATA_WRITABLE | attr,
         },
 
         .layout = layout,

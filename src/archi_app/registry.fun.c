@@ -135,21 +135,21 @@ archi_print_pointer(
 
     if (archi_pointer_attr_unpk__pdata(value.attr, &length, &stride, &alignment, NULL))
     {
-        const char *mem_type;
+        const char *mem_kind;
 
-        if (ARCHI_POINTER_TO_READONLY_DATA(value.attr))
-            mem_type = "persistent/read-only";
+        if (ARCHI_POINTER_TO_TRANSIENT_DATA(value.attr))
+            mem_kind = "transient";
         else if (ARCHI_POINTER_TO_WRITABLE_DATA(value.attr))
-            mem_type = "persistent/writable";
+            mem_kind = "persistent/writable";
         else
-            mem_type = "transient";
+            mem_kind = "persistent/readable";
 
         archi_print_color(ARCHI_COLOR_FG_BRI_YELLOW);
         archi_print("data");
         archi_print_color(ARCHI_COLOR_RESET);
         archi_print(", ");
         archi_print_color(ARCHI_COLOR_FG_BRI_YELLOW);
-        archi_print_string(mem_type);
+        archi_print_string(mem_kind);
         archi_print_color(ARCHI_COLOR_RESET);
         archi_print(", length = ");
         archi_print_color(ARCHI_COLOR_FG_BRI_YELLOW);
@@ -168,21 +168,21 @@ archi_print_pointer(
     }
     else if (archi_pointer_attr_unpk__cdata(value.attr, &tag, NULL))
     {
-        const char *mem_type;
+        const char *mem_kind;
 
-        if (ARCHI_POINTER_TO_READONLY_DATA(value.attr))
-            mem_type = "persistent/read-only";
+        if (ARCHI_POINTER_TO_TRANSIENT_DATA(value.attr))
+            mem_kind = "transient";
         else if (ARCHI_POINTER_TO_WRITABLE_DATA(value.attr))
-            mem_type = "persistent/writable";
+            mem_kind = "persistent/writable";
         else
-            mem_type = "transient";
+            mem_kind = "persistent/readable";
 
         archi_print_color(ARCHI_COLOR_FG_BRI_YELLOW);
         archi_print("data");
         archi_print_color(ARCHI_COLOR_RESET);
         archi_print(", ");
         archi_print_color(ARCHI_COLOR_FG_BRI_YELLOW);
-        archi_print_string(mem_type);
+        archi_print_string(mem_kind);
         archi_print_color(ARCHI_COLOR_RESET);
         archi_print(", tag = ");
         archi_print_color(ARCHI_COLOR_FG_BRI_YELLOW);
@@ -615,7 +615,7 @@ ARCHI_APP_REGISTRY_OPERATION_FUNC(archi_app_registry_op__create_plist)
     // Prepare the interface
     archi_rcpointer_t interface = {
         .cptr = &archi_context_interface__plist,
-        .attr = ARCHI_POINTER_TYPE__DATA_READONLY |
+        .attr = ARCHI_POINTEE_MEM__DATA_GENERIC |
             archi_pointer_attr__cdata(ARCHI_POINTER_DATA_TAG__CONTEXT_INTERFACE),
     };
 
@@ -663,7 +663,7 @@ ARCHI_APP_REGISTRY_OPERATION_FUNC(archi_app_registry_op__create_ptr)
     // Prepare the interface
     archi_rcpointer_t interface = {
         .cptr = &archi_context_interface__pointer,
-        .attr = ARCHI_POINTER_TYPE__DATA_READONLY |
+        .attr = ARCHI_POINTEE_MEM__DATA_GENERIC |
             archi_pointer_attr__cdata(ARCHI_POINTER_DATA_TAG__CONTEXT_INTERFACE),
     };
 
@@ -721,7 +721,7 @@ ARCHI_APP_REGISTRY_OPERATION_FUNC(archi_app_registry_op__create_dptr_array)
     // Prepare the interface
     archi_rcpointer_t interface = {
         .cptr = &archi_context_interface__dptr_array,
-        .attr = ARCHI_POINTER_TYPE__DATA_READONLY |
+        .attr = ARCHI_POINTEE_MEM__DATA_GENERIC |
             archi_pointer_attr__cdata(ARCHI_POINTER_DATA_TAG__CONTEXT_INTERFACE),
     };
 
@@ -731,7 +731,7 @@ ARCHI_APP_REGISTRY_OPERATION_FUNC(archi_app_registry_op__create_dptr_array)
             .n.key = "length",
             .n.value = {
                 .cptr = &op_data->length,
-                .attr = ARCHI_POINTER_TYPE__DATA_READONLY |
+                .attr = ARCHI_POINTEE_MEM__DATA_GENERIC |
                     ARCHI_POINTER_ATTR__PDATA(1, size_t),
             },
             .ref_count = ref_count,

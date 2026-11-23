@@ -120,7 +120,7 @@ archi_context_registry_get(
         .function = archi_context_callback__getter,
         .data = {
             .ptr = &context,
-            .attr = ARCHI_POINTER_TYPE__DATA_TRANSIENT | ARCHI_POINTER_ATTR__PDATA(1, archi_rcpointer_t*),
+            .attr = ARCHI_POINTEE_MEM__DATA_TRANSIENT | ARCHI_POINTER_ATTR__PDATA(1, archi_rcpointer_t*),
         },
     };
 
@@ -209,7 +209,7 @@ archi_context_registry_insert(
     // Insert the context
     archi_rcpointer_t context_ptr = {
         .ptr = context,
-        .attr = ARCHI_POINTER_TYPE__DATA_WRITABLE |
+        .attr = ARCHI_POINTEE_MEM__DATA_GENERIC |
             archi_pointer_attr__cdata(ARCHI_POINTER_DATA_TAG__CONTEXT),
         .ref_count = archi_context_data(context).ref_count,
     };
@@ -321,7 +321,7 @@ archi_context_registry_create_from(
         .function = archi_context_callback__getter,
         .data = {
             .ptr = &interface,
-            .attr = ARCHI_POINTER_TYPE__DATA_TRANSIENT | ARCHI_POINTER_ATTR__PDATA(1, archi_rcpointer_t*),
+            .attr = ARCHI_POINTEE_MEM__DATA_TRANSIENT | ARCHI_POINTER_ATTR__PDATA(1, archi_rcpointer_t*),
         },
     };
 

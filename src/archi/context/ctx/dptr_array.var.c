@@ -62,7 +62,7 @@ ARCHI_CONTEXT_INIT_FUNC(archi_context_init__dptr_array)
     }
 
     // Check validness of parameters
-    if (length >= (ARCHI_POINTER_DATA_SIZE_MAX + 1) / sizeof(archi_rcpointer_t))
+    if (length >= (ARCHI_POINTER_ATTR_MAX__DATA_SIZE + 1) / sizeof(archi_rcpointer_t))
     {
         ARCHI_ERROR_SET(ARCHI__ECONSTRAINT, "array length (%zu) is too big", length);
         return NULL;
@@ -78,7 +78,7 @@ ARCHI_CONTEXT_INIT_FUNC(archi_context_init__dptr_array)
 
     *context_data = (struct archi_context_data__dptr_array){
         .array = {
-            .attr = ARCHI_POINTER_TYPE__DATA_WRITABLE |
+            .attr = ARCHI_POINTEE_MEM__DATA_WRITABLE |
                 archi_pointer_attr__cdata(ARCHI_POINTER_DATA_TAG__DPTR_ARRAY),
         },
     };
@@ -178,7 +178,7 @@ ARCHI_CONTEXT_EVAL_FUNC(archi_context_eval__dptr_array)
 
         archi_rcpointer_t value = {
             .ptr = &array->ptr[index],
-            .attr = ARCHI_POINTER_TYPE__DATA_WRITABLE |
+            .attr = ARCHI_POINTEE_MEM__DATA_WRITABLE |
                 ARCHI_POINTER_ATTR__PDATA(1, archi_data_t),
             .ref_count = ARCHI_CONTEXT_REF_COUNT,
         };
@@ -206,7 +206,7 @@ ARCHI_CONTEXT_EVAL_FUNC(archi_context_eval__dptr_array)
 
         archi_rcpointer_t value = {
             .ptr = &array->ptr[index],
-            .attr = ARCHI_POINTER_TYPE__DATA_WRITABLE |
+            .attr = ARCHI_POINTEE_MEM__DATA_WRITABLE |
                 ARCHI_POINTER_ATTR__PDATA(array->length - index, archi_data_t),
             .ref_count = ARCHI_CONTEXT_REF_COUNT,
         };
@@ -225,7 +225,7 @@ ARCHI_CONTEXT_EVAL_FUNC(archi_context_eval__dptr_array)
 
         archi_rcpointer_t value = {
             .ptr = &length,
-            .attr = ARCHI_POINTER_TYPE__DATA_TRANSIENT |
+            .attr = ARCHI_POINTEE_MEM__DATA_TRANSIENT |
                 ARCHI_POINTER_ATTR__PDATA(1, size_t),
         };
 
@@ -290,7 +290,7 @@ ARCHI_CONTEXT_SET_FUNC(archi_context_set__dptr_array)
         }
 
         size_t new_length = *(size_t*)value.ptr;
-        if (new_length >= (ARCHI_POINTER_DATA_SIZE_MAX + 1) / sizeof(archi_rcpointer_t))
+        if (new_length >= (ARCHI_POINTER_ATTR_MAX__DATA_SIZE + 1) / sizeof(archi_rcpointer_t))
         {
             ARCHI_ERROR_SET(ARCHI__ECONSTRAINT, "array length (%zu) is too big", new_length);
             return;

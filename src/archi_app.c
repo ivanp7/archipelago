@@ -134,7 +134,7 @@ struct {
 
 #define INTERFACE_PTR(interface_var)    {                                       \
     .cptr = &interface_var,                                                     \
-    .attr = ARCHI_POINTER_TYPE__DATA_READONLY |                                 \
+    .attr = ARCHI_POINTEE_MEM__DATA_GENERIC |                                 \
         archi_pointer_attr__cdata(ARCHI_POINTER_DATA_TAG__CONTEXT_INTERFACE),   \
 }
 
@@ -585,7 +585,7 @@ create_context_registry(void)
             .n.key = "params",
             .n.value = {
                 .ptr = &hashmap_params,
-                .attr = ARCHI_POINTER_TYPE__DATA_TRANSIENT |
+                .attr = ARCHI_POINTEE_MEM__DATA_TRANSIENT |
                     ARCHI_POINTER_ATTR__PDATA(1, archi_hashmap_alloc_params_t),
             },
         },
@@ -642,7 +642,7 @@ create_builtin_contexts(void)
                 .n.key = "id",
                 .n.value = {
                     .ptr = &stream_id,
-                    .attr = ARCHI_POINTER_TYPE__DATA_TRANSIENT |
+                    .attr = ARCHI_POINTEE_MEM__DATA_TRANSIENT |
                         ARCHI_POINTER_ATTR__PDATA(1, int),
                 },
             },
@@ -773,7 +773,7 @@ map_input_file(
             .n.key = "fd",
             .n.value = {
                 .ptr = &fd,
-                .attr = ARCHI_POINTER_TYPE__DATA_TRANSIENT |
+                .attr = ARCHI_POINTEE_MEM__DATA_TRANSIENT |
                     ARCHI_POINTER_ATTR__PDATA(1, archi_file_descriptor_t),
             },
         },
@@ -781,7 +781,7 @@ map_input_file(
             .n.key = "params",
             .n.value = {
                 .ptr = &map_params,
-                .attr = ARCHI_POINTER_TYPE__DATA_TRANSIENT |
+                .attr = ARCHI_POINTEE_MEM__DATA_TRANSIENT |
                     ARCHI_POINTER_ATTR__PDATA(1, archi_file_map_params_t),
             },
         },
@@ -1018,7 +1018,7 @@ initialize_signal_management(void)
                 .n.key = "params",
                 .n.value = {
                     .ptr = &hashmap_params,
-                    .attr = ARCHI_POINTER_TYPE__DATA_TRANSIENT |
+                    .attr = ARCHI_POINTEE_MEM__DATA_TRANSIENT |
                         ARCHI_POINTER_ATTR__PDATA(1, archi_hashmap_alloc_params_t),
                 },
             },

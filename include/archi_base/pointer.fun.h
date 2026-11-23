@@ -30,8 +30,8 @@
 #include "archi_base/pointer.typ.h"
 #include "archi_base/error.typ.h"
 
-#include <stdbool.h>
 #include <stdalign.h>
+#include <stdbool.h>
 
 
 /*****************************************************************************/
@@ -41,11 +41,11 @@
 /**
  * @brief Compute pointer attributes (all bits except memory type) for a primitive data type.
  *
- * Data size (length * stride) must be not greater than ARCHI_POINTER_DATA_SIZE_MAX.
+ * Data size (length * stride) must be not greater than ARCHI_POINTER_ATTR_MAX__DATA_SIZE.
  * Stride must be non-zero. Alignment requirement must be a power of two.
  * Stride must be divisible by alignment requirement.
  *
- * @return Primitive data pointer attributes, or (archi_pointer_attr_t)-1 on error.
+ * @return Primitive data pointer attributes, or -1 on error.
  */
 archi_pointer_attr_t
 archi_pointer_attr__pdata(
@@ -64,9 +64,9 @@ archi_pointer_attr__pdata(
 /**
  * @brief Compute pointer attributes (all bits except pointer type) for a complex data type.
  *
- * Data type tag must not be greater than ARCHI_POINTER_DATA_TAG_MAX.
+ * Data type tag must not be greater than ARCHI_POINTER_ATTR_MAX__DATA_TAG.
  *
- * @return Complex data pointer attributes, or (archi_pointer_attr_t)-1 on error.
+ * @return Complex data pointer attributes, or -1 on error.
  */
 archi_pointer_attr_t
 archi_pointer_attr__cdata(
@@ -76,7 +76,7 @@ archi_pointer_attr__cdata(
 /**
  * @brief Compute function pointer attributes.
  *
- * Function type tag must not be greater than ARCHI_POINTER_FUNC_TAG_MAX.
+ * Function type tag must not be greater than ARCHI_POINTER_ATTR_MAX__FUNC_TAG.
  *
  * @return Function pointer attributes, or 0 on error.
  */
@@ -88,12 +88,12 @@ archi_pointer_attr__func(
 /**
  * @brief Unpack pointer attributes.
  *
- * This function never fails, because attributes are always valid -- there are forbidden representations.
+ * This function never fails because there are no invalid representations of pointer attributes.
  */
 void
 archi_pointer_attr_unpk(
         archi_pointer_attr_t attr, ///< [in] Pointer attributes.
-        unsigned char *out_kind, ///< [out] Kind of the pointee.
+        unsigned char *out_type, ///< [out] Type of the pointee.
         archi_pointer_attr_t *out_tag, ///< [out] Type tag.
         size_t *out_length,   ///< [out] Data length.
         size_t *out_stride,   ///< [out] Data stride.

@@ -520,7 +520,7 @@ ARCHI_AGGR_GET_FUNC(archi_aggr_get__generic)
     ARCHI_ERROR_RESET();
     return (archi_pointer_t){
         .ptr = (char*)object + walk_data.offset,
-        .attr = ARCHI_POINTER_TYPE__DATA_WRITABLE | attr,
+        .attr = ARCHI_POINTEE_MEM__DATA_WRITABLE | attr,
     };
 }
 
@@ -606,10 +606,10 @@ ARCHI_AGGR_SET_FUNC(archi_aggr_set__generic)
 
                 switch (pointer_type->pointee_kind)
                 {
-                    case ARCHI_POINTEE__UNSPEC:
+                    case ARCHI_POINTEE_TYPE__UNSPEC:
                         break;
 
-                    case ARCHI_POINTEE__PDATA:
+                    case ARCHI_POINTEE_TYPE__PDATA:
                         attr = archi_pointer_attr__pdata(pointer_type->pointee_layout.length,
                                 pointer_type->pointee_layout.base.size, pointer_type->pointee_layout.base.alignment,
                                 ARCHI_ERROR_PARAM);
@@ -619,7 +619,7 @@ ARCHI_AGGR_SET_FUNC(archi_aggr_set__generic)
 
                         break;
 
-                    case ARCHI_POINTEE__CDATA:
+                    case ARCHI_POINTEE_TYPE__CDATA:
                         attr = archi_pointer_attr__cdata(pointer_type->pointee_tag);
 
                         if (attr == (archi_pointer_attr_t)-1)
@@ -630,7 +630,7 @@ ARCHI_AGGR_SET_FUNC(archi_aggr_set__generic)
 
                         break;
 
-                    case ARCHI_POINTEE__FUNC:
+                    case ARCHI_POINTEE_TYPE__FUNC:
                         attr = archi_pointer_attr__func(pointer_type->pointee_tag);
 
                         if (attr == 0)
@@ -647,7 +647,7 @@ ARCHI_AGGR_SET_FUNC(archi_aggr_set__generic)
                         return;
                 }
 
-                if ((pointer_type->pointee_kind != ARCHI_POINTEE__UNSPEC) &&
+                if ((pointer_type->pointee_kind != ARCHI_POINTEE_TYPE__UNSPEC) &&
                         !archi_pointer_attr_compatible(value.attr, attr, &error))
                 {
                     ARCHI_ERROR_SET(error.code, "assigned value is not compatible with the specified submember: %s", error.message);

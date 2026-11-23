@@ -7,11 +7,11 @@
 TEST(ARCHI_POINTER_ATTR_LIMITS)
 {
     // Pointer attributes limits
-    ASSERT_EQ(ARCHI_POINTER_DATA_SIZE_MAX,      0x00FFFFFFFFFFFFFF, size_t, "%zu");
-    ASSERT_EQ(ARCHI_POINTER_DATA_STRIDE_MAX,    0x0080000000000000, size_t, "%zu");
-    ASSERT_EQ(ARCHI_POINTER_DATA_ALIGNMENT_MAX, 0x0080000000000000, size_t, "%zu");
-    ASSERT_EQ(ARCHI_POINTER_DATA_TAG_MAX,       0x07FFFFFFFFFFFFFF, size_t, "%zu");
-    ASSERT_EQ(ARCHI_POINTER_FUNC_TAG_MAX,       0x3FFFFFFFFFFFFFFF, size_t, "%zu");
+    ASSERT_EQ(ARCHI_POINTER_ATTR_MAX__DATA_SIZE,      0x00FFFFFFFFFFFFFF, size_t, "%zu");
+    ASSERT_EQ(ARCHI_POINTER_ATTR_MAX__DATA_STRIDE,    0x0080000000000000, size_t, "%zu");
+    ASSERT_EQ(ARCHI_POINTER_ATTR_MAX__DATA_ALIGNMENT, 0x0080000000000000, size_t, "%zu");
+    ASSERT_EQ(ARCHI_POINTER_ATTR_MAX__DATA_TAG,       0x07FFFFFFFFFFFFFF, size_t, "%zu");
+    ASSERT_EQ(ARCHI_POINTER_ATTR_MAX__FUNC_TAG,       0x3FFFFFFFFFFFFFFF, size_t, "%zu");
 }
 
 TEST(archi_pointer_attr__pdata)
@@ -53,72 +53,72 @@ TEST(archi_pointer_attr__pdata)
     ASSERT_EQ(attr, 0x3F00000000000001, archi_pointer_attr_t, "%zX");
 
     ARCHI_ERROR_VAR_UNSET(&error);
-    attr = archi_pointer_attr__pdata(ARCHI_POINTER_DATA_SIZE_MAX - 1, 1, 1, &error);
+    attr = archi_pointer_attr__pdata(ARCHI_POINTER_ATTR_MAX__DATA_SIZE - 1, 1, 1, &error);
     ASSERT_EQ(error.code, 0, archi_error_code_t, "%i");
     ASSERT_EQ(attr, ((archi_pointer_attr_t)1 << 62) - 2, archi_pointer_attr_t, "%zX");
 
     ARCHI_ERROR_VAR_UNSET(&error);
-    attr = archi_pointer_attr__pdata(ARCHI_POINTER_DATA_SIZE_MAX, 1, 1, &error);
+    attr = archi_pointer_attr__pdata(ARCHI_POINTER_ATTR_MAX__DATA_SIZE, 1, 1, &error);
     ASSERT_EQ(error.code, 0, archi_error_code_t, "%i");
     ASSERT_EQ(attr, ((archi_pointer_attr_t)1 << 62) - 1, archi_pointer_attr_t, "%zX");
 
     ARCHI_ERROR_VAR_UNSET(&error);
-    attr = archi_pointer_attr__pdata(ARCHI_POINTER_DATA_SIZE_MAX + 1, 1, 1, &error);
+    attr = archi_pointer_attr__pdata(ARCHI_POINTER_ATTR_MAX__DATA_SIZE + 1, 1, 1, &error);
     ASSERT_NE(error.code, 0, archi_error_code_t, "%i");
     ASSERT_EQ(attr, -1, archi_pointer_attr_t, "%zX");
 
     ARCHI_ERROR_VAR_UNSET(&error);
-    attr = archi_pointer_attr__pdata(0, ARCHI_POINTER_DATA_STRIDE_MAX, 1, &error);
+    attr = archi_pointer_attr__pdata(0, ARCHI_POINTER_ATTR_MAX__DATA_STRIDE, 1, &error);
     ASSERT_EQ(error.code, 0, archi_error_code_t, "%i");
     ASSERT_EQ(attr, 0x8FFFFFFFFFFFFFE, archi_pointer_attr_t, "%zX");
     ASSERT_TRUE(archi_pointer_attr_unpk__pdata(attr, &length, &stride, &alignment, &error));
     ASSERT_EQ(error.code, 0, archi_error_code_t, "%i");
     ASSERT_EQ(length, 0, size_t, "%zu");
-    ASSERT_EQ(stride, ARCHI_POINTER_DATA_STRIDE_MAX, size_t, "%zu");
+    ASSERT_EQ(stride, ARCHI_POINTER_ATTR_MAX__DATA_STRIDE, size_t, "%zu");
     ASSERT_EQ(alignment, 1, size_t, "%zu");
 
     ARCHI_ERROR_VAR_UNSET(&error);
-    attr = archi_pointer_attr__pdata(1, ARCHI_POINTER_DATA_STRIDE_MAX, 1, &error);
+    attr = archi_pointer_attr__pdata(1, ARCHI_POINTER_ATTR_MAX__DATA_STRIDE, 1, &error);
     ASSERT_EQ(error.code, 0, archi_error_code_t, "%i");
     ASSERT_EQ(attr, 0x8FFFFFFFFFFFFFF, archi_pointer_attr_t, "%zX");
     ASSERT_TRUE(archi_pointer_attr_unpk__pdata(attr, &length, &stride, &alignment, &error));
     ASSERT_EQ(error.code, 0, archi_error_code_t, "%i");
     ASSERT_EQ(length, 1, size_t, "%zu");
-    ASSERT_EQ(stride, ARCHI_POINTER_DATA_STRIDE_MAX, size_t, "%zu");
+    ASSERT_EQ(stride, ARCHI_POINTER_ATTR_MAX__DATA_STRIDE, size_t, "%zu");
     ASSERT_EQ(alignment, 1, size_t, "%zu");
 
     ARCHI_ERROR_VAR_UNSET(&error);
-    attr = archi_pointer_attr__pdata(2, ARCHI_POINTER_DATA_STRIDE_MAX, 1, &error);
+    attr = archi_pointer_attr__pdata(2, ARCHI_POINTER_ATTR_MAX__DATA_STRIDE, 1, &error);
     ASSERT_NE(error.code, 0, archi_error_code_t, "%i");
     ASSERT_EQ(attr, -1, archi_pointer_attr_t, "%zX");
 
     ARCHI_ERROR_VAR_UNSET(&error);
-    attr = archi_pointer_attr__pdata(0, ARCHI_POINTER_DATA_STRIDE_MAX + 1, 1, &error);
+    attr = archi_pointer_attr__pdata(0, ARCHI_POINTER_ATTR_MAX__DATA_STRIDE + 1, 1, &error);
     ASSERT_NE(error.code, 0, archi_error_code_t, "%i");
     ASSERT_EQ(attr, -1, archi_pointer_attr_t, "%zX");
 
     ARCHI_ERROR_VAR_UNSET(&error);
-    attr = archi_pointer_attr__pdata(0, ARCHI_POINTER_DATA_STRIDE_MAX, ARCHI_POINTER_DATA_ALIGNMENT_MAX, &error);
+    attr = archi_pointer_attr__pdata(0, ARCHI_POINTER_ATTR_MAX__DATA_STRIDE, ARCHI_POINTER_ATTR_MAX__DATA_ALIGNMENT, &error);
     ASSERT_EQ(error.code, 0, archi_error_code_t, "%i");
     ASSERT_EQ(attr, 0x800000000000000, archi_pointer_attr_t, "%zX");
     ASSERT_TRUE(archi_pointer_attr_unpk__pdata(attr, &length, &stride, &alignment, &error));
     ASSERT_EQ(error.code, 0, archi_error_code_t, "%i");
     ASSERT_EQ(length, 0, size_t, "%zu");
-    ASSERT_EQ(stride, ARCHI_POINTER_DATA_STRIDE_MAX, size_t, "%zu");
-    ASSERT_EQ(alignment, ARCHI_POINTER_DATA_ALIGNMENT_MAX, size_t, "%zu");
+    ASSERT_EQ(stride, ARCHI_POINTER_ATTR_MAX__DATA_STRIDE, size_t, "%zu");
+    ASSERT_EQ(alignment, ARCHI_POINTER_ATTR_MAX__DATA_ALIGNMENT, size_t, "%zu");
 
     ARCHI_ERROR_VAR_UNSET(&error);
-    attr = archi_pointer_attr__pdata(1, ARCHI_POINTER_DATA_STRIDE_MAX, ARCHI_POINTER_DATA_ALIGNMENT_MAX, &error);
+    attr = archi_pointer_attr__pdata(1, ARCHI_POINTER_ATTR_MAX__DATA_STRIDE, ARCHI_POINTER_ATTR_MAX__DATA_ALIGNMENT, &error);
     ASSERT_EQ(error.code, 0, archi_error_code_t, "%i");
     ASSERT_EQ(attr, 0x800000000000001, archi_pointer_attr_t, "%zX");
     ASSERT_TRUE(archi_pointer_attr_unpk__pdata(attr, &length, &stride, &alignment, &error));
     ASSERT_EQ(error.code, 0, archi_error_code_t, "%i");
     ASSERT_EQ(length, 1, size_t, "%zu");
-    ASSERT_EQ(stride, ARCHI_POINTER_DATA_STRIDE_MAX, size_t, "%zu");
-    ASSERT_EQ(alignment, ARCHI_POINTER_DATA_ALIGNMENT_MAX, size_t, "%zu");
+    ASSERT_EQ(stride, ARCHI_POINTER_ATTR_MAX__DATA_STRIDE, size_t, "%zu");
+    ASSERT_EQ(alignment, ARCHI_POINTER_ATTR_MAX__DATA_ALIGNMENT, size_t, "%zu");
 
     ARCHI_ERROR_VAR_UNSET(&error);
-    attr = archi_pointer_attr__pdata(2, ARCHI_POINTER_DATA_STRIDE_MAX, ARCHI_POINTER_DATA_ALIGNMENT_MAX, &error);
+    attr = archi_pointer_attr__pdata(2, ARCHI_POINTER_ATTR_MAX__DATA_STRIDE, ARCHI_POINTER_ATTR_MAX__DATA_ALIGNMENT, &error);
     ASSERT_NE(error.code, 0, archi_error_code_t, "%i");
     ASSERT_EQ(attr, -1, archi_pointer_attr_t, "%zX");
 
@@ -137,7 +137,7 @@ TEST(archi_pointer_attr__pdata)
             else
             {
                 ASSERT_EQ(error.code, 0, archi_error_code_t, "%i");
-                ASSERT_EQ(attr & ARCHI_POINTER_ATTR_MASK__TYPE, 0, archi_pointer_attr_t, "%zX");
+                ASSERT_EQ(attr & ARCHI_POINTER_ATTR_MASK__MEM_KIND, 0, archi_pointer_attr_t, "%zX");
                 ASSERT_TRUE(archi_pointer_attr_unpk__pdata(attr, &length, &stride, &alignment, &error));
                 ASSERT_EQ(error.code, 0, archi_error_code_t, "%i");
                 ASSERT_EQ(length, 16, size_t, "%zu");
@@ -170,21 +170,21 @@ TEST(archi_pointer_attr__cdata)
     ASSERT_EQ(error.code, 0, archi_error_code_t, "%i");
     ASSERT_EQ(tag, 1, archi_pointer_attr_t, "%zX");
 
-    attr = archi_pointer_attr__cdata(ARCHI_POINTER_DATA_TAG_MAX - 1);
-    ASSERT_EQ(attr, ARCHI_POINTER_DATA_TAG_MAX - 1, archi_pointer_attr_t, "%zX");
+    attr = archi_pointer_attr__cdata(ARCHI_POINTER_ATTR_MAX__DATA_TAG - 1);
+    ASSERT_EQ(attr, ARCHI_POINTER_ATTR_MAX__DATA_TAG - 1, archi_pointer_attr_t, "%zX");
     ARCHI_ERROR_VAR_UNSET(&error);
     ASSERT_TRUE(archi_pointer_attr_unpk__cdata(attr, &tag, &error));
     ASSERT_EQ(error.code, 0, archi_error_code_t, "%i");
-    ASSERT_EQ(tag, ARCHI_POINTER_DATA_TAG_MAX - 1, archi_pointer_attr_t, "%zX");
+    ASSERT_EQ(tag, ARCHI_POINTER_ATTR_MAX__DATA_TAG - 1, archi_pointer_attr_t, "%zX");
 
-    attr = archi_pointer_attr__cdata(ARCHI_POINTER_DATA_TAG_MAX);
-    ASSERT_EQ(attr, ARCHI_POINTER_DATA_TAG_MAX, archi_pointer_attr_t, "%zX");
+    attr = archi_pointer_attr__cdata(ARCHI_POINTER_ATTR_MAX__DATA_TAG);
+    ASSERT_EQ(attr, ARCHI_POINTER_ATTR_MAX__DATA_TAG, archi_pointer_attr_t, "%zX");
     ARCHI_ERROR_VAR_UNSET(&error);
     ASSERT_TRUE(archi_pointer_attr_unpk__cdata(attr, &tag, &error));
     ASSERT_EQ(error.code, 0, archi_error_code_t, "%i");
-    ASSERT_EQ(tag, ARCHI_POINTER_DATA_TAG_MAX, archi_pointer_attr_t, "%zX");
+    ASSERT_EQ(tag, ARCHI_POINTER_ATTR_MAX__DATA_TAG, archi_pointer_attr_t, "%zX");
 
-    attr = archi_pointer_attr__cdata(ARCHI_POINTER_DATA_TAG_MAX + 1);
+    attr = archi_pointer_attr__cdata(ARCHI_POINTER_ATTR_MAX__DATA_TAG + 1);
     ASSERT_EQ(attr, -1, archi_pointer_attr_t, "%zX");
 }
 
@@ -210,25 +210,25 @@ TEST(archi_pointer_attr__func)
     ASSERT_EQ(error.code, 0, archi_error_code_t, "%i");
     ASSERT_EQ(tag, 1, archi_pointer_attr_t, "%zX");
 
-    attr = archi_pointer_attr__func(ARCHI_POINTER_FUNC_TAG_MAX - 1);
+    attr = archi_pointer_attr__func(ARCHI_POINTER_ATTR_MAX__FUNC_TAG - 1);
     ASSERT_EQ(attr, 0xFFFFFFFFFFFFFFFE, archi_pointer_attr_t, "%zX");
     ARCHI_ERROR_VAR_UNSET(&error);
     ASSERT_TRUE(archi_pointer_attr_unpk__func(attr, &tag, &error));
     ASSERT_EQ(error.code, 0, archi_error_code_t, "%i");
-    ASSERT_EQ(tag, ARCHI_POINTER_FUNC_TAG_MAX - 1, archi_pointer_attr_t, "%zX");
+    ASSERT_EQ(tag, ARCHI_POINTER_ATTR_MAX__FUNC_TAG - 1, archi_pointer_attr_t, "%zX");
 
-    attr = archi_pointer_attr__func(ARCHI_POINTER_FUNC_TAG_MAX);
+    attr = archi_pointer_attr__func(ARCHI_POINTER_ATTR_MAX__FUNC_TAG);
     ASSERT_EQ(attr, 0xFFFFFFFFFFFFFFFF, archi_pointer_attr_t, "%zX");
     ARCHI_ERROR_VAR_UNSET(&error);
     ASSERT_TRUE(archi_pointer_attr_unpk__func(attr, &tag, &error));
     ASSERT_EQ(error.code, 0, archi_error_code_t, "%i");
-    ASSERT_EQ(tag, ARCHI_POINTER_FUNC_TAG_MAX, archi_pointer_attr_t, "%zX");
+    ASSERT_EQ(tag, ARCHI_POINTER_ATTR_MAX__FUNC_TAG, archi_pointer_attr_t, "%zX");
 
-    attr = archi_pointer_attr__func(ARCHI_POINTER_FUNC_TAG_MAX + 1);
+    attr = archi_pointer_attr__func(ARCHI_POINTER_ATTR_MAX__FUNC_TAG + 1);
     ASSERT_EQ(attr, 0, archi_pointer_attr_t, "%zX");
 
     ASSERT_EQ(archi_pointer_attr__func(0),
-            ~archi_pointer_attr__pdata(ARCHI_POINTER_DATA_SIZE_MAX, 1, 1, NULL),
+            ~archi_pointer_attr__pdata(ARCHI_POINTER_ATTR_MAX__DATA_SIZE, 1, 1, NULL),
             archi_pointer_attr_t, "%zX");
 }
 

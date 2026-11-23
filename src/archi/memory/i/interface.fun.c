@@ -216,12 +216,12 @@ archi_memory_allocate(
 
     const archi_memory_interface_t *interface_ptr = interface.cptr;
 
-    if (interface_ptr->alloc_data_tag > ARCHI_POINTER_DATA_TAG_MAX)
+    if (interface_ptr->alloc_data_tag > ARCHI_POINTER_ATTR_MAX__DATA_TAG)
     {
         ARCHI_ERROR_SET(ARCHI__ECONSTRAINT, "memory allocation data tag is invalid");
         return NULL;
     }
-    else if (interface_ptr->map_data_tag > ARCHI_POINTER_DATA_TAG_MAX)
+    else if (interface_ptr->map_data_tag > ARCHI_POINTER_ATTR_MAX__DATA_TAG)
     {
         ARCHI_ERROR_SET(ARCHI__ECONSTRAINT, "memory mapping data tag is invalid");
         return NULL;
@@ -290,7 +290,7 @@ archi_memory_allocate(
     memory->allocation = (archi_rcpointer_t){
         .ptr = alloc_info.allocation.ptr,
         .attr = (alloc_info.allocation.writable ?
-                ARCHI_POINTER_TYPE__DATA_WRITABLE : ARCHI_POINTER_TYPE__DATA_READONLY) |
+                ARCHI_POINTEE_MEM__DATA_WRITABLE : ARCHI_POINTEE_MEM__DATA_GENERIC) |
             (alloc_info.allocation.tag ?
              archi_pointer_attr__cdata(alloc_info.allocation.tag) : attr),
         .ref_count = ref_count,
@@ -509,7 +509,7 @@ archi_memory_map(
     mapping->pointer = (archi_rcpointer_t){
         .ptr = map_info.mapping.ptr,
         .attr = (map_info.mapping.writable ?
-                ARCHI_POINTER_TYPE__DATA_WRITABLE : ARCHI_POINTER_TYPE__DATA_READONLY) |
+                ARCHI_POINTEE_MEM__DATA_WRITABLE : ARCHI_POINTEE_MEM__DATA_GENERIC) |
             archi_pointer_attr__pdata(length, memory->stride, memory->alignment, NULL),
         .ref_count = ref_count,
     };

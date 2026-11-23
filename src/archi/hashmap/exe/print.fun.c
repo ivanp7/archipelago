@@ -58,31 +58,31 @@ ARCHI_HASHMAP_TRAV_KV_FUNC(archi_dexgraph_op__hashmap_print_traverse)
 
     if (archi_pointer_attr_unpk__pdata(value.attr, &length, &stride, &alignment, NULL))
     {
-        const char *mem_type;
+        const char *mem_kind;
 
-        if (ARCHI_POINTER_TO_READONLY_DATA(value.attr))
-            mem_type = "persistent/read-only";
+        if (ARCHI_POINTER_TO_TRANSIENT_DATA(value.attr))
+            mem_kind = "transient";
         else if (ARCHI_POINTER_TO_WRITABLE_DATA(value.attr))
-            mem_type = "persistent/writable";
+            mem_kind = "persistent/writable";
         else
-            mem_type = "transient";
+            mem_kind = "persistent/readable";
 
         printf("data, %s, length = %zu, stride = %zu, alignment = %#zx",
-                mem_type, length, stride, alignment);
+                mem_kind, length, stride, alignment);
     }
     else if (archi_pointer_attr_unpk__cdata(value.attr, &tag, NULL))
     {
-        const char *mem_type;
+        const char *mem_kind;
 
-        if (ARCHI_POINTER_TO_READONLY_DATA(value.attr))
-            mem_type = "persistent/read-only";
+        if (ARCHI_POINTER_TO_TRANSIENT_DATA(value.attr))
+            mem_kind = "transient";
         else if (ARCHI_POINTER_TO_WRITABLE_DATA(value.attr))
-            mem_type = "persistent/writable";
+            mem_kind = "persistent/writable";
         else
-            mem_type = "transient";
+            mem_kind = "persistent/readable";
 
         printf("data, %s, tag = %#jx",
-                mem_type, (uintmax_t)tag);
+                mem_kind, (uintmax_t)tag);
     }
     else if (archi_pointer_attr_unpk__func(value.attr, &tag, NULL))
     {

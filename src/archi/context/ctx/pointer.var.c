@@ -190,9 +190,9 @@ ARCHI_CONTEXT_INIT_FUNC(archi_context_init__dpointer)
     // Set writability flag
     if (writable_set)
     {
-        context_data->attr &= ~ARCHI_POINTER_ATTR_MASK__TYPE;
-        context_data->attr |= writable ? ARCHI_POINTER_TYPE__DATA_WRITABLE :
-            ARCHI_POINTER_TYPE__DATA_READONLY;
+        context_data->attr &= ~ARCHI_POINTER_ATTR_MASK__MEM_KIND;
+        context_data->attr |= writable ? ARCHI_POINTEE_MEM__DATA_WRITABLE :
+            ARCHI_POINTEE_MEM__DATA_GENERIC;
     }
 
     ARCHI_ERROR_RESET();
@@ -228,11 +228,11 @@ ARCHI_CONTEXT_EVAL_FUNC(archi_context_eval__dpointer)
             return;
         }
 
-        char writable = !ARCHI_POINTER_TO_READONLY_DATA(context->attr);
+        char writable = ARCHI_POINTER_TO_WRITABLE_DATA(context->attr);
 
         archi_rcpointer_t value = {
             .ptr = &writable,
-            .attr = ARCHI_POINTER_TYPE__DATA_TRANSIENT |
+            .attr = ARCHI_POINTEE_MEM__DATA_TRANSIENT |
                 ARCHI_POINTER_ATTR__PDATA(1, char),
         };
 
@@ -285,9 +285,9 @@ ARCHI_CONTEXT_SET_FUNC(archi_context_set__dpointer)
 
         bool writable = *(char*)value.ptr;
 
-        context->attr &= ~ARCHI_POINTER_ATTR_MASK__TYPE;
-        context->attr |= writable ? ARCHI_POINTER_TYPE__DATA_WRITABLE :
-            ARCHI_POINTER_TYPE__DATA_READONLY;
+        context->attr &= ~ARCHI_POINTER_ATTR_MASK__MEM_KIND;
+        context->attr |= writable ? ARCHI_POINTEE_MEM__DATA_WRITABLE :
+            ARCHI_POINTEE_MEM__DATA_GENERIC;
     }
     else
     {
@@ -385,7 +385,7 @@ ARCHI_CONTEXT_INIT_FUNC(archi_context_init__pdpointer)
     if (attr == (archi_pointer_attr_t)-1)
         return NULL;
 
-    data.attr = (data.attr & ARCHI_POINTER_ATTR_MASK__TYPE) | attr;
+    data.attr = (data.attr & ARCHI_POINTER_ATTR_MASK__MEM_KIND) | attr;
 
     // Apply offset
     if (data.ptr != NULL)
@@ -416,13 +416,13 @@ ARCHI_CONTEXT_INIT_FUNC(archi_context_init__pdpointer)
     // Set writability flag
     if (writable_set)
     {
-        context_data->attr &= ~ARCHI_POINTER_ATTR_MASK__TYPE;
-        context_data->attr |= writable ? ARCHI_POINTER_TYPE__DATA_WRITABLE :
-            ARCHI_POINTER_TYPE__DATA_READONLY;
+        context_data->attr &= ~ARCHI_POINTER_ATTR_MASK__MEM_KIND;
+        context_data->attr |= writable ? ARCHI_POINTEE_MEM__DATA_WRITABLE :
+            ARCHI_POINTEE_MEM__DATA_GENERIC;
     }
 
     // Set pointer attributes
-    context_data->attr = (context_data->attr & ARCHI_POINTER_ATTR_MASK__TYPE) | attr;
+    context_data->attr = (context_data->attr & ARCHI_POINTER_ATTR_MASK__MEM_KIND) | attr;
 
     ARCHI_ERROR_RESET();
     return context_data;
@@ -460,9 +460,9 @@ ARCHI_CONTEXT_EVAL_FUNC(archi_context_eval__pdpointer)
                 ARCHI_ERROR_SET(ARCHI__EINDEX, "offset (%lli) exceeds data length (%zu)", offset, length);
                 return;
             }
-            else if ((offset < 0) && (length - offset >= (ARCHI_POINTER_DATA_SIZE_MAX + 1) / stride))
+            else if ((offset < 0) && (length - offset >= (ARCHI_POINTER_ATTR_MAX__DATA_SIZE + 1) / stride))
             {
-                ARCHI_ERROR_SET(ARCHI__EINDEX, "(offset+length)*stride (%lli*%zu+%zu) exceeds ARCHI_POINTER_DATA_SIZE_MAX",
+                ARCHI_ERROR_SET(ARCHI__EINDEX, "(offset+length)*stride (%lli*%zu+%zu) exceeds ARCHI_POINTER_ATTR_MAX__DATA_SIZE",
                         offset, stride, length);
                 return;
             }
@@ -473,7 +473,7 @@ ARCHI_CONTEXT_EVAL_FUNC(archi_context_eval__pdpointer)
             {
                 value = (archi_rcpointer_t){
                     .ptr = (char*)context->ptr + (ptrdiff_t)offset * (ptrdiff_t)stride,
-                    .attr = (context->attr & ARCHI_POINTER_ATTR_MASK__TYPE) |
+                    .attr = (context->attr & ARCHI_POINTER_ATTR_MASK__MEM_KIND) |
                         archi_pointer_attr__pdata(length - offset, stride, alignment, NULL),
                     .ref_count = context->ref_count,
                 };
@@ -481,7 +481,7 @@ ARCHI_CONTEXT_EVAL_FUNC(archi_context_eval__pdpointer)
             else
             {
                 value = (archi_rcpointer_t){
-                    .attr = (context->attr & ARCHI_POINTER_ATTR_MASK__TYPE) |
+                    .attr = (context->attr & ARCHI_POINTER_ATTR_MASK__MEM_KIND) |
                         archi_pointer_attr__pdata(0, stride, alignment, NULL),
                 };
             }
@@ -496,11 +496,11 @@ ARCHI_CONTEXT_EVAL_FUNC(archi_context_eval__pdpointer)
                 return;
             }
 
-            char writable = !ARCHI_POINTER_TO_READONLY_DATA(context->attr);
+            char writable = ARCHI_POINTER_TO_WRITABLE_DATA(context->attr);
 
             archi_rcpointer_t value = {
                 .ptr = &writable,
-                .attr = ARCHI_POINTER_TYPE__DATA_TRANSIENT |
+                .attr = ARCHI_POINTEE_MEM__DATA_TRANSIENT |
                     ARCHI_POINTER_ATTR__PDATA(1, char),
             };
 
@@ -519,7 +519,7 @@ ARCHI_CONTEXT_EVAL_FUNC(archi_context_eval__pdpointer)
 
             archi_rcpointer_t value = {
                 .ptr = &length,
-                .attr = ARCHI_POINTER_TYPE__DATA_TRANSIENT |
+                .attr = ARCHI_POINTEE_MEM__DATA_TRANSIENT |
                     ARCHI_POINTER_ATTR__PDATA(1, size_t),
             };
 
@@ -538,7 +538,7 @@ ARCHI_CONTEXT_EVAL_FUNC(archi_context_eval__pdpointer)
 
             archi_rcpointer_t value = {
                 .ptr = &stride,
-                .attr = ARCHI_POINTER_TYPE__DATA_TRANSIENT |
+                .attr = ARCHI_POINTEE_MEM__DATA_TRANSIENT |
                     ARCHI_POINTER_ATTR__PDATA(1, size_t),
             };
 
@@ -561,7 +561,7 @@ ARCHI_CONTEXT_EVAL_FUNC(archi_context_eval__pdpointer)
 
             archi_rcpointer_t value = {
                 .ptr = &size,
-                .attr = ARCHI_POINTER_TYPE__DATA_TRANSIENT |
+                .attr = ARCHI_POINTEE_MEM__DATA_TRANSIENT |
                     ARCHI_POINTER_ATTR__PDATA(1, size_t),
             };
 
@@ -580,7 +580,7 @@ ARCHI_CONTEXT_EVAL_FUNC(archi_context_eval__pdpointer)
 
             archi_rcpointer_t value = {
                 .ptr = &alignment,
-                .attr = ARCHI_POINTER_TYPE__DATA_TRANSIENT |
+                .attr = ARCHI_POINTEE_MEM__DATA_TRANSIENT |
                     ARCHI_POINTER_ATTR__PDATA(1, size_t),
             };
 
@@ -669,7 +669,7 @@ ARCHI_CONTEXT_EVAL_FUNC(archi_context_eval__pdpointer)
                 return;
             }
 
-            context->attr = (context->attr & ARCHI_POINTER_ATTR_MASK__TYPE) | attr;
+            context->attr = (context->attr & ARCHI_POINTER_ATTR_MASK__MEM_KIND) | attr;
 
             ARCHI_ERROR_RESET();
         }
@@ -680,9 +680,9 @@ ARCHI_CONTEXT_EVAL_FUNC(archi_context_eval__pdpointer)
                 ARCHI_ERROR_SET(ARCHI__EINDEX, "number of slot indices isn't 0");
                 return;
             }
-            else if (ARCHI_POINTER_TO_READONLY_DATA(context->attr))
+            else if (!ARCHI_POINTER_TO_WRITABLE_DATA(context->attr))
             {
-                ARCHI_ERROR_SET(ARCHI__ECONSTRAINT, "destination memory is read-only");
+                ARCHI_ERROR_SET(ARCHI__ECONSTRAINT, "destination memory is not writable");
                 return;
             }
 
@@ -798,9 +798,9 @@ ARCHI_CONTEXT_EVAL_FUNC(archi_context_eval__pdpointer)
                 ARCHI_ERROR_SET(ARCHI__EINDEX, "number of slot indices isn't 0");
                 return;
             }
-            else if (ARCHI_POINTER_TO_READONLY_DATA(context->attr))
+            else if (!ARCHI_POINTER_TO_WRITABLE_DATA(context->attr))
             {
-                ARCHI_ERROR_SET(ARCHI__ECONSTRAINT, "destination memory is read-only");
+                ARCHI_ERROR_SET(ARCHI__ECONSTRAINT, "destination memory is not writable");
                 return;
             }
 
@@ -913,9 +913,9 @@ ARCHI_CONTEXT_SET_FUNC(archi_context_set__pdpointer)
 
         bool writable = *(char*)value.ptr;
 
-        context->attr &= ~ARCHI_POINTER_ATTR_MASK__TYPE;
-        context->attr |= writable ? ARCHI_POINTER_TYPE__DATA_WRITABLE :
-            ARCHI_POINTER_TYPE__DATA_READONLY;
+        context->attr &= ~ARCHI_POINTER_ATTR_MASK__MEM_KIND;
+        context->attr |= writable ? ARCHI_POINTEE_MEM__DATA_WRITABLE :
+            ARCHI_POINTEE_MEM__DATA_GENERIC;
     }
     else if (ARCHI_STRING_COMPARE("length", ==, slot.name))
     {
@@ -941,7 +941,7 @@ ARCHI_CONTEXT_SET_FUNC(archi_context_set__pdpointer)
         if (attr == (archi_pointer_attr_t)-1)
             return;
 
-        context->attr = (context->attr & ARCHI_POINTER_ATTR_MASK__TYPE) | attr;
+        context->attr = (context->attr & ARCHI_POINTER_ATTR_MASK__MEM_KIND) | attr;
     }
     else if (ARCHI_STRING_COMPARE("stride", ==, slot.name))
     {
@@ -985,7 +985,7 @@ ARCHI_CONTEXT_SET_FUNC(archi_context_set__pdpointer)
         if (attr == (archi_pointer_attr_t)-1)
             return;
 
-        context->attr = (context->attr & ARCHI_POINTER_ATTR_MASK__TYPE) | attr;
+        context->attr = (context->attr & ARCHI_POINTER_ATTR_MASK__MEM_KIND) | attr;
     }
     else if (ARCHI_STRING_COMPARE("alignment", ==, slot.name))
     {
@@ -1018,7 +1018,7 @@ ARCHI_CONTEXT_SET_FUNC(archi_context_set__pdpointer)
             return;
         }
 
-        context->attr = (context->attr & ARCHI_POINTER_ATTR_MASK__TYPE) | attr;
+        context->attr = (context->attr & ARCHI_POINTER_ATTR_MASK__MEM_KIND) | attr;
     }
     else
     {
@@ -1079,9 +1079,9 @@ ARCHI_CONTEXT_INIT_FUNC(archi_context_init__cdpointer)
         ARCHI_ERROR_SET(ARCHI__ECONSTRAINT, "pointer offset unit is zero");
         return NULL;
     }
-    else if (tag > ARCHI_POINTER_DATA_TAG_MAX)
+    else if (tag > ARCHI_POINTER_ATTR_MAX__DATA_TAG)
     {
-        ARCHI_ERROR_SET(ARCHI__ECONSTRAINT, "data type tag (%#jx) exceeds ARCHI_POINTER_DATA_TAG_MAX",
+        ARCHI_ERROR_SET(ARCHI__ECONSTRAINT, "data type tag (%#jx) exceeds ARCHI_POINTER_ATTR_MAX__DATA_TAG",
                 (uintmax_t)tag);
         return NULL;
     }
@@ -1115,14 +1115,14 @@ ARCHI_CONTEXT_INIT_FUNC(archi_context_init__cdpointer)
     // Set writability flag
     if (writable_set)
     {
-        context_data->attr &= ~ARCHI_POINTER_ATTR_MASK__TYPE;
-        context_data->attr |= writable ? ARCHI_POINTER_TYPE__DATA_WRITABLE :
-            ARCHI_POINTER_TYPE__DATA_READONLY;
+        context_data->attr &= ~ARCHI_POINTER_ATTR_MASK__MEM_KIND;
+        context_data->attr |= writable ? ARCHI_POINTEE_MEM__DATA_WRITABLE :
+            ARCHI_POINTEE_MEM__DATA_GENERIC;
     }
 
     // Set data type tag
     if (tag_set || !archi_pointer_attr_unpk__cdata(context_data->attr, NULL, NULL))
-        context_data->attr = (context_data->attr & ARCHI_POINTER_ATTR_MASK__TYPE) | archi_pointer_attr__cdata(tag);
+        context_data->attr = (context_data->attr & ARCHI_POINTER_ATTR_MASK__MEM_KIND) | archi_pointer_attr__cdata(tag);
 
     ARCHI_ERROR_RESET();
     return context_data;
@@ -1157,11 +1157,11 @@ ARCHI_CONTEXT_EVAL_FUNC(archi_context_eval__cdpointer)
             return;
         }
 
-        char writable = !ARCHI_POINTER_TO_READONLY_DATA(context->attr);
+        char writable = ARCHI_POINTER_TO_WRITABLE_DATA(context->attr);
 
         archi_rcpointer_t value = {
             .ptr = &writable,
-            .attr = ARCHI_POINTER_TYPE__DATA_TRANSIENT |
+            .attr = ARCHI_POINTEE_MEM__DATA_TRANSIENT |
                 ARCHI_POINTER_ATTR__PDATA(1, char),
         };
 
@@ -1181,7 +1181,7 @@ ARCHI_CONTEXT_EVAL_FUNC(archi_context_eval__cdpointer)
 
         archi_rcpointer_t value = {
             .ptr = &tag,
-            .attr = ARCHI_POINTER_TYPE__DATA_TRANSIENT |
+            .attr = ARCHI_POINTEE_MEM__DATA_TRANSIENT |
                 ARCHI_POINTER_ATTR__PDATA(1, archi_pointer_attr_t),
         };
 
@@ -1217,7 +1217,7 @@ ARCHI_CONTEXT_SET_FUNC(archi_context_set__cdpointer)
             return;
 
         if (!archi_pointer_attr_unpk__cdata(value.attr, NULL, NULL))
-            value.attr = (value.attr & ARCHI_POINTER_ATTR_MASK__TYPE) | archi_pointer_attr__cdata(0);
+            value.attr = (value.attr & ARCHI_POINTER_ATTR_MASK__MEM_KIND) | archi_pointer_attr__cdata(0);
 
         *context = value;
     }
@@ -1237,9 +1237,9 @@ ARCHI_CONTEXT_SET_FUNC(archi_context_set__cdpointer)
 
         bool writable = *(char*)value.ptr;
 
-        context->attr &= ~ARCHI_POINTER_ATTR_MASK__TYPE;
-        context->attr |= writable ? ARCHI_POINTER_TYPE__DATA_WRITABLE :
-            ARCHI_POINTER_TYPE__DATA_READONLY;
+        context->attr &= ~ARCHI_POINTER_ATTR_MASK__MEM_KIND;
+        context->attr |= writable ? ARCHI_POINTEE_MEM__DATA_WRITABLE :
+            ARCHI_POINTEE_MEM__DATA_GENERIC;
     }
     else if (ARCHI_STRING_COMPARE("tag", ==, slot.name))
     {
@@ -1256,14 +1256,14 @@ ARCHI_CONTEXT_SET_FUNC(archi_context_set__cdpointer)
         }
 
         archi_pointer_attr_t tag = *(archi_pointer_attr_t*)value.ptr;
-        if (tag > ARCHI_POINTER_DATA_TAG_MAX)
+        if (tag > ARCHI_POINTER_ATTR_MAX__DATA_TAG)
         {
-            ARCHI_ERROR_SET(ARCHI__ECONSTRAINT, "data type tag (%#jx) exceeds ARCHI_POINTER_DATA_TAG_MAX",
+            ARCHI_ERROR_SET(ARCHI__ECONSTRAINT, "data type tag (%#jx) exceeds ARCHI_POINTER_ATTR_MAX__DATA_TAG",
                     (uintmax_t)tag);
             return;
         }
 
-        context->attr = (context->attr & ARCHI_POINTER_ATTR_MASK__TYPE) | archi_pointer_attr__cdata(tag);
+        context->attr = (context->attr & ARCHI_POINTER_ATTR_MASK__MEM_KIND) | archi_pointer_attr__cdata(tag);
     }
     else
     {
@@ -1307,9 +1307,9 @@ ARCHI_CONTEXT_INIT_FUNC(archi_context_init__fpointer)
     }
 
     // Check validness of parameters
-    if (tag > ARCHI_POINTER_FUNC_TAG_MAX)
+    if (tag > ARCHI_POINTER_ATTR_MAX__FUNC_TAG)
     {
-        ARCHI_ERROR_SET(ARCHI__ECONSTRAINT, "function type tag (%#jx) exceeds ARCHI_POINTER_FUNC_TAG_MAX",
+        ARCHI_ERROR_SET(ARCHI__ECONSTRAINT, "function type tag (%#jx) exceeds ARCHI_POINTER_ATTR_MAX__FUNC_TAG",
                 (uintmax_t)tag);
         return NULL;
     }
@@ -1374,7 +1374,7 @@ ARCHI_CONTEXT_EVAL_FUNC(archi_context_eval__fpointer)
 
         archi_rcpointer_t value = {
             .ptr = &tag,
-            .attr = ARCHI_POINTER_TYPE__DATA_TRANSIENT |
+            .attr = ARCHI_POINTEE_MEM__DATA_TRANSIENT |
                 ARCHI_POINTER_ATTR__PDATA(1, archi_pointer_attr_t),
         };
 
@@ -1426,9 +1426,9 @@ ARCHI_CONTEXT_SET_FUNC(archi_context_set__fpointer)
         }
 
         archi_pointer_attr_t tag = *(archi_pointer_attr_t*)value.ptr;
-        if (tag > ARCHI_POINTER_FUNC_TAG_MAX)
+        if (tag > ARCHI_POINTER_ATTR_MAX__FUNC_TAG)
         {
-            ARCHI_ERROR_SET(ARCHI__ECONSTRAINT, "function type tag (%#jx) exceeds ARCHI_POINTER_FUNC_TAG_MAX",
+            ARCHI_ERROR_SET(ARCHI__ECONSTRAINT, "function type tag (%#jx) exceeds ARCHI_POINTER_ATTR_MAX__FUNC_TAG",
                     (uintmax_t)tag);
             return;
         }

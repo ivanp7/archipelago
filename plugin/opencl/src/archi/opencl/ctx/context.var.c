@@ -86,7 +86,7 @@ ARCHI_CONTEXT_INIT_FUNC(archi_context_init__opencl_context)
 
     *context_data = (struct archi_context_data__opencl_context){
         .context = {
-            .attr = ARCHI_POINTER_TYPE__DATA_WRITABLE |
+            .attr = ARCHI_POINTEE_MEM__DATA_GENERIC |
                 archi_pointer_attr__cdata(ARCHI_POINTER_DATA_TAG__OPENCL_CONTEXT),
         },
         .platdev = archi_opencl_platdev_alloc(num_devices),
@@ -167,7 +167,7 @@ ARCHI_CONTEXT_EVAL_FUNC(archi_context_eval__opencl_context)
 
         archi_rcpointer_t value = {
             .ptr = context_data->platdev->platform_id,
-            .attr = ARCHI_POINTER_TYPE__DATA_READONLY |
+            .attr = ARCHI_POINTEE_MEM__DATA_GENERIC |
                 archi_pointer_attr__cdata(ARCHI_POINTER_DATA_TAG__OPENCL_PLATFORM_ID),
         };
 
@@ -187,7 +187,7 @@ ARCHI_CONTEXT_EVAL_FUNC(archi_context_eval__opencl_context)
         {
             value = (archi_rcpointer_t){
                 .ptr = context_data->platdev->device_id,
-                .attr = ARCHI_POINTER_TYPE__DATA_WRITABLE |
+                .attr = ARCHI_POINTEE_MEM__DATA_GENERIC |
                     ARCHI_POINTER_ATTR__PDATA(context_data->platdev->num_devices, cl_device_id),
                 .ref_count = ARCHI_CONTEXT_REF_COUNT,
             };
@@ -203,7 +203,7 @@ ARCHI_CONTEXT_EVAL_FUNC(archi_context_eval__opencl_context)
 
             value = (archi_rcpointer_t){
                 .ptr = context_data->platdev->device_id[slot.index[0]],
-                .attr = ARCHI_POINTER_TYPE__DATA_READONLY |
+                .attr = ARCHI_POINTEE_MEM__DATA_GENERIC |
                     archi_pointer_attr__cdata(ARCHI_POINTER_DATA_TAG__OPENCL_DEVICE_ID),
             };
         }

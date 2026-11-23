@@ -86,7 +86,7 @@ ARCHI_CONTEXT_INIT_FUNC(archi_context_init__library)
 
     *context_data = (archi_rcpointer_t){
         .ptr = library,
-        .attr = ARCHI_POINTER_TYPE__DATA_WRITABLE |
+        .attr = ARCHI_POINTEE_MEM__DATA_GENERIC |
             archi_pointer_attr__cdata(ARCHI_POINTER_DATA_TAG__LIBRARY_HANDLE),
     };
 
@@ -192,7 +192,7 @@ ARCHI_CONTEXT_EVAL_FUNC(archi_context_eval__library)
         {
             ARCHI_ERROR_VAR(error);
 
-            symbol_attr = ARCHI_POINTER_TYPE__DATA_READONLY |
+            symbol_attr = ARCHI_POINTEE_MEM__DATA_GENERIC |
                 archi_pointer_attr__pdata(length, stride, alignment, &error);
             if (symbol_attr == (archi_pointer_attr_t)-1)
             {
@@ -202,7 +202,7 @@ ARCHI_CONTEXT_EVAL_FUNC(archi_context_eval__library)
         }
         else // complex data
         {
-            symbol_attr = ARCHI_POINTER_TYPE__DATA_READONLY | archi_pointer_attr__cdata(tag);
+            symbol_attr = ARCHI_POINTEE_MEM__DATA_GENERIC | archi_pointer_attr__cdata(tag);
             if (symbol_attr == (archi_pointer_attr_t)-1)
             {
                 ARCHI_ERROR_SET(ARCHI__ECONSTRAINT, "complex data type tag (%#jx) exceeds maximum value",

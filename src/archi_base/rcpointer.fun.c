@@ -62,8 +62,8 @@ archi_rcpointer_memcopy(
     archi_rcpointer_t copy = source;
 
     // Change pointer type
-    copy.attr &= ~ARCHI_POINTER_ATTR_MASK__TYPE;
-    copy.attr |= ARCHI_POINTER_TYPE__DATA_WRITABLE;
+    copy.attr &= ~ARCHI_POINTER_ATTR_MASK__MEM_KIND;
+    copy.attr |= ARCHI_POINTEE_MEM__DATA_WRITABLE;
 
     if (source.ptr != NULL)
     {

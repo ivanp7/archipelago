@@ -230,7 +230,7 @@ archi_font_psf2_glyph(
     return (archi_rcpointer_t){
         .cptr = (unsigned char*)font->data.cptr + font->header.header_size +
             (size_t)font->header.bytes_per_glyph * glyph_idx,
-        .attr = (font->data.attr & ARCHI_POINTER_ATTR_MASK__TYPE) |
+        .attr = (font->data.attr & ARCHI_POINTER_ATTR_MASK__MEM_KIND) |
             ARCHI_POINTER_ATTR__PDATA(font->header.bytes_per_glyph, char),
         .ref_count = font->data.ref_count,
     };

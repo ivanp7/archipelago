@@ -71,7 +71,7 @@ ARCHI_CONTEXT_INIT_FUNC(archi_context_init__timer)
 
     *context_data = (archi_rcpointer_t){
         .ptr = timer,
-        .attr = ARCHI_POINTER_TYPE__DATA_WRITABLE |
+        .attr = ARCHI_POINTEE_MEM__DATA_GENERIC |
             archi_pointer_attr__cdata(ARCHI_POINTER_DATA_TAG__TIMER),
     };
 

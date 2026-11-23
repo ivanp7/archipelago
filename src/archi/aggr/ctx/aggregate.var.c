@@ -78,7 +78,7 @@ ARCHI_CONTEXT_INIT_FUNC(archi_context_init__aggregate)
 
     *context_data = (archi_rcpointer_t){
         .ptr = aggregate,
-        .attr = ARCHI_POINTER_TYPE__DATA_WRITABLE |
+        .attr = ARCHI_POINTEE_MEM__DATA_GENERIC |
             archi_pointer_attr__cdata(ARCHI_POINTER_DATA_TAG__AGGR),
     };
 
@@ -219,7 +219,7 @@ ARCHI_CONTEXT_EVAL_FUNC(archi_context_eval__aggregate)
 
         archi_rcpointer_t value = {
             .ptr = &layout,
-            .attr = ARCHI_POINTER_TYPE__DATA_TRANSIENT |
+            .attr = ARCHI_POINTEE_MEM__DATA_TRANSIENT |
                 ARCHI_POINTER_ATTR__PDATA(1, archi_layout_struct_t),
         };
 
@@ -237,7 +237,7 @@ ARCHI_CONTEXT_EVAL_FUNC(archi_context_eval__aggregate)
 
         archi_rcpointer_t value = {
             .ptr = &size,
-            .attr = ARCHI_POINTER_TYPE__DATA_TRANSIENT |
+            .attr = ARCHI_POINTEE_MEM__DATA_TRANSIENT |
                 ARCHI_POINTER_ATTR__PDATA(1, size_t),
         };
 
@@ -255,7 +255,7 @@ ARCHI_CONTEXT_EVAL_FUNC(archi_context_eval__aggregate)
 
         archi_rcpointer_t value = {
             .ptr = &alignment,
-            .attr = ARCHI_POINTER_TYPE__DATA_TRANSIENT |
+            .attr = ARCHI_POINTEE_MEM__DATA_TRANSIENT |
                 ARCHI_POINTER_ATTR__PDATA(1, size_t),
         };
 
@@ -273,7 +273,7 @@ ARCHI_CONTEXT_EVAL_FUNC(archi_context_eval__aggregate)
 
         archi_rcpointer_t value = {
             .ptr = &fam_stride,
-            .attr = ARCHI_POINTER_TYPE__DATA_TRANSIENT |
+            .attr = ARCHI_POINTEE_MEM__DATA_TRANSIENT |
                 ARCHI_POINTER_ATTR__PDATA(1, size_t),
         };
 
@@ -291,7 +291,7 @@ ARCHI_CONTEXT_EVAL_FUNC(archi_context_eval__aggregate)
 
         archi_rcpointer_t value = {
             .ptr = &fam_length,
-            .attr = ARCHI_POINTER_TYPE__DATA_TRANSIENT |
+            .attr = ARCHI_POINTEE_MEM__DATA_TRANSIENT |
                 ARCHI_POINTER_ATTR__PDATA(1, size_t),
         };
 
@@ -309,7 +309,7 @@ ARCHI_CONTEXT_EVAL_FUNC(archi_context_eval__aggregate)
 
         archi_rcpointer_t value = {
             .ptr = &full_size,
-            .attr = ARCHI_POINTER_TYPE__DATA_TRANSIENT |
+            .attr = ARCHI_POINTEE_MEM__DATA_TRANSIENT |
                 ARCHI_POINTER_ATTR__PDATA(1, size_t),
         };
 

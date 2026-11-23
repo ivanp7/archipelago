@@ -102,7 +102,7 @@ ARCHI_CONTEXT_INIT_FUNC(archi_context_init__plist)
 
     *context_data = (archi_rcpointer_t){
         .ptr = copy,
-        .attr = ARCHI_POINTER_TYPE__DATA_WRITABLE |
+        .attr = ARCHI_POINTEE_MEM__DATA_GENERIC |
             archi_pointer_attr__cdata(ARCHI_POINTER_DATA_TAG__KRCVLIST),
     };
 
@@ -154,7 +154,7 @@ ARCHI_CONTEXT_EVAL_FUNC(archi_context_eval__plist)
 
             // Update context pointer and attributes
             context->ptr = copy;
-            context->attr = ARCHI_POINTER_TYPE__DATA_WRITABLE |
+            context->attr = ARCHI_POINTEE_MEM__DATA_GENERIC |
                 archi_pointer_attr__cdata(ARCHI_POINTER_DATA_TAG__KRCVLIST);
         }
         else
@@ -206,7 +206,7 @@ ARCHI_CONTEXT_SET_FUNC(archi_context_set__plist)
 
         // Update context pointer and attributes
         context->ptr = node;
-        context->attr = ARCHI_POINTER_TYPE__DATA_WRITABLE |
+        context->attr = ARCHI_POINTEE_MEM__DATA_GENERIC |
             archi_pointer_attr__cdata(ARCHI_POINTER_DATA_TAG__KRCVLIST);
     }
     else

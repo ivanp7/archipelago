@@ -68,8 +68,8 @@ typedef struct archi_aggr_member_type__value {
 /**
  * @brief Description of a pointer type of an aggregate member.
  *
- * `pointee_tag` is used when `pointee_kind` is `ARCHI_POINTEE__CDATA` or `ARCHI_POINTEE__FUNC`.
- * `pointee_layout` is used when `pointee_kind` is `ARCHI_POINTEE__PDATA`.
+ * `pointee_tag` is used when `pointee_kind` is `ARCHI_POINTEE_TYPE__CDATA` or `ARCHI_POINTEE_TYPE__FUNC`.
+ * `pointee_layout` is used when `pointee_kind` is `ARCHI_POINTEE_TYPE__PDATA`.
  */
 typedef struct archi_aggr_member_type__pointer {
     archi_layout_type_t layout; ///< Pointer member type layout.
@@ -86,14 +86,14 @@ typedef struct archi_aggr_member_type__pointer {
  */
 #define ARCHI_AGGR_MEMBER_TYPE__POINTER(ptr_type)   \
     {.layout = ARCHI_LAYOUT_TYPE(ptr_type),         \
-        .pointee_kind = ARCHI_POINTEE__UNSPEC}
+        .pointee_kind = ARCHI_POINTEE_TYPE__UNSPEC}
 
 /**
  * @brief Description literal of a pointer type of an aggregate member (pointee is primitive data).
  */
 #define ARCHI_AGGR_MEMBER_TYPE__POINTER_TO_PDATA(ptr_type, poe_type, num_poe)   \
     {.layout = ARCHI_LAYOUT_TYPE(ptr_type),                                     \
-        .pointee_kind = ARCHI_POINTEE__PDATA,                                   \
+        .pointee_kind = ARCHI_POINTEE_TYPE__PDATA,                              \
         .pointee_layout = ARCHI_LAYOUT_ARRAY(poe_type, (num_poe))}
 
 /**
@@ -101,7 +101,7 @@ typedef struct archi_aggr_member_type__pointer {
  */
 #define ARCHI_AGGR_MEMBER_TYPE__POINTER_TO_CDATA(ptr_type, poe_tag) \
     {.layout = ARCHI_LAYOUT_TYPE(ptr_type),                         \
-        .pointee_kind = ARCHI_POINTEE__CDATA,                       \
+        .pointee_kind = ARCHI_POINTEE_TYPE__CDATA,                  \
         .pointee_tag = (poe_tag)}
 
 /**
@@ -109,7 +109,7 @@ typedef struct archi_aggr_member_type__pointer {
  */
 #define ARCHI_AGGR_MEMBER_TYPE__POINTER_TO_FUNC(ptr_type, poe_tag)  \
     {.layout = ARCHI_LAYOUT_TYPE(ptr_type),                         \
-        .pointee_kind = ARCHI_POINTEE__FUNC,                        \
+        .pointee_kind = ARCHI_POINTEE_TYPE__FUNC,                   \
         .pointee_tag = (poe_tag)}
 
 ///////////////////////////////////////////////////////////////////////
