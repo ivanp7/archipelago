@@ -718,15 +718,15 @@ Function tags are used for matching: unequal tags correspond to incompatible fun
 
 ### Data Pointers
 
-If the memory kind is `00`, `01`, or `10`, the interpretation of bits 61–0 depends on the value of bits 61-59:
-- if the value is `000`, bits 61-0 encode a *complex data* type;
+If the memory kind is `00`, `01`, or `10`, the interpretation of bits 61–0 depends on the value of bits 61-60:
+- if the value is `00`, bits 61-0 encode a *complex data* type;
 - otherwise, it's a *primitive data* type.
 
 #### Complex Data
 
 Opaque objects, structures with flexible array members, and other types not intended to form arrays or be copyable.
 
-Bits 58-0 store a **data tag**.
+Bits 59-0 store a **data tag**.
 Similar to function tags, data tags identify data types,
 but the matching rules are more complex to support extension of data types (inheritance).
 Data tags allow to encode base and derived types,
@@ -737,8 +737,8 @@ so that derived types are compatible with base types and not vice versa.
 | Bit Range  | Field Width | Field Value |
 | ---------- | ----------- | ----------- |
 | (64; 62]   | 2           | Memory kind (`00`, `01`, or `10`) |
-| (62; 59]   | 3           | `000` |
-| (59; 0]    | 59          | Data tag |
+| (62; 60]   | 2           | `00` |
+| (60; 0]    | 60          | Data tag |
 
 #### Primitive Data
 
@@ -758,9 +758,9 @@ These are defined by length, stride (element size), and alignment requirement.
 | (56; 56-N] | N           | *q* = (stride / alignment) - 1 |
 | (56-N; 0]  | 56-N        | Array length |
 
-> **Note**: value of *63 - N* is always >= 8 because bits 61-59 are never `000` for primitive data.
-> Therefore, 0 <= *N* < 56.
-> The length field always contains at least one bit,
+> **Note**: value of *63 - N* is always >= 16 because bits 61-60 are never `00` for primitive data.
+> Therefore, 0 <= *N* < 48.
+> The length field always contains at least 9 bits,
 > unlike the stride/alignment field, which can be absent if *N* = 0.
 
 * Alignment is calculated as `1 << M`, where *M* is the number of leading zeros
@@ -781,8 +781,8 @@ The attribute format is exhaustive; every representation has a unique, valid mea
 
 For 64-bit attributes:
 - Max data size (length×stride): 64 PiB minus 1 byte
-- Max data stride & alignment: 32 PiB
-- Number of distinct data tags: 2^59 - 1 = 576,460,752,303,423,487 (`0x07ffffffffffffff`)
+- Max data stride & alignment: 128 TiB
+- Number of distinct data tags: 2^60 - 1 = 1,152,921,504,606,846,976 (`0x0fffffffffffffff`)
 - Number of distinct function tags: 2^62 - 1 = 4,611,686,018,427,387,903 (`0x3fffffffffffffff`)
 
 ### Compatibility & Matching

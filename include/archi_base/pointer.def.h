@@ -64,7 +64,7 @@ enum {
      * - all zeros: complex data type;
      * - other: primitive data type.
      */
-    ARCHI_POINTER_ATTR_WIDTH__DATA_TYPE = 3,
+    ARCHI_POINTER_ATTR_WIDTH__DATA_TYPE = 2,
 
     /*********************** Primitive data attributes ***********************/
 
@@ -77,7 +77,7 @@ enum {
      * @see ARCHI_POINTER_ATTR_WIDTH__PDATA_STRIDE_ALIGN
      * @see ARCHI_POINTER_ATTR_WIDTH__PDATA_LENGTH
      */
-    ARCHI_POINTER_ATTR_WIDTH__PDATA_SHAPE_SPLIT = ARCHI_POINTER_ATTR_WIDTH__DATA_TYPE + 3,
+    ARCHI_POINTER_ATTR_WIDTH__PDATA_SHAPE_SPLIT = ARCHI_POINTER_ATTR_WIDTH__DATA_TYPE + 4,
 
     /**
      * @brief Width of the primitive data shape field.

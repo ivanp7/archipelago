@@ -68,17 +68,17 @@ typedef void (*archi_function_t)(void);
  * 3. function: identified by tag.
  *
  * Data pointer attributes for primitive data:
- * + bits (64; 62]   <2 bits>    -- memory type (equal to 0 or one of ARCHI_POINTEE_MEM__DATA_xxx constants);
+ * + bits (64; 62]   <2 bits>    -- memory type (equal to one of ARCHI_POINTEE_MEM__DATA_xxx constants);
  * + bits (62; 56]   <6 bits>    -- 63-N, where N is the bit width of the data stride/alignment attribute;
  * + bits (56; 56-N] <N bits>    -- (data stride) / (alignment requirement) - 1,
  *                                  with M leading zeros designating alignment (1 << M);
  * + bits (56-N; 0]  <56-N bits> -- data length;
- * where 0 <= M <= N < 56.
+ * where 0 <= M <= N < 48.
  *
  * Data pointer attributes for complex data:
  * + bits (64; 62]   <2 bits>    -- memory type (equal to one of ARCHI_POINTEE_MEM__DATA_xxx constants);
- * + bits (62; 59]   <3 bits>    -- zeroes: `000`;
- * + bits (59; 0]    <59 bits>   -- data tag.
+ * + bits (62; 60]   <2 bits>    -- zeroes: `00`;
+ * + bits (60; 0]    <60 bits>   -- data tag.
  *
  * Function pointer attributes:
  * + bits (64; 62]   <2 bits>    -- equal to ARCHI_POINTEE_MEM__FUNCTION constant;
