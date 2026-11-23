@@ -53,7 +53,7 @@ class archi_pointer_attr_t(c.c_uint64):
     FUNC_TAG_MAX = (1 << FUNC_TAG_BITS) - 1 # 0x3FFFFFFFFFFFFFFF
 
     TYPE_MASK = 0x3 << TYPE_OFFSET
-    DATA_READONLY = 0x0 << TYPE_OFFSET
+    DATA_GENERIC = 0x0 << TYPE_OFFSET
     DATA_WRITABLE = 0x1 << TYPE_OFFSET
     DATA_TRANSIENT = 0x2 << TYPE_OFFSET
     FUNCTION = 0x3 << TYPE_OFFSET
@@ -66,7 +66,7 @@ class archi_pointer_attr_t(c.c_uint64):
         if self.is_function:
             return f"{cls_name}.function(tag={tag})"
 
-        mem_type = f"writable={self.is_data_persistent_writable}" \
+        mem_type = f"writable={self.is_data_writable}" \
                 if not self.is_data_transient else "transient=True"
 
         if tag is None:
@@ -96,16 +96,10 @@ class archi_pointer_attr_t(c.c_uint64):
         return self.is_data and not self.is_data_transient
 
     @property
-    def is_data_persistent_writable(self, /):
-        """Check if the attributes describes data stored in writable persistent memory.
+    def is_data_writable(self, /):
+        """Check if the attributes describes data stored in persistent, writable memory.
         """
         return self.value & self.__class__.TYPE_MASK == self.__class__.DATA_WRITABLE
-
-    @property
-    def is_data_persistent_readonly(self, /):
-        """Check if the attributes describes data stored in read-only persistent memory.
-        """
-        return self.value & self.__class__.TYPE_MASK == self.__class__.DATA_READONLY
 
     @property
     def is_function(self, /):
@@ -123,22 +117,22 @@ class archi_pointer_attr_t(c.c_uint64):
         type_offset = self.__class__.TYPE_OFFSET
         pdata_shape_bits = self.__class__.PDATA_SHAPE_BITS
 
-        pdata_swidth_bits = type_offset - pdata_shape_bits
-        pdata_swidth_mask = (1 << pdata_swidth_bits) - 1
+        pdata_shape_split_bits = type_offset - pdata_shape_bits
+        pdata_shape_split_mask = (1 << pdata_shape_split_bits) - 1
 
-        stride_width = (self.value >> pdata_shape_bits) & pdata_swidth_mask
-        stride_width = pdata_swidth_mask - stride_width
+        shape_split = (self.value >> pdata_shape_bits) & pdata_shape_split_mask
+        stride_align_width = pdata_shape_split_mask - shape_split
 
-        if stride_width >= pdata_shape_bits:
+        if stride_align_width >= pdata_shape_bits:
             return (None, None, None)
 
-        length_width = pdata_shape_bits - stride_width
+        length_width = pdata_shape_bits - stride_align_width
         length = self.value & ((1 << length_width) - 1)
 
-        stride_over_alignment = (self.value >> length_width) & ((1 << stride_width) - 1)
-        alignment_log2 = stride_width - stride_over_alignment.bit_length()
+        stride_align = (self.value >> length_width) & ((1 << stride_align_width) - 1)
+        alignment_log2 = stride_align_width - stride_align.bit_length()
         alignment = 1 << alignment_log2
-        stride = (stride_over_alignment + 1) * alignment
+        stride = (stride_align + 1) * alignment
 
         return (length, stride, alignment)
 
@@ -236,16 +230,17 @@ class archi_pointer_attr_t(c.c_uint64):
 
         type_offset = cls.TYPE_OFFSET
         pdata_shape_bits = cls.PDATA_SHAPE_BITS
-        pdata_swidth_bits = type_offset - pdata_shape_bits
+        pdata_shape_split_bits = type_offset - pdata_shape_bits
 
-        stride_width = (stride - 1).bit_length()
+        stride_align_width = (stride - 1).bit_length()
+        shape_split = ((1 << pdata_shape_split_bits) - 1) - stride_align_width
 
-        attr_memtype = cls.DATA_WRITABLE if writable else cls.DATA_READONLY
-        attr_stride_width = (((1 << pdata_swidth_bits) - 1) - stride_width) << pdata_shape_bits
-        attr_stride_over_alignment = (stride // alignment - 1) << (pdata_shape_bits - stride_width)
-        attr_length = length
+        field_mem_kind = cls.DATA_WRITABLE if writable else cls.DATA_GENERIC
+        field_shape_split = shape_split << pdata_shape_bits
+        field_stride_align = (stride // alignment - 1) << (pdata_shape_bits - stride_align_width)
+        field_length = length
 
-        return cls(attr_memtype | attr_stride_width | attr_stride_over_alignment | attr_length)
+        return cls(field_mem_kind | field_shape_split | field_stride_align | field_length)
 
     @classmethod
     def complex_data(cls, tag=0, writable=False):
@@ -259,10 +254,10 @@ class archi_pointer_attr_t(c.c_uint64):
         elif tag > cls.DATA_TAG_MAX:
             raise ValueError("Data type tag exceeds maximum supported value of {cls.DATA_TAG_MAX:016x}")
 
-        attr_memtype = cls.DATA_WRITABLE if writable else cls.DATA_READONLY
-        attr_tag = tag
+        field_mem_kind = cls.DATA_WRITABLE if writable else cls.DATA_GENERIC
+        field_tag = tag
 
-        return cls(attr_memtype | attr_tag)
+        return cls(field_mem_kind | field_tag)
 
     @classmethod
     def function(cls, tag=0):
@@ -276,9 +271,9 @@ class archi_pointer_attr_t(c.c_uint64):
         elif tag > cls.FUNC_TAG_MAX:
             raise ValueError("Function type tag exceeds maximum supported value of {cls.FUNC_TAG_MAX:016x}")
 
-        attr_tag = tag
+        field_tag = tag
 
-        return cls(cls.FUNCTION | attr_tag)
+        return cls(cls.FUNCTION | field_tag)
 
     @classmethod
     def from_type(cls, c_type, /, writable=False):
