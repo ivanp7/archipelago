@@ -208,7 +208,8 @@ enum {
  * @brief Maximum data stride that can be represented by the attribute format.
  */
 #define ARCHI_POINTER_ATTR_MAX__DATA_STRIDE         \
-    (((size_t)1 << (ARCHI_POINTER_ATTR_WIDTH__PDATA_SHAPE - 1)))
+    (((size_t)1 << ARCHI_POINTER_ATTR_WIDTH__PDATA_STRIDE_ALIGN(1 <<    \
+        (ARCHI_POINTER_ATTR_WIDTH__PDATA_SHAPE_SPLIT - ARCHI_POINTER_ATTR_WIDTH__DATA_TYPE))))
 
 /**
  * @def
