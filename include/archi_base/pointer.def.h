@@ -29,6 +29,9 @@
 
 #include "archi_base/pointer.typ.h"
 
+#include <limits.h> // for CHAR_BIT
+#include <assert.h> // for static_assert()
+
 
 /*****************************************************************************/
 // Attributes format description
@@ -138,6 +141,9 @@ enum {
     ARCHI_POINTER_ATTR_WIDTH__FUNC_TAG = ARCHI_POINTER_ATTR_WIDTH
         - ARCHI_POINTER_ATTR_WIDTH__MEM_KIND,
 };
+
+static_assert(ARCHI_POINTER_ATTR_WIDTH == sizeof(archi_pointer_attr_t) * CHAR_BIT,
+        "the pointer attributes type has unsupported width");
 
 /**
  * @enum
