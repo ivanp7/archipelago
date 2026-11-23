@@ -780,10 +780,10 @@ in the stride/alignment field (0 ≤ *M* ≤ *N*).
 The attribute format is exhaustive; every representation has a unique, valid meaning.
 
 For 64-bit attributes:
-- Max primitive size (length×stride): 64 PiB minus 1 byte
-- Max primitive stride & alignment: 32 PiB
-- Number of distinct data tags: 576,460,752,303,423,487 (`0x07ffffffffffffff`)
-- Number of distinct function tags: 4,611,686,018,427,387,903 (`0x3fffffffffffffff`)
+- Max data size (length×stride): 64 PiB minus 1 byte
+- Max data stride & alignment: 32 PiB
+- Number of distinct data tags: 2^59 - 1 = 576,460,752,303,423,487 (`0x07ffffffffffffff`)
+- Number of distinct function tags: 2^62 - 1 = 4,611,686,018,427,387,903 (`0x3fffffffffffffff`)
 
 ### Compatibility & Matching
 
