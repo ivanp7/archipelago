@@ -688,14 +688,14 @@ Compatibility is determined by matching the actual (tested) pointer attributes a
 
 The attribute format is 64 bits wide (though the format is adaptable to other widths).
 
-The **memory type** is determined by bits 63–62:
+The **memory kind** is determined by bits 63–62:
 
-| Bits 63-62 | Memory Type               | Description |
-| ---------- | ------------------------- | ----------- |
-| `00`       | Persistent, readable data | Generic readable memory (e.g., read-only memory mapping) |
-| `01`       | Persistent, writable data | Writable memory (e.g., heap); **may or may not be readable** |
-| `10`       | Transient, readable data  | Short-lived memory (e.g. stack); **may or may not be writable** |
-| `11`       | Function                  | Executable memory |
+| Bits 63-62 | Memory Kind    | Lifetime   | Readability    | Writability    | Description |
+| ---------- | -------------- | ---------- | -------------- | -------------- | ----------- |
+| `00`       | Generic data   | persistent | guaranteed     | not guaranteed | Readable memory (e.g., read-only or read-write memory mapping) |
+| `01`       | Writable data  | persistent | not guaranteed | guaranteed     | Writable memory (e.g., heap, read-write or write-only memory mapping) |
+| `10`       | Transient data | transient  | guaranteed     | not guaranteed | Short-lived memory (e.g. stack) |
+| `11`       | Function       | persistent | n/a            | n/a            | Executable memory (e.g. function in shared library) |
 
 > Readability for writable memory is unspecified, which mirrors standard C semantics.
 > In C language, pointers to `const`-qualified types denote read-only memory (memory that shouldn't be written to),
@@ -706,19 +706,19 @@ The **memory type** is determined by bits 63–62:
 
 ### Function Pointers
 
-If the memory type is `11`, bits 61–0 store a **function tag**, an unsigned integer ID identifying a function type.
+If the memory kind is `11`, bits 61–0 store a **function tag**, an unsigned integer ID identifying a function type.
 Function tags are used for matching: unequal tags correspond to incompatible functions.
 
 **Format**:
 
 | Bit Range | Field Width | Field Value |
 | --------- | ----------- | ----------- |
-| (64; 62]  | 2           | Memory type (`11`) |
+| (64; 62]  | 2           | Memory kind (`11`) |
 | (62; 0]   | 62          | Function tag |
 
 ### Data Pointers
 
-If the type is `00`, `01`, or `10`, the interpretation of bits 61–0 depends on the value of bits 61-59:
+If the memory kind is `00`, `01`, or `10`, the interpretation of bits 61–0 depends on the value of bits 61-59:
 - if the value is `000`, bits 61-0 encode a *complex data* type;
 - otherwise, it's a *primitive data* type.
 
@@ -736,7 +736,7 @@ so that derived types are compatible with base types and not vice versa.
 
 | Bit Range  | Field Width | Field Value |
 | ---------- | ----------- | ----------- |
-| (64; 62]   | 2           | Memory type (`00`, `01`, or `10`) |
+| (64; 62]   | 2           | Memory kind (`00`, `01`, or `10`) |
 | (62; 59]   | 3           | `000` |
 | (59; 0]    | 59          | Data tag |
 
@@ -753,7 +753,7 @@ These are defined by length, stride (element size), and alignment requirement.
 
 | Bit Range  | Field Width | Field Value |
 | ---------- | ----------- | ----------- |
-| (64; 62]   | 2           | Memory type (`00`, `01`, or `10`) |
+| (64; 62]   | 2           | Memory kind (`00`, `01`, or `10`) |
 | (62; 56]   | 6           | *63 - N*, where *N* is the bit width of the next field |
 | (56; 56-N] | N           | *q* = (stride / alignment) - 1 |
 | (56-N; 0]  | 56-N        | Array length |
@@ -771,7 +771,7 @@ in the stride/alignment field (0 ≤ *M* ≤ *N*).
 
 | Bit Range  | Field Width | Field Value |
 | ---------- | ----------- | ----------- |
-| (64; 62]   | 2           | Memory type (`00`, `01`, or `10`) |
+| (64; 62]   | 2           | Memory kind (`00`, `01`, or `10`) |
 | (62; 56]   | 6           | *63 - N* = 63 (`111111`) |
 | (56; 0]    | 56          | Array length |
 
@@ -810,7 +810,7 @@ Data types match if they meet one of the following criteria:
 * **OR** Both types are complex, and:
     - The tested tag is an *extension* of the sample tag.
 
-> **Note**: memory types of both attributes are irrelevant for matching and ignored.
+> **Note**: memory kinds of both attributes are irrelevant for matching and ignored.
 
 The data wildcard tag is defined as a tag with all bits clear (`0`).
 
