@@ -692,9 +692,9 @@ The **memory kind** is determined by bits 63–62:
 
 | Bits 63-62 | Memory Kind    | Lifetime   | Readability    | Writability    | Description |
 | ---------- | -------------- | ---------- | -------------- | -------------- | ----------- |
-| `00`       | Generic data   | persistent | guaranteed     | not guaranteed | Readable memory (e.g., read-only or read-write memory mapping) |
-| `01`       | Writable data  | persistent | not guaranteed | guaranteed     | Writable memory (e.g., heap, read-write or write-only memory mapping) |
-| `10`       | Transient data | transient  | guaranteed     | not guaranteed | Short-lived memory (e.g. stack) |
+| `00`       | Generic Data   | persistent | guaranteed     | not guaranteed | Readable memory (e.g., read-only or read-write memory mapping) |
+| `01`       | Writable Data  | persistent | not guaranteed | guaranteed     | Writable memory (e.g., heap, read-write or write-only memory mapping) |
+| `10`       | Transient Data | transient  | guaranteed     | not guaranteed | Short-lived memory (e.g. stack) |
 | `11`       | Function       | persistent | n/a            | n/a            | Executable memory (e.g. function in shared library) |
 
 > Readability for writable memory is unspecified, which mirrors standard C semantics.

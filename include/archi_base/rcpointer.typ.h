@@ -36,6 +36,8 @@
  * @brief Generic wrapper for reference counted data/function pointers with attributes.
  *
  * This type extends `archi_pointer_t` with a reference counter of the pointee.
+ *
+ * @note The `ref_count` field should not be set for pointers to transient data.
  */
 typedef struct archi_rcpointer {
     union {
