@@ -24,8 +24,8 @@
  */
 
 #pragma once
-#ifndef _ARCHI_LOG_COLOR_DEF_H_
-#define _ARCHI_LOG_COLOR_DEF_H_
+#ifndef _ARCHI_LOG_I_COLOR_DEF_H_
+#define _ARCHI_LOG_I_COLOR_DEF_H_
 
 #define ARCHI_COLOR_RESET           "\033[0m" ///< Reset color to default.
 
@@ -87,5 +87,5 @@
 
 /** @} end of ArchiLogColorConstants */
 
-#endif // _ARCHI_LOG_COLOR_DEF_H_
+#endif // _ARCHI_LOG_I_COLOR_DEF_H_
 

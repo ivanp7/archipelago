@@ -8,7 +8,7 @@
 #include "archi/opencl/i/string.fun.h"
 #include "archi_base/pointer.fun.h"
 #include "archi_base/util/string.fun.h"
-#include "archi_log/print.fun.h"
+#include "archi/log/i/print.fun.h"
 
 #include <stdlib.h> // for malloc(), free()
 #include <string.h> // for memcpy()

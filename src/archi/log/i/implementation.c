@@ -23,10 +23,10 @@
  * @brief Implementation of the logging module.
  */
 
-#include "archi_log/manager.fun.h"
-#include "archi_log/print.fun.h"
-#include "archi_log/verbosity.def.h"
-#include "archi_log/color.def.h"
+#include "archi/log/i/manager.fun.h"
+#include "archi/log/i/print.fun.h"
+#include "archi/log/i/verbosity.def.h"
+#include "archi/log/i/color.def.h"
 #include "manager.typ.h" // for struct archi_log_manager
 
 #include <time.h> // for struct timespec, timespec_get()

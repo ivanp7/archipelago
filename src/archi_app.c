@@ -65,10 +65,10 @@
 
 // Logging
 #include "archi_app/manager/log.fun.h"
-#include "archi_log/manager.fun.h"
-#include "archi_log/print.fun.h"
-#include "archi_log/verbosity.def.h"
-#include "archi_log/color.def.h"
+#include "archi/log/i/manager.fun.h"
+#include "archi/log/i/print.fun.h"
+#include "archi/log/i/verbosity.def.h"
+#include "archi/log/i/color.def.h"
 
 // Utilities
 #include "archi_base/pointer.fun.h"

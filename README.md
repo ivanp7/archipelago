@@ -5,13 +5,13 @@
     * [System Lifecycle](#system-lifecycle)
     * [System Architecture](#system-architecture)
 * [Component Breakdown](#component-breakdown)
-    * [Logging](#logging)
     * [Base](#base)
         * [Reference Counters](#reference-counters)
         * [Generic Pointers](#generic-pointers)
         * [Key-Value Lists](#key-value-lists)
         * [Error Propagation](#error-propagation)
     * [Built-In Modules](#built-in-modules)
+        * [Logging](#logging)
         * [Contexts](#contexts)
             * [Contexts and Slots](#contexts-and-slots)
             * [Context Interfaces](#context-interfaces)
@@ -24,7 +24,7 @@
         * [Files](#files)
         * [Shared Libraries](#shared-libraries)
         * [Hashmaps](#hashmaps)
-        * [Environment Variables](#environment-variables)
+        * [Environment](#environment)
         * [Parsers](#parsers)
         * [Timers](#timers)
     * [Application](#application)
@@ -124,17 +124,19 @@ ensuring a strict hierarchy of dependencies.
 ```
 +-------------------+--------------------+
 |    application    |      plugins       |
-+===================+====================+ -\---\
-| threads, memory, files, libraries, ... | m
-+----------------------------------------+ o   l
-|        directed execution graphs       | d   i
-+----------------------------------------+ u   b
-|             aggregate types            | l   r
-+----------------------------------------+ e   a
-|                contexts                | s   r
-+========================+===============+ -/  y
-|    base & utilities    |    logging    |
-+------------------------+---------------+ -----/
++===================+====================+ -\----\
+| threads, memory, files, libraries, ... |
++----------------------------------------+ m
+|        directed execution graphs       | o    l
++----------------------------------------+ d    i
+|            aggregate objects           | u    b
++----------------------------------------+ l    r
+|                contexts                | e    a
++----------------------------------------+ s    r
+|                logging                 |      y
++========================================+ -/
+|            base & utilities            |
++----------------------------------------+ ------/
 ```
 
 ### The Library
@@ -160,35 +162,6 @@ the system employs a loosely coupled modular architecture:
     optimizing the resulting binaries for different deployment targets.
 
 # Component Breakdown
-
-## Logging
-
-Directory: `archi_log`.
-
-A standalone, singleton logging component that outputs to a configurable stream.
-
-### Filtering
-
-Messages are categorized by severity, which determines their output color:
-1. *Error*
-2. *Warning*
-3. *Notice*
-4. *Info*
-5. *Debug*
-
-Messages are only printed if their verbosity level is less than or equal to the global logger threshold,
-which is configurable via a command-line option.
-
-### Message Format
-
-```
-H:MM:SS.mmm.uuu [LVL] (origin) text
-```
-
-* `H:MM:SS.mmm.uuu`: Timestamp (hours, minutes, seconds, milliseconds, microseconds).
-* `LVL`: Verbosity level abbreviation (ERR, WRN, NTC, INF, or DBG).
-* `origin`: Optional source of the message (typically the calling function).
-* `text`: The log message content.
 
 ## Base
 
@@ -246,6 +219,35 @@ If an error with non-zero error code gets returned to the application, it is pri
 ## Built-In Modules
 
 Directory: `archi`.
+
+### Logging
+
+Directory: `archi/log`.
+
+A standalone, singleton logging component that outputs to a configurable stream.
+
+#### Filtering
+
+Messages are categorized by severity, which determines their output color:
+1. *Error*
+2. *Warning*
+3. *Notice*
+4. *Info*
+5. *Debug*
+
+Messages are only printed if their verbosity level is less than or equal to the global logger threshold,
+which is configurable via a command-line option.
+
+#### Message Format
+
+```
+H:MM:SS.mmm.uuu [LVL] (origin) text
+```
+
+* `H:MM:SS.mmm.uuu`: Timestamp (hours, minutes, seconds, milliseconds, microseconds).
+* `LVL`: Verbosity level abbreviation (ERR, WRN, NTC, INF, or DBG).
+* `origin`: Optional source of the message (typically the calling function).
+* `text`: The log message content.
 
 ### Contexts
 
@@ -583,7 +585,7 @@ Directory: `archi/hashmap`.
 
 TODO
 
-### Environment Variables
+### Environment
 
 Directory: `archi/env`.
 

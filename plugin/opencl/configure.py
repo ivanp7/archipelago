@@ -63,7 +63,7 @@ LFLAGS += [f'-L{ARCHI_LDIR}']
 CFLAGS += pkgconfig.cflags('OpenCL').split(' ')
 CFLAGS += ['-DCL_TARGET_OPENCL_VERSION=300']
 
-LIBS = ['-larchi_base', '-larchi_log', '-larchi-timer-i', '-lm']
+LIBS = ['-larchi_base', '-larchi-log-i', '-larchi-timer-i', '-lm']
 LIBS += pkgconfig.libs('OpenCL').split(' ')
 
 ## }}}

@@ -24,8 +24,8 @@
  */
 
 #pragma once
-#ifndef _ARCHI_LOG_MANAGER_FUN_H_
-#define _ARCHI_LOG_MANAGER_FUN_H_
+#ifndef _ARCHI_LOG_I_MANAGER_FUN_H_
+#define _ARCHI_LOG_I_MANAGER_FUN_H_
 
 #include "archi_base/manager.typ.h"
 
@@ -113,5 +113,5 @@ archi_log_indentation(void);
 bool
 archi_log_colorful(void);
 
-#endif // _ARCHI_LOG_MANAGER_FUN_H_
+#endif // _ARCHI_LOG_I_MANAGER_FUN_H_
 

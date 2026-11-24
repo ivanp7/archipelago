@@ -34,8 +34,8 @@
 #include "archi_base/rcpointer.fun.h"
 #include "archi_base/pointer.fun.h"
 #include "archi_base/pointer.def.h"
-#include "archi_log/print.fun.h"
-#include "archi_log/color.def.h"
+#include "archi/log/i/print.fun.h"
+#include "archi/log/i/color.def.h"
 
 #include <stdint.h> // for uintmax_t
 

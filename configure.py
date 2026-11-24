@@ -40,11 +40,10 @@ MODULES = [
 
         "archi_base",
 
-        ### Logging ###
-
-        "archi_log",
-
         ### Built-in modules ###
+
+        # logging
+        "archi/log/i",
 
         # contexts
         "archi/context/i",
@@ -96,7 +95,7 @@ MODULES = [
         "archi/hashmap/exe",
         "archi/hashmap/ctx",
 
-        # environment variables
+        # environment
         "archi/env/i",
         "archi/env/ctx",
 

@@ -24,8 +24,8 @@
  */
 
 #pragma once
-#ifndef _ARCHI_LOG_PRINT_FUN_H_
-#define _ARCHI_LOG_PRINT_FUN_H_
+#ifndef _ARCHI_LOG_I_PRINT_FUN_H_
+#define _ARCHI_LOG_I_PRINT_FUN_H_
 
 #include <stdbool.h>
 #include <stddef.h> // for size_t
@@ -276,5 +276,5 @@ archi_log_debug(
         ...
 );
 
-#endif // _ARCHI_LOG_PRINT_FUN_H_
+#endif // _ARCHI_LOG_I_PRINT_FUN_H_
 

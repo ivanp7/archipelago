@@ -20,21 +20,31 @@
 
 /**
  * @file
- * @brief Log verbosity levels.
+ * @brief The logging manager type.
  */
 
 #pragma once
-#ifndef _ARCHI_LOG_VERBOSITY_DEF_H_
-#define _ARCHI_LOG_VERBOSITY_DEF_H_
+#ifndef _SRC_ARCHI_LOG_I_MANAGER_TYP_H_
+#define _SRC_ARCHI_LOG_I_MANAGER_TYP_H_
 
-#define ARCHI_LOG_VERBOSITY__QUIET      0  ///< Disable all logging.
-#define ARCHI_LOG_VERBOSITY__ERROR      1  ///< Print errors only.
-#define ARCHI_LOG_VERBOSITY__WARNING    2  ///< Print errors and warnings only.
-#define ARCHI_LOG_VERBOSITY__NOTICE     3  ///< Print errors, warnings, and notices only.
-#define ARCHI_LOG_VERBOSITY__INFO       4  ///< Print errors, warnings, notices, and info messages.
-#define ARCHI_LOG_VERBOSITY__DEBUG      5  ///< Print everything, including debug messages.
+#include <stdio.h> // for FILE
+#include <time.h> // for struct timespec
+#include <stdbool.h>
+#ifndef __STDC_NO_THREADS__
+#  include <threads.h> // for mtx_t
+#endif
 
-#define ARCHI_LOG_VERBOSITY_MAX     ARCHI_LOG_VERBOSITY__DEBUG ///< The maximum verbosity level.
 
-#endif // _ARCHI_LOG_VERBOSITY_DEF_H_
+struct archi_log_manager {
+    FILE *stream; ///< Stream to print messages to.
+    struct timespec start_time; ///< Application start time.
+    int verbosity_level;        ///< Log verbosity level.
+    int indentation_width;      ///< Log indentation width.
+    bool colorful;              ///< Whether color is used in log messages.
+#ifndef __STDC_NO_THREADS__
+    mtx_t *lock; ///< Mutex for message printing operation atomicity.
+#endif
+};
+
+#endif // _SRC_ARCHI_LOG_I_MANAGER_TYP_H_
 

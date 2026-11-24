@@ -24,8 +24,8 @@
  */
 
 #include "archi_app/manager/log.fun.h"
-#include "archi_log/verbosity.def.h"
-#include "../../archi_log/manager.typ.h" // for struct archi_log_manager
+#include "archi/log/i/verbosity.def.h"
+#include "../../archi/log/i/manager.typ.h" // for struct archi_log_manager
 
 #include <stdlib.h> // for malloc(), free()
 
