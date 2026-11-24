@@ -39,7 +39,7 @@ from ..context import (
         MemoryMapDataSymbol,
 )
 from ..registry import Registry
-from ..helper import new_aggregate_object
+from ..helper import Helper, AggregateHelper
 from ..procedure import Procedure, MemoryAllocationProcedure
 
 ##############################################################################
@@ -220,318 +220,288 @@ class OpenCLKernelCloneContext(ContextWhitelist):
 
 ##############################################################################
 
-def opencl_svm_interface(plugin, /):
-    """Obtain OpenCL SVM interface.
+class OpenCLHelper(Helper):
+    """Helper functions for archi/opencl module.
     """
-    return MemoryInterfaceSymbol.slot('opencl_svm', plugin)
+    @staticmethod
+    def svm_flags(read=False, write=False, fine_grain=False, atomics=False):
+        """Calculate OpenCL SVM flags.
+        """
+        if not isinstance(read, bool):
+            raise TypeError
+        elif not isinstance(write, bool):
+            raise TypeError
+        elif not isinstance(fine_grain, bool):
+            raise TypeError
+        elif not isinstance(atomics, bool):
+            raise TypeError
 
-
-def opencl_svm_flags(read=False, write=False, fine_grain=False, atomics=False):
-    """Calculate OpenCL SVM flags.
-    """
-    if not isinstance(read, bool):
-        raise TypeError
-    elif not isinstance(write, bool):
-        raise TypeError
-    elif not isinstance(fine_grain, bool):
-        raise TypeError
-    elif not isinstance(atomics, bool):
-        raise TypeError
-
-    if not read and not write:
-        raise ValueError
-    elif not fine_grain and atomics:
-        raise ValueError
-
-    if read and write:
-        mem_flags = 1 << 0
-    elif write:
-        mem_flags = 1 << 1
-    elif read:
-        mem_flags = 1 << 2
-
-    if fine_grain:
-        mem_flags |= 1 << 10
-    if atomics:
-        mem_flags |= 1 << 11
-
-    return mem_flags
-
-
-def opencl_mem_map_flags(read=False, write=False, invalidate=False):
-    """Calculate OpenCL SVM map flags.
-    """
-    if not isinstance(read, bool):
-        raise TypeError
-    elif not isinstance(write, bool):
-        raise TypeError
-    elif not isinstance(invalidate, bool):
-        raise TypeError
-
-    if not read and not write:
-        raise ValueError
-    elif invalidate and (read or not write):
-        raise ValueError
-
-    if write and invalidate:
-        map_flags = 1 << 2
-    else:
-        map_flags = 0
-        if read:
-            map_flags |= 1 << 0
-        if write:
-            map_flags |= 1 << 1
-
-    return map_flags
-
-
-def new_opencl_svm_alloc_data(registry, key, /, cl_context=None, mem_flags=None):
-    """Create OpenCL SVM allocation function data.
-    """
-    if not isinstance(registry, Registry):
-        raise TypeError
-
-    if cl_context is not None and not TypeAttr.compatible(
-            TypeAttr.of(cl_context),
-            TypeAttr.complex_data(ARCHI_POINTER_DATA_TAG__OPENCL_CONTEXT)):
-        raise TypeError
-
-    if isinstance(mem_flags, int):
-        if mem_flags < 0:
+        if not read and not write:
+            raise ValueError
+        elif not fine_grain and atomics:
             raise ValueError
 
-        mem_flags = PrimitiveData(c.c_ulong(mem_flags))
-    elif mem_flags is not None and not TypeAttr.compatible(
-            TypeAttr.of(mem_flags), TypeAttr.from_type(c.c_ulong)):
-        raise TypeError
+        if read and write:
+            mem_flags = 1 << 0
+        elif write:
+            mem_flags = 1 << 1
+        elif read:
+            mem_flags = 1 << 2
 
-    alloc_data = new_aggregate_object(registry, key, metadata=AggregateTypeSymbol.slot(
-        MemoryAllocDataSymbol.full_name('opencl_svm'), registry.PLUGIN.opencl))
+        if fine_grain:
+            mem_flags |= 1 << 10
+        if atomics:
+            mem_flags |= 1 << 11
 
-    if cl_context is not None:
-        registry(alloc_data.member.context << cl_context)
-    if mem_flags is not None:
-        registry(alloc_data.member.mem_flags << mem_flags)
+        return mem_flags
 
-    return alloc_data
+    @staticmethod
+    def mem_map_flags(read=False, write=False, invalidate=False):
+        """Calculate OpenCL SVM map flags.
+        """
+        if not isinstance(read, bool):
+            raise TypeError
+        elif not isinstance(write, bool):
+            raise TypeError
+        elif not isinstance(invalidate, bool):
+            raise TypeError
 
-
-def new_opencl_svm_map_data(registry, key, /, command_queue=None, map_flags=None):
-    """Create OpenCL SVM mapping function data.
-    """
-    if not isinstance(registry, Registry):
-        raise TypeError
-
-    if command_queue is not None and not TypeAttr.compatible(
-            TypeAttr.of(command_queue),
-            TypeAttr.complex_data(ARCHI_POINTER_DATA_TAG__OPENCL_COMMAND_QUEUE)):
-        raise TypeError
-
-    if isinstance(map_flags, int):
-        if map_flags < 0:
+        if not read and not write:
+            raise ValueError
+        elif invalidate and (read or not write):
             raise ValueError
 
-        map_flags = PrimitiveData(c.c_ulong(map_flags))
-    elif map_flags is not None and not TypeAttr.compatible(
-            TypeAttr.of(map_flags), TypeAttr.from_type(c.c_ulong)):
-        raise TypeError
+        if write and invalidate:
+            map_flags = 1 << 2
+        else:
+            map_flags = 0
+            if read:
+                map_flags |= 1 << 0
+            if write:
+                map_flags |= 1 << 1
 
-    map_data = new_aggregate_object(registry, key, metadata=AggregateTypeSymbol.slot(
-        MemoryMapDataSymbol.full_name('opencl_svm'), registry.PLUGIN.opencl))
+        return map_flags
 
-    if command_queue is not None:
-        registry(map_data.member.command_queue << command_queue)
-    if map_flags is not None:
-        registry(map_data.member.map_flags << map_flags)
+    def svm_interface(self):
+        """Obtain OpenCL SVM interface.
+        """
+        return MemoryInterfaceSymbol.slot('opencl_svm', self.registry.PLUGIN.opencl)
 
-    return map_data
+    def new_svm_alloc_data(self, key, /, cl_context=None, mem_flags=None):
+        """Create OpenCL SVM allocation function data.
+        """
+        self._check_attr(cl_context, TypeAttr.complex_data(
+            ARCHI_POINTER_DATA_TAG__OPENCL_CONTEXT))
 
-
-def new_opencl_kernel_arg_set_func_data(registry, key, /,
-                                        kernel=None, arg_index=None, value=None):
-    """Create OpenCL kernel argument setting function data.
-    """
-    if not isinstance(registry, Registry):
-        raise TypeError
-
-    if kernel is not None and not TypeAttr.compatible(
-            TypeAttr.of(kernel),
-            TypeAttr.complex_data(ARCHI_POINTER_DATA_TAG__OPENCL_KERNEL)):
-        raise TypeError
-
-    if isinstance(arg_index, int):
-        if arg_index < 0:
-            raise ValueError
-
-        arg_index = PrimitiveData(c.c_uint(arg_index))
-    elif arg_index is not None and not TypeAttr.compatible(
-            TypeAttr.of(arg_index), TypeAttr.from_type(c.c_uint)):
-        raise TypeError
-
-    if value is not None and not TypeAttr.compatible(
-            TypeAttr.of(value), TypeAttr.complex_data(0)):
-        raise TypeError
-
-    setarg_data = new_aggregate_object(registry, key, metadata=AggregateTypeSymbol.slot(
-        DexgraphOperationDataSymbol.full_name('opencl_kernel_set_argument'), registry.PLUGIN.opencl))
-
-    if kernel is not None:
-        registry(setarg_data.member.kernel << kernel)
-    if arg_index is not None:
-        registry(setarg_data.member.arg_index << arg_index)
-    if value is not None:
-        registry(setarg_data.member.value << value)
-
-    return setarg_data
-
-
-def new_opencl_kernel_enqueue_func_data(registry, key, /,
-                                        command_queue=None, kernel=None,
-                                        num_work_dimensions=None, work_offset_global=None,
-                                        work_size_global=None, work_size_local=None):
-    """Create OpenCL kernel enqueueing function data.
-    """
-    if not isinstance(registry, Registry):
-        raise TypeError
-
-    if command_queue is not None and not TypeAttr.compatible(
-            TypeAttr.of(command_queue),
-            TypeAttr.complex_data(ARCHI_POINTER_DATA_TAG__OPENCL_COMMAND_QUEUE)):
-        raise TypeError
-
-    if kernel is not None and not TypeAttr.compatible(
-            TypeAttr.of(kernel),
-            TypeAttr.complex_data(ARCHI_POINTER_DATA_TAG__OPENCL_KERNEL)):
-        raise TypeError
-
-    if isinstance(work_offset_global, int):
-        if work_offset_global < 0:
-            raise ValueError
-
-        work_offset_global = PrimitiveData(c.c_size_t(work_offset_global))
-    elif isinstance(work_offset_global, tuple):
-        for offset in work_offset_global:
-            if not isinstance(offset, int):
-                raise TypeError
-            elif offset < 0:
+        if isinstance(mem_flags, int):
+            if mem_flags < 0:
                 raise ValueError
 
-        work_offset_global = PrimitiveData(
-                (c.c_size_t * len(work_offset_global))(*work_offset_global))
-    elif work_offset_global is not None and not TypeAttr.compatible(
-            TypeAttr.of(work_offset_global), TypeAttr.from_type(c.c_size_t)):
-        raise TypeError
+            mem_flags = PrimitiveData(c.c_ulong(mem_flags))
+        else:
+            self._check_attr(mem_flags, TypeAttr.from_type(c.c_ulong))
 
-    if isinstance(work_size_global, int):
-        if work_size_global < 0:
-            raise ValueError
+        alloc_data = AggregateHelper(self.registry, prefix=self.prefix).new_object(
+                key, metadata=AggregateTypeSymbol.slot(
+                    MemoryAllocDataSymbol.full_name('opencl_svm'),
+                    self.registry.PLUGIN.opencl))
 
-        work_size_global = PrimitiveData(c.c_size_t(work_size_global))
-    elif isinstance(work_size_global, tuple):
-        for offset in work_size_global:
-            if not isinstance(offset, int):
-                raise TypeError
-            elif offset < 0:
+        if cl_context is not None:
+            self.registry(alloc_data.member.context << cl_context)
+        if mem_flags is not None:
+            self.registry(alloc_data.member.mem_flags << mem_flags)
+
+        return alloc_data
+
+    def new_svm_map_data(self, key, /, command_queue=None, map_flags=None):
+        """Create OpenCL SVM mapping function data.
+        """
+        self._check_attr(command_queue, TypeAttr.complex_data(
+            ARCHI_POINTER_DATA_TAG__OPENCL_COMMAND_QUEUE))
+
+        if isinstance(map_flags, int):
+            if map_flags < 0:
                 raise ValueError
 
-        work_size_global = PrimitiveData(
-                (c.c_size_t * len(work_size_global))(*work_size_global))
-    elif work_size_global is not None and not TypeAttr.compatible(
-            TypeAttr.of(work_size_global), TypeAttr.from_type(c.c_size_t)):
-        raise TypeError
+            map_flags = PrimitiveData(c.c_ulong(map_flags))
+        else:
+            self._check_attr(map_flags, TypeAttr.from_type(c.c_ulong))
 
-    if isinstance(work_size_local, int):
-        if work_size_local < 0:
-            raise ValueError
+        map_data = AggregateHelper(self.registry, prefix=self.prefix).new_object(
+                key, metadata=AggregateTypeSymbol.slot(
+                    MemoryMapDataSymbol.full_name('opencl_svm'),
+                    self.registry.PLUGIN.opencl))
 
-        work_size_local = PrimitiveData(c.c_size_t(work_size_local))
-    elif isinstance(work_size_local, tuple):
-        for offset in work_size_local:
-            if not isinstance(offset, int):
-                raise TypeError
-            elif offset < 0:
+        if command_queue is not None:
+            self.registry(map_data.member.command_queue << command_queue)
+        if map_flags is not None:
+            self.registry(map_data.member.map_flags << map_flags)
+
+        return map_data
+
+    def new_kernel_arg_set_data(self, key, /, kernel=None, arg_index=None, value=None):
+        """Create OpenCL kernel argument setter function data.
+        """
+        self._check_attr(kernel, TypeAttr.complex_data(
+            ARCHI_POINTER_DATA_TAG__OPENCL_KERNEL))
+
+        if isinstance(arg_index, int):
+            if arg_index < 0:
                 raise ValueError
 
-        work_size_local = PrimitiveData(
-                (c.c_size_t * len(work_size_local))(*work_size_local))
-    elif work_size_local is not None and not TypeAttr.compatible(
-            TypeAttr.of(work_size_local), TypeAttr.from_type(c.c_size_t)):
-        raise TypeError
+            arg_index = PrimitiveData(c.c_uint(arg_index))
+        else:
+            self._check_attr(arg_index, TypeAttr.from_type(c.c_uint))
 
-    if isinstance(num_work_dimensions, int):
-        if num_work_dimensions <= 0:
-            raise ValueError("Number of work dimensions must be positive")
+        self._check_attr(value, TypeAttr.complex_data())
 
-        if isinstance(work_offset_global, Object) \
-                and work_offset_global.length != num_work_dimensions:
-            raise ValueError("Global work offset has wrong number of dimensions")
-        elif isinstance(work_size_global, Object) \
-                and work_size_global.length != num_work_dimensions:
-            raise ValueError("Global work size has wrong number of dimensions")
-        elif isinstance(work_size_local, Object) \
-                and work_size_local.length != num_work_dimensions:
-            raise ValueError("Local work size has wrong number of dimensions")
+        setarg_data = AggregateHelper(self.registry, prefix=self.prefix).new_object(
+                key, metadata=AggregateTypeSymbol.slot(
+                    DexgraphOperationDataSymbol.full_name('opencl_kernel_set_argument'),
+                    self.registry.PLUGIN.opencl))
 
-        num_work_dimensions = PrimitiveData(c.c_size_t(num_work_dimensions))
-    elif num_work_dimensions is not None and not TypeAttr.compatible(
-            TypeAttr.of(num_work_dimensions), TypeAttr.from_type(c.c_size_t)):
-        raise TypeError
+        if kernel is not None:
+            self.registry(setarg_data.member.kernel << kernel)
+        if arg_index is not None:
+            self.registry(setarg_data.member.arg_index << arg_index)
+        if value is not None:
+            self.registry(setarg_data.member.value << value)
 
-    enqueue_data = new_aggregate_object(registry, key, metadata=AggregateTypeSymbol.slot(
-        DexgraphOperationDataSymbol.full_name('opencl_kernel_enqueue'), registry.PLUGIN.opencl))
+        return setarg_data
 
-    if command_queue is not None:
-        registry(enqueue_data.member.command_queue << command_queue)
-    if kernel is not None:
-        registry(enqueue_data.member.kernel << kernel)
-    if num_work_dimensions is not None:
-        registry(enqueue_data.member.num_work_dimensions << num_work_dimensions)
-    if work_offset_global is not None:
-        registry(enqueue_data.member.work_offset_global << work_offset_global)
-    if work_size_global is not None:
-        registry(enqueue_data.member.work_size_global << work_size_global)
-    if work_size_local is not None:
-        registry(enqueue_data.member.work_size_local << work_size_local)
+    def new_kernel_enqueue_data(self, key, /, command_queue=None, kernel=None,
+                                num_work_dimensions=None, work_offset_global=None,
+                                work_size_global=None, work_size_local=None):
+        """Create OpenCL kernel enqueueing function data.
+        """
+        self._check_attr(command_queue, TypeAttr.complex_data(
+            ARCHI_POINTER_DATA_TAG__OPENCL_COMMAND_QUEUE))
+        self._check_attr(kernel, TypeAttr.complex_data(
+            ARCHI_POINTER_DATA_TAG__OPENCL_KERNEL))
 
-    return enqueue_data
+        if isinstance(work_offset_global, int):
+            if work_offset_global < 0:
+                raise ValueError
 
+            work_offset_global = PrimitiveData(c.c_size_t(work_offset_global))
+        elif isinstance(work_offset_global, tuple):
+            for offset in work_offset_global:
+                if not isinstance(offset, int):
+                    raise TypeError
+                elif offset < 0:
+                    raise ValueError
 
-def new_opencl_event_wait_func_data(registry, key, /):
-    """Create OpenCL event waiting function data.
-    """
-    return new_aggregate_object(registry, key, metadata=AggregateTypeSymbol.slot(
-        'opencl_event_array', registry.PLUGIN.opencl))
+            work_offset_global = PrimitiveData(
+                    (c.c_size_t * len(work_offset_global))(*work_offset_global))
+        else:
+            self._check_attr(work_offset_global, TypeAttr.from_type(c.c_size_t))
 
-def new_opencl_event_profile_func_data(registry, key, /,
-                                       timer=None, from_time='START', to_time='END'):
-    """Create OpenCL event time recording function data.
-    """
-    if not isinstance(registry, Registry):
-        raise TypeError
+        if isinstance(work_size_global, int):
+            if work_size_global < 0:
+                raise ValueError
 
-    if timer is not None and not TypeAttr.compatible(
-            TypeAttr.of(timer),
-            TypeAttr.complex_data(typ.ARCHI_POINTER_DATA_TAG__TIMER)):
-        raise TypeError
+            work_size_global = PrimitiveData(c.c_size_t(work_size_global))
+        elif isinstance(work_size_global, tuple):
+            for offset in work_size_global:
+                if not isinstance(offset, int):
+                    raise TypeError
+                elif offset < 0:
+                    raise ValueError
 
-    profiling_info = {'QUEUED': 0x1280, 'SUBMIT': 0x1281,
-                      'START': 0x1282, 'END': 0x1283,
-                      'COMPLETE': 0x1284}
+            work_size_global = PrimitiveData(
+                    (c.c_size_t * len(work_size_global))(*work_size_global))
+        else:
+            self._check_attr(work_size_global, TypeAttr.from_type(c.c_size_t))
 
-    if from_time not in profiling_info:
-        raise  ValueError
-    elif to_time not in profiling_info:
-        raise  ValueError
+        if isinstance(work_size_local, int):
+            if work_size_local < 0:
+                raise ValueError
 
-    recording_data = new_aggregate_object(registry, key, metadata=AggregateTypeSymbol.slot(
-        DexgraphOperationDataSymbol.full_name('opencl_event_profile'), registry.PLUGIN.opencl))
+            work_size_local = PrimitiveData(c.c_size_t(work_size_local))
+        elif isinstance(work_size_local, tuple):
+            for offset in work_size_local:
+                if not isinstance(offset, int):
+                    raise TypeError
+                elif offset < 0:
+                    raise ValueError
 
-    if timer is not None:
-        registry(recording_data.member.timer << timer)
-    registry(recording_data.member.from_time << PrimitiveData(c.c_uint(profiling_info[from_time])))
-    registry(recording_data.member.to_time << PrimitiveData(c.c_uint(profiling_info[to_time])))
+            work_size_local = PrimitiveData(
+                    (c.c_size_t * len(work_size_local))(*work_size_local))
+        else:
+            self._check_attr(work_size_local, TypeAttr.from_type(c.c_size_t))
 
-    return recording_data
+        if isinstance(num_work_dimensions, int):
+            if num_work_dimensions <= 0:
+                raise ValueError("Number of work dimensions must be positive")
+
+            if isinstance(work_offset_global, Object) \
+                    and work_offset_global.length != num_work_dimensions:
+                raise ValueError("Global work offset has wrong number of dimensions")
+            elif isinstance(work_size_global, Object) \
+                    and work_size_global.length != num_work_dimensions:
+                raise ValueError("Global work size has wrong number of dimensions")
+            elif isinstance(work_size_local, Object) \
+                    and work_size_local.length != num_work_dimensions:
+                raise ValueError("Local work size has wrong number of dimensions")
+
+            num_work_dimensions = PrimitiveData(c.c_size_t(num_work_dimensions))
+        else:
+            self._check_attr(num_work_dimensions, TypeAttr.from_type(c.c_size_t))
+
+        enqueue_data = AggregateHelper(self.registry, prefix=self.prefix).new_object(
+                key, metadata=AggregateTypeSymbol.slot(
+                    DexgraphOperationDataSymbol.full_name('opencl_kernel_enqueue'),
+                    self.registry.PLUGIN.opencl))
+
+        if command_queue is not None:
+            self.registry(enqueue_data.member.command_queue << command_queue)
+        if kernel is not None:
+            self.registry(enqueue_data.member.kernel << kernel)
+        if num_work_dimensions is not None:
+            self.registry(enqueue_data.member.num_work_dimensions << num_work_dimensions)
+        if work_offset_global is not None:
+            self.registry(enqueue_data.member.work_offset_global << work_offset_global)
+        if work_size_global is not None:
+            self.registry(enqueue_data.member.work_size_global << work_size_global)
+        if work_size_local is not None:
+            self.registry(enqueue_data.member.work_size_local << work_size_local)
+
+        return enqueue_data
+
+    def new_event_wait_data(self, key, /):
+        """Create OpenCL event waiting function data.
+        """
+        return AggregateHelper(self.registry, prefix=self.prefix).new_object(
+                key, metadata=AggregateTypeSymbol.slot(
+                    'opencl_event_array',
+                    self.registry.PLUGIN.opencl))
+
+    def new_event_profile_data(self, key, /, timer=None, from_time='START', to_time='END'):
+        """Create OpenCL event time recording function data.
+        """
+        self._check_attr(timer, TypeAttr.complex_data(
+            typ.ARCHI_POINTER_DATA_TAG__TIMER))
+
+        profiling_info = {'QUEUED': 0x1280, 'SUBMIT': 0x1281,
+                        'START': 0x1282, 'END': 0x1283,
+                        'COMPLETE': 0x1284}
+
+        if from_time not in profiling_info:
+            raise  ValueError
+        elif to_time not in profiling_info:
+            raise  ValueError
+
+        profiling_data = AggregateHelper(self.registry, prefix=self.prefix).new_object(
+                key, metadata=AggregateTypeSymbol.slot(
+                    DexgraphOperationDataSymbol.full_name('opencl_event_profile'),
+                    self.registry.PLUGIN.opencl))
+
+        if timer is not None:
+            self.registry(profiling_data.member.timer << timer)
+        self.registry(profiling_data.member.from_time << PrimitiveData(c.c_uint(profiling_info[from_time])))
+        self.registry(profiling_data.member.to_time << PrimitiveData(c.c_uint(profiling_info[to_time])))
+
+        return profiling_data
 
 ##############################################################################
 

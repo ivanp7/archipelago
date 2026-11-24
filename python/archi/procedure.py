@@ -30,7 +30,7 @@ from .object import Object, PrimitiveData
 from .context import TypeAttr, Context
 import archi.context as ctx
 from .registry import Registry
-from .helper import heap_memory_interface
+from .helper import MemoryHelper
 
 
 class Procedure:
@@ -265,7 +265,7 @@ class MemoryAllocationProcedure(Procedure):
         if self.interface is not None:
             interface = self.interface
         else:
-            interface = heap_memory_interface(registry.BUILTIN.executable)
+            interface = MemoryHelper(registry).heap_interface()
 
         I_MEMORY = ctx.MemoryContext.interface_in(registry.BUILTIN.executable)
         I_MEMORY_MAPPING = ctx.MemoryMappingContext.interface_in(registry.BUILTIN.executable)
