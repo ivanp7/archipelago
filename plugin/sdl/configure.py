@@ -40,7 +40,7 @@ ARCHI_LDIR  = "../../build"
 
 MODULES = [
         "archi/sdl2/exe",
-        "archi/sdl2/agg",
+        "archi/sdl2/obj",
         "archi/sdl2/ctx",
 
         "archi/font_psf2/i",

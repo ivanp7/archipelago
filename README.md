@@ -661,7 +661,7 @@ by integrating facilities provided by other modules.
 The Archipelago library utilizes the following names for auxiliary submodules:
 
 - `ctx`: Context interfaces.
-- `agg`: Aggregate type interfaces.
+- `obj`: Aggregate object type interfaces.
 - `mem`: Memory interfaces.
 - `exe`: Directed execution graph functions.
 - `thr`: Threading functions.

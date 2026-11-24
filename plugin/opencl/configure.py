@@ -42,7 +42,7 @@ MODULES = [
         "archi/opencl/i",
         "archi/opencl/mem",
         "archi/opencl/exe",
-        "archi/opencl/agg",
+        "archi/opencl/obj",
         "archi/opencl/ctx",
         ]
 

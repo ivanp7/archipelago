@@ -52,39 +52,39 @@ MODULES = [
 
         # aggregate objects
         "archi/aggr/i",
-        "archi/aggr/agg",
+        "archi/aggr/obj",
         "archi/aggr/ctx",
 
         # directed execution graphs
         "archi/exec/i",
         "archi/exec/exe",
-        "archi/exec/agg",
+        "archi/exec/obj",
         "archi/exec/ctx",
 
         # threads
         "archi/thread/i",
         "archi/thread/exe",
-        "archi/thread/agg",
+        "archi/thread/obj",
         "archi/thread/ctx",
 
         # signal management
         "archi/signal/i",
         "archi/signal/sig",
         "archi/signal/exe",
-        "archi/signal/agg",
+        "archi/signal/obj",
         "archi/signal/sig-ctx",
 
         # memory
         "archi/memory/i",
         "archi/memory/mem",
         "archi/memory/exe",
-        "archi/memory/agg",
+        "archi/memory/obj",
         "archi/memory/ctx",
 
         # files
         "archi/file/i",
         "archi/file/exe",
-        "archi/file/agg",
+        "archi/file/obj",
         "archi/file/ctx",
 
         # shared libraries
