@@ -133,26 +133,22 @@ archi_pointer_attr__func(
     return ARCHI_POINTEE_MEM__FUNCTION | tag;
 }
 
-void
+int
 archi_pointer_attr_unpk(
         archi_pointer_attr_t attr,
-        unsigned char *out_type,
         archi_pointer_attr_t *out_tag,
         size_t *out_length,
         size_t *out_stride,
         size_t *out_alignment)
 {
-    unsigned char type = ARCHI_POINTEE_TYPE__UNSPEC;
-
-    if (archi_pointer_attr_unpk__pdata(attr, out_length, out_stride, out_alignment, NULL))
-        type = ARCHI_POINTEE_TYPE__PDATA;
+    if (archi_pointer_attr_unpk__func(attr, out_tag, NULL))
+        return ARCHI_POINTEE_TYPE__FUNC;
     else if (archi_pointer_attr_unpk__cdata(attr, out_tag, NULL))
-        type = ARCHI_POINTEE_TYPE__CDATA;
-    else if (archi_pointer_attr_unpk__func(attr, out_tag, NULL))
-        type = ARCHI_POINTEE_TYPE__FUNC;
-
-    if (out_type != NULL)
-        *out_type = type;
+        return ARCHI_POINTEE_TYPE__CDATA;
+    else if (archi_pointer_attr_unpk__pdata(attr, out_length, out_stride, out_alignment, NULL))
+        return ARCHI_POINTEE_TYPE__PDATA;
+    else // cannot happen, but added for robustness
+        return ARCHI_POINTEE_TYPE__UNSPEC;
 }
 
 bool

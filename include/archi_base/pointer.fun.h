@@ -45,6 +45,9 @@
  * Stride must be non-zero. Alignment requirement must be a power of two.
  * Stride must be divisible by alignment requirement.
  *
+ * The result of this function can be combined using bit OR (|)
+ * with one of ARCHI_POINTEE_MEM__DATA_* constants to specify the memory kind.
+ *
  * @return Primitive data pointer attributes, or -1 on error.
  */
 archi_pointer_attr_t
@@ -57,6 +60,10 @@ archi_pointer_attr__pdata(
 
 /**
  * @brief Compute data pointer attributes for primitive data of specified length and type.
+ *
+ * The result of this macro can be combined using bit OR (|)
+ * with one of ARCHI_POINTEE_MEM__DATA_* constants to specify the memory kind.
+ *
  */
 #define ARCHI_POINTER_ATTR__PDATA(length, type) \
     archi_pointer_attr__pdata((length), sizeof(type), alignof(type), NULL)
@@ -65,6 +72,9 @@ archi_pointer_attr__pdata(
  * @brief Compute pointer attributes (all bits except pointer type) for a complex data type.
  *
  * Data type tag must not be greater than ARCHI_POINTER_ATTR_MAX__DATA_TAG.
+ *
+ * The result of this function can be combined using bit OR (|)
+ * with one of ARCHI_POINTEE_MEM__DATA_* constants to specify the memory kind.
  *
  * @return Complex data pointer attributes, or -1 on error.
  */
@@ -89,12 +99,15 @@ archi_pointer_attr__func(
  * @brief Unpack pointer attributes.
  *
  * This function never fails because there are no invalid representations of pointer attributes.
+ * It returns the type of a pointee encoded by the attributes --
+ * one of the ARCHI_POINTEE_TYPE__* constants (except ARCHI_POINTEE_TYPE__UNSPEC).
+ *
+ * @return Type of a pointee.
  */
-void
+int
 archi_pointer_attr_unpk(
         archi_pointer_attr_t attr, ///< [in] Pointer attributes.
-        unsigned char *out_type, ///< [out] Type of the pointee.
-        archi_pointer_attr_t *out_tag, ///< [out] Type tag.
+        archi_pointer_attr_t *out_tag, ///< [out] Data or function type tag.
         size_t *out_length,   ///< [out] Data length.
         size_t *out_stride,   ///< [out] Data stride.
         size_t *out_alignment ///< [out] Data alignment.
