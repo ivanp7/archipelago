@@ -48,5 +48,16 @@ archi_library_initialize_manager_ptr(
         archi_manager_ptr_init_spec_t init_spec ///< [in] Manager pointer initialization specification.
 );
 
+/**
+ * @brief Initialize a shared library.
+ *
+ * This function calls archi_library_initialize_manager_ptr() for
+ * all managers in `archi_manager_ptr_init_specs`.
+ */
+void
+archi_library_initialize(
+        archi_library_handle_t handle ///< [in] Shared library handle.
+);
+
 #endif // _ARCHI_LIBRARY_I_INIT_FUN_H_
 

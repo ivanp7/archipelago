@@ -25,6 +25,7 @@
 
 #include "archi/library/i/init.fun.h"
 #include "archi/library/i/library.fun.h"
+#include "archi_base/manager.var.h"
 
 #include <stddef.h> // for NULL
 
@@ -53,5 +54,16 @@ archi_library_initialize_manager_ptr(
     library.init_fn(manager);
 
     return true;
+}
+
+void
+archi_library_initialize(
+        archi_library_handle_t handle)
+{
+    if (handle == NULL)
+        return;
+
+    for (size_t i = 0; archi_manager_ptr_init_specs[i].get_fn != NULL; i++)
+        archi_library_initialize_manager_ptr(handle, archi_manager_ptr_init_specs[i]);
 }
 
