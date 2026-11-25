@@ -17,8 +17,18 @@
             * [Context Interfaces](#context-interfaces)
             * [Context Registry](#context-registry)
         * [Aggregate Objects](#aggregate-objects)
+            * [Aggregate Interfaces](#aggregate-interfaces)
+                * [The Generic Aggregate Interface](#the-generic-aggregate-interface)
         * [Directed Execution Graphs](#directed-execution-graphs)
+            * [Operations](#operations)
+            * [Operation Sequences](#operation-sequences)
+            * [Transitions](#transitions)
+            * [Branching and Conditions](#branching-and-conditions)
+            * [Nodes](#nodes)
+            * [Graph Execution](#graph-execution)
         * [Threads](#threads)
+            * [Thread Groups](#thread-groups)
+            * [Lock-Free Queues](#lock-free-queues)
         * [Signal Management](#signal-management)
         * [Memory](#memory)
         * [Files](#files)
@@ -466,7 +476,7 @@ or NULL if the execution is finished.
 
 When a *transition function* is NULL, a *transition data* must be a successor node, which is used as is.
 
-##### Branching & Conditions
+##### Branching and Conditions
 
 An example of a transition function is the built-in 'branch' function.
 This function allows to choose between two branches,
@@ -484,7 +494,7 @@ A *graph* consists of *nodes* connected by *transitions*. Each node contains:
 * **Operation**: A function (and associated data) defining the node logic.
 * **Transition**: A function (and associated data) used to determine the successor node.
 
-#### Execution
+#### Graph Execution
 
 1. **Operation Phase**: Operation of the current node is executed.
     If the function is NULL, the operation function data is interpreted as a pointer to an operation sequence.
