@@ -76,10 +76,10 @@ archi_dexgraph_execute(
         else
         {
             if (node->name != NULL)
-                ARCHI_ERROR_VAR_MODIFY(&error, error.code, "DEG node \"%s\": %s",
+                ARCHI_ERROR_VAR_MODIFY(&error, error.code, "DEG node \"%s\" -> %s",
                         node->name, error.message);
             else
-                ARCHI_ERROR_VAR_MODIFY(&error, error.code, "DEG: %s",
+                ARCHI_ERROR_VAR_MODIFY(&error, error.code, "DEG -> %s",
                         error.message);
 
             break;

@@ -117,11 +117,11 @@ archi_dexgraph_operation_seq_call(
         if (error.code != 0)
         {
             if (sequence->name != NULL)
-                ARCHI_ERROR_VAR_MODIFY(&error, error.code, "DEG op.seq. \"%s\" operation #%zu: %s",
+                ARCHI_ERROR_VAR_MODIFY(&error, error.code, "DEG op.seq. \"%s\" operation #%zu -> %s",
                         sequence->name, op_index, error.message);
             else
-                ARCHI_ERROR_VAR_MODIFY(&error, error.code, "DEG op.seq. operation #%zu: %s",
-                        sequence->name, op_index, error.message);
+                ARCHI_ERROR_VAR_MODIFY(&error, error.code, "DEG op.seq. operation #%zu -> %s",
+                        op_index, error.message);
 
             break;
         }
