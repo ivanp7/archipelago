@@ -93,17 +93,28 @@ typedef struct archi_error {
     ARCHI_ERROR_VAR_UNSET(&var)
 
 /**
- * @brief Fill error variable with error info.
+ * @brief Fill error variable with error info (without setting the origin).
  */
-#define ARCHI_ERROR_VAR_SET(ptr, err_code, ...) do {                            \
+#define ARCHI_ERROR_VAR_MODIFY(ptr, err_code, ...) do {                         \
     if ((ptr) != NULL) {                                                        \
         (ptr)->code = (err_code);                                               \
-        (ptr)->origin.line = __LINE__;                                          \
-        (ptr)->origin.file = __FILE__;                                          \
-        (ptr)->origin.func = __func__;                                          \
-        snprintf((ptr)->message, ARCHI_ERROR_MESSAGE_SIZE, __VA_ARGS__)         \
+        char archi_error_message[ARCHI_ERROR_MESSAGE_SIZE];                     \
+        snprintf(archi_error_message, ARCHI_ERROR_MESSAGE_SIZE, __VA_ARGS__)    \
         < 0 ? abort() : (void)0; /* suppress GCC -Wformat-truncation warning */ \
+        strcpy((ptr)->message, archi_error_message);                            \
     }                                                                           \
+} while (0)
+
+/**
+ * @brief Fill error variable with error info.
+ */
+#define ARCHI_ERROR_VAR_SET(ptr, err_code, ...) do {            \
+    if ((ptr) != NULL) {                                        \
+        ARCHI_ERROR_VAR_MODIFY((ptr), (err_code), __VA_ARGS__); \
+        (ptr)->origin.line = __LINE__;                          \
+        (ptr)->origin.file = __FILE__;                          \
+        (ptr)->origin.func = __func__;                          \
+    }                                                           \
 } while (0)
 
 /**
@@ -154,6 +165,12 @@ typedef struct archi_error {
  * @brief Error parameter declaration for function parameter lists.
  */
 #define ARCHI_ERROR_PARAM_DECL  archi_error_t *const ARCHI_ERROR_PARAM
+
+/**
+ * @brief Fill the error parameter with error info (without setting the origin).
+ */
+#define ARCHI_ERROR_MODIFY(ptr, err_code, ...) \
+    ARCHI_ERROR_VAR_MODIFY(ARCHI_ERROR_PARAM, (err_code), __VA_ARGS__)
 
 /**
  * @brief Fill the error parameter with error info.
