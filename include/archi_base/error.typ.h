@@ -66,7 +66,7 @@ typedef int archi_error_code_t;
 /**
  * @brief Size of an error message buffer.
  */
-#define ARCHI_ERROR_MESSAGE_SIZE    (1 << 7) // 128
+#define ARCHI_ERROR_MESSAGE_SIZE    (1 << 10) // 1024
 
 /**
  * @brief Error description.
