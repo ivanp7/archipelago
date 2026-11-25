@@ -151,9 +151,8 @@ ensuring a strict hierarchy of dependencies.
 
 ### The Library
 
-The foundation of the system consists of the logging subsystem and the library base & utilities.
-The library base provides core features utilized throughout the system,
-except for the logging subsystem which is an independent component.
+The foundation of the system consists of the library base & utilities,
+which provide core features utilized throughout the system.
 
 Together, the foundational layer and the modules built upon it constitute
 the **Archipelago Library** (`libarchi`).
@@ -234,7 +233,7 @@ Directory: `archi`.
 
 Directory: `archi/log`.
 
-A standalone, singleton logging component that outputs to a configurable stream.
+The logging system for printing formatted messages to a configurable stream.
 
 #### Filtering
 
