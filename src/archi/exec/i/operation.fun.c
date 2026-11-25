@@ -115,10 +115,18 @@ archi_dexgraph_operation_seq_call(
         archi_dexgraph_operation_call(sequence->operation[op_index], &error);
 
         if (error.code != 0)
-            goto finish;
+        {
+            if (sequence->name != NULL)
+                ARCHI_ERROR_VAR_MODIFY(&error, error.code, "DEG op.seq. \"%s\" operation #%zu: %s",
+                        sequence->name, op_index, error.message);
+            else
+                ARCHI_ERROR_VAR_MODIFY(&error, error.code, "DEG op.seq. operation #%zu: %s",
+                        sequence->name, op_index, error.message);
+
+            break;
+        }
     }
 
-finish:
     ARCHI_ERROR_ASSIGN(error);
 }
 

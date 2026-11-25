@@ -38,7 +38,7 @@
  * to obtain the successor node.
  * Otherwise, the transition data is interpreted as the pointer to the successor node.
  *
- * @return The successor node, or NULL.
+ * @return Pointer to the successor node, or NULL.
  */
 const struct archi_dexgraph_node*
 archi_dexgraph_transition_target(

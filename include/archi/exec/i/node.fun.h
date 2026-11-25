@@ -40,7 +40,7 @@ struct archi_dexgraph_node;
  *
  * Then, the transition is used to determine the successor node.
  *
- * @return Pointer to the successor node.
+ * @return Pointer to the successor node, or to the current node in case of error.
  */
 const struct archi_dexgraph_node*
 archi_dexgraph_execute_node(

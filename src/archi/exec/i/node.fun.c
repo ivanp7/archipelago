@@ -41,7 +41,6 @@ archi_dexgraph_execute_node(
     }
 
     archi_error_t error;
-    const archi_dexgraph_node_t *target = NULL;
 
     // Execute the node operation
     archi_dexgraph_operation_call(node->operation, &error);
@@ -55,12 +54,9 @@ archi_dexgraph_execute_node(
     if (error.code != 0)
         goto finish;
 
-    // Update the node
-    target = node;
-
 finish:
     ARCHI_ERROR_ASSIGN(error);
-    return target;
+    return node;
 }
 
 void
@@ -71,8 +67,24 @@ archi_dexgraph_execute(
     archi_error_t error;
     ARCHI_ERROR_VAR_RESET(&error);
 
-    while ((node != NULL) && (error.code == 0))
-        node = archi_dexgraph_execute_node(node, &error);
+    while (node != NULL)
+    {
+        const archi_dexgraph_node_t *successor = archi_dexgraph_execute_node(node, &error);
+
+        if (error.code == 0)
+            node = successor;
+        else
+        {
+            if (node->name != NULL)
+                ARCHI_ERROR_VAR_MODIFY(&error, error.code, "DEG node \"%s\": %s",
+                        node->name, error.message);
+            else
+                ARCHI_ERROR_VAR_MODIFY(&error, error.code, "DEG: %s",
+                        error.message);
+
+            break;
+        }
+    }
 
     ARCHI_ERROR_ASSIGN(error);
 }
