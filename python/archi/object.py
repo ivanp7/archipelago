@@ -22,6 +22,7 @@
 # @brief Representation of objects in memory.
 
 import ctypes as c
+from collections import defaultdict
 from types import MappingProxyType, NoneType
 
 import archi.ctypes as typ
@@ -173,10 +174,10 @@ class Object:
         self._reset_address()
 
     def __repr__(self, /):
-        if not self.function:
-            return f'{self.__class__.__name__}(length={self.length}, stride={self.stride}, alignment={self.alignment}, tag={self.tag}, function={self.function}, refs={list(self.ref_map.keys())})'
+        if not self.is_function:
+            return f'{self.__class__.__name__}(length={self.length}, stride={self.stride}, alignment={self.alignment}, tag={self.tag}, function={self.is_function}, refs={list(self.ref_map.keys())})'
         else:
-            return f'{self.__class__.__name__}(tag={self.tag}, function={self.function})'
+            return f'{self.__class__.__name__}(tag={self.tag}, function={self.is_function})'
 
     @property
     def is_function(self, /):
@@ -526,52 +527,67 @@ class ObjectRefTree(ObjectSequence):
         elif root.total_size == 0:
             raise ValueError("root object cannot be of zero size")
 
-        # Get the whole tree of subreferences
-        objects = root.ref_set(nested=True)
-        objects.discard(root) # should not be needed, as circular dependencies are not supported
-
         ###############################################
         # Optimize size by merging equivalent objects #
         ###############################################
 
-        # Split the set of objects by total size, total alignment, and keys
-        objects_grouped = {(root.total_size, root.total_alignment, frozenset(root.ref_map.keys())): {root}}
+        # Compute hashes of all objects
+        obj_hashes = {None: None}
 
-        for obj in objects:
-            if obj.total_size == 0:
-                continue # zero size objects are omitted and won't be assigned an address
+        obj_queue = [root]
+        while obj_queue:
+            obj = obj_queue.pop()
+            if obj in obj_hashes:
+                continue
 
-            group = (obj.total_size, obj.total_alignment, frozenset(obj.ref_map.keys()))
-
-            if group in objects_grouped:
-                objects_grouped[group].add(obj)
+            q = {ref_obj for ref_obj in obj.ref_map.values() if ref_obj not in obj_hashes}
+            if q:
+                obj_queue.append(obj)
+                obj_queue.extend(q)
             else:
-                objects_grouped[group] = {obj}
+                obj_hashes[obj] = hash((obj.total_size, obj.total_alignment,
+                                        frozenset((key, obj_hashes[ref_obj])
+                                                  for key, ref_obj in obj.ref_map.items())))
+        del obj_queue
+
+        del obj_hashes[None]
+
+        # Split objects into groups by hash
+        obj_groups = defaultdict(set)
+
+        for obj, hash_value in obj_hashes.items():
+            obj_groups[hash_value].add(obj)
+
+        del obj_hashes
 
         # Create a map of objects to sets of all equivalent objects
         equivalents = {}
 
-        for group, objects in objects_grouped.items():
-            local_equivalents = {}
+        for group in obj_groups.values():
+            # Check equivalence pairwise within a group (unequal hashes guarantee non-equivalence)
+            group_equivalents = {}
 
-            for obj in objects:
-                for key_obj, eq_objs in local_equivalents.items():
+            for obj in group:
+                for key_obj, eq_objs in group_equivalents.items(): # O(N^2)
                     if key_obj is not obj and obj.equivalent_to(key_obj):
                         eq_objs.add(obj)
                         break
                 else:
-                    local_equivalents[obj] = set()
+                    group_equivalents[obj] = set()
 
-            equivalents |= local_equivalents
+            equivalents |= group_equivalents
 
-        del objects_grouped
+        del obj_groups
 
         # Merge the root object equivalents
-        if equivalents[root]:
-            equivalents[root].add(root)
-            root = ObjectEquivalentSet(frozenset(equivalents[root]))
-
+        root_eq_objs = equivalents[root]
         del equivalents[root]
+
+        if root_eq_objs:
+            root_eq_objs.add(root)
+            root = ObjectEquivalentSet(frozenset(root_eq_objs))
+
+        del root_eq_objs
 
         # Create the list of remaining objects
         objects = []
