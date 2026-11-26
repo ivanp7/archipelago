@@ -534,21 +534,37 @@ class ObjectRefTree(ObjectSequence):
         # Optimize size by merging equivalent objects #
         ###############################################
 
+        # Split the set of objects by total size, total alignment, and keys
+        objects_grouped = {(root.total_size, root.total_alignment, frozenset(root.ref_map.keys())): {root}}
+
+        for obj in objects:
+            if obj.total_size == 0:
+                continue # zero size objects are omitted and won't be assigned an address
+
+            group = (obj.total_size, obj.total_alignment, frozenset(obj.ref_map.keys()))
+
+            if group in objects_grouped:
+                objects_grouped[group].add(obj)
+            else:
+                objects_grouped[group] = {obj}
+
         # Create a map of objects to sets of all equivalent objects
-        equivalents = {root: set()}
+        equivalents = {}
 
-        while objects:
-            obj = next(iter(objects))
+        for group, objects in objects_grouped.items():
+            local_equivalents = {}
 
-            if obj.total_size != 0: # zero size objects are omitted and won't be assigned an address
-                for key_obj, eq_objs in equivalents.items():
-                    if obj.equivalent_to(key_obj):
+            for obj in objects:
+                for key_obj, eq_objs in local_equivalents.items():
+                    if key_obj is not obj and obj.equivalent_to(key_obj):
                         eq_objs.add(obj)
                         break
                 else:
-                    equivalents[obj] = set()
+                    local_equivalents[obj] = set()
 
-            objects.remove(obj)
+            equivalents |= local_equivalents
+
+        del objects_grouped
 
         # Merge the root object equivalents
         if equivalents[root]:
