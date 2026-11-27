@@ -130,22 +130,22 @@ ARCHI_DEXGRAPH_OPERATION_FUNC(archi_dexgraph_op__timer_report)
         return;
     }
 
-    printf("\n------ TIMER REPORT ------\n");
+    fprintf(stderr, "\n------ TIMER REPORT ------\n");
 
     {
         const char *name = archi_timer_name(timer);
         if (name != NULL)
-            printf("Name         : %s\n", name);
+            fprintf(stderr, "Name         : %s\n", name);
     }
 
     {
         unsigned long runs_done = archi_timer_runs_done(timer);
-        printf("Runs done    : %lu\n", runs_done);
+        fprintf(stderr, "Runs done    : %lu\n", runs_done);
     }
 
-#define PRINT_TIME(name, func) {                                    \
-        float time = func(timer);                                   \
-        printf(name ": %.3g s (%.3g ms)\n", time, time * 1e+3f);    \
+#define PRINT_TIME(name, func) {                                            \
+        float time = func(timer);                                           \
+        fprintf(stderr, name ": %.3g s (%.3g ms)\n", time, time * 1e+3f);   \
     }
 
     PRINT_TIME("Minimum time ", archi_timer_time_minimum);
@@ -157,11 +157,11 @@ ARCHI_DEXGRAPH_OPERATION_FUNC(archi_dexgraph_op__timer_report)
 
     {
         float runs_per_second = 1.0f / archi_timer_time_average(timer);
-        printf("Average rate : %.3g runs/s (%.3g runs/ms)\n",
+        fprintf(stderr, "Average rate : %.3g runs/s (%.3g runs/ms)\n",
                 runs_per_second, runs_per_second * 1e-3f);
     }
 
-    printf("--- END OF TIMER REPORT ---\n");
+    fprintf(stderr, "--- END OF TIMER REPORT ---\n");
 
     ARCHI_ERROR_RESET();
 }

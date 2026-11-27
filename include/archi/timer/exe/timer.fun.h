@@ -56,7 +56,7 @@ ARCHI_DEXGRAPH_OPERATION_FUNC(archi_dexgraph_op__timer_stop);
  *
  * Function data type: archi_timer_t.
  *
- * The report is printed to the standard output stream.
+ * The report is printed to the standard error stream.
  */
 ARCHI_DEXGRAPH_OPERATION_FUNC(archi_dexgraph_op__timer_report);
 
