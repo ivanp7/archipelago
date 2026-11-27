@@ -1196,52 +1196,65 @@ print_logo(void)
 void
 print_error(void)
 {
-#define LOCATION_LENGTH 1024
+#define LINE_LEN__CODE          128
+#define LINE_LEN__MESSAGE       (16 + ARCHI_ERROR_MESSAGE_SIZE)
+#define LINE_LEN__LOCATION_FILE (16 + PATH_MAX)
+#define LINE_LEN__LOCATION_LINE 32
+#define LINE_LEN__LOCATION_FUNC 128
 
-    char location[LOCATION_LENGTH];
-
-    if ((archi_process.error.location.func != NULL) && (archi_process.error.location.file != NULL))
-        snprintf(location, LOCATION_LENGTH, " | (%s:%i) in %s()",
-                archi_process.error.location.file,
-                archi_process.error.location.line,
-                archi_process.error.location.func);
-    else if (archi_process.error.location.file != NULL)
-        snprintf(location, LOCATION_LENGTH, " | (%s:%i)",
-                archi_process.error.location.file,
-                archi_process.error.location.line);
-    else if (archi_process.error.location.func != NULL)
-        snprintf(location, LOCATION_LENGTH, " | in %s()",
-                archi_process.error.location.func);
-    else
-        location[0] = '\0';
-
-#undef LOCATION_LENGTH
+    char line__code[LINE_LEN__CODE];
+    char line__message[LINE_LEN__MESSAGE];
+    char line__location_file[LINE_LEN__LOCATION_FILE];
+    char line__location_line[LINE_LEN__LOCATION_LINE];
+    char line__location_func[LINE_LEN__LOCATION_FUNC];
 
     if (archi_process.error.code != 0)
-    {
-        const char *code_name = archi_error_code_string(archi_process.error.code);
+        snprintf(line__code, LINE_LEN__CODE, "  Code: %+i (%s)\n",
+                archi_process.error.code, archi_error_code_string(archi_process.error.code));
 
-        if (code_name != NULL)
-        {
-            if (archi_process.error.message[0] != '\0')
-                archi_log_error(NULL, "%i (%s): %s%s",
-                        archi_process.error.code, code_name, archi_process.error.message, location);
-            else
-                archi_log_error(NULL, "%i (%s)%s",
-                        archi_process.error.code, code_name, location);
-        }
-        else
-        {
-            if (archi_process.error.message[0] != '\0')
-                archi_log_error(NULL, "%i: %s%s",
-                        archi_process.error.code, archi_process.error.message, location);
-            else
-                archi_log_error(NULL, "%i%s",
-                        archi_process.error.code, location);
-        }
-    }
+    if (archi_process.error.message[0] != '\0')
+        snprintf(line__message, LINE_LEN__MESSAGE, "  Message: %s\n", archi_process.error.message);
+    else
+        line__message[0] = '\0';
+
+    if (archi_process.error.location.file != NULL)
+        snprintf(line__location_file, LINE_LEN__LOCATION_FILE, "  File: %s\n",
+                archi_process.error.location.file);
+    else
+        line__location_file[0] = '\0';
+
+    if (archi_process.error.location.line != 0)
+        snprintf(line__location_line, LINE_LEN__LOCATION_LINE, "  Line: %i\n",
+                archi_process.error.location.line);
+    else
+        line__location_line[0] = '\0';
+
+    if (archi_process.error.location.func != NULL)
+        snprintf(line__location_func, LINE_LEN__LOCATION_FUNC, "  Function: %s()\n",
+                archi_process.error.location.func);
+    else
+        line__location_func[0] = '\0';
+
+#undef LINE_LEN__CODE
+#undef LINE_LEN__MESSAGE
+#undef LINE_LEN__LOCATION_FILE
+#undef LINE_LEN__LOCATION_LINE
+#undef LINE_LEN__LOCATION_FUNC
+
+#define SEP1    "--------------------------------"
+#define SEP2    " -------------------------------------------------------"
+
+    if (archi_process.error.code != 0)
+        archi_log_error(NULL, SEP1 "\n%s%s%s%s%s" SEP2,
+                line__code, line__message,
+                line__location_file, line__location_line, line__location_func);
     else if (archi_process.error.message[0] != '\0')
-        archi_log_warning(NULL, "%s%s", archi_process.error.message, location);
+        archi_log_warning(NULL, SEP1 "\n%s%s%s%s" SEP2,
+                line__message,
+                line__location_file, line__location_line, line__location_func);
+
+#undef SEP1
+#undef SEP2
 }
 
 ///////////////////////////////////////////////////////////////////////////////
