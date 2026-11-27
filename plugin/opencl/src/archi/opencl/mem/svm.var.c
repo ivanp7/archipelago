@@ -25,6 +25,7 @@
 
 #include "archi/opencl/mem/svm.var.h"
 #include "archi/opencl/mem/svm.typ.h"
+#include "archi/opencl/i/string.fun.h"
 #include "archi/opencl/i/tag.def.h"
 
 #include <stdlib.h> // for malloc(), free()
@@ -86,7 +87,8 @@ ARCHI_MEMORY_MAP_FUNC(archi_memory_map__opencl_svm)
 
     if (ret != CL_SUCCESS)
     {
-        ARCHI_ERROR_SET(ARCHI__ESYSTEM, "couldn't map OpenCL SVM: error %i", ret);
+        ARCHI_ERROR_SET(ARCHI__ESYSTEM, "couldn't map OpenCL SVM: error %i (%s)",
+                ret, archi_opencl_string_error(ret));
         return (archi_memory_map_info_t){0};
     }
 
@@ -118,7 +120,8 @@ ARCHI_MEMORY_UNMAP_FUNC(archi_memory_unmap__opencl_svm)
         clReleaseEvent(event);
     }
     // else
-    //     ARCHI_ERROR_SET(ARCHI__ESYSTEM, "couldn't unmap OpenCL SVM: error %i", ret);
+    //     ARCHI_ERROR_SET(ARCHI__ESYSTEM, "couldn't unmap OpenCL SVM: error %i (%s)",
+    //             ret, archi_opencl_string_error(ret));
 
     clReleaseCommandQueue(command_queue);
 }

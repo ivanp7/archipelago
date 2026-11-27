@@ -97,7 +97,7 @@ archi_opencl_string_error(
         CASE_STR(CL_INVALID_LINKER_OPTIONS)
         CASE_STR(CL_INVALID_DEVICE_PARTITION_COUNT)
 
-        default: return NULL;
+        default: return "<unknown>";
     }
 }
 
@@ -112,7 +112,7 @@ archi_opencl_string_build_status(
         CASE_STR(CL_BUILD_SUCCESS)
         CASE_STR(CL_BUILD_IN_PROGRESS)
 
-        default: return NULL;
+        default: return "<unknown>";
     }
 }
 

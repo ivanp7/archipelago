@@ -24,6 +24,7 @@
  */
 
 #include "archi/opencl/ctx/command_queue.var.h"
+#include "archi/opencl/i/string.fun.h"
 #include "archi/opencl/i/tag.def.h"
 #include "archi/context/i/interface.def.h"
 #include "archi_base/rcpointer.fun.h"
@@ -135,7 +136,8 @@ ARCHI_CONTEXT_INIT_FUNC(archi_context_init__opencl_command_queue)
             archi_rcpointer_abandon(context_data->ref_context);
             free(context_data);
 
-            ARCHI_ERROR_SET(ARCHI__ESYSTEM, "couldn't obtain platform ID of the devices");
+            ARCHI_ERROR_SET(ARCHI__ESYSTEM, "couldn't obtain platform ID of the devices: error %i (%s)",
+                    ret, archi_opencl_string_error(ret));
             return NULL;
         }
     }
@@ -161,7 +163,8 @@ ARCHI_CONTEXT_INIT_FUNC(archi_context_init__opencl_command_queue)
         archi_rcpointer_abandon(context_data->ref_context);
         free(context_data);
 
-        ARCHI_ERROR_SET(ARCHI__ESYSTEM, "couldn't create an OpenCL command queue: error %i", ret);
+        ARCHI_ERROR_SET(ARCHI__ESYSTEM, "couldn't create an OpenCL command queue: error %i (%s)",
+                ret, archi_opencl_string_error(ret));
         return NULL;
     }
 

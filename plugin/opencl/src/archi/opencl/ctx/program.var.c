@@ -26,6 +26,7 @@
 #include "archi/opencl/ctx/program.var.h"
 #include "archi/opencl/i/program.fun.h"
 #include "archi/opencl/i/device.fun.h"
+#include "archi/opencl/i/string.fun.h"
 #include "archi/opencl/i/tag.def.h"
 #include "archi/context/i/interface.def.h"
 #include "archi_base/rcpointer.fun.h"
@@ -304,7 +305,8 @@ ARCHI_CONTEXT_INIT_FUNC(archi_context_init__opencl_program_bin)
                 &context_data->platdev->platform_id, NULL);
         if (ret != CL_SUCCESS)
         {
-            ARCHI_ERROR_SET(ARCHI__ESYSTEM, "couldn't obtain platform ID of the devices");
+            ARCHI_ERROR_SET(ARCHI__ESYSTEM, "couldn't obtain platform ID of the devices: error %i (%s)",
+                    ret, archi_opencl_string_error(ret));
             goto failure;
         }
     }

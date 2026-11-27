@@ -24,6 +24,7 @@
  */
 
 #include "archi/opencl/i/device.fun.h"
+#include "archi/opencl/i/string.fun.h"
 #include "archi_base/util/size.def.h"
 
 #include <stdlib.h> // for malloc(), free()
@@ -79,7 +80,8 @@ archi_opencl_platdev_set(
         cl_int ret = clGetPlatformIDs(0, (cl_platform_id*)NULL, &num_platforms);
         if (ret != CL_SUCCESS)
         {
-            ARCHI_ERROR_SET(ARCHI__ESYSTEM, "couldn't get number of platform IDs");
+            ARCHI_ERROR_SET(ARCHI__ESYSTEM, "couldn't get number of platform IDs: error %i (%s)",
+                    ret, archi_opencl_string_error(ret));
             return;
         }
 
@@ -103,7 +105,8 @@ archi_opencl_platdev_set(
         {
             free(platform_list);
 
-            ARCHI_ERROR_SET(ARCHI__ESYSTEM, "couldn't get platform IDs");
+            ARCHI_ERROR_SET(ARCHI__ESYSTEM, "couldn't get platform IDs: error %i (%s)",
+                    ret, archi_opencl_string_error(ret));
             return;
         }
 
@@ -121,7 +124,8 @@ archi_opencl_platdev_set(
                 0, (cl_device_id*)NULL, &num_devices);
         if (ret != CL_SUCCESS)
         {
-            ARCHI_ERROR_SET(ARCHI__ESYSTEM, "couldn't get number of device IDs");
+            ARCHI_ERROR_SET(ARCHI__ESYSTEM, "couldn't get number of device IDs: error %i (%s)",
+                    ret, archi_opencl_string_error(ret));
             return;
         }
 
@@ -147,7 +151,8 @@ archi_opencl_platdev_set(
         {
             free(device_list);
 
-            ARCHI_ERROR_SET(ARCHI__ESYSTEM, "couldn't get device IDs");
+            ARCHI_ERROR_SET(ARCHI__ESYSTEM, "couldn't get device IDs: error %i (%s)",
+                    ret, archi_opencl_string_error(ret));
             return;
         }
 

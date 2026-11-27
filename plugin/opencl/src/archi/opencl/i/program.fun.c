@@ -495,7 +495,8 @@ archi_opencl_program_build(
 
         if (ret != CL_SUCCESS)
         {
-            ARCHI_ERROR_SET(ARCHI__ESYSTEM, "couldn't create program with source: error %i", ret);
+            ARCHI_ERROR_SET(ARCHI__ESYSTEM, "couldn't create program with source: error %i (%s)",
+                    ret, archi_opencl_string_error(ret));
             goto finish;
         }
     }
@@ -513,7 +514,8 @@ archi_opencl_program_build(
 
         if (ret != CL_SUCCESS)
         {
-            ARCHI_ERROR_SET(ARCHI__ESYSTEM, "couldn't create program with source: error %i", ret);
+            ARCHI_ERROR_SET(ARCHI__ESYSTEM, "couldn't create program with source: error %i (%s)",
+                    ret, archi_opencl_string_error(ret));
             goto finish;
         }
     }
@@ -534,7 +536,8 @@ archi_opencl_program_build(
 
         if (ret != CL_SUCCESS)
         {
-            ARCHI_ERROR_SET(ARCHI__ESYSTEM, "couldn't compile program: error %i", ret);
+            ARCHI_ERROR_SET(ARCHI__ESYSTEM, "couldn't compile program: error %i (%s)",
+                    ret, archi_opencl_string_error(ret));
             goto finish;
         }
     }
@@ -555,7 +558,8 @@ archi_opencl_program_build(
 
         if (ret != CL_SUCCESS)
         {
-            ARCHI_ERROR_SET(ARCHI__ESYSTEM, "couldn't link program: error %i", ret);
+            ARCHI_ERROR_SET(ARCHI__ESYSTEM, "couldn't link program: error %i (%s)",
+                    ret, archi_opencl_string_error(ret));
             goto finish;
         }
     }
@@ -609,7 +613,8 @@ archi_opencl_program_bin_extract(
                 sizeof(num_devices), &num_devices, NULL);
         if (ret != CL_SUCCESS)
         {
-            ARCHI_ERROR_SET(ARCHI__ESYSTEM, "couldn't extract number of devices the program was built for");
+            ARCHI_ERROR_SET(ARCHI__ESYSTEM, "couldn't extract number of devices the program was built for: error %i (%s)",
+                    ret, archi_opencl_string_error(ret));
             goto failure;
         }
         else if (num_devices == 0) // probably never true, but check it anyway
@@ -637,7 +642,8 @@ archi_opencl_program_bin_extract(
                 sizeof(cl_device_id) * binaries.num_binaries, platdev->device_id, NULL);
         if (ret != CL_SUCCESS)
         {
-            ARCHI_ERROR_SET(ARCHI__ESYSTEM, "couldn't extract devices the program was built for");
+            ARCHI_ERROR_SET(ARCHI__ESYSTEM, "couldn't extract devices the program was built for: error %i (%s)",
+                    ret, archi_opencl_string_error(ret));
             goto failure;
         }
 
@@ -647,7 +653,8 @@ archi_opencl_program_bin_extract(
                     sizeof(cl_platform_id), &platdev->platform_id, NULL);
             if (ret != CL_SUCCESS)
             {
-                ARCHI_ERROR_SET(ARCHI__ESYSTEM, "couldn't extract platform ID associated with a device");
+                ARCHI_ERROR_SET(ARCHI__ESYSTEM, "couldn't extract platform ID associated with a device: error %i (%s)",
+                        ret, archi_opencl_string_error(ret));
                 goto failure;
             }
         }
@@ -660,7 +667,8 @@ archi_opencl_program_bin_extract(
         cl_int ret = clGetProgramInfo(program, CL_PROGRAM_BINARY_SIZES, 0, NULL, &binary_sizes_size);
         if (ret != CL_SUCCESS)
         {
-            ARCHI_ERROR_SET(ARCHI__ESYSTEM, "couldn't extract size of the array of sizes of program binaries");
+            ARCHI_ERROR_SET(ARCHI__ESYSTEM, "couldn't extract size of the array of sizes of program binaries: error %i (%s)",
+                    ret, archi_opencl_string_error(ret));
             goto failure;
         }
         else if (binary_sizes_size == 0)
@@ -680,7 +688,8 @@ archi_opencl_program_bin_extract(
         ret = clGetProgramInfo(program, CL_PROGRAM_BINARY_SIZES, binary_sizes_size, binaries.size, NULL);
         if (ret != CL_SUCCESS)
         {
-            ARCHI_ERROR_SET(ARCHI__ESYSTEM, "couldn't extract sizes of program binaries");
+            ARCHI_ERROR_SET(ARCHI__ESYSTEM, "couldn't extract sizes of program binaries: error %i (%s)",
+                    ret, archi_opencl_string_error(ret));
             goto failure;
         }
     }
@@ -717,7 +726,8 @@ archi_opencl_program_bin_extract(
         cl_int ret = clGetProgramInfo(program, CL_PROGRAM_BINARIES, contents_size, binaries.content, NULL);
         if (ret != CL_SUCCESS)
         {
-            ARCHI_ERROR_SET(ARCHI__ESYSTEM, "couldn't extract program binaries");
+            ARCHI_ERROR_SET(ARCHI__ESYSTEM, "couldn't extract program binaries: error %i (%s)",
+                    ret, archi_opencl_string_error(ret));
             goto failure;
         }
     }
@@ -914,7 +924,8 @@ archi_opencl_program_create(
 
         if (ret != CL_SUCCESS)
         {
-            ARCHI_ERROR_SET(ARCHI__ESYSTEM, "couldn't create program from binaries: error %i", ret);
+            ARCHI_ERROR_SET(ARCHI__ESYSTEM, "couldn't create program from binaries: error %i (%s)",
+                    ret, archi_opencl_string_error(ret));
             return NULL;
         }
     }
@@ -935,7 +946,8 @@ archi_opencl_program_create(
 
         if (ret != CL_SUCCESS)
         {
-            ARCHI_ERROR_SET(ARCHI__ESYSTEM, "couldn't build program: error %i", ret);
+            ARCHI_ERROR_SET(ARCHI__ESYSTEM, "couldn't build program: error %i (%s)",
+                    ret, archi_opencl_string_error(ret));
             return NULL;
         }
     }

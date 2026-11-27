@@ -25,6 +25,7 @@
 
 #include "archi/opencl/ctx/context.var.h"
 #include "archi/opencl/i/device.fun.h"
+#include "archi/opencl/i/string.fun.h"
 #include "archi/opencl/i/tag.def.h"
 #include "archi/context/i/interface.def.h"
 #include "archi_base/pointer.fun.h"
@@ -123,8 +124,8 @@ ARCHI_CONTEXT_INIT_FUNC(archi_context_init__opencl_context)
         free(context_data->platdev);
         free(context_data);
 
-        ARCHI_ERROR_SET(ARCHI__ESYSTEM, "couldn't create an OpenCL context on platform #%u: error %i",
-                platform_idx, ret);
+        ARCHI_ERROR_SET(ARCHI__ESYSTEM, "couldn't create an OpenCL context on platform #%u: error %i (%s)",
+                platform_idx, ret, archi_opencl_string_error(ret));
         return NULL;
     }
 

@@ -27,6 +27,7 @@
 #include "archi/opencl/exe/kernel.typ.h"
 #include "archi/opencl/exe/tag.def.h"
 #include "archi/opencl/i/event.fun.h"
+#include "archi/opencl/i/string.fun.h"
 #include "archi/opencl/i/tag.def.h"
 #include "archi_base/pointer.fun.h"
 
@@ -69,8 +70,8 @@ ARCHI_DEXGRAPH_OPERATION_FUNC(archi_dexgraph_op__opencl_kernel_set_arg_value)
 
     if (ret != CL_SUCCESS)
     {
-        ARCHI_ERROR_SET(ARCHI__ESYSTEM, "couldn't set value of an OpenCL kernel argument #%u: error %i",
-                setarg_data->arg_index, ret);
+        ARCHI_ERROR_SET(ARCHI__ESYSTEM, "couldn't set value of an OpenCL kernel argument #%u: error %i (%s)",
+                setarg_data->arg_index, ret, archi_opencl_string_error(ret));
         return;
     }
 
@@ -111,8 +112,8 @@ ARCHI_DEXGRAPH_OPERATION_FUNC(archi_dexgraph_op__opencl_kernel_set_arg_svmptr)
 
     if (ret != CL_SUCCESS)
     {
-        ARCHI_ERROR_SET(ARCHI__ESYSTEM, "couldn't set SVM pointer of an OpenCL kernel argument #%u: error %i",
-                setarg_data->arg_index, ret);
+        ARCHI_ERROR_SET(ARCHI__ESYSTEM, "couldn't set SVM pointer of an OpenCL kernel argument #%u: error %i (%s)",
+                setarg_data->arg_index, ret, archi_opencl_string_error(ret));
         return;
     }
 
@@ -186,7 +187,8 @@ ARCHI_DEXGRAPH_OPERATION_FUNC(archi_dexgraph_op__opencl_kernel_enqueue)
 
     if (ret != CL_SUCCESS)
     {
-        ARCHI_ERROR_SET(ARCHI__ESYSTEM, "couldn't enqueue an OpenCL kernel: error %i", ret);
+        ARCHI_ERROR_SET(ARCHI__ESYSTEM, "couldn't enqueue an OpenCL kernel: error %i (%s)",
+                ret, archi_opencl_string_error(ret));
         return;
     }
 

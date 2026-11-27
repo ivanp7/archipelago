@@ -27,6 +27,7 @@
 #include "archi/opencl/exe/event.typ.h"
 #include "archi/opencl/exe/tag.def.h"
 #include "archi/opencl/i/event.fun.h"
+#include "archi/opencl/i/string.fun.h"
 #include "archi/opencl/i/tag.def.h"
 #include "archi/timer/i/timer.fun.h"
 #include "archi_base/pointer.fun.h"
@@ -103,7 +104,8 @@ ARCHI_DEXGRAPH_OPERATION_FUNC(archi_dexgraph_op__opencl_event_profile)
 
         if (ret != CL_SUCCESS)
         {
-            ARCHI_ERROR_SET(ARCHI__ESYSTEM, "couldn't get interval start time: error %i", ret);
+            ARCHI_ERROR_SET(ARCHI__ESYSTEM, "couldn't get interval start time: error %i (%s)",
+                    ret, archi_opencl_string_error(ret));
             return;
         }
 
@@ -112,7 +114,8 @@ ARCHI_DEXGRAPH_OPERATION_FUNC(archi_dexgraph_op__opencl_event_profile)
 
         if (ret != CL_SUCCESS)
         {
-            ARCHI_ERROR_SET(ARCHI__ESYSTEM, "couldn't get interval end time: error %i", ret);
+            ARCHI_ERROR_SET(ARCHI__ESYSTEM, "couldn't get interval end time: error %i (%s)",
+                    ret, archi_opencl_string_error(ret));
             return;
         }
     }

@@ -24,6 +24,7 @@
  */
 
 #include "archi/opencl/ctx/kernel.var.h"
+#include "archi/opencl/i/string.fun.h"
 #include "archi/opencl/i/tag.def.h"
 #include "archi/context/i/interface.def.h"
 #include "archi_base/rcpointer.fun.h"
@@ -112,7 +113,8 @@ ARCHI_CONTEXT_INIT_FUNC(archi_context_init__opencl_kernel_new)
 
     if (context_data->kernel.ptr == NULL)
     {
-        ARCHI_ERROR_SET(ARCHI__ESYSTEM, "couldn't create an OpenCL kernel: error %i", ret);
+        ARCHI_ERROR_SET(ARCHI__ESYSTEM, "couldn't create an OpenCL kernel: error %i (%s)",
+                ret, archi_opencl_string_error(ret));
         goto failure;
     }
 
@@ -121,7 +123,8 @@ ARCHI_CONTEXT_INIT_FUNC(archi_context_init__opencl_kernel_new)
             sizeof(context_data->num_arguments), &context_data->num_arguments, NULL);
     if (ret != CL_SUCCESS)
     {
-        ARCHI_ERROR_SET(ARCHI__ESYSTEM, "couldn't extract number of OpenCL kernel arguments: error %i", ret);
+        ARCHI_ERROR_SET(ARCHI__ESYSTEM, "couldn't extract number of OpenCL kernel arguments: error %i (%s)",
+                ret, archi_opencl_string_error(ret));
         goto failure;
     }
 
@@ -187,7 +190,8 @@ ARCHI_CONTEXT_INIT_FUNC(archi_context_init__opencl_kernel_clone)
 
     if (context_data->kernel.ptr == NULL)
     {
-        ARCHI_ERROR_SET(ARCHI__ESYSTEM, "couldn't clone an OpenCL kernel: error %i", ret);
+        ARCHI_ERROR_SET(ARCHI__ESYSTEM, "couldn't clone an OpenCL kernel: error %i (%s)",
+                ret, archi_opencl_string_error(ret));
         goto failure;
     }
 
@@ -197,7 +201,8 @@ ARCHI_CONTEXT_INIT_FUNC(archi_context_init__opencl_kernel_clone)
 
     if (ret != CL_SUCCESS)
     {
-        ARCHI_ERROR_SET(ARCHI__ESYSTEM, "couldn't extract an OpenCL program from kernel: error %i", ret);
+        ARCHI_ERROR_SET(ARCHI__ESYSTEM, "couldn't extract an OpenCL program from kernel: error %i (%s)",
+                ret, archi_opencl_string_error(ret));
         goto failure;
     }
 
@@ -207,7 +212,8 @@ ARCHI_CONTEXT_INIT_FUNC(archi_context_init__opencl_kernel_clone)
         ret = clGetKernelInfo(context_data->kernel.ptr, CL_KERNEL_FUNCTION_NAME, 0, NULL, &name_len);
         if (ret != CL_SUCCESS)
         {
-            ARCHI_ERROR_SET(ARCHI__ESYSTEM, "couldn't extract size of the name of an OpenCL kernel: error %i", ret);
+            ARCHI_ERROR_SET(ARCHI__ESYSTEM, "couldn't extract size of the name of an OpenCL kernel: error %i (%s)",
+                    ret, archi_opencl_string_error(ret));
             goto failure;
         }
 
@@ -221,7 +227,8 @@ ARCHI_CONTEXT_INIT_FUNC(archi_context_init__opencl_kernel_clone)
         ret = clGetKernelInfo(context_data->kernel.ptr, CL_KERNEL_FUNCTION_NAME, name_len, context_data->kernel_name, NULL);
         if (ret != CL_SUCCESS)
         {
-            ARCHI_ERROR_SET(ARCHI__ESYSTEM, "couldn't extract name of an OpenCL kernel: error %i", ret);
+            ARCHI_ERROR_SET(ARCHI__ESYSTEM, "couldn't extract name of an OpenCL kernel: error %i (%s)",
+                    ret, archi_opencl_string_error(ret));
             goto failure;
         }
     }
@@ -231,7 +238,8 @@ ARCHI_CONTEXT_INIT_FUNC(archi_context_init__opencl_kernel_clone)
             sizeof(context_data->num_arguments), &context_data->num_arguments, NULL);
     if (ret != CL_SUCCESS)
     {
-        ARCHI_ERROR_SET(ARCHI__ESYSTEM, "couldn't extract number of OpenCL kernel arguments: error %i", ret);
+        ARCHI_ERROR_SET(ARCHI__ESYSTEM, "couldn't extract number of OpenCL kernel arguments: error %i (%s)",
+                ret, archi_opencl_string_error(ret));
         goto failure;
     }
 
@@ -362,8 +370,8 @@ ARCHI_CONTEXT_SET_FUNC(archi_context_set__opencl_kernel)
         cl_int ret = clSetKernelArg(context_data->kernel.ptr, arg_index, arg_size, NULL);
         if (ret != CL_SUCCESS)
         {
-            ARCHI_ERROR_SET(ARCHI__ESYSTEM, "couldn't set OpenCL kernel argument #%lli: error %i",
-                    arg_index, ret);
+            ARCHI_ERROR_SET(ARCHI__ESYSTEM, "couldn't set OpenCL kernel argument #%lli: error %i (%s)",
+                    arg_index, ret, archi_opencl_string_error(ret));
             return;
         }
 
@@ -395,8 +403,8 @@ ARCHI_CONTEXT_SET_FUNC(archi_context_set__opencl_kernel)
                 length * stride, value.ptr);
         if (ret != CL_SUCCESS)
         {
-            ARCHI_ERROR_SET(ARCHI__ESYSTEM, "couldn't set OpenCL kernel argument #%lli: error %i",
-                    arg_index, ret);
+            ARCHI_ERROR_SET(ARCHI__ESYSTEM, "couldn't set OpenCL kernel argument #%lli: error %i (%s)",
+                    arg_index, ret, archi_opencl_string_error(ret));
             return;
         }
 
@@ -427,8 +435,8 @@ ARCHI_CONTEXT_SET_FUNC(archi_context_set__opencl_kernel)
         cl_int ret = clSetKernelArg(context_data->kernel.ptr, arg_index, sizeof(cl_mem), value.ptr);
         if (ret != CL_SUCCESS)
         {
-            ARCHI_ERROR_SET(ARCHI__ESYSTEM, "couldn't set OpenCL kernel argument #%lli: error %i",
-                    arg_index, ret);
+            ARCHI_ERROR_SET(ARCHI__ESYSTEM, "couldn't set OpenCL kernel argument #%lli: error %i (%s)",
+                    arg_index, ret, archi_opencl_string_error(ret));
             return;
         }
 
@@ -459,8 +467,8 @@ ARCHI_CONTEXT_SET_FUNC(archi_context_set__opencl_kernel)
         cl_int ret = clSetKernelArgSVMPointer(context_data->kernel.ptr, arg_index, value.ptr);
         if (ret != CL_SUCCESS)
         {
-            ARCHI_ERROR_SET(ARCHI__ESYSTEM, "couldn't set OpenCL kernel argument #%lli (SVM): error %i",
-                    arg_index, ret);
+            ARCHI_ERROR_SET(ARCHI__ESYSTEM, "couldn't set OpenCL kernel argument #%lli (SVM): error %i (%s)",
+                    arg_index, ret, archi_opencl_string_error(ret));
             return;
         }
 
@@ -491,8 +499,8 @@ ARCHI_CONTEXT_SET_FUNC(archi_context_set__opencl_kernel)
                 length * stride, value.ptr);
         if (ret != CL_SUCCESS)
         {
-            ARCHI_ERROR_SET(ARCHI__ESYSTEM, "couldn't set OpenCL kernel SVM pointers: error %i",
-                    ret);
+            ARCHI_ERROR_SET(ARCHI__ESYSTEM, "couldn't set OpenCL kernel SVM pointers: error %i (%s)",
+                    ret, archi_opencl_string_error(ret));
             return;
         }
 

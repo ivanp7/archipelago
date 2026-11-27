@@ -24,6 +24,7 @@
  */
 
 #include "archi/opencl/i/event.fun.h"
+#include "archi/opencl/i/string.fun.h"
 
 
 bool
@@ -53,7 +54,8 @@ archi_opencl_event_wait(
 
     if (ret != CL_SUCCESS)
     {
-        ARCHI_ERROR_SET(ARCHI__ESYSTEM, "couldn't wait for OpenCL events: error %i", ret);
+        ARCHI_ERROR_SET(ARCHI__ESYSTEM, "couldn't wait for OpenCL events: error %i (%s)",
+                ret, archi_opencl_string_error(ret));
         return false;
     }
 
