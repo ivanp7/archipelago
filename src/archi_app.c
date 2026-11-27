@@ -50,6 +50,7 @@
 #include "archi/signal/i/signal.fun.h"
 #include "archi/signal/i/tag.def.h"
 #include "archi/signal/sig/hashmap.fun.h"
+#include "archi/signal/sig/tag.def.h"
 #include "archi/signal/sig-ctx/hashmap_data.var.h"
 
 // Environment
@@ -1041,7 +1042,11 @@ initialize_signal_management(void)
     archi_log_info(__func__, "Starting the signal management thread...");
 
     archi_process.signal.handler.function = archi_signal_handler__hashmap;
-    archi_process.signal.handler.data = archi_context_data(archi_process.signal.handler_data).ptr;
+    archi_process.signal.handler.data = (archi_pointer_t){
+        .ptr = archi_context_data(archi_process.signal.handler_data).ptr,
+        .attr = ARCHI_POINTEE_MEM__DATA_GENERIC |
+            archi_pointer_attr__cdata(ARCHI_POINTER_DATA_TAG__SIGNAL_HANDLER_DATA__HASHMAP),
+    };
 
     INIT_ERROR();
     archi_app_manager_initialize__signal(archi_process.signal.watch_set, archi_process.signal.handler,

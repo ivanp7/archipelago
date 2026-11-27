@@ -65,7 +65,12 @@ ARCHI_HASHMAP_TRAV_KV_FUNC(archi_hashmap_traverse__signal_handler)
 
 ARCHI_SIGNAL_HANDLER_FUNC(archi_signal_handler__hashmap)
 {
-    archi_signal_handler_data__hashmap_t *hashmap_data = data;
+    if (!archi_pointer_attr_compatible(data.attr,
+                archi_pointer_attr__cdata(ARCHI_POINTER_DATA_TAG__SIGNAL_HANDLER_DATA__HASHMAP),
+                NULL))
+        return false;
+
+    archi_signal_handler_data__hashmap_t *hashmap_data = data.ptr;
 
     if (hashmap_data == NULL)
         return true;

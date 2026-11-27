@@ -27,6 +27,8 @@
 #ifndef _ARCHI_SIGNAL_I_HANDLER_TYP_H_
 #define _ARCHI_SIGNAL_I_HANDLER_TYP_H_
 
+#include "archi_base/pointer.typ.h"
+
 #include <stdbool.h>
 
 
@@ -68,7 +70,7 @@ struct archi_signal_flags;
         int signo,                                              \
         void *siginfo,                                          \
         struct archi_signal_flags *flags,                       \
-        void *data)
+        archi_pointer_t data)
 
 /**
  * @brief Function pointer type for a signal handler.
@@ -89,7 +91,7 @@ typedef ARCHI_SIGNAL_HANDLER_FUNC((*archi_signal_handler_func_t));
  */
 typedef struct archi_signal_handler {
     archi_signal_handler_func_t function; ///< Signal hander function.
-    void *data; ///< Signal hander function data.
+    archi_pointer_t data; ///< Signal hander function data.
 } archi_signal_handler_t;
 
 #endif // _ARCHI_SIGNAL_I_HANDLER_TYP_H_
