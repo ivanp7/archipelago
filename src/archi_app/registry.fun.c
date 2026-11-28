@@ -300,7 +300,7 @@ archi_print_pointer_with_contents(
 
 #define MAX_SIZE    (16*8) // 8 lines of 16 bytes each
 
-    archi_print_hex_dump(value.ptr, (size <= MAX_SIZE) ? size : MAX_SIZE, false, indent_level);
+    archi_print__hex_dump(value.ptr, (size <= MAX_SIZE) ? size : MAX_SIZE, false, indent_level);
 
     if (size > MAX_SIZE)
     {

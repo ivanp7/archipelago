@@ -205,7 +205,7 @@ archi_print_color(
 }
 
 void
-archi_print_hex_dump(
+archi_print__hex_dump(
         const void *memory,
         size_t length,
         bool absolute,
