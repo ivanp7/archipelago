@@ -27,6 +27,8 @@
 #ifndef _ARCHI_LOG_I_PRINT_FUN_H_
 #define _ARCHI_LOG_I_PRINT_FUN_H_
 
+#include "archi/log/i/verbosity.def.h"
+
 #include <stdbool.h>
 #include <stddef.h> // for size_t
 
@@ -160,7 +162,7 @@ archi_print_hex_dump(
 /*****************************************************************************/
 
 /**
- * @brief Log an error-level message.
+ * @brief Log an message.
  *
  * Each message is colorized, prefixed with an elapsed-time timestamp,
  * a single-character level indicator, and optionally the message origin name.
@@ -168,6 +170,9 @@ archi_print_hex_dump(
  *
  * Thread-safe with the help of a mutex protecting the actual print,
  * (as if implicitly surrounded by a pair of archi_print_lock() and archi_print_unlock()).
+ *
+ * @param[in] verbosity
+ *   Log verbosity level. Higher values generally correspond to more verbose logging.
  *
  * @param[in] origin
  *     Optional null-terminated message origin name;
@@ -181,100 +186,47 @@ archi_print_hex_dump(
  *     Arguments corresponding to @p format.
  */
 void
-archi_log_error(
+archi_log(
+        int verbosity,
         const char *origin,
         const char *format,
         ...
 );
 
 /**
- * @brief Log a warning-level message.
+ * @brief Log an error-level message.
  *
- * Same behavior as archi_log_error(), but gated at
- * higher verbosity level and using the warning color/indicator.
- *
- * @param[in] origin
- *     Same as in archi_log_error().
- *
- * @param[in] format
- *     Same as in archi_log_error().
- *
- * @param[in] ...
- *     Same as in archi_log_error().
+ * Parameters of the macro are the same as of archi_log() except `verbosity`.
  */
-void
-archi_log_warning(
-        const char *origin,
-        const char *format,
-        ...
-);
+#define ARCHI_LOG_ERROR(...)   archi_log(ARCHI_LOG_VERBOSITY__ERROR, __VA_ARGS__)
 
 /**
- * @brief Log a notice-level message.
+ * @brief Log an warning-level message.
  *
- * Same behavior as archi_log_error(), but gated at
- * higher verbosity level and using the notice color/indicator.
- *
- * @param[in] origin
- *     Same as in archi_log_error().
- *
- * @param[in] format
- *     Same as in archi_log_error().
- *
- * @param[in] ...
- *     Same as in archi_log_error().
+ * Parameters of the macro are the same as of archi_log() except `verbosity`.
  */
-void
-archi_log_notice(
-        const char *origin,
-        const char *format,
-        ...
-);
+#define ARCHI_LOG_WARNING(...)   archi_log(ARCHI_LOG_VERBOSITY__WARNING, __VA_ARGS__)
 
 /**
- * @brief Log a info-level message.
+ * @brief Log an notice-level message.
  *
- * Same behavior as archi_log_error(), but gated at
- * higher verbosity level and using the info color/indicator.
- *
- * @param[in] origin
- *     Same as in archi_log_error().
- *
- * @param[in] format
- *     Same as in archi_log_error().
- *
- * @param[in] ...
- *     Same as in archi_log_error().
+ * Parameters of the macro are the same as of archi_log() except `verbosity`.
  */
-void
-archi_log_info(
-        const char *origin,
-        const char *format,
-        ...
-);
+#define ARCHI_LOG_NOTICE(...)   archi_log(ARCHI_LOG_VERBOSITY__NOTICE, __VA_ARGS__)
 
 /**
- * @brief Log a debug-level message.
+ * @brief Log an info-level message.
  *
- * Same behavior as archi_log_error(), but gated at
- * higher verbosity level and using the debug color/indicator.
- *
- * @param[in] origin
- *     Same as in archi_log_error().
- *
- * @param[in] format
- *     Same as in archi_log_error().
- *
- * @param[in] ...
- *     Same as in archi_log_error().
+ * Parameters of the macro are the same as of archi_log() except `verbosity`.
  */
+#define ARCHI_LOG_INFO(...)   archi_log(ARCHI_LOG_VERBOSITY__INFO, __VA_ARGS__)
 
-void
-archi_log_debug(
-        const char *origin,
-        const char *format,
-        ...
-);
+/**
+ * @brief Log an debug-level message.
+ *
+ * Parameters of the macro are the same as of archi_log() except `verbosity`.
+ */
+#define ARCHI_LOG_DEBUG(...)   archi_log(ARCHI_LOG_VERBOSITY__DEBUG, __VA_ARGS__)
 
 #endif // _ARCHI_LOG_I_PRINT_FUN_H_
 

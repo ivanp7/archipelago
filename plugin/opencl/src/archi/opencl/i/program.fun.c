@@ -281,16 +281,16 @@ archi_opencl_program_build_log(
                     CL_PROGRAM_BUILD_STATUS, sizeof(status), &status, NULL);
             if (error != CL_SUCCESS)
             {
-                archi_log_debug(__func__, "[device #%u] couldn't obtain build status", i);
+                ARCHI_LOG_DEBUG(__func__, "[device #%u] couldn't obtain build status", i);
                 continue;
             }
 
             const char *status_str = archi_opencl_string_build_status(status);
 
             if (status_str != NULL)
-                archi_log_debug(__func__, "[device #%u] build status: %s", i, status_str);
+                ARCHI_LOG_DEBUG(__func__, "[device #%u] build status: %s", i, status_str);
             else
-                archi_log_debug(__func__, "[device #%u] build status: code %i", i, status);
+                ARCHI_LOG_DEBUG(__func__, "[device #%u] build status: code %i", i, status);
         }
 
         // Print program build log
@@ -301,7 +301,7 @@ archi_opencl_program_build_log(
                     CL_PROGRAM_BUILD_LOG, 0, NULL, &length);
             if (error != CL_SUCCESS)
             {
-                archi_log_debug(__func__, "[device #%u] couldn't obtain length of build log", i);
+                ARCHI_LOG_DEBUG(__func__, "[device #%u] couldn't obtain length of build log", i);
                 continue;
             }
 
@@ -310,7 +310,7 @@ archi_opencl_program_build_log(
                 char *new_build_log = realloc(build_log, length);
                 if (new_build_log == NULL)
                 {
-                    archi_log_debug(__func__, "couldn't realloc(%zu bytes) for build log", length);
+                    ARCHI_LOG_DEBUG(__func__, "couldn't realloc(%zu bytes) for build log", length);
                     continue;
                 }
 
@@ -325,11 +325,11 @@ archi_opencl_program_build_log(
                     CL_PROGRAM_BUILD_LOG, length, build_log, NULL);
             if (error != CL_SUCCESS)
             {
-                archi_log_debug(__func__, "[device #%u] couldn't obtain build log", i);
+                ARCHI_LOG_DEBUG(__func__, "[device #%u] couldn't obtain build log", i);
                 continue;
             }
 
-            archi_log_debug(__func__, "[device #%u] build log: \n%s", i, build_log);
+            ARCHI_LOG_DEBUG(__func__, "[device #%u] build log: \n%s", i, build_log);
         }
     }
 
@@ -490,7 +490,7 @@ archi_opencl_program_build(
                 1, (const char**)&headers.content[i], &headers.size[i], &ret);
 
         if (logging)
-            archi_log_debug(__func__, "clCreateProgramWithSource('%s') -> %s",
+            ARCHI_LOG_DEBUG(__func__, "clCreateProgramWithSource('%s') -> %s",
                     headers.pathname[i], archi_opencl_string_error(ret));
 
         if (ret != CL_SUCCESS)
@@ -509,7 +509,7 @@ archi_opencl_program_build(
                 1, (const char**)&sources.content[i], &sources.size[i], &ret);
 
         if (logging)
-            archi_log_debug(__func__, "clCreateProgramWithSource('%s') -> %s",
+            ARCHI_LOG_DEBUG(__func__, "clCreateProgramWithSource('%s') -> %s",
                     sources.pathname[i], archi_opencl_string_error(ret));
 
         if (ret != CL_SUCCESS)
@@ -528,7 +528,7 @@ archi_opencl_program_build(
 
         if (logging)
         {
-            archi_log_debug(__func__, "clCompileProgram('%s') -> %s",
+            ARCHI_LOG_DEBUG(__func__, "clCompileProgram('%s') -> %s",
                     sources.pathname[i], archi_opencl_string_error(ret));
 
             archi_opencl_program_build_log(program_sources[i], num_devices, device_id);
@@ -551,7 +551,7 @@ archi_opencl_program_build(
 
         if (logging)
         {
-            archi_log_debug(__func__, "clLinkProgram() -> %s", archi_opencl_string_error(ret));
+            ARCHI_LOG_DEBUG(__func__, "clLinkProgram() -> %s", archi_opencl_string_error(ret));
 
             archi_opencl_program_build_log(program, num_devices, device_id);
         }
@@ -914,10 +914,10 @@ archi_opencl_program_create(
 
         if (logging)
         {
-            archi_log_debug(__func__, "clCreateProgramWithBinary() -> %s", archi_opencl_string_error(ret));
+            ARCHI_LOG_DEBUG(__func__, "clCreateProgramWithBinary() -> %s", archi_opencl_string_error(ret));
 
             for (cl_uint i = 0; i < platdev->num_devices; i++)
-                archi_log_debug(__func__, "[device #%u] status: %s", i, archi_opencl_string_error(binary_status[i]));
+                ARCHI_LOG_DEBUG(__func__, "[device #%u] status: %s", i, archi_opencl_string_error(binary_status[i]));
 
             free(binary_status);
         }
@@ -939,7 +939,7 @@ archi_opencl_program_create(
 
         if (logging)
         {
-            archi_log_debug(__func__, "clBuildProgram() -> %s", archi_opencl_string_error(ret));
+            ARCHI_LOG_DEBUG(__func__, "clBuildProgram() -> %s", archi_opencl_string_error(ret));
 
             archi_opencl_program_build_log(program, platdev->num_devices, platdev->device_id);
         }

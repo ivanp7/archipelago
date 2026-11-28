@@ -291,7 +291,7 @@ archi_print_hex_dump(
 
 static
 void
-archi_log(
+archi_log_impl(
         const char *message_char,
         const char *message_color,
         const char *origin,
@@ -348,89 +348,49 @@ archi_log(
 #endif
 }
 
-/*****************************************************************************/
-
 void
-archi_log_error(
+archi_log(
+        int verbosity,
         const char *origin,
         const char *format,
         ...)
 {
-    if (archi_log_verbosity() < ARCHI_LOG_VERBOSITY__ERROR)
+    if (archi_log_verbosity() < verbosity)
         return;
+
+    const char *message_char, *message_color;
+    switch (verbosity)
+    {
+        case ARCHI_LOG_VERBOSITY__ERROR:
+            message_char = "ERR";
+            message_color = ARCHI_LOG_COLOR_ERROR;
+            break;
+
+        case ARCHI_LOG_VERBOSITY__WARNING:
+            message_char = "WRN";
+            message_color = ARCHI_LOG_COLOR_WARNING;
+            break;
+
+        case ARCHI_LOG_VERBOSITY__NOTICE:
+            message_char = "NTC";
+            message_color = ARCHI_LOG_COLOR_NOTICE;
+            break;
+
+        case ARCHI_LOG_VERBOSITY__INFO:
+            message_char = "INF";
+            message_color = ARCHI_LOG_COLOR_INFO;
+            break;
+
+        default:
+            message_char = "DBG";
+            message_color = ARCHI_LOG_COLOR_DEBUG;
+            break;
+    }
 
     va_list args;
     va_start(args, format);
 
-    archi_log("ERR", ARCHI_LOG_COLOR_ERROR, origin, format, args);
-
-    va_end(args);
-}
-
-void
-archi_log_warning(
-        const char *origin,
-        const char *format,
-        ...)
-{
-    if (archi_log_verbosity() < ARCHI_LOG_VERBOSITY__WARNING)
-        return;
-
-    va_list args;
-    va_start(args, format);
-
-    archi_log("WRN", ARCHI_LOG_COLOR_WARNING, origin, format, args);
-
-    va_end(args);
-}
-
-void
-archi_log_notice(
-        const char *origin,
-        const char *format,
-        ...)
-{
-    if (archi_log_verbosity() < ARCHI_LOG_VERBOSITY__NOTICE)
-        return;
-
-    va_list args;
-    va_start(args, format);
-
-    archi_log("NTC", ARCHI_LOG_COLOR_NOTICE, origin, format, args);
-
-    va_end(args);
-}
-
-void
-archi_log_info(
-        const char *origin,
-        const char *format,
-        ...)
-{
-    if (archi_log_verbosity() < ARCHI_LOG_VERBOSITY__INFO)
-        return;
-
-    va_list args;
-    va_start(args, format);
-
-    archi_log("INF", ARCHI_LOG_COLOR_INFO, origin, format, args);
-
-    va_end(args);
-}
-
-void
-archi_log_debug(
-        const char *origin,
-        const char *format,
-        ...)
-{
-    if (archi_log_verbosity() < ARCHI_LOG_VERBOSITY__DEBUG)
-        return;
-
-    va_list args;
-    va_start(args, format);
-
-    archi_log("DBG", ARCHI_LOG_COLOR_DEBUG, origin, format, args);
+    archi_log_impl(message_char, message_color, origin, format, args);
 
     va_end(args);
 }

@@ -68,7 +68,6 @@
 #include "archi_app/manager/log.fun.h"
 #include "archi/log/i/manager.fun.h"
 #include "archi/log/i/print.fun.h"
-#include "archi/log/i/verbosity.def.h"
 #include "archi/log/i/color.def.h"
 
 // Utilities
@@ -254,13 +253,13 @@ main(
     {
         if (atexit(exit_clean) != 0)
         {
-            archi_log_error(__func__, "Error: atexit(exit_clean) failed.");
+            ARCHI_LOG_ERROR(__func__, "Error: atexit(exit_clean) failed.");
             archi_app_manager_finalize__log();
             return EXIT_FAILURE;
         }
 
         if (at_quick_exit(exit_quick) != 0)
-            archi_log_warning(__func__, "at_quick_exit(exit_quick) failed, attempting to continue...");
+            ARCHI_LOG_WARNING(__func__, "at_quick_exit(exit_quick) failed, attempting to continue...");
     }
 
     // Display the logo
@@ -273,18 +272,18 @@ main(
 
     // Initialize the reference counting manager
     {
-        archi_log_info(__func__, "Initializing the reference counting manager...");
+        ARCHI_LOG_INFO(__func__, "Initializing the reference counting manager...");
 
         archi_manager_ptr_init__ref_count(archi_app_manager_ptr_get__ref_count());
     }
 
     // Initialize the environment manager
     {
-        archi_log_info(__func__, "Initializing the environment manager...");
+        ARCHI_LOG_INFO(__func__, "Initializing the environment manager...");
 
         if (!archi_app_manager_initialize__env())
         {
-            archi_log_error(__func__, "Error: couldn't initialize the environment manager.");
+            ARCHI_LOG_ERROR(__func__, "Error: couldn't initialize the environment manager.");
             exit(EXIT_FAILURE);
         }
 
@@ -295,7 +294,7 @@ main(
     // Initialization phase //
     //////////////////////////
 
-    archi_log_notice(__func__, "Initializing the application...");
+    ARCHI_LOG_NOTICE(__func__, "Initializing the application...");
 
     open_and_map_input_files();
     create_context_registry();
@@ -306,13 +305,13 @@ main(
     // Execution phase //
     /////////////////////
 
-    archi_log_notice(__func__, "Executing the operations...");
+    ARCHI_LOG_NOTICE(__func__, "Executing the operations...");
 
     for (size_t i = 0; i < archi_process.args.num_inputs; i++)
     {
         if (!archi_process.args.dry_run)
         {
-            archi_log_info(__func__, " * updating input file mapping contexts (current = #%zu) in the registry...", i);
+            ARCHI_LOG_INFO(__func__, " * updating input file mapping contexts (current = #%zu) in the registry...", i);
 
             // Insert the previous input file context to the registry
             INSERT_CONTEXT(ARCHI_APP_REGISTRY_CONTEXT__INPUT_FILE_PREV,
@@ -335,7 +334,7 @@ main(
             // Disown the previous input file
             if (i > 0)
             {
-                archi_log_info(__func__, " * disowning file mapping context #%zu...", i-1);
+                ARCHI_LOG_INFO(__func__, " * disowning file mapping context #%zu...", i-1);
 
                 archi_context_finalize(archi_process.context.input_file[i-1]);
                 archi_process.context.input_file[i-1] = NULL;
@@ -347,7 +346,7 @@ main(
     {
         // Disown the last input file
         {
-            archi_log_info(__func__, " * disowning file mapping context #%zu...", archi_process.args.num_inputs-1);
+            ARCHI_LOG_INFO(__func__, " * disowning file mapping context #%zu...", archi_process.args.num_inputs-1);
 
             archi_context_finalize(archi_process.context.input_file[archi_process.args.num_inputs-1]);
             archi_process.context.input_file[archi_process.args.num_inputs-1] = NULL;
@@ -362,7 +361,7 @@ exec_file(
         archi_context_t file_context,
         size_t file_index)
 {
-    archi_log_info(__func__, " * executing file #%zu ('%s')...", file_index,
+    ARCHI_LOG_INFO(__func__, " * executing file #%zu ('%s')...", file_index,
             archi_process.args.input[file_index]);
 
     size_t num_operation_lists = 0; // number of traversed operation lists in the current file
@@ -389,13 +388,13 @@ exec_file(
             if (!archi_pointer_attr_compatible(contents->value.attr,
                         archi_pointer_attr__cdata(ARCHI_POINTER_DATA_TAG__KVLIST), &error))
             {
-                archi_log_warning(__func__, "Pointer to operation list #%zu has incorrect attributes (%s), ignoring...",
+                ARCHI_LOG_WARNING(__func__, "Pointer to operation list #%zu has incorrect attributes (%s), ignoring...",
                         num_operation_lists - 1, error.message);
                 continue;
             }
         }
 
-        archi_log_info(__func__, "   * [file #%zu] executing operation list #%zu...",
+        ARCHI_LOG_INFO(__func__, "   * [file #%zu] executing operation list #%zu...",
                 file_index, num_operation_lists - 1);
 
         // Execute the current operation list
@@ -417,17 +416,17 @@ exec_list(
     {
         if (operation_list->key != NULL)
         {
-            archi_log_info(__func__, "     * [operation #%zu (%zu)] :: %s",
+            ARCHI_LOG_INFO(__func__, "     * [operation #%zu (%zu)] :: %s",
                     num_operations, archi_process.num_operations, operation_list->key);
 
             if (ARCHI_POINTER_TO_FUNCTION(operation_list->value.attr))
             {
-                archi_log_error(__func__, "Operation data pointer has a function type");
+                ARCHI_LOG_ERROR(__func__, "Operation data pointer has a function type");
                 exit(EXIT_FAILURE);
             }
             else if (!archi_pointer_valid(operation_list->value, NULL))
             {
-                archi_log_error(__func__, "Operation data pointer is invalid");
+                ARCHI_LOG_ERROR(__func__, "Operation data pointer is invalid");
                 exit(EXIT_FAILURE);
             }
 
@@ -436,13 +435,13 @@ exec_list(
                 archi_pointer_attr_t tag;
 
                 if (archi_pointer_attr_unpk__cdata(operation_list->value.attr, &tag, NULL))
-                    archi_log_debug(__func__, "       operation data tag = %#jx", (uintmax_t)tag);
+                    ARCHI_LOG_DEBUG(__func__, "       operation data tag = %#jx", (uintmax_t)tag);
                 else
                 {
                     size_t length, stride, alignment;
                     archi_pointer_attr_unpk__pdata(operation_list->value.attr, &length, &stride, &alignment, NULL);
 
-                    archi_log_debug(__func__, "       operation data length = %zu, stride = %zu, alignment = %zu",
+                    ARCHI_LOG_DEBUG(__func__, "       operation data length = %zu, stride = %zu, alignment = %zu",
                             length, stride, alignment);
                 }
             }
@@ -501,11 +500,11 @@ exec_list(
                 }
             }
             else
-                archi_log_warning(__func__, "Operation of type \"%s\" is not supported, ignoring...",
+                ARCHI_LOG_WARNING(__func__, "Operation of type \"%s\" is not supported, ignoring...",
                         operation_list->key);
         }
         else // no-op
-            archi_log_info(__func__, "     * [file #%zu, list #%zu, operation #%zu (%zu)]",
+            ARCHI_LOG_INFO(__func__, "     * [file #%zu, list #%zu, operation #%zu (%zu)]",
                     file_index, list_index, num_operations, archi_process.num_operations);
 
         // Increment operation counters
@@ -521,14 +520,14 @@ exit_clean(void) // is called on exit() or if main() returns
     // Finalization phase //
     ////////////////////////
 
-    archi_log_notice(__func__, "Shutting down the application...");
+    ARCHI_LOG_NOTICE(__func__, "Shutting down the application...");
 
     finalize_signal_management();
     finalize_contexts();
 
     if (archi_manager_ptr_get__env() != NULL)
     {
-        archi_log_info(__func__, "Finalizing the environment manager...");
+        ARCHI_LOG_INFO(__func__, "Finalizing the environment manager...");
 
         archi_app_manager_finalize__env();
     }
@@ -540,20 +539,20 @@ exit_clean(void) // is called on exit() or if main() returns
         uintmax_t total_increments = archi_refcount_total_increments();
         uintmax_t total_decrements = archi_refcount_total_decrements();
 
-        archi_log_debug(__func__, "total reference counter allocations = %ju, releases = %ju, increments = %ju, decrements = %ju",
+        ARCHI_LOG_DEBUG(__func__, "total reference counter allocations = %ju, releases = %ju, increments = %ju, decrements = %ju",
                 total_allocations, total_releases, total_increments, total_decrements);
 
         if (total_increments < total_decrements)
-            archi_log_error(__func__, "Memory corruption detected: total number of reference counter decrements (%zu) exceeds increments (%zu) by %zu",
+            ARCHI_LOG_ERROR(__func__, "Memory corruption detected: total number of reference counter decrements (%zu) exceeds increments (%zu) by %zu",
                     total_decrements, total_increments, total_decrements - total_increments);
         else if (archi_refcount_error_detected())
-            archi_log_error(__func__, "Memory corruption detected: a reference counter that reached zero has been accessed");
+            ARCHI_LOG_ERROR(__func__, "Memory corruption detected: a reference counter that reached zero has been accessed");
         else if (total_increments > total_decrements)
-            archi_log_warning(__func__, "Memory leak detected: total number of reference counter increments (%zu) exceeds decrements (%zu) by %zu",
+            ARCHI_LOG_WARNING(__func__, "Memory leak detected: total number of reference counter increments (%zu) exceeds decrements (%zu) by %zu",
                     total_increments, total_decrements, total_increments - total_decrements);
     }
 
-    archi_log_notice(__func__, "The application has exited normally.");
+    ARCHI_LOG_NOTICE(__func__, "The application has exited normally.");
 
     archi_app_manager_finalize__log();
 }
@@ -561,7 +560,7 @@ exit_clean(void) // is called on exit() or if main() returns
 void
 exit_quick(void) // is called on quick_exit()
 {
-    archi_log_notice(__func__, "The application has exited without the finalization procedures.");
+    ARCHI_LOG_NOTICE(__func__, "The application has exited without the finalization procedures.");
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -574,7 +573,7 @@ create_context_registry(void)
     if (archi_process.args.dry_run)
         return;
 
-    archi_log_info(__func__, "Creating the context registry...");
+    ARCHI_LOG_INFO(__func__, "Creating the context registry...");
 
     // Prepare context initialization parameters
     archi_hashmap_alloc_params_t hashmap_params = {
@@ -604,7 +603,7 @@ create_context_registry(void)
     if (archi_process.context.registry == NULL)
         exit(EXIT_FAILURE);
 
-    archi_log_info(__func__, "Inserting the context registry into itself...");
+    ARCHI_LOG_INFO(__func__, "Inserting the context registry into itself...");
 
     INSERT_CONTEXT(ARCHI_APP_REGISTRY_CONTEXT__REGISTRY, archi_process.context.registry);
 }
@@ -616,7 +615,7 @@ create_builtin_contexts(void)
         return;
 
     {
-        archi_log_info(__func__, "Creating the library handle context of the executable...");
+        ARCHI_LOG_INFO(__func__, "Creating the library handle context of the executable...");
 
         archi_rcpointer_t interface =
             INTERFACE_PTR(archi_context_interface__library);
@@ -632,7 +631,7 @@ create_builtin_contexts(void)
             exit(EXIT_FAILURE);
     }
     {
-        archi_log_info(__func__, "Creating the standard streams contexts...");
+        ARCHI_LOG_INFO(__func__, "Creating the standard streams contexts...");
 
         archi_rcpointer_t interface =
             INTERFACE_PTR(archi_context_interface__file_std);
@@ -697,7 +696,7 @@ ARCHI_HASHMAP_TRAV_KV_FUNC(finalize_context)
     (void) index;
     (void) data;
 
-    archi_log_info(__func__, " * finalizing context '%s'", key);
+    ARCHI_LOG_INFO(__func__, " * finalizing context '%s'", key);
 
     return (archi_hashmap_trav_action_t){.type = ARCHI_HASHMAP_TRAV_UNSET};
 }
@@ -709,12 +708,12 @@ finalize_contexts(void)
     {
         archi_hashmap_t registry = archi_context_data(archi_process.context.registry).ptr;
 
-        archi_log_info(__func__, "Finalizing the remaining %zu contexts...",
+        ARCHI_LOG_INFO(__func__, "Finalizing the remaining %zu contexts...",
                 archi_hashmap_num_elements(registry));
 
         archi_hashmap_traverse(registry, false, finalize_context, NULL, NULL);
 
-        archi_log_info(__func__, "Finalizing the context registry...");
+        ARCHI_LOG_INFO(__func__, "Finalizing the context registry...");
 
         archi_context_finalize(archi_process.context.registry);
         archi_process.context.registry = NULL;
@@ -724,7 +723,7 @@ finalize_contexts(void)
     {
         for (size_t i = 0; i < archi_process.args.num_inputs; i++)
         {
-            archi_log_info(__func__, "Finalizing file #%zu mapping context...", i);
+            ARCHI_LOG_INFO(__func__, "Finalizing file #%zu mapping context...", i);
 
             archi_context_finalize(archi_process.context.input_file[i]);
         }
@@ -819,13 +818,13 @@ check_input_file_format(
 
     if (archi_process.error.code != 0)
     {
-        archi_log_error(__func__, "Error: input file mapping attributes are incorrect.");
+        ARCHI_LOG_ERROR(__func__, "Error: input file mapping attributes are incorrect.");
         exit(EXIT_FAILURE);
     }
 
     if (size < sizeof(archi_app_input_file_header_t))
     {
-        archi_log_error(__func__, "Error: input file mapping is too short (file header won't fit).");
+        ARCHI_LOG_ERROR(__func__, "Error: input file mapping is too short (file header won't fit).");
         exit(EXIT_FAILURE);
     }
 
@@ -833,7 +832,7 @@ check_input_file_format(
 
     if (strncmp(ARCHI_APP_INPUT_FILE_MAGIC, input_file_header->magic, sizeof(input_file_header->magic)) != 0)
     {
-        archi_log_error(__func__, "Error: input file format is invalid (magic bytes are incorrect).");
+        ARCHI_LOG_ERROR(__func__, "Error: input file format is invalid (magic bytes are incorrect).");
         exit(EXIT_FAILURE);
     }
 }
@@ -842,42 +841,42 @@ void
 open_and_map_input_files(void)
 {
     // Allocate and initialize the array of input file contexts
-    archi_log_info(__func__, "Allocating the array of input file contexts...");
+    ARCHI_LOG_INFO(__func__, "Allocating the array of input file contexts...");
 
     archi_process.context.input_file = malloc(
             sizeof(*archi_process.context.input_file) * archi_process.args.num_inputs);
     if (archi_process.context.input_file == NULL)
     {
-        archi_log_error(__func__, "Error: couldn't allocate the array of input file contexts.");
+        ARCHI_LOG_ERROR(__func__, "Error: couldn't allocate the array of input file contexts.");
         exit(EXIT_FAILURE);
     }
 
     for (size_t i = 0; i < archi_process.args.num_inputs; i++)
         archi_process.context.input_file[i] = NULL;
 
-    archi_log_info(__func__, "Opening and mapping input files...");
+    ARCHI_LOG_INFO(__func__, "Opening and mapping input files...");
 
     for (size_t i = 0; i < archi_process.args.num_inputs; i++)
     {
         // Open input file
-        archi_log_info(__func__, " * opening file #%zu ('%s')", i, archi_process.args.input[i]);
+        ARCHI_LOG_INFO(__func__, " * opening file #%zu ('%s')", i, archi_process.args.input[i]);
         archi_file_descriptor_t fd = open_input_file(i);
 
         // Map input file to memory, creating a context
-        archi_log_info(__func__, " * mapping file #%zu ('%s') into memory", i, archi_process.args.input[i]);
+        ARCHI_LOG_INFO(__func__, " * mapping file #%zu ('%s') into memory", i, archi_process.args.input[i]);
         map_input_file(i, fd);
 
         // Check input file format
         archi_rcpointer_t input_file = archi_context_data(archi_process.context.input_file[i]);
 
-        archi_log_info(__func__, " * checking format of file #%zu ('%s')", i, archi_process.args.input[i]);
+        ARCHI_LOG_INFO(__func__, " * checking format of file #%zu ('%s')", i, archi_process.args.input[i]);
         check_input_file_format(input_file);
 
         // Log file address & size
         const archi_app_input_file_header_t *input_file_header = input_file.cptr;
         size_t size = sizeof(input_file_header->header) + input_file_header->header.size;
 
-        archi_log_debug(__func__, "\taddress = %p, size = %zu B (%.2f KiB, %.2f MiB, %.2f GiB)",
+        ARCHI_LOG_DEBUG(__func__, "\taddress = %p, size = %zu B (%.2f KiB, %.2f MiB, %.2f GiB)",
                 input_file_header->header.addr, size,
                 size / 1024.0, size / (1024.0 * 1024.0), size / (1024.0 * 1024.0 * 1024.0));
     }
@@ -904,19 +903,19 @@ bool
 prepare_signal_watch_set(void)
 {
     // Allocate signal watch set
-    archi_log_info(__func__, "Allocating the signal watch set...");
+    ARCHI_LOG_INFO(__func__, "Allocating the signal watch set...");
 
     archi_process.signal.watch_set = archi_signal_set_alloc();
     if (archi_process.signal.watch_set == NULL)
     {
-        archi_log_error(__func__, "Error: couldn't allocate the signal watch set.");
+        ARCHI_LOG_ERROR(__func__, "Error: couldn't allocate the signal watch set.");
         exit(EXIT_FAILURE);
     }
 
     // Join signal watch sets from all files into one
     for (size_t i = 0; i < archi_process.args.num_inputs; i++)
     {
-        archi_log_info(__func__, " * joining signal watch sets from file #%zu ('%s')",
+        ARCHI_LOG_INFO(__func__, " * joining signal watch sets from file #%zu ('%s')",
                 i, archi_process.args.input[i]);
 
         size_t num_signal_sets = 0;
@@ -942,7 +941,7 @@ prepare_signal_watch_set(void)
                 if (!archi_pointer_attr_compatible(contents->value.attr,
                             archi_pointer_attr__cdata(ARCHI_POINTER_DATA_TAG__SIGNAL_SET), &error))
                 {
-                    archi_log_warning(__func__, "Pointer to signal watch set #%zu has incorrect attributes (%s), ignoring...",
+                    ARCHI_LOG_WARNING(__func__, "Pointer to signal watch set #%zu has incorrect attributes (%s), ignoring...",
                             num_signal_sets - 1, error.message);
                     continue;
                 }
@@ -971,7 +970,7 @@ prepare_signal_watch_set(void)
 
     if (enable_signal_management_thread)
     {
-        archi_log_info(__func__, "Signal management thread: ENABLED");
+        ARCHI_LOG_INFO(__func__, "Signal management thread: ENABLED");
 
         // Log the signal watch set
         if (archi_print_lock(ARCHI_LOG_VERBOSITY__DEBUG))
@@ -986,7 +985,7 @@ prepare_signal_watch_set(void)
     }
     else
     {
-        archi_log_info(__func__, "Signal management thread: DISABLED");
+        ARCHI_LOG_INFO(__func__, "Signal management thread: DISABLED");
 
         // Free the signal watch set
         free(archi_process.signal.watch_set);
@@ -1006,7 +1005,7 @@ initialize_signal_management(void)
     if (!prepare_signal_watch_set())
         return; // signal management subsystem is not required
 
-    archi_log_info(__func__, "Initializing the signal handler data context...");
+    ARCHI_LOG_INFO(__func__, "Initializing the signal handler data context...");
 
     {
         // Prepare context initialization parameters
@@ -1039,7 +1038,7 @@ initialize_signal_management(void)
             exit(EXIT_FAILURE);
     }
 
-    archi_log_info(__func__, "Starting the signal management thread...");
+    ARCHI_LOG_INFO(__func__, "Starting the signal management thread...");
 
     archi_process.signal.handler.function = archi_signal_handler__hashmap;
     archi_process.signal.handler.data = (archi_pointer_t){
@@ -1065,13 +1064,13 @@ finalize_signal_management(void)
     if (archi_process.signal.watch_set == NULL)
         return; // signal management subsystem hasn't been initialized
 
-    archi_log_info(__func__, "Stopping the signal management thread...");
+    ARCHI_LOG_INFO(__func__, "Stopping the signal management thread...");
 
     archi_app_manager_finalalize__signal();
 
     if (archi_process.signal.handler_data != NULL)
     {
-        archi_log_info(__func__, "Finalizing the signal handler data context...");
+        ARCHI_LOG_INFO(__func__, "Finalizing the signal handler data context...");
 
         archi_context_finalize(archi_process.signal.handler_data);
         archi_process.signal.handler_data = NULL;
@@ -1250,11 +1249,11 @@ print_error(void)
 #define SEP2    " -------------------------------------------------------"
 
     if (archi_process.error.code != 0)
-        archi_log_error(NULL, SEP1 "\n%s%s%s%s%s" SEP2,
+        ARCHI_LOG_ERROR(NULL, SEP1 "\n%s%s%s%s%s" SEP2,
                 line__code, line__message,
                 line__location_file, line__location_line, line__location_func);
     else if (archi_process.error.message[0] != '\0')
-        archi_log_warning(NULL, SEP1 "\n%s%s%s%s" SEP2,
+        ARCHI_LOG_WARNING(NULL, SEP1 "\n%s%s%s%s" SEP2,
                 line__message,
                 line__location_file, line__location_line, line__location_func);
 
